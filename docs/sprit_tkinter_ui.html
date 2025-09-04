@@ -296,7 +296,7 @@ saving data) must be done before calling this function.</p></div>
 
                 update_progress_bars(prog_percent=1)            
                 self.params = sprit_hvsr.input_params(input_data=self.fpath,
-                                    metapath = self.meta_path.get(),
+                                    metadata = self.meta_path.get(),
                                     site=self.site_name.get(),
                                     network=self.network.get(),
                                     station=self.station.get(),
@@ -355,7 +355,7 @@ saving data) must be done before calling this function.</p></div>
 
                 update_progress_bars(prog_percent=1)
                 self.params = sprit_hvsr.input_params( input_data=self.fpath,
-                                    metapath = self.meta_path.get(),
+                                    metadata = self.meta_path.get(),
                                     site=self.site_name.get(),
                                     network=self.network.get(), 
                                     station=self.station.get(), 
@@ -510,9 +510,9 @@ saving data) must be done before calling this function.</p></div>
             update_progress_bars(prog_percent=50)
 
             self.hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data=self.hvsr_data,
-                                            rmse_thresh=98,
+                                            outlier_threshold=98,
                                             use_percentile=True,
-                                            use_hv_curve = False,
+                                            use_hv_curves = False,
                                             show_plot = False)
             update_progress_bars(prog_percent=60)
 
@@ -591,7 +591,7 @@ saving data) must be done before calling this function.</p></div>
 
         def update_input_params_call():
             prevCall = self.input_params_call.cget(&#39;text&#39;)
-            self.input_params_call.configure(text=&#34;input_params( input_data=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, location=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
+            self.input_params_call.configure(text=&#34;input_params( input_data=&#39;{}&#39;, metadata={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, location=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,  \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),
@@ -1181,7 +1181,7 @@ saving data) must be done before calling this function.</p></div>
 
         #self.starttime, self.endtime = get_times()
         input_params_LF = ttk.LabelFrame(master=self.input_tab, text=&#39;input_params() call&#39;)
-        self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params( input_data=&#39;{}&#39;, metapath={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, location=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,   \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
+        self.input_params_call = ttk.Label(master=input_params_LF, text=&#34;input_params( input_data=&#39;{}&#39;, metadata={}, site=&#39;{}&#39;, instrument=&#39;{}&#39;,\n\tnetwork=&#39;{}&#39;, station=&#39;{}&#39;, location=&#39;{}&#39;, channels=[{}, {}, {}], \n\tacq_date=&#39;{}&#39;, starttime=&#39;{}&#39;, endttime=&#39;{}&#39;, tzone=&#39;{}&#39;, \n\txcoord={}, ycoord={}, elevation={}, input_crs=&#39;{}&#39;, output_crs=&#39;{}&#39;, elev_unit=&#39;{}&#39;,   \n\thvsr_band=[{}, {}], peak_freq_range=[{}, {}])&#34;.format(
                                             self.data_path.get(), self.meta_path.get(), self.site_name.get(), self.instrumentSel.get(),
                                             self.network.get(), self.station.get(), self.location.get(),
                                             self.z_channel.get(), self.e_channel.get(), self.n_channel.get(),

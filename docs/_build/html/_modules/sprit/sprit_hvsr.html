@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 2.8.9 documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 2.9.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=ee1499ef"></script>
+        <script src="../../_static/documentation_options.js?v=182a64a0"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -111,6 +111,7 @@
 <span class="kn">import</span> <span class="nn">plotly</span>
 <span class="kn">from</span> <span class="nn">pyproj</span> <span class="kn">import</span> <span class="n">CRS</span><span class="p">,</span> <span class="n">Transformer</span>
 <span class="kn">import</span> <span class="nn">scipy</span>
+<span class="kn">from</span> <span class="nn">scipy.spatial.distance</span> <span class="kn">import</span> <span class="n">squareform</span><span class="p">,</span> <span class="n">pdist</span>
 
 <span class="k">try</span><span class="p">:</span>  <span class="c1"># For distribution</span>
     <span class="kn">from</span> <span class="nn">sprit</span> <span class="kn">import</span> <span class="n">sprit_utils</span>
@@ -131,7 +132,8 @@
                  <span class="s1">&#39;NNSA_KB_CORE&#39;</span><span class="p">,</span> <span class="s1">&#39;PDAS&#39;</span><span class="p">,</span> <span class="s1">&#39;PICKLE&#39;</span><span class="p">,</span> <span class="s1">&#39;Q&#39;</span><span class="p">,</span> <span class="s1">&#39;REFTEK130&#39;</span><span class="p">,</span> <span class="s1">&#39;RG16&#39;</span><span class="p">,</span> 
                  <span class="s1">&#39;SAC&#39;</span><span class="p">,</span> <span class="s1">&#39;SACXY&#39;</span><span class="p">,</span> <span class="s1">&#39;SEG2&#39;</span><span class="p">,</span> <span class="s1">&#39;SEGY&#39;</span><span class="p">,</span> <span class="s1">&#39;SEISAN&#39;</span><span class="p">,</span> <span class="s1">&#39;SH_ASC&#39;</span><span class="p">,</span> <span class="s1">&#39;SLIST&#39;</span><span class="p">,</span> <span class="s1">&#39;TRC&#39;</span><span class="p">,</span>
                  <span class="s1">&#39;SU&#39;</span><span class="p">,</span> <span class="s1">&#39;TSPAIR&#39;</span><span class="p">,</span> <span class="s1">&#39;WAV&#39;</span><span class="p">,</span> <span class="s1">&#39;WIN&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">]</span>
-<span class="n">DEFAULT_BAND</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">50</span><span class="p">]</span>
+<span class="n">DEFAULT_BAND</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">40</span><span class="p">]</span>
+<span class="n">PLOT_KEYS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Input_Plot&quot;</span><span class="p">,</span> <span class="s2">&quot;Outlier_Plot&quot;</span><span class="p">,</span> <span class="s2">&quot;Plot_Report&quot;</span><span class="p">,</span> <span class="s2">&quot;Depth_Plot&quot;</span><span class="p">,</span> <span class="s2">&quot;Plot_Report&quot;</span><span class="p">]</span>
 
 <span class="c1"># Resources directory path, and the other paths as well</span>
 <span class="n">RESOURCE_DIR</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;resources&#39;</span><span class="p">))</span>
@@ -884,21 +886,78 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
 
     <span class="c1"># METHODS (many reflect dictionary methods)    </span>
-    <span class="k">def</span> <span class="nf">__to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">):</span>
+<div class="viewcode-block" id="HVSRData.to_json">
+<a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.HVSRData.to_json">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_filepath</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Not yet supported, will export HVSRData object to json&quot;&quot;&quot;</span>
-        <span class="c1"># open the file with the given filepath</span>
-        <span class="k">def</span> <span class="nf">unseriable_fun</span><span class="p">(</span><span class="n">o</span><span class="p">):</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-                <span class="n">output</span> <span class="o">=</span> <span class="n">o</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">output</span> <span class="o">=</span> <span class="n">o</span><span class="o">.</span><span class="vm">__dict__</span>
-            <span class="k">except</span><span class="p">:</span>
-                <span class="n">output</span> <span class="o">=</span> <span class="nb">dir</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">output</span>
 
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">class_keys_to_convert</span> <span class="o">=</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">,</span> 
+                             <span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="n">CRS</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Inventory</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">iterative_json_parser</span><span class="p">(</span><span class="n">input_attrib</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">outValue</span> <span class="o">=</span> <span class="n">input_attrib</span>
+            
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_attrib</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>  <span class="c1"># simplified condition for demo</span>
+            <span class="c1"># if isinstance(input_attrib, (dict, sprit.HVSRData)):  # use this line instead</span>
+                <span class="n">outValue</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">level</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">input_attrib</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+                    <span class="n">outKey</span> <span class="o">=</span> <span class="n">key</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;  &#39;</span><span class="p">]</span><span class="o">*</span><span class="n">level</span><span class="p">),</span> <span class="n">outKey</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">outKey</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))):</span>
+                        <span class="n">outKey</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">outKey</span><span class="p">)</span>
+                    
+                    <span class="c1"># Recursively process the value</span>
+                    <span class="n">processed_value</span> <span class="o">=</span> <span class="n">iterative_json_parser</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">level</span><span class="p">)</span>
+                    
+                    <span class="c1"># Apply string conversion if needed</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">processed_value</span><span class="p">,</span> <span class="n">class_keys_to_convert</span><span class="p">):</span>
+                        <span class="n">processed_value</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">processed_value</span><span class="p">)</span>
+                    
+                    <span class="n">outValue</span><span class="p">[</span><span class="n">outKey</span><span class="p">]</span> <span class="o">=</span> <span class="n">processed_value</span>
+                
+                <span class="k">return</span> <span class="n">outValue</span>
+            
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_attrib</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">outValue</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">input_attrib</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                        <span class="n">outValue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># Recursively process list items</span>
+                        <span class="n">outValue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">iterative_json_parser</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">level</span><span class="p">))</span>
+                <span class="k">return</span> <span class="n">outValue</span>
+            
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_attrib</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="n">outValue</span> <span class="o">=</span> <span class="n">input_attrib</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="k">return</span> <span class="n">outValue</span>
+            
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_attrib</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+                <span class="c1"># Convert DataFrame to dict, but then recursively process it</span>
+                <span class="n">dict_value</span> <span class="o">=</span> <span class="n">input_attrib</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                <span class="k">return</span> <span class="n">iterative_json_parser</span><span class="p">(</span><span class="n">dict_value</span><span class="p">,</span> <span class="n">level</span><span class="p">)</span>
+            
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_attrib</span><span class="p">,</span> <span class="n">class_keys_to_convert</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">input_attrib</span><span class="p">)</span>
+            
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">input_attrib</span>
+
+        <span class="n">sKeys</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="s1">&#39;sort_keys&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">sKeys</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;sort_keys&#39;</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;sort_keys&#39;</span><span class="p">]</span>
+
+        <span class="n">indent</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="k">if</span> <span class="s1">&#39;indent&#39;</span> <span class="ow">in</span> <span class="n">kwarg</span><span class="p">:</span>
+            <span class="n">indent</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;indent&#39;</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;indent&#39;</span><span class="p">]</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">json_filepath</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="c1"># dump the JSON string to the file</span>
-            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">unseriable_fun</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fp</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">iterative_json_parser</span><span class="p">,</span> 
+                      <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="HVSRData.export">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.HVSRData.export">[docs]</a>
@@ -976,7 +1035,7 @@
 <span class="sd">        --------</span>
 <span class="sd">        get_report</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">report_return</span> <span class="o">=</span> <span class="n">get_report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">report_return</span> <span class="o">=</span> <span class="n">get_report</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">report_return</span></div>
 
 
@@ -1040,7 +1099,7 @@
 <span class="sd">        --------</span>
 <span class="sd">        get_report</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">report_return</span> <span class="o">=</span> <span class="n">get_report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">report_return</span> <span class="o">=</span> <span class="n">get_report</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">report_return</span></div>
 
     
@@ -1261,7 +1320,13 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">sprit_jupyter_UI</span><span class="o">.</span><span class="n">create_jupyter_ui</span><span class="p">()</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">):</span>
+                <span class="n">errMsg</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">message</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">errMsg</span> <span class="o">=</span> <span class="n">e</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">e</span>
+            
     <span class="k">elif</span> <span class="n">kind</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">liteList</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Lite GUI is not currently supported&quot;</span><span class="p">)</span></div>
 
@@ -1618,16 +1683,19 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="n">psd_data</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;batch&#39;</span><span class="p">]:</span>
                 <span class="n">psd_data</span> <span class="o">=</span> <span class="n">psd_data</span><span class="p">[</span><span class="n">site_name</span><span class="p">]</span>
 
-    <span class="c1"># Remove Outlier Curves</span>
+    <span class="c1"># Remove Outlier PSD Curves</span>
     <span class="n">data_curvesRemoved</span> <span class="o">=</span> <span class="n">psd_data</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">remove_outlier_curve_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">remove_outlier_curves</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
-
+        <span class="k">if</span> <span class="s1">&#39;use_hv_curves&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">remove_outlier_curve_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">use_hv_curves</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">use_hv_curves</span> <span class="o">=</span> <span class="n">remove_outlier_curve_kwargs</span><span class="p">[</span><span class="s1">&#39;use_hv_curves&#39;</span><span class="p">]</span>
         <span class="c1"># Check whether it is indicated to remove outlier curves</span>
         <span class="n">outlier_curve_keys_used</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">if</span> <span class="n">remove_outlier_curve_kwargs</span> <span class="o">==</span> <span class="p">{}</span> <span class="ow">or</span> <span class="nb">list</span><span class="p">(</span><span class="n">remove_outlier_curve_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="p">[</span><span class="s1">&#39;show_plot&#39;</span><span class="p">]:</span>
             <span class="n">outlier_curve_keys_used</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">if</span> <span class="n">outlier_curves_removal</span> <span class="ow">or</span> <span class="n">outlier_curve_keys_used</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">outlier_curves_removal</span> <span class="ow">or</span> <span class="n">outlier_curve_keys_used</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">use_hv_curves</span><span class="p">:</span>
             <span class="n">remove_outlier_curve_kwargs</span><span class="p">[</span><span class="s1">&#39;remove_outliers_during_plot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="n">data_curvesRemoved</span> <span class="o">=</span> <span class="n">remove_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="n">data_curvesRemoved</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span><span class="o">**</span><span class="n">remove_outlier_curve_kwargs</span><span class="p">)</span>   
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -1650,7 +1718,7 @@
         
         <span class="k">for</span> <span class="n">site_name</span> <span class="ow">in</span> <span class="n">data_curvesRemoved_interim</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>  <span class="c1"># This should work more or less the same for batch and regular data now</span>
             <span class="n">data_curvesRemoved_interim</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;processing_status&#39;</span><span class="p">][</span><span class="s1">&#39;remove_outlier_curves_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="n">data_curvesRemoved_interim</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;processing_status&#39;</span><span class="p">][</span><span class="s1">&#39;overall_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="c1">#data_curvesRemoved_interim[site_name][&#39;processing_status&#39;][&#39;overall_status&#39;] = False</span>
     
             <span class="c1">#If it wasn&#39;t originally HVSRBatch, make it HVSRData object again</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">data_curvesRemoved_interim</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;batch&#39;</span><span class="p">]:</span>
@@ -1681,7 +1749,49 @@
             <span class="c1"># If it wasn&#39;t originally HVSRBatch, make it HVSRData object again</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">hvsr_results</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;batch&#39;</span><span class="p">]:</span>
                 <span class="n">hvsr_results</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="p">[</span><span class="n">site_name</span><span class="p">]</span>            
-            
+
+    <span class="c1"># Remove outlier HV Curves</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">remove_outlier_curve_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">remove_outlier_curves</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
+        <span class="k">if</span> <span class="s1">&#39;use_hv_curves&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">remove_outlier_curve_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">use_hv_curves</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">use_hv_curves</span> <span class="o">=</span> <span class="n">remove_outlier_curve_kwargs</span><span class="p">[</span><span class="s1">&#39;use_hv_curves&#39;</span><span class="p">]</span>
+        <span class="c1"># Check whether it is indicated to remove outlier curves</span>
+        <span class="n">outlier_curve_keys_used</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">remove_outlier_curve_kwargs</span> <span class="o">==</span> <span class="p">{}</span> <span class="ow">or</span> <span class="nb">list</span><span class="p">(</span><span class="n">remove_outlier_curve_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="p">[</span><span class="s1">&#39;show_plot&#39;</span><span class="p">]:</span>
+            <span class="n">outlier_curve_keys_used</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">outlier_curves_removal</span> <span class="ow">or</span> <span class="n">outlier_curve_keys_used</span><span class="p">)</span> <span class="ow">and</span> <span class="n">use_hv_curves</span><span class="p">:</span>
+            <span class="n">remove_outlier_curve_kwargs</span><span class="p">[</span><span class="s1">&#39;remove_outliers_during_plot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">hvsr_results</span> <span class="o">=</span> <span class="n">remove_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span><span class="o">**</span><span class="n">remove_outlier_curve_kwargs</span><span class="p">)</span>   
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">traceback</span><span class="o">.</span><span class="n">print_exception</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_obj</span><span class="p">,</span> <span class="n">tb</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">tb_frame</span>
+        <span class="n">lineno</span> <span class="o">=</span> <span class="n">tb</span><span class="o">.</span><span class="n">tb_lineno</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_filename</span>
+        <span class="n">errLineNo</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">extract_tb</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">2</span><span class="p">])[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">lineno</span><span class="p">)</span>
+        <span class="n">error_category</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">title</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="s1">&#39;Error&#39;</span><span class="p">)</span>
+        <span class="n">error_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">errLineNo</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">error_category</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">errLineNo</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">error_message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">lineno</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        
+        <span class="c1"># Reformat data so HVSRData and HVSRBatch data both work here</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">HVSRData</span><span class="p">):</span>
+            <span class="n">data_curvesRemoved_interim</span> <span class="o">=</span> <span class="p">{</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]:</span> <span class="n">hvsr_results</span><span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data_curvesRemoved_interim</span> <span class="o">=</span> <span class="n">hvsr_results</span>
+        
+        <span class="k">for</span> <span class="n">site_name</span> <span class="ow">in</span> <span class="n">data_curvesRemoved_interim</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>  <span class="c1"># This should work more or less the same for batch and regular data now</span>
+            <span class="n">data_curvesRemoved_interim</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;processing_status&#39;</span><span class="p">][</span><span class="s1">&#39;remove_outlier_curves_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="c1">#data_curvesRemoved_interim[site_name][&#39;processing_status&#39;][&#39;overall_status&#39;] = False</span>
+    
+            <span class="c1">#If it wasn&#39;t originally HVSRBatch, make it HVSRData object again</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">data_curvesRemoved_interim</span><span class="p">[</span><span class="n">site_name</span><span class="p">][</span><span class="s1">&#39;batch&#39;</span><span class="p">]:</span>
+                <span class="n">data_curvesRemoved_interim</span> <span class="o">=</span> <span class="n">data_curvesRemoved_interim</span><span class="p">[</span><span class="n">site_name</span><span class="p">]</span>
+        <span class="n">hvsr_results</span> <span class="o">=</span> <span class="n">data_curvesRemoved_interim</span>
+        
+
     <span class="c1"># Final post-processing/reporting</span>
     <span class="c1"># Check peaks</span>
     <span class="n">check_peaks_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">check_peaks</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
@@ -1765,7 +1875,7 @@
                 <span class="k">pass</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># hvplot_kwargs = {k: v for k, v in kwargs.items() if k in plot_hvsr.__code__.co_varnames}</span>
-                <span class="c1"># hvsr_results[&#39;HV_Plot&#39;] = plot_hvsr(hvsr_results, return_fig=True, show_plot=False, close_figs=True)</span>
+                <span class="c1"># hvsr_results[&#39;Plot_Report&#39;] = plot_hvsr(hvsr_results, return_fig=True, show_plot=False, close_figs=True)</span>
                 <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">pass</span>
@@ -2717,7 +2827,9 @@
 <span class="c1"># Function to export data to .hvsr file (pickled)</span>
 <div class="viewcode-block" id="export_hvsr">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.export_hvsr">[docs]</a>
-<span class="k">def</span> <span class="nf">export_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">hvsr_export_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="s1">&#39;hvsr&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">export_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">hvsr_export_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="s1">&#39;hvsr&#39;</span><span class="p">,</span> 
+                <span class="n">export_plots</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Export data into pickle format that can be read back in using import_data().</span>
 <span class="sd">       Intended so data does not need to be processed each time it needs to be used. </span>
 <span class="sd">       Default extension is .hvsr but it is still a pickled file that can be read in using pickle.load().</span>
@@ -2733,6 +2845,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">_hvsr_export</span><span class="p">(</span><span class="n">_hvsr_data</span><span class="o">=</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">_export_path</span><span class="o">=</span><span class="n">hvsr_export_path</span><span class="p">,</span> <span class="n">_ext</span><span class="o">=</span><span class="n">ext</span><span class="p">):</span>
         
+        <span class="nb">print</span><span class="p">(</span><span class="nb">dir</span><span class="p">(</span><span class="n">_hvsr_data</span><span class="p">))</span>
         <span class="n">fname</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_hvsr_data</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_HVSRData_</span><span class="si">{</span><span class="n">_hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="si">}</span><span class="s2">_pickled.</span><span class="si">{</span><span class="n">ext</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">if</span> <span class="n">_export_path</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">_export_path</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
             <span class="n">_export_path</span> <span class="o">=</span> <span class="n">_hvsr_data</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span>
@@ -2746,13 +2859,21 @@
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">_export_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">_hvsr_data</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> 
             
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;EXPORT COMPLETE&#39;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processed data exported as pickled data to: </span><span class="si">{</span><span class="n">_export_path</span><span class="si">}</span><span class="s2"> [~</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">_export_path</span><span class="p">)</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">st_size</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="o">**</span><span class="mi">20</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> Mb]&quot;</span><span class="p">)</span>    
-            
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">HVSRBatch</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">sitename</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">_hvsr_export</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="n">sitename</span><span class="p">],</span> <span class="n">hvsr_export_path</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">HVSRData</span><span class="p">):</span>
-        <span class="n">_hvsr_export</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">hvsr_export_path</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span>
+
+    <span class="n">hvData</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">export_plots</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">pk</span> <span class="ow">in</span> <span class="n">PLOT_KEYS</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvData</span><span class="p">,</span> <span class="n">pk</span><span class="p">):</span>
+                <span class="k">del</span> <span class="n">hvData</span><span class="p">[</span><span class="n">pk</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvData</span><span class="p">,</span> <span class="n">HVSRBatch</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">sitename</span> <span class="ow">in</span> <span class="n">hvData</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">_hvsr_export</span><span class="p">(</span><span class="n">_hvsr_data</span><span class="o">=</span><span class="n">hvData</span><span class="p">[</span><span class="n">sitename</span><span class="p">],</span> <span class="n">_export_path</span><span class="o">=</span><span class="n">hvsr_export_path</span><span class="p">,</span> <span class="n">_ext</span><span class="o">=</span><span class="n">ext</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvData</span><span class="p">,</span> <span class="n">HVSRData</span><span class="p">):</span>
+        <span class="n">_hvsr_export</span><span class="p">(</span><span class="n">_hvsr_data</span><span class="o">=</span><span class="n">hvData</span><span class="p">,</span> <span class="n">_export_path</span><span class="o">=</span><span class="n">hvsr_export_path</span><span class="p">,</span> <span class="n">_ext</span><span class="o">=</span><span class="n">ext</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Error in data export. Data must be either of type sprit.HVSRData or sprit.HVSRBatch&quot;</span><span class="p">)</span>         
     
@@ -2909,9 +3030,9 @@
                         <span class="nb">print</span><span class="p">(</span><span class="n">colStr</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="n">maxColWidth</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;  &#39;</span><span class="p">)</span>
                     <span class="nb">print</span><span class="p">()</span>
         <span class="k">elif</span> <span class="n">ref</span> <span class="o">==</span> <span class="s1">&#39;plot&#39;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="s1">&#39;HV_Plot&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="s1">&#39;Plot_Report&#39;</span><span class="p">):</span>
                 <span class="n">fig</span> <span class="o">=</span> <span class="n">plot_hvsr</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;BestPeak&#39;</span><span class="p">][</span><span class="n">azimuth</span><span class="p">][</span><span class="s1">&#39;Report&#39;</span><span class="p">][</span><span class="s1">&#39;HV_Plot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;HV_Plot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span>
+            <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;BestPeak&#39;</span><span class="p">][</span><span class="n">azimuth</span><span class="p">][</span><span class="s1">&#39;Report&#39;</span><span class="p">][</span><span class="s1">&#39;Plot_Report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;Plot_Report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span>
 
             <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Saving plot to: </span><span class="si">{</span><span class="n">outFile</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -2989,7 +3110,7 @@
     <span class="n">procSetFPath</span> <span class="o">=</span> <span class="n">settingsPath</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">fnameDict</span><span class="p">[</span><span class="s1">&#39;processing&#39;</span><span class="p">])</span>
 
     <span class="c1">#Get settings values</span>
-    <span class="n">instKeys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;instrument&quot;</span><span class="p">,</span> <span class="s2">&quot;net&quot;</span><span class="p">,</span> <span class="s2">&quot;sta&quot;</span><span class="p">,</span> <span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="s2">&quot;cha&quot;</span><span class="p">,</span> <span class="s2">&quot;depth&quot;</span><span class="p">,</span> <span class="s2">&quot;metapath&quot;</span><span class="p">,</span> <span class="s2">&quot;hvsr_band&quot;</span><span class="p">]</span>
+    <span class="n">instKeys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;instrument&quot;</span><span class="p">,</span> <span class="s2">&quot;net&quot;</span><span class="p">,</span> <span class="s2">&quot;sta&quot;</span><span class="p">,</span> <span class="s2">&quot;loc&quot;</span><span class="p">,</span> <span class="s2">&quot;cha&quot;</span><span class="p">,</span> <span class="s2">&quot;depth&quot;</span><span class="p">,</span> <span class="s2">&quot;metadata&quot;</span><span class="p">,</span> <span class="s2">&quot;hvsr_band&quot;</span><span class="p">]</span>
     <span class="n">inst_location_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;xcoord&#39;</span><span class="p">,</span> <span class="s1">&#39;ycoord&#39;</span><span class="p">,</span> <span class="s1">&#39;elevation&#39;</span><span class="p">,</span> <span class="s1">&#39;elev_unit&#39;</span><span class="p">,</span> <span class="s1">&#39;input_crs&#39;</span><span class="p">]</span>
     <span class="n">procFuncs</span> <span class="o">=</span> <span class="p">[</span><span class="n">fetch_data</span><span class="p">,</span> <span class="n">remove_noise</span><span class="p">,</span> <span class="n">generate_psds</span><span class="p">,</span> <span class="n">process_hvsr</span><span class="p">,</span> <span class="n">check_peaks</span><span class="p">,</span> <span class="n">get_report</span><span class="p">]</span>
 
@@ -3848,7 +3969,7 @@
 <div class="viewcode-block" id="generate_psds">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.generate_psds">[docs]</a>
 <span class="k">def</span> <span class="nf">generate_psds</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mf">30.0</span><span class="p">,</span> <span class="n">overlap_pct</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">window_type</span><span class="o">=</span><span class="s1">&#39;hann&#39;</span><span class="p">,</span> <span class="n">window_length_method</span><span class="o">=</span><span class="s1">&#39;length&#39;</span><span class="p">,</span> 
-                  <span class="n">remove_response</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">skip_on_gaps</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_freq_bins</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> 
+                  <span class="n">remove_response</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">skip_on_gaps</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_freq_bins</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">hvsr_band</span><span class="o">=</span><span class="n">DEFAULT_BAND</span><span class="p">,</span>
                   <span class="n">obspy_ppsds</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">azimuthal_psds</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">plot_psds</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">obspy_ppsd_kwargs</span><span class="p">):</span>
 <span class="w">    </span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate Power Spectral Density (PSD) curves for each channel.</span>
@@ -3920,7 +4041,7 @@
         <span class="k">elif</span> <span class="s1">&#39;input_params&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">&#39;hvsr_band&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">obspy_ppsd_kwargs_sprit_defaults</span><span class="p">[</span><span class="s1">&#39;period_limits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="o">/</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">][</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="o">/</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">][</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">obspy_ppsd_kwargs_sprit_defaults</span><span class="p">[</span><span class="s1">&#39;period_limits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="o">/</span><span class="n">DEFAULT_BAND</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="o">/</span><span class="n">DEFAULT_BAND</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+            <span class="n">obspy_ppsd_kwargs_sprit_defaults</span><span class="p">[</span><span class="s1">&#39;period_limits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="o">/</span><span class="n">hvsr_band</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="o">/</span><span class="n">hvsr_band</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">Updating hvsr_band to band specified by period_limits=</span><span class="si">{</span><span class="n">obspy_ppsd_kwargs</span><span class="p">[</span><span class="s1">&#39;period_limits&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -4127,7 +4248,9 @@
     <span class="k">if</span> <span class="n">obspy_ppsds</span><span class="p">:</span>
         <span class="n">hvsr_data</span><span class="p">,</span> <span class="n">dfList</span><span class="p">,</span> <span class="n">colList</span><span class="p">,</span> <span class="n">common_times</span> <span class="o">=</span> <span class="n">_get_obspy_ppsds</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="o">**</span><span class="n">obspy_ppsd_kwargs</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">psdDict</span><span class="p">,</span> <span class="n">common_times</span> <span class="o">=</span> <span class="n">__single_psd_from_raw_data</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="n">window_length</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="n">overlap_pct</span><span class="p">,</span> <span class="n">remove_response</span><span class="o">=</span><span class="n">remove_response</span><span class="p">,</span> <span class="n">do_azimuths</span><span class="o">=</span><span class="n">azimuthal_psds</span><span class="p">,</span> <span class="n">show_psd_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">psdDict</span><span class="p">,</span> <span class="n">common_times</span> <span class="o">=</span> <span class="n">__single_psd_from_raw_data</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="n">window_length</span><span class="p">,</span> <span class="n">window_length_method</span><span class="o">=</span><span class="n">window_length_method</span><span class="p">,</span> <span class="n">window_type</span><span class="o">=</span><span class="n">window_type</span><span class="p">,</span>
+                                                           <span class="n">num_freq_bins</span><span class="o">=</span><span class="n">num_freq_bins</span><span class="p">,</span>
+                                                           <span class="n">overlap</span><span class="o">=</span><span class="n">overlap_pct</span><span class="p">,</span> <span class="n">remove_response</span><span class="o">=</span><span class="n">remove_response</span><span class="p">,</span> <span class="n">do_azimuths</span><span class="o">=</span><span class="n">azimuthal_psds</span><span class="p">,</span> <span class="n">show_psd_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="n">x_freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span> <span class="n">num_freq_bins</span><span class="p">))</span>
         
@@ -4186,7 +4309,6 @@
         <span class="c1"># hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][&#39;times_gaps&#39;]: list of two-item lists with UTCDatetimes for gaps</span>
         
         <span class="c1"># #Maybe not needed hvsr_data[&#39;ppsds&#39;][&#39;Z&#39;][&#39;current_times_used&#39;]</span>
-
 
     <span class="n">hvsrDF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">dfList</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">colList</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
@@ -4294,7 +4416,7 @@
 <span class="sd">        Modified input dictionary with additional key:value pair containing paz dictionary (key = &quot;paz&quot;)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
-    <span class="n">invPath</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;metapath&#39;</span><span class="p">]</span>
+    <span class="n">invPath</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]</span>
     <span class="n">raspShakeInstNameList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;raspberry shake&#39;</span><span class="p">,</span> <span class="s1">&#39;shake&#39;</span><span class="p">,</span> <span class="s1">&#39;raspberry&#39;</span><span class="p">,</span> 
                              <span class="s1">&#39;rs&#39;</span><span class="p">,</span> <span class="s1">&#39;rs3d&#39;</span><span class="p">,</span> <span class="s1">&#39;rasp. shake&#39;</span><span class="p">,</span> 
                              <span class="s1">&#39;raspshake&#39;</span><span class="p">,</span> <span class="s1">&#39;raspberry shake 3d&#39;</span><span class="p">]</span>
@@ -4362,7 +4484,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">invPath</span><span class="p">:</span>
             <span class="k">pass</span> <span class="c1">#if invPath is None</span>
         <span class="k">elif</span> <span class="ow">not</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">invPath</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">or</span> <span class="n">invPath</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The metapath parameter was not specified correctly. Returning original params value </span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;metapath&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The metadata parameter was not specified correctly. Returning original params value </span><span class="si">{</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">readInvKwargs</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">argspecs</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getfullargspec</span><span class="p">(</span><span class="n">obspy</span><span class="o">.</span><span class="n">read_inventory</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">argName</span> <span class="ow">in</span> <span class="n">argspecs</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
@@ -4408,7 +4530,7 @@
 <span class="sd">        Format in which to print or export the report.</span>
 <span class="sd">        The following report_formats return the following items in the following attributes:</span>
 <span class="sd">            - &#39;plot&#39;: hvsr_results[&#39;Print_Report&#39;] as a str</span>
-<span class="sd">            - &#39;print&#39;: hvsr_results[&#39;HV_Plot&#39;] - matplotlib.Figure object</span>
+<span class="sd">            - &#39;print&#39;: hvsr_results[&#39;Plot_Report&#39;] - matplotlib.Figure object</span>
 <span class="sd">            - &#39;table&#39;:  hvsr_results[&#39;Table_Report&#39;]- pandas.DataFrame object</span>
 <span class="sd">                - list/tuple - a list or tuple of the above objects, in the same order they are in the report_formats list</span>
 <span class="sd">            - &#39;html&#39;: hvsr_results[&#39;HTML_Report&#39;] - a string containing the text for an HTML document</span>
@@ -4636,7 +4758,7 @@
             <span class="k">if</span> <span class="n">show_table_report</span><span class="p">:</span>
                 <span class="n">verbose_table</span> <span class="o">=</span> <span class="kc">True</span>
             
-            <span class="n">hsvr_results</span> <span class="o">=</span> <span class="n">_generate_table_report</span><span class="p">(</span><span class="n">hsvr_results</span><span class="p">,</span> 
+            <span class="n">hsvr_results</span> <span class="o">=</span> <span class="n">_generate_table_report</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> 
                                 <span class="n">azimuth</span><span class="o">=</span><span class="n">azimuth</span><span class="p">,</span>
                                 <span class="n">show_table_report</span><span class="o">=</span><span class="n">show_table_report</span><span class="p">,</span>
                                 <span class="n">verbose</span><span class="o">=</span><span class="n">verbose_table</span><span class="p">)</span>
@@ -4653,7 +4775,7 @@
                             <span class="n">show_report</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="c1"># If report is to be shown, done in previous step</span>
                             <span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose_table</span><span class="p">)</span>
 
-        <span class="c1"># HV_Plot</span>
+        <span class="c1"># Plot_Report</span>
         <span class="k">elif</span> <span class="n">rep_form</span> <span class="o">==</span> <span class="s1">&#39;plot&#39;</span><span class="p">:</span>
             <span class="n">plot_hvsr_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">plot_hvsr</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
             <span class="k">if</span> <span class="s1">&#39;plot_type&#39;</span> <span class="ow">in</span> <span class="n">plot_hvsr_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -4666,8 +4788,8 @@
             
             <span class="k">if</span> <span class="s1">&#39;plot&#39;</span> <span class="ow">in</span> <span class="n">report_export_format</span><span class="p">:</span>
                 <span class="n">export_report</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">=</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">report_export_path</span><span class="o">=</span><span class="n">report_export_path</span><span class="p">,</span> <span class="n">report_export_format</span><span class="o">=</span><span class="s1">&#39;plot&#39;</span><span class="p">)</span>
-            <span class="c1">#hvsr_results[&#39;BestPeak&#39;][azimuth][&#39;Report&#39;][&#39;HV_Plot&#39;] = fig</span>
-            <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;HV_Plot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span>
+            <span class="c1">#hvsr_results[&#39;BestPeak&#39;][azimuth][&#39;Report&#39;][&#39;Plot_Report&#39;] = fig</span>
+            <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;Plot_Report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span>
 
             <span class="k">if</span> <span class="n">show_plot_report</span><span class="p">:</span><span class="c1">#&#39;show_plot&#39; in plot_hvsr_kwargs.keys() and plot_hvsr_kwargs[&#39;show_plot&#39;] is False:</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">verbose</span><span class="p">:</span>
@@ -4683,7 +4805,7 @@
                         <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>                    
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\t</span><span class="s2">Plot of data report created and saved in [&#39;HV_Plot&#39;] attribute&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\t</span><span class="s2">Plot of data report created and saved in [&#39;Plot_Report&#39;] attribute&quot;</span><span class="p">)</span>
 
         <span class="c1"># HTML_Report</span>
         <span class="k">elif</span> <span class="n">rep_form</span> <span class="o">==</span> <span class="s1">&#39;html&#39;</span><span class="p">:</span>
@@ -4828,7 +4950,7 @@
                 <span class="n">elev_unit</span> <span class="o">=</span> <span class="s1">&#39;meters&#39;</span><span class="p">,</span>
                 <span class="n">depth</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
                 <span class="n">instrument</span> <span class="o">=</span> <span class="s2">&quot;Seismometer&quot;</span><span class="p">,</span>
-                <span class="n">metapath</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">metadata</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="n">hvsr_band</span> <span class="o">=</span> <span class="n">DEFAULT_BAND</span><span class="p">,</span>
                 <span class="n">peak_freq_range</span> <span class="o">=</span> <span class="n">DEFAULT_BAND</span><span class="p">,</span>
                 <span class="n">processing_parameters</span><span class="o">=</span><span class="p">{},</span>
@@ -4849,7 +4971,7 @@
 <span class="sd">        f&quot;{project}-{acq_date.strftime(&quot;%Y%m%d&quot;)}-{starttime.strftime(&quot;%H%M&quot;)}-{station}&quot;.</span>
 <span class="sd">    network : str, default=&#39;AM&#39;</span>
 <span class="sd">        The network designation of the seismometer. This is necessary for data from Raspberry Shakes. &#39;AM&#39; is for Amateur network, which fits Raspberry Shakes.</span>
-<span class="sd">    station : str, default=&#39;RAC84&#39;</span>
+<span class="sd">    station : str, default=&#39;None&#39;</span>
 <span class="sd">        The station name of the seismometer. This is necessary for data from Raspberry Shakes.</span>
 <span class="sd">    location : str, default=&#39;00&#39;</span>
 <span class="sd">        Location information of the seismometer.</span>
@@ -4881,7 +5003,7 @@
 <span class="sd">        Depth of seismometer. Not currently used, but will likely be used in the future.</span>
 <span class="sd">    instrument : str {&#39;Raspberry Shake&#39;, &quot;Tromino&quot;}</span>
 <span class="sd">        Instrument from which the data was acquired. </span>
-<span class="sd">    metapath : str or pathlib.Path object, default=None</span>
+<span class="sd">    metadata : str or pathlib.Path object, default=None</span>
 <span class="sd">        Filepath of metadata, in format supported by obspy.read_inventory. If default value of None, will read from resources folder of repository (only supported for Raspberry Shake).</span>
 <span class="sd">    hvsr_band : list, default=[0.1, 50]</span>
 <span class="sd">        Two-element list containing low and high &quot;corner&quot; frequencies (in Hz) for processing. This can specified again later.</span>
@@ -5083,7 +5205,7 @@
                       <span class="s1">&#39;acq_date&#39;</span><span class="p">:</span><span class="n">acq_date</span><span class="p">,</span><span class="s1">&#39;starttime&#39;</span><span class="p">:</span><span class="n">starttime</span><span class="p">,</span><span class="s1">&#39;endtime&#39;</span><span class="p">:</span><span class="n">endtime</span><span class="p">,</span> <span class="s1">&#39;timezone&#39;</span><span class="p">:</span><span class="s1">&#39;UTC&#39;</span><span class="p">,</span> <span class="c1">#Will be in UTC by this point</span>
                       <span class="s1">&#39;xcoord_input&#39;</span><span class="p">:</span><span class="n">xcoordIN</span><span class="p">,</span> <span class="s1">&#39;ycoord_input&#39;</span><span class="p">:</span> <span class="n">ycoordIN</span> <span class="p">,</span><span class="s1">&#39;xcoord&#39;</span><span class="p">:</span><span class="n">xcoord</span><span class="p">,</span> <span class="s1">&#39;ycoord&#39;</span><span class="p">:</span><span class="n">ycoord</span><span class="p">,</span> <span class="s1">&#39;longitude&#39;</span><span class="p">:</span><span class="n">xcoord_wgs84</span><span class="p">,</span><span class="s1">&#39;latitude&#39;</span><span class="p">:</span><span class="n">ycoord_wgs84</span><span class="p">,</span>
                       <span class="s1">&#39;elevation&#39;</span><span class="p">:</span><span class="n">elevation</span><span class="p">,</span> <span class="s1">&#39;elev_unit&#39;</span><span class="p">:</span><span class="n">elev_unit</span><span class="p">,</span> <span class="s1">&#39;input_crs&#39;</span><span class="p">:</span><span class="n">input_crs</span><span class="p">,</span> <span class="s1">&#39;output_crs&#39;</span><span class="p">:</span><span class="n">output_crs</span><span class="p">,</span>
-                      <span class="s1">&#39;depth&#39;</span><span class="p">:</span><span class="n">depth</span><span class="p">,</span> <span class="s1">&#39;input_data&#39;</span><span class="p">:</span> <span class="n">input_data</span><span class="p">,</span> <span class="s1">&#39;metapath&#39;</span><span class="p">:</span><span class="n">metapath</span><span class="p">,</span> <span class="s1">&#39;hvsr_band&#39;</span><span class="p">:</span><span class="n">hvsr_band</span><span class="p">,</span> <span class="s1">&#39;peak_freq_range&#39;</span><span class="p">:</span><span class="n">peak_freq_range</span><span class="p">,</span>
+                      <span class="s1">&#39;depth&#39;</span><span class="p">:</span><span class="n">depth</span><span class="p">,</span> <span class="s1">&#39;input_data&#39;</span><span class="p">:</span> <span class="n">input_data</span><span class="p">,</span> <span class="s1">&#39;metadata&#39;</span><span class="p">:</span><span class="n">metadata</span><span class="p">,</span> <span class="s1">&#39;hvsr_band&#39;</span><span class="p">:</span><span class="n">hvsr_band</span><span class="p">,</span> <span class="s1">&#39;peak_freq_range&#39;</span><span class="p">:</span><span class="n">peak_freq_range</span><span class="p">,</span>
                       <span class="s1">&#39;processing_parameters&#39;</span><span class="p">:</span><span class="n">processing_parameters</span><span class="p">,</span> <span class="s1">&#39;processing_status&#39;</span><span class="p">:{</span><span class="s1">&#39;input_params_status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;overall_status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}</span>
                       <span class="p">}</span>
     
@@ -5102,9 +5224,9 @@
         <span class="n">inputParamDict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">instrument_settings_dict</span><span class="p">)</span>
     
     <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">instrument</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">raspShakeInstNameList</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">metapath</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">metapath</span><span class="o">==</span><span class="s1">&#39;&#39;</span><span class="p">:</span>
-            <span class="n">metapath</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;resources/rs3dv5plus_metadata.inv&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span>
-            <span class="n">inputParamDict</span><span class="p">[</span><span class="s1">&#39;metapath&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">metapath</span>
+        <span class="k">if</span> <span class="n">metadata</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">metadata</span><span class="o">==</span><span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="n">metadata</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;resources/rs3dv5plus_metadata.inv&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span>
+            <span class="n">inputParamDict</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">metadata</span>
 
     <span class="k">for</span> <span class="n">settingName</span> <span class="ow">in</span> <span class="n">instrument_settings_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">settingName</span> <span class="ow">in</span> <span class="n">inputParamDict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -5573,7 +5695,9 @@
 <span class="c1"># Main function for processing HVSR Curve</span>
 <div class="viewcode-block" id="process_hvsr">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.process_hvsr">[docs]</a>
-<span class="k">def</span> <span class="nf">process_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">horizontal_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">smooth</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">freq_smooth</span><span class="o">=</span><span class="s1">&#39;konno ohmachi&#39;</span><span class="p">,</span> <span class="n">f_smooth_width</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">resample</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">outlier_curve_rmse_percentile</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">process_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">horizontal_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">smooth</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">freq_smooth</span><span class="o">=</span><span class="s1">&#39;konno ohmachi&#39;</span><span class="p">,</span> 
+                 <span class="n">f_smooth_width</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">resample</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+                 <span class="n">outlier_curve_percentile_threshold</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Process the input data and get HVSR data</span>
 <span class="sd">    </span>
 <span class="sd">    This is the main function that uses other (private) functions to do </span>
@@ -5612,10 +5736,10 @@
 <span class="sd">        bool or int. </span>
 <span class="sd">            If True, default to resample H/V data to include 1000 frequency values for the rest of the analysis</span>
 <span class="sd">            If int, the number of data points to interpolate/resample/smooth the component psd/HV curve data to.</span>
-<span class="sd">    outlier_curve_rmse_percentile : bool, float, default = False</span>
+<span class="sd">    outlier_curve_percentile_threshold : bool, float, default = False</span>
 <span class="sd">        If False, outlier curve removal is not carried out here. </span>
 <span class="sd">        If True, defaults to 98 (98th percentile). </span>
-<span class="sd">        Otherwise, float of percentile used as rmse_thresh of remove_outlier_curve().</span>
+<span class="sd">        Otherwise, float of percentile used as outlier_threshold of remove_outlier_curve().</span>
 <span class="sd">    azimuth : float, default = None</span>
 <span class="sd">        The azimuth angle to use when method is single azimuth.</span>
 <span class="sd">    verbose : bool, defualt=False</span>
@@ -5647,7 +5771,7 @@
     <span class="n">freq_smooth</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;freq_smooth&#39;</span><span class="p">]</span>
     <span class="n">f_smooth_width</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;f_smooth_width&#39;</span><span class="p">]</span>
     <span class="n">resample</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;resample&#39;</span><span class="p">]</span>
-    <span class="n">outlier_curve_rmse_percentile</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;outlier_curve_rmse_percentile&#39;</span><span class="p">]</span>
+    <span class="n">outlier_curve_percentile_threshold</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;outlier_curve_percentile_threshold&#39;</span><span class="p">]</span>
     <span class="n">verbose</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;verbose&#39;</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="n">verbose</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">HVSRBatch</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="n">verbose</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;batch&#39;</span><span class="p">]):</span>
@@ -5825,8 +5949,6 @@
                 <span class="c1"># If no simple curve smoothing</span>
                 <span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">input_ppsds</span><span class="p">)</span>
         
-
-
         <span class="n">hvsrDF</span><span class="p">[</span><span class="s1">&#39;psd_values_&#39;</span><span class="o">+</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
         <span class="n">use</span> <span class="o">=</span> <span class="n">hvsrDF</span><span class="p">[</span><span class="s1">&#39;Use&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
 
@@ -5999,10 +6121,10 @@
     <span class="c1">#Initialize array based only on the curves we are currently using</span>
     <span class="n">indHVCurvesArr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;HV_Curves&#39;</span><span class="p">][</span><span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;Use&#39;</span><span class="p">]])</span>
 
-    <span class="k">if</span> <span class="n">outlier_curve_rmse_percentile</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">outlier_curve_rmse_percentile</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="n">outlier_curve_rmse_percentile</span> <span class="o">=</span> <span class="mi">98</span>
-        <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">remove_outlier_curves</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rmse_thresh</span><span class="o">=</span><span class="n">outlier_curve_rmse_percentile</span><span class="p">,</span> <span class="n">use_hv_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">outlier_curve_percentile_threshold</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">outlier_curve_percentile_threshold</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">outlier_curve_percentile_threshold</span> <span class="o">=</span> <span class="mi">98</span>
+        <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">remove_outlier_curves</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">outlier_threshold</span><span class="o">=</span><span class="n">outlier_curve_percentile_threshold</span><span class="p">,</span> <span class="n">use_hv_curves</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
 
     <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;ind_hvsr_stdDev&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
@@ -6486,7 +6608,7 @@
                 <span class="n">outStream</span> <span class="o">=</span> <span class="n">__remove_noise_thresh</span><span class="p">(</span><span class="n">outStream</span><span class="p">,</span> <span class="n">noise_percent</span><span class="o">=</span><span class="n">noise_percent</span><span class="p">,</span> <span class="n">lta</span><span class="o">=</span><span class="n">lta</span><span class="p">,</span> <span class="n">min_win_size</span><span class="o">=</span><span class="n">min_win_size</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">rem_kind</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">warmup_cooldown</span><span class="p">:</span>
                 <span class="n">outStream</span> <span class="o">=</span> <span class="n">__remove_warmup_cooldown</span><span class="p">(</span><span class="n">stream</span><span class="o">=</span><span class="n">outStream</span><span class="p">,</span> <span class="n">warmup_time</span><span class="o">=</span><span class="n">warmup_time</span><span class="p">,</span> <span class="n">cooldown_time</span><span class="o">=</span><span class="n">cooldown_time</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">rem_kind</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">procWinList</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="n">rem_kind</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">procWinList</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">processing_window</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
                 <span class="n">outStream</span> <span class="o">=</span> <span class="n">_keep_processing_windows</span><span class="p">(</span><span class="n">stream</span><span class="o">=</span><span class="n">outStream</span><span class="p">,</span> <span class="n">processing_window</span><span class="o">=</span><span class="n">processing_window</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">remove_method</span><span class="p">)</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
@@ -6556,7 +6678,11 @@
 <span class="c1"># Remove outlier ppsds</span>
 <div class="viewcode-block" id="remove_outlier_curves">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.remove_outlier_curves">[docs]</a>
-<span class="k">def</span> <span class="nf">remove_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">rmse_thresh</span><span class="o">=</span><span class="mi">98</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_hv_curve</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;matplotlib&#39;</span><span class="p">,</span> <span class="n">show_outlier_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">generate_outlier_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">remove_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">outlier_method</span><span class="o">=</span><span class="s1">&#39;prototype&#39;</span><span class="p">,</span>
+                          <span class="n">outlier_threshold</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">min_pts</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                          <span class="n">use_hv_curves</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                          <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;matplotlib&#39;</span><span class="p">,</span> <span class="n">show_outlier_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">generate_outlier_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                          <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed</span>
 <span class="sd">    Probabilistic Power Spectral Density (PPSD) curve against the median PPSD value at each frequency step for all times.</span>
 <span class="sd">    It calculates the RMSE for the PPSD curves of each component individually. All curves are removed from analysis.</span>
@@ -6568,13 +6694,19 @@
 <span class="sd">    ----------</span>
 <span class="sd">    hvsr_data : dict</span>
 <span class="sd">        Input dictionary containing all the values and parameters of interest</span>
-<span class="sd">    rmse_thresh : float or int, default=98</span>
+<span class="sd">    outlier_method : str, default=&#39;prototype&#39;</span>
+<span class="sd">        The method to use for outlier detection. Currently, &#39;dbscan&#39; and &#39;prototype&#39; is supported.</span>
+<span class="sd">    outlier_threshold : float or int, default=98</span>
 <span class="sd">        The Root Mean Square Error value to use as a threshold for determining whether a curve is an outlier. </span>
 <span class="sd">        This averages over each individual entire curve so that curves with very abberant data (often occurs when using the remove_noise() method), can be identified.</span>
 <span class="sd">        Otherwise, specify a float or integer to use as the cutoff RMSE value (all curves with RMSE above will be removed)</span>
 <span class="sd">    use_percentile :  float, default=True</span>
-<span class="sd">        Whether rmse_thresh should be interepreted as a raw RMSE value or as a percentile of the RMSE values.</span>
-<span class="sd">    use_hv_curve : bool, default=False</span>
+<span class="sd">        Whether outlier_threshold should be interepreted as a raw RMSE value or as a percentile of the RMSE values.</span>
+<span class="sd">    min_pts : int, default=5</span>
+<span class="sd">        The minimum number of points to use for the outlier detection method.</span>
+<span class="sd">        This is only used if outlier_method=&#39;dbscan&#39; </span>
+<span class="sd">        This is minimum number of points a point needs in its neighborhood to not be considered an outlier.</span>
+<span class="sd">    use_hv_curves : bool, default=False</span>
 <span class="sd">        Whether to use the calculated HV Curve or the individual components. This can only be True after process_hvsr() has been run.</span>
 <span class="sd">    show_plot : bool, default=False</span>
 <span class="sd">        Whether to show a plot of the removed data</span>
@@ -6604,11 +6736,19 @@
                     <span class="n">orig_args</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
 
     <span class="c1"># Reset parameters in case of manual override of imported parameters</span>
+    <span class="n">outlier_method</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;outlier_method&#39;</span><span class="p">]</span>
+    <span class="n">outlier_threshold</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;outlier_threshold&#39;</span><span class="p">]</span>
     <span class="n">use_percentile</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;use_percentile&#39;</span><span class="p">]</span>
-    <span class="n">rmse_thresh</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;rmse_thresh&#39;</span><span class="p">]</span>
-    <span class="n">use_hv_curve</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;use_hv_curve&#39;</span><span class="p">]</span>
+    <span class="n">min_pts</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;min_pts&#39;</span><span class="p">]</span>
+    <span class="n">use_hv_curves</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;use_hv_curves&#39;</span><span class="p">]</span>
+    <span class="n">plot_engine</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;plot_engine&#39;</span><span class="p">]</span>
     <span class="n">show_outlier_plot</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;show_outlier_plot&#39;</span><span class="p">]</span>
+    <span class="n">generate_outlier_plot</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;generate_outlier_plot&#39;</span><span class="p">]</span>
     <span class="n">verbose</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;verbose&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Allow skipping step if outlier_method specified as None (may help GUIs)</span>
+    <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">outlier_method</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span> <span class="ow">or</span> <span class="n">outlier_method</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">hvsr_data</span>
 
     <span class="c1">#Print if verbose, which changes depending on if batch data or not</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">verbose</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">HVSRBatch</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="n">verbose</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;batch&#39;</span><span class="p">]):</span>
@@ -6654,8 +6794,13 @@
         <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">sprit_utils</span><span class="o">.</span><span class="n">_check_processing_status</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span> <span class="n">func_name</span><span class="o">=</span><span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="mi">3</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">hvsr_out</span>
 
+    <span class="n">dbscanList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;dbscan&#39;</span><span class="p">,</span> <span class="s1">&#39;distance&#39;</span><span class="p">,</span> <span class="s1">&#39;dist&#39;</span><span class="p">,</span> <span class="s1">&#39;dbs&#39;</span><span class="p">,</span> <span class="s1">&#39;db&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">]</span>
+    <span class="n">prototypeList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;prototype&#39;</span><span class="p">,</span> <span class="s1">&#39;proto&#39;</span><span class="p">,</span> <span class="s1">&#39;ptype&#39;</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;root mean square&#39;</span><span class="p">,</span> <span class="s1">&#39;root mean square error&#39;</span><span class="p">,</span> 
+                     <span class="s1">&#39;rms&#39;</span><span class="p">,</span> <span class="s1">&#39;rmse&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">]</span>
+
     <span class="c1"># Determine names of hvsr_windows_df columns to use</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">use_hv_curve</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">use_hv_curves</span><span class="p">:</span>
         <span class="n">compNames</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
             <span class="k">if</span> <span class="s1">&#39;psd_values&#39;</span> <span class="ow">in</span> <span class="n">col_name</span> <span class="ow">and</span> <span class="s1">&#39;RMSE&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">col_name</span><span class="p">:</span>
@@ -6672,62 +6817,42 @@
         <span class="n">colNames</span> <span class="o">=</span> <span class="n">compNames</span>
         <span class="n">col_prefix</span> <span class="o">=</span> <span class="s1">&#39;HV_Curves&#39;</span>
 
-
-    <span class="c1"># Loop through each component, and determine which curves are outliers</span>
-    <span class="n">bad_rmse</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">column</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">colNames</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">compNames</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">use_hv_curve</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
-                <span class="n">column</span> <span class="o">=</span> <span class="n">col_prefix</span> <span class="o">+</span> <span class="n">column</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">column</span> <span class="o">=</span> <span class="n">column</span>
-
-        <span class="c1"># Retrieve data from dataframe (use all windows, just in case)</span>
-        <span class="n">curr_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="n">column</span><span class="p">])</span>
+    <span class="c1"># Remove outlier depending on method, prototype as default</span>
+    <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">outlier_method</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">dbscanList</span><span class="p">:</span>
+        <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">__dbscan_outlier_detect</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">use_hv_curves</span><span class="o">=</span><span class="n">use_hv_curves</span><span class="p">,</span> 
+                                           <span class="n">use_percentile</span><span class="o">=</span><span class="n">use_percentile</span><span class="p">,</span>
+                                           <span class="n">neighborhood_size</span><span class="o">=</span><span class="n">outlier_threshold</span><span class="p">,</span>
+                                           <span class="n">dist_metric</span><span class="o">=</span><span class="s1">&#39;euclidean&#39;</span><span class="p">,</span> 
+                                           <span class="n">min_neighborhood_pts</span><span class="o">=</span><span class="n">min_pts</span><span class="p">,</span>
+                                           <span class="n">col_names</span><span class="o">=</span><span class="n">colNames</span><span class="p">,</span>
+                                           <span class="n">comp_names</span><span class="o">=</span><span class="n">compNames</span><span class="p">,</span>
+                                           <span class="n">col_prefix</span><span class="o">=</span><span class="n">col_prefix</span><span class="p">,</span>
+                                           <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
         
-        <span class="c1"># Calculate a median curve, and reshape so same size as original</span>
-        <span class="n">medCurve</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">curr_data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">medCurveArr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">medCurve</span><span class="p">,</span> <span class="p">(</span><span class="n">curr_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">))</span>
-        
-        <span class="c1"># Calculate RMSE</span>
-        <span class="n">rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(((</span><span class="n">np</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="n">curr_data</span><span class="p">,</span> <span class="n">medCurveArr</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span><span class="o">/</span><span class="n">curr_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;RMSE_&#39;</span><span class="o">+</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">rmse</span>
-        <span class="k">if</span> <span class="n">use_percentile</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="n">rmse_threshold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">rmse</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">rmse</span><span class="p">)],</span> <span class="n">rmse_thresh</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">RMSE at </span><span class="si">{</span><span class="n">rmse_thresh</span><span class="si">}</span><span class="s1">th percentile for </span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s1"> calculated at: </span><span class="si">{</span><span class="n">rmse_threshold</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">rmse_threshold</span> <span class="o">=</span> <span class="n">rmse_thresh</span>
-        
-        <span class="c1"># Retrieve index of those RMSE values that lie outside the threshold</span>
-        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">curve</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">curr_data</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">rmse</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">rmse_threshold</span><span class="p">:</span>
-                <span class="n">bad_rmse</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">outlier_method</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">prototypeList</span><span class="p">:</span>
+        <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">__prototype_outlier_detect</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">use_hv_curves</span><span class="o">=</span><span class="n">use_hv_curves</span><span class="p">,</span> 
+                                              <span class="n">use_percentile</span><span class="o">=</span><span class="n">use_percentile</span><span class="p">,</span>
+                                              <span class="n">outlier_threshold</span><span class="o">=</span><span class="n">outlier_threshold</span><span class="p">,</span>
+                                              <span class="n">col_names</span><span class="o">=</span><span class="n">colNames</span><span class="p">,</span>
+                                              <span class="n">comp_names</span><span class="o">=</span><span class="n">compNames</span><span class="p">,</span>
+                                              <span class="n">col_prefix</span><span class="o">=</span><span class="n">col_prefix</span><span class="p">,</span>
+                                              <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">__prototype_outlier_detect</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">use_hv_curves</span><span class="o">=</span><span class="n">use_hv_curves</span><span class="p">,</span> 
+                                              <span class="n">use_percentile</span><span class="o">=</span><span class="n">use_percentile</span><span class="p">,</span>
+                                              <span class="n">outlier_threshold</span><span class="o">=</span><span class="n">outlier_threshold</span><span class="p">,</span>
+                                              <span class="n">col_names</span><span class="o">=</span><span class="n">colNames</span><span class="p">,</span>
+                                              <span class="n">comp_names</span><span class="o">=</span><span class="n">compNames</span><span class="p">,</span>
+                                              <span class="n">col_prefix</span><span class="o">=</span><span class="n">col_prefix</span><span class="p">,</span>
+                                              <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
 
     <span class="c1"># Show plot of removed/retained data</span>
     <span class="k">if</span> <span class="n">plot_engine</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;matplotlib&#39;</span> <span class="ow">and</span> <span class="p">(</span><span class="n">generate_outlier_plot</span> <span class="ow">or</span> <span class="n">show_outlier_plot</span><span class="p">):</span>
-        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;Outlier_Plot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sprit_plot</span><span class="o">.</span><span class="n">plot_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">rmse_thresh</span><span class="o">=</span><span class="n">rmse_thresh</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="n">use_percentile</span><span class="p">,</span> <span class="n">use_hv_curve</span><span class="o">=</span><span class="n">use_hv_curve</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;matplotlib&#39;</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="n">show_outlier_plot</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;Outlier_Plot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sprit_plot</span><span class="o">.</span><span class="n">plot_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">outlier_threshold</span><span class="o">=</span><span class="n">outlier_threshold</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="n">use_percentile</span><span class="p">,</span> <span class="n">use_hv_curves</span><span class="o">=</span><span class="n">use_hv_curves</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;matplotlib&#39;</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="n">show_outlier_plot</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">plot_engine</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;plotly&#39;</span>  <span class="ow">and</span> <span class="p">(</span><span class="n">generate_outlier_plot</span> <span class="ow">or</span> <span class="n">show_outlier_plot</span><span class="p">):</span>
-        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;Outlier_Plot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sprit_plot</span><span class="o">.</span><span class="n">plot_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">rmse_thresh</span><span class="o">=</span><span class="n">rmse_thresh</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="n">use_percentile</span><span class="p">,</span> <span class="n">use_hv_curve</span><span class="o">=</span><span class="n">use_hv_curve</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span> <span class="n">from_roc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="n">show_outlier_plot</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;Outlier_Plot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sprit_plot</span><span class="o">.</span><span class="n">plot_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">outlier_threshold</span><span class="o">=</span><span class="n">outlier_threshold</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="n">use_percentile</span><span class="p">,</span> <span class="n">use_hv_curves</span><span class="o">=</span><span class="n">use_hv_curves</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span> <span class="n">from_roc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="n">show_outlier_plot</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">pass</span>
-
-    <span class="c1"># Get unique values of bad_rmse indices and set the &quot;Use&quot; column of the hvsr_windows_df to False for that window</span>
-    <span class="n">bad_rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">bad_rmse</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bad_rmse</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;Use&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;Use&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">rmse_threshold</span> <span class="o">&gt;</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;RMSE_&#39;</span><span class="o">+</span><span class="n">column</span><span class="p">])</span>
-        <span class="c1">#hvsr_data[&#39;hvsr_windows_df&#39;].loc[bad_index, &quot;Use&quot;] = False   </span>
-    
-
-    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bad_rmse</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\t\t</span><span class="s2">The windows starting at the following times have been removed from further analysis (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">bad_rmse</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">):&quot;</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">bad_rmse</span><span class="p">)]:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">  </span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">No outlier curves have been removed&#39;</span><span class="p">)</span>
-                
-    <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">hvsr_data</span>
 
     <span class="k">if</span> <span class="s1">&#39;processing_parameters&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hvsr_out</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -6754,7 +6879,9 @@
 
 
 <span class="c1"># Update all elevation-related attriutes</span>
-<span class="k">def</span> <span class="nf">_update_elevation</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">updated_surface_elevation</span><span class="p">,</span> <span class="n">updated_elevation_unit</span><span class="p">):</span>
+<div class="viewcode-block" id="update_elevation">
+<a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.update_elevation">[docs]</a>
+<span class="k">def</span> <span class="nf">update_elevation</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">updated_surface_elevation</span><span class="p">,</span> <span class="n">updated_elevation_unit</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to quickly update all attributes associated with elevation of an HVSRData object</span>
 
 <span class="sd">    Parameters</span>
@@ -6867,7 +6994,107 @@
     <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;fetch_data&#39;</span><span class="p">][</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;elevation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">updated_surface_elevation</span>
     <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;fetch_data&#39;</span><span class="p">][</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;elev_unit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;meters&#39;</span>
     
-    <span class="k">return</span> <span class="n">hvsr_data</span>
+    <span class="k">return</span> <span class="n">hvsr_data</span></div>
+
+
+
+<span class="c1"># Update instrument response file headers in .resp format</span>
+<div class="viewcode-block" id="update_resp_file">
+<a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.update_resp_file">[docs]</a>
+<span class="k">def</span> <span class="nf">update_resp_file</span><span class="p">(</span><span class="n">resp_file</span><span class="p">,</span> <span class="n">new_network</span><span class="p">,</span> <span class="n">new_station</span><span class="p">,</span> 
+                     <span class="n">return_inv</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">new_channels</span><span class="o">=</span><span class="s1">&#39;CHZ&#39;</span><span class="p">,</span> <span class="n">new_location</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                     <span class="n">starttime_new</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">endtime_new</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">new_resp_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">existing_starttime</span><span class="o">=</span><span class="s1">&#39;2015,001,00:00:00.0000&#39;</span><span class="p">,</span> <span class="n">existing_endtime</span><span class="o">=</span><span class="s2">&quot;No Ending Time&quot;</span><span class="p">,</span>
+                     <span class="n">existing_network</span><span class="o">=</span><span class="s1">&#39;XX&#39;</span><span class="p">,</span> <span class="n">existing_station</span><span class="o">=</span><span class="s1">&#39;NS124&#39;</span><span class="p">,</span> <span class="n">existing_channel</span><span class="o">=</span><span class="s1">&#39;CHZ&#39;</span><span class="p">,</span> <span class="n">existing_location</span><span class="o">=</span><span class="s1">&#39;??&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to update headers in .RESP instrument response files for easy copying.</span>
+<span class="sd">       It is recommended to read this into a variable and set it as the metadata parameter of input_params</span>
+<span class="sd">       if it is desired to correct for instrument response, for example.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    resp_file : str</span>
+<span class="sd">        Filepath to input response file</span>
+<span class="sd">    new_network : str</span>
+<span class="sd">        Name of network to update header to.</span>
+<span class="sd">    new_station : str</span>
+<span class="sd">        Name of station to update header to.</span>
+<span class="sd">    return_inv : bool, optional</span>
+<span class="sd">        Whether to return an obspy inventory object.</span>
+<span class="sd">        If False, a .RESP file will be saved in the same directory as resp_file, by default True</span>
+<span class="sd">    new_channels : str, optional</span>
+<span class="sd">        Name or list of channels to update the header to.</span>
+<span class="sd">        If list, multiple inventory objects will be created/saved, by default &#39;CHZ&#39;</span>
+<span class="sd">    new_location : str, optional</span>
+<span class="sd">        New instrument location attribute to update header to, by default &quot;&quot;</span>
+<span class="sd">    starttime : obspy.UTCDateTime, optional</span>
+<span class="sd">        Input to update starttime. Must be readable by obspy.UTCDateTime(), by default None</span>
+<span class="sd">    endtime : obspy.UTCDateTime, optional</span>
+<span class="sd">        Input to update endtime. Must be readable by obspy.UTCDateTime(), by default None</span>
+<span class="sd">    new_resp_file : str, optional</span>
+<span class="sd">        Filepath to designate for .RESP file output, if desired (and return_inv=False)</span>
+<span class="sd">        If None, uses same directory as resp_file, by default None</span>
+<span class="sd">    existing_network : str, optional</span>
+<span class="sd">        Name of network as specified in input file, by default &#39;XX&#39;</span>
+<span class="sd">    existing_station : str, optional</span>
+<span class="sd">        name of station as specified in input file, by default &#39;NS124&#39;</span>
+<span class="sd">    existing_channel : str, optional</span>
+<span class="sd">        Name of channel as specified in input file, by default &#39;CHZ&#39;</span>
+<span class="sd">    existing_location : str, optional</span>
+<span class="sd">        Name of location as specified in input file, by default &#39;??&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    obspy.Inventory</span>
+<span class="sd">        Only returned if return_inv = True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">resp_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">inFile</span><span class="p">:</span>
+        <span class="n">respTextIN</span> <span class="o">=</span> <span class="n">inFile</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+    <span class="n">respText</span> <span class="o">=</span> <span class="n">respTextIN</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">existing_network</span><span class="p">,</span> <span class="n">new_network</span><span class="p">)</span>
+    <span class="n">respText</span> <span class="o">=</span> <span class="n">respText</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">existing_station</span><span class="p">,</span> <span class="n">new_station</span><span class="p">)</span>
+    <span class="n">respTextNoChann</span> <span class="o">=</span> <span class="n">respText</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">existing_location</span><span class="p">,</span> <span class="n">new_location</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">new_channels</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="n">new_channels</span> <span class="o">=</span> <span class="p">[</span><span class="n">new_channels</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">starttime_new</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">sTime</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">starttime_new</span><span class="p">)</span>
+        <span class="n">sTimeText</span> <span class="o">=</span> <span class="n">existing_starttime</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;2015,&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">sTime</span><span class="o">.</span><span class="n">year</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+        <span class="n">sTimeText</span> <span class="o">=</span> <span class="n">sTimeText</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;001,&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">sTime</span><span class="o">.</span><span class="n">julday</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+        <span class="n">sTimeText</span> <span class="o">=</span> <span class="n">sTimeText</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;00:00:00.0000&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">sTime</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%H:%M:%S.</span><span class="si">%f</span><span class="s2">&quot;</span><span class="p">)))</span>
+        <span class="n">respTextNoChann</span> <span class="o">=</span> <span class="n">respTextNoChann</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">existing_starttime</span><span class="p">,</span> <span class="n">sTimeText</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">endtime_new</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">eTime</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">endtime_new</span><span class="p">)</span>
+        <span class="n">respTextNoChann</span> <span class="o">=</span> <span class="n">respTextNoChann</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">existing_endtime</span><span class="p">,</span> 
+                                                  <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">eTime</span><span class="o">.</span><span class="n">year</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">eTime</span><span class="o">.</span><span class="n">julday</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">eTime</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%H:%M:%S.</span><span class="si">%f</span><span class="s1">&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">invList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">newcha</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">new_channels</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">newcha</span><span class="p">)</span>
+        <span class="n">respText</span> <span class="o">=</span> <span class="n">respTextNoChann</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">existing_channel</span><span class="p">,</span> <span class="n">newcha</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">return_inv</span><span class="p">:</span>
+            <span class="n">invList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obspy</span><span class="o">.</span><span class="n">read_inventory</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">(</span><span class="n">respText</span><span class="p">)))</span>
+                        
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">new_resp_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="nb">dir</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">resp_file</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+                <span class="n">new_resp_file</span> <span class="o">=</span> <span class="nb">dir</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RESP_</span><span class="si">{</span><span class="n">new_network</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">new_station</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">new_station</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">newcha</span><span class="si">}</span><span class="s2">.resp&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_resp_file</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">new_resp_file</span><span class="p">)</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">new_resp_file</span><span class="o">.</span><span class="n">as_posix</span><span class="p">(),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">outFile</span><span class="p">:</span>
+                <span class="n">outFile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">new_resp_file</span><span class="o">.</span><span class="n">as_posix</span><span class="p">())</span>
+    
+    <span class="k">if</span> <span class="n">return_inv</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">invList</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">inv</span> <span class="o">=</span> <span class="n">r</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">inv</span> <span class="o">=</span> <span class="n">inv</span> <span class="o">+</span> <span class="n">r</span>
+        <span class="k">return</span> <span class="n">inv</span></div>
+
 
 <span class="c1"># BATCH FUNCTIONS: various functions that are used to help the regular functions handle batch data</span>
 <span class="c1"># Helper function for batch processing of check_peaks</span>
@@ -7150,8 +7377,8 @@
     <span class="k">if</span> <span class="s1">&#39;inv&#39;</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">inv</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;inv&#39;</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">sprit_utils</span><span class="o">.</span><span class="n">_checkifpath</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;metapath&#39;</span><span class="p">])</span>
-        <span class="n">inv</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">read_inventory</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;metapath&#39;</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;STATIONXML&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s1">&#39;response&#39;</span><span class="p">)</span>
+        <span class="n">sprit_utils</span><span class="o">.</span><span class="n">_checkifpath</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">])</span>
+        <span class="n">inv</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">read_inventory</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;STATIONXML&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s1">&#39;response&#39;</span><span class="p">)</span>
         <span class="n">params</span><span class="p">[</span><span class="s1">&#39;inv&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inv</span>
 
     <span class="n">station</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sta&#39;</span><span class="p">]</span>
@@ -7172,7 +7399,7 @@
         <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">tpf</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">inv</span> <span class="o">=</span> <span class="n">sprit_utils</span><span class="o">.</span><span class="n">_checkifpath</span><span class="p">(</span><span class="n">inv</span><span class="p">)</span>
-        <span class="n">inv</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">read_inventory</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;metapath&#39;</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;STATIONXML&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s1">&#39;response&#39;</span><span class="p">)</span>
+        <span class="n">inv</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">read_inventory</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;STATIONXML&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s1">&#39;response&#39;</span><span class="p">)</span>
         <span class="n">params</span><span class="p">[</span><span class="s1">&#39;inv&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inv</span>
         <span class="n">tree</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">inv</span><span class="p">)</span>
         <span class="n">root</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">getroot</span><span class="p">()</span>
@@ -7969,7 +8196,7 @@
 
 
 <span class="c1"># Helper function for getting windows to remove noise using moving stdev</span>
-<span class="k">def</span> <span class="nf">__remove_moving_std</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">std_ratio_thresh</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">std_window_s</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_win_size</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">__remove_moving_std</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">std_ratio_thresh</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">std_window_s</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_win_size</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function for removing noisy data due to high local standard deviation.</span>
 <span class="sd">    This is similar to the default noise removal method used in Grilla software.</span>
 
@@ -8947,9 +9174,164 @@
     <span class="k">return</span> <span class="n">outStream</span>
 
 
+<span class="c1"># Helper functions for remove_outlier_curves()</span>
+<span class="c1"># Use DBSCAN algorithm for outlier detection</span>
+<span class="k">def</span> <span class="nf">__dbscan_outlier_detect</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">use_hv_curves</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="n">dist_metric</span><span class="o">=</span><span class="s1">&#39;euclidean&#39;</span><span class="p">,</span> 
+                            <span class="n">neighborhood_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">min_neighborhood_pts</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                            <span class="n">col_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;HV_Curves&#39;</span><span class="p">],</span> <span class="n">comp_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">],</span> 
+                            <span class="n">col_prefix</span> <span class="o">=</span> <span class="s1">&#39;HV_Curves&#39;</span><span class="p">,</span>                       
+                            <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is a helper function for remove_outlier_curves() to use a DBSCAN algorithm </span>
+<span class="sd">    to identify and discard outlier curves.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hvsr_data : HVSRData</span>
+<span class="sd">        HVSRData instance on which to perform DBSCAN analysis</span>
+<span class="sd">    use_hv_curves : bool, optional</span>
+<span class="sd">        Whether to use HV_Curves as the curve set of interest, by default True</span>
+<span class="sd">    dist_metric : str, optional</span>
+<span class="sd">        Distance metric to use (see scipy.spatial.distance.pdist), by default &#39;euclidean&#39;</span>
+<span class="sd">    neighborhood_size : int, optional</span>
+<span class="sd">        Percentile value to use in selecting neighborhood cutoff size.</span>
+<span class="sd">        100 would use the largest distance in the distance matrix. 0 would use the smallest (0), by default 95</span>
+<span class="sd">    min_neighborhood_pts : int, optional</span>
+<span class="sd">        Minimum number of points in a curve&#39;s neighborhood for that point to be considered a core point, by default 5</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    HVSRData</span>
+<span class="sd">        HVSRData instance with the hvsr_windows_df DataFrame &quot;Use&quot; column updated</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Get the correct set of curves to use</span>
+    <span class="c1"># This can be generalized better (and adapted for azimuthal values)</span>
+    <span class="c1">#if use_hv_curves:</span>
+    <span class="c1">#    curveCols = [&#39;HV_Curves&#39;]</span>
+    <span class="c1">#else:</span>
+    <span class="c1">#    curveCols = [&#39;psd_values_Z&#39;, &#39;psd_values_E&#39;, &#39;psd_values_N&#39;]</span>
+
+
+    <span class="c1"># Clean up percentile value</span>
+    <span class="k">if</span> <span class="n">use_percentile</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">neighborhood_size</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">neighborhood_size</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">Neighborhood_percentile must be between 0-100, not &quot;</span><span class="p">,</span> <span class="n">neighborhood_size</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">  Resetting neighborhood_size to 95&#39;</span><span class="p">)</span>
+            <span class="n">neighborhood_size</span> <span class="o">=</span> <span class="mi">95</span>
+        <span class="k">elif</span> <span class="n">neighborhood_size</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">neighborhood_size</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">neighborhood_size</span> <span class="o">=</span> <span class="n">neighborhood_size</span> <span class="o">*</span> <span class="mi">100</span>
+
+    <span class="c1"># Define local function to use general dbscan algorithm for identifying outliers</span>
+    <span class="k">def</span> <span class="nf">_dbscan_outliers</span><span class="p">(</span><span class="n">distance_matrix</span><span class="p">,</span> <span class="n">n_size</span><span class="p">,</span> <span class="n">min_pts</span><span class="p">,</span> <span class="n">_use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">dist_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">has_neighbors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+        <span class="c1"># Get epsilon based on whether it is a percentile</span>
+        <span class="k">if</span> <span class="n">_use_percentile</span><span class="p">:</span>
+            <span class="n">eps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">dist_matrix</span><span class="p">,</span> <span class="n">n_size</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">eps</span> <span class="o">=</span> <span class="n">n_size</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">neighbors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">dist_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">eps</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">neighbors</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span> <span class="o">&lt;</span> <span class="n">min_pts</span><span class="p">:</span>
+                <span class="n">has_neighbors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            
+            <span class="c1">#print(i, len(neighbors), has_neighbors[i])</span>
+        
+        <span class="k">return</span> <span class="n">has_neighbors</span>
+
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">column</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">col_names</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">comp_names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">use_hv_curves</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="n">column</span> <span class="o">=</span> <span class="n">col_prefix</span> <span class="o">+</span> <span class="n">column</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">column</span> <span class="o">=</span> <span class="n">column</span>
+
+
+    <span class="c1"># Iterate through curves of interest</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">column</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">col_names</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">comp_names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">use_hv_curves</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="n">column</span> <span class="o">=</span> <span class="n">col_prefix</span> <span class="o">+</span> <span class="n">column</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">column</span> <span class="o">=</span> <span class="n">column</span>
+        <span class="n">curves</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="n">column</span><span class="p">])</span>
+        <span class="n">dist_matrix</span> <span class="o">=</span> <span class="n">squareform</span><span class="p">(</span><span class="n">pdist</span><span class="p">(</span><span class="n">curves</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="n">dist_metric</span><span class="p">))</span>
+
+        <span class="n">noise_array</span> <span class="o">=</span> <span class="n">_dbscan_outliers</span><span class="p">(</span><span class="n">distance_matrix</span><span class="o">=</span><span class="n">dist_matrix</span><span class="p">,</span> 
+                                       <span class="n">n_size</span><span class="o">=</span><span class="n">neighborhood_size</span><span class="p">,</span> 
+                                       <span class="n">min_pts</span><span class="o">=</span><span class="n">min_neighborhood_pts</span><span class="p">,</span>
+                                       <span class="n">_use_percentile</span><span class="o">=</span><span class="n">use_percentile</span><span class="p">)</span>
+        <span class="c1"># Remove curves from analysis</span>
+        <span class="n">hvsr_data</span><span class="o">.</span><span class="n">hvsr_windows_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">noise_array</span><span class="p">,</span> <span class="s1">&#39;Use&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">return</span> <span class="n">hvsr_data</span>
+
+
+<span class="c1"># This is a remove_outlier_curve() helper function to use a &quot;prototype&quot; curve (median curve) to detect outliers</span>
+<span class="k">def</span> <span class="nf">__prototype_outlier_detect</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">use_hv_curves</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+                                <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">outlier_threshold</span><span class="o">=</span><span class="mi">98</span><span class="p">,</span>
+                                <span class="n">col_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;HV_Curves&#39;</span><span class="p">],</span> <span class="n">comp_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">],</span> 
+                                <span class="n">col_prefix</span> <span class="o">=</span> <span class="s1">&#39;HV_Curves&#39;</span><span class="p">,</span>
+                                <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+    <span class="c1"># Loop through each component, and determine which curves are outliers</span>
+    <span class="n">bad_rmse</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">column</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">col_names</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">comp_names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">use_hv_curves</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="n">column</span> <span class="o">=</span> <span class="n">col_prefix</span> <span class="o">+</span> <span class="n">column</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">column</span> <span class="o">=</span> <span class="n">column</span>
+
+        <span class="c1"># Retrieve data from dataframe (use all windows, just in case)</span>
+        <span class="n">curr_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="n">column</span><span class="p">])</span>
+
+        <span class="c1"># Calculate a median curve, and reshape so same size as original</span>
+        <span class="n">medCurve</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">curr_data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">medCurveArr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">medCurve</span><span class="p">,</span> <span class="p">(</span><span class="n">curr_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># Calculate RMSE</span>
+        <span class="n">rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(((</span><span class="n">np</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="n">curr_data</span><span class="p">,</span> <span class="n">medCurveArr</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span><span class="o">/</span><span class="n">curr_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;RMSE_&#39;</span><span class="o">+</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">rmse</span>
+        <span class="k">if</span> <span class="n">use_percentile</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">rmse_threshold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">rmse</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">rmse</span><span class="p">)],</span> <span class="n">outlier_threshold</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">RMSE at </span><span class="si">{</span><span class="n">outlier_threshold</span><span class="si">}</span><span class="s1">th percentile for </span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s1"> calculated at: </span><span class="si">{</span><span class="n">rmse_threshold</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rmse_threshold</span> <span class="o">=</span> <span class="n">outlier_threshold</span>
+
+        <span class="c1"># Retrieve index of those RMSE values that lie outside the threshold</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">curve</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">curr_data</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">rmse</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">rmse_threshold</span><span class="p">:</span>
+                <span class="n">bad_rmse</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+
+    <span class="c1"># Get unique values of bad_rmse indices and set the &quot;Use&quot; column of the hvsr_windows_df to False for that window</span>
+    <span class="n">bad_rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">bad_rmse</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bad_rmse</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;Use&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;Use&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">rmse_threshold</span> <span class="o">&gt;</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;RMSE_&#39;</span><span class="o">+</span><span class="n">column</span><span class="p">])</span>
+        <span class="c1">#hvsr_data[&#39;hvsr_windows_df&#39;].loc[bad_index, &quot;Use&quot;] = False   </span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bad_rmse</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\t\t</span><span class="s2">The windows starting at the following times have been removed from further analysis (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">bad_rmse</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">):&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">bad_rmse</span><span class="p">)]:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">  </span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">No outlier curves have been removed&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">hvsr_data</span>
+
+
 <span class="c1"># Helper functions for generate_psds()</span>
 <span class="c1"># Generate psds from raw data (no response removed)</span>
-<span class="k">def</span> <span class="nf">__single_psd_from_raw_data</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mf">30.0</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">show_psd_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">remove_response</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">do_azimuths</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">__single_psd_from_raw_data</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mf">30.0</span><span class="p">,</span> <span class="n">window_length_method</span><span class="o">=</span><span class="s1">&#39;length&#39;</span><span class="p">,</span> <span class="n">window_type</span><span class="o">=</span><span class="s1">&#39;hann&#39;</span><span class="p">,</span>
+                               <span class="n">overlap</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">num_freq_bins</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>
+                               <span class="n">show_psd_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">remove_response</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">do_azimuths</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to get psds from raw trace streams (no response information is needed in this case)</span>
 
 <span class="sd">    Parameters</span>
@@ -9036,7 +9418,7 @@
         <span class="n">low_freq</span> <span class="o">=</span> <span class="n">DEFAULT_BAND</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">hi_freq</span> <span class="o">=</span> <span class="n">DEFAULT_BAND</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
-    <span class="n">x_freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">low_freq</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">hi_freq</span><span class="p">),</span> <span class="mi">512</span><span class="p">)</span>
+    <span class="n">x_freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">low_freq</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">hi_freq</span><span class="p">),</span> <span class="n">num_freq_bins</span><span class="p">)</span>
 
     <span class="c1"># For each component, create the time windows and do FFT analysis</span>
     <span class="n">psdDict</span> <span class="o">=</span> <span class="p">{}</span>
@@ -9057,7 +9439,8 @@
 
         <span class="c1"># Get all possible windows and initialize output window list for windows that are actually used</span>
         <span class="c1">#  This will likely be the same if there are no gaps in the data</span>
-        <span class="n">windows</span> <span class="o">=</span> <span class="n">_create_windows</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="n">window_length</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="n">overlap</span><span class="p">,</span> <span class="n">window_length_method</span><span class="o">=</span><span class="s1">&#39;length&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">windows</span> <span class="o">=</span> <span class="n">_create_windows</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="n">window_length</span><span class="p">,</span> 
+                                  <span class="n">overlap</span><span class="o">=</span><span class="n">overlap</span><span class="p">,</span> <span class="n">window_length_method</span><span class="o">=</span><span class="n">window_length_method</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">windows_out</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="c1"># Iterate through each window to trim data trace and perform fft analysis</span>
@@ -9091,9 +9474,10 @@
             <span class="k">if</span> <span class="n">nsamplesperwin</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
                     <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span> <span class="c1"># Sometimes unnecessary warnings arise</span>
-                    <span class="n">f</span><span class="p">,</span> <span class="n">pxx</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">welch</span><span class="p">(</span><span class="n">window_trace</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">window_trace</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">sampling_rate</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="s1">&#39;hann&#39;</span><span class="p">,</span> <span class="n">nperseg</span><span class="o">=</span><span class="n">nsamplesperwin</span><span class="p">,</span> 
-                                        <span class="n">noverlap</span><span class="o">=</span><span class="n">overlap_samples</span><span class="p">,</span> <span class="n">nfft</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">detrend</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">return_onesided</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
-                                        <span class="n">scaling</span><span class="o">=</span><span class="s1">&#39;density&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">)</span>
+                    <span class="n">f</span><span class="p">,</span> <span class="n">pxx</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">welch</span><span class="p">(</span><span class="n">window_trace</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">window_trace</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">sampling_rate</span><span class="p">,</span> 
+                                                <span class="n">window</span><span class="o">=</span><span class="n">window_type</span><span class="p">,</span> <span class="n">nperseg</span><span class="o">=</span><span class="n">nsamplesperwin</span><span class="p">,</span> 
+                                                <span class="n">noverlap</span><span class="o">=</span><span class="n">overlap_samples</span><span class="p">,</span> <span class="n">nfft</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">detrend</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">return_onesided</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+                                                <span class="n">scaling</span><span class="o">=</span><span class="s1">&#39;density&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">)</span>
                 
                 <span class="c1"># Only add successful psds to psdDict (and the window starttime to window_out)</span>
                 <span class="k">if</span> <span class="n">pxx</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">f</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -9529,7 +9913,7 @@
 
 
 <span class="c1"># Get HVSR</span>
-<span class="k">def</span> <span class="nf">__get_hvsr</span><span class="p">(</span><span class="n">_dbz</span><span class="p">,</span> <span class="n">_db1</span><span class="p">,</span> <span class="n">_db2</span><span class="p">,</span> <span class="n">_x</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_method</span><span class="o">=</span><span class="mi">4</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">__get_hvsr</span><span class="p">(</span><span class="n">_dbz</span><span class="p">,</span> <span class="n">_db1</span><span class="p">,</span> <span class="n">_db2</span><span class="p">,</span> <span class="n">_x</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_method</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Helper function to calculate H/V ratio</span>
 
 <span class="sd">    _dbz : list</span>
@@ -10041,7 +10425,7 @@
         <span class="n">plotEngine</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">processing_parameters</span><span class="p">[</span><span class="s1">&#39;get_report&#39;</span><span class="p">][</span><span class="s1">&#39;plot_engine&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         
     <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">plotEngine</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span> <span class="s1">&#39;plty&#39;</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">]:</span>
-        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;HV_Plot&#39;</span><span class="p">])</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;Plot_Report&#39;</span><span class="p">])</span>
         <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mf">8.5</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
         <span class="c1">#fig.set_size_inches(4.25, 3)</span>
         <span class="c1"># Create a byte stream from the image</span>
@@ -10054,9 +10438,9 @@
         <span class="c1"># Embed the image in the html document</span>
         <span class="n">html</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;./output.png&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;data:image/png;base64,</span><span class="si">{</span><span class="n">hvplot_base64</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="c1">#htmlstring = plotly.io.to_html(hvsr_results.HV_Plot, include_plotlyjs=False)</span>
+        <span class="c1">#htmlstring = plotly.io.to_html(hvsr_results.Plot_Report, include_plotlyjs=False)</span>
         <span class="c1">#print(type(htmlstring))</span>
-        <span class="n">img</span> <span class="o">=</span> <span class="n">plotly</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">to_image</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">HV_Plot</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;png&#39;</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;kaleido&#39;</span><span class="p">)</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">plotly</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">to_image</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">Plot_Report</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;png&#39;</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;kaleido&#39;</span><span class="p">)</span>
         <span class="n">hvplot_base64</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">img</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf8&#39;</span><span class="p">)</span>
 
         <span class="n">html</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;./output.png&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;data:image/png;base64,</span><span class="si">{</span><span class="n">hvplot_base64</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -10438,10 +10822,12 @@
                                 <span class="n">ax</span><span class="o">.</span><span class="n">fill_betweenx</span><span class="p">(</span><span class="n">ylim</span><span class="p">,</span><span class="n">v</span><span class="o">-</span><span class="n">width</span><span class="p">,</span><span class="n">v</span><span class="o">+</span><span class="n">width</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
                 <span class="c1"># Show curves at all time windows</span>
                 <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;t&#39;</span><span class="p">:</span>
-                    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsrDF</span><span class="p">[</span><span class="n">used</span><span class="p">][</span><span class="s1">&#39;HV_Curves&#39;</span><span class="p">]):</span>
-                        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsrDF</span><span class="p">[</span><span class="n">notused</span><span class="p">][</span><span class="s1">&#39;HV_Curves&#39;</span><span class="p">]):</span>
-                        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;orangered&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.666</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">used</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsrDF</span><span class="p">[</span><span class="n">used</span><span class="p">][</span><span class="s1">&#39;HV_Curves&#39;</span><span class="p">]):</span>
+                            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">notused</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsrDF</span><span class="p">[</span><span class="n">notused</span><span class="p">][</span><span class="s1">&#39;HV_Curves&#39;</span><span class="p">]):</span>
+                            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;orangered&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.666</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="c1"># Plot SESAME test results and thresholds on HVSR plot</span>
         <span class="k">if</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="n">k</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;subplot&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;hvsr&#39;</span><span class="p">:</span>

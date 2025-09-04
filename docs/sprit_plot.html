@@ -150,10 +150,10 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 </dl></div>
 </dd>
 <dt id="sprit.sprit_plot.plot_outlier_curves"><code class="name flex">
-<span>def <span class="ident">plot_outlier_curves</span></span>(<span>hvsr_data, plot_engine='plotly', plotly_module='go', remove_outliers_during_plot=False, rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False, discarded_curves=None)</span>
+<span>def <span class="ident">plot_outlier_curves</span></span>(<span>hvsr_data, plot_engine='plotly', plotly_module='go', remove_outliers_during_plot=False, outlier_threshold=0.98, use_percentile=True, use_hv_curves=False, from_roc=False, show_plot=True, verbose=False, discarded_curves=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Functio to plot outlier curves, including which have been excluded</p>
+<div class="desc"><p>Function to plot outlier curves, including which have been excluded</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>hvsr_data</code></strong> :&ensp;<code>HVSRData</code></dt>
@@ -164,11 +164,11 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 <dd>Which plotly module to use if applicable, by default 'go'</dd>
 <dt><strong><code>remove_outliers_during_plot</code></strong> :&ensp;<code>bool</code>, optional</dt>
 <dd>Whether curves should also be removed when plotted. During sprit.run(), removal happens separately, so this is False.</dd>
-<dt><strong><code>rmse_thresh</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dt><strong><code>outlier_threshold</code></strong> :&ensp;<code>float</code>, optional</dt>
 <dd>RMSE threshold (for removing outliers), by default 0.98</dd>
 <dt><strong><code>use_percentile</code></strong> :&ensp;<code>bool</code>, optional</dt>
 <dd>Whether to use percentile or raw value, by default True</dd>
-<dt><strong><code>use_hv_curve</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dt><strong><code>use_hv_curves</code></strong> :&ensp;<code>bool</code>, optional</dt>
 <dd>Whether to perform analysis on HV curves (if True) or PSD curves (if False), by default False</dd>
 <dt><strong><code>from_roc</code></strong> :&ensp;<code>bool</code>, optional</dt>
 <dd>Helper parameter to determine if this is being called from sprit.remove_outlier_curves function, by default False</dd>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr module &mdash; sprit 2.8.9 documentation</title>
+  <title>sprit.sprit_hvsr module &mdash; sprit 2.9.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
 
@@ -13,7 +13,7 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/documentation_options.js?v=ee1499ef"></script>
+        <script src="_static/documentation_options.js?v=182a64a0"></script>
         <script src="_static/doctools.js?v=9a2dae69"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -78,6 +78,8 @@
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.remove_noise"><code class="docutils literal notranslate"><span class="pre">remove_noise()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.remove_outlier_curves"><code class="docutils literal notranslate"><span class="pre">remove_outlier_curves()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.update_elevation"><code class="docutils literal notranslate"><span class="pre">update_elevation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.update_resp_file"><code class="docutils literal notranslate"><span class="pre">update_resp_file()</span></code></a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="sprit.html#submodules">Submodules</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_calibration.html">sprit.sprit_calibration module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_cli.html">sprit.sprit_cli module</a></li>
@@ -109,6 +111,8 @@
 <li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_hvsr.remove_outlier_curves"><code class="docutils literal notranslate"><span class="pre">remove_outlier_curves()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_hvsr.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_hvsr.test_function"><code class="docutils literal notranslate"><span class="pre">test_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_hvsr.update_elevation"><code class="docutils literal notranslate"><span class="pre">update_elevation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sprit.sprit_hvsr.update_resp_file"><code class="docutils literal notranslate"><span class="pre">update_resp_file()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_jupyter_UI.html">sprit.sprit_jupyter_UI module</a></li>
@@ -148,6 +152,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.ppsds_obspy"><code class="docutils literal notranslate"><span class="pre">HVSRData.ppsds_obspy</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.report"><code class="docutils literal notranslate"><span class="pre">HVSRData.report()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.select"><code class="docutils literal notranslate"><span class="pre">HVSRData.select()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.to_json"><code class="docutils literal notranslate"><span class="pre">HVSRData.to_json()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.sprit_hvsr.batch_data_read"><code class="docutils literal notranslate"><span class="pre">batch_data_read()</span></code></a></li>
@@ -175,6 +180,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#sprit.sprit_hvsr.remove_outlier_curves"><code class="docutils literal notranslate"><span class="pre">remove_outlier_curves()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.sprit_hvsr.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.sprit_hvsr.test_function"><code class="docutils literal notranslate"><span class="pre">test_function()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sprit.sprit_hvsr.update_elevation"><code class="docutils literal notranslate"><span class="pre">update_elevation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sprit.sprit_hvsr.update_resp_file"><code class="docutils literal notranslate"><span class="pre">update_resp_file()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="sprit.sprit_utils.html">sprit.sprit_utils module</a></li>
@@ -465,6 +472,9 @@ It contains all the processed data, input parameters, and reports.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.select" title="sprit.sprit_hvsr.HVSRData.select"><code class="xref py py-obj docutils literal notranslate"><span class="pre">select</span></code></a>(**kwargs)</p></td>
 <td><p>Wrapper for obspy select method on 'stream' attribute of HVSRData object</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.to_json" title="sprit.sprit_hvsr.HVSRData.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_json</span></code></a>(json_filepath, **kwargs)</p></td>
+<td><p>Not yet supported, will export HVSRData object to json</p></td>
+</tr>
 </tbody>
 </table>
 <dl class="py property">
@@ -662,6 +672,12 @@ If True, it will first try to save each file to the same directory as input_data
 <dd><p>Wrapper for obspy select method on ‘stream’ attribute of HVSRData object</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="sprit.sprit_hvsr.HVSRData.to_json">
+<span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_filepath</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRData.to_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.HVSRData.to_json" title="Link to this definition">¶</a></dt>
+<dd><p>Not yet supported, will export HVSRData object to json</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py function">
@@ -751,7 +767,7 @@ with *</strong> being zero-padded (3 digits) azimuth angle in degrees.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.check_peaks">
-<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">check_peaks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.1,</span> <span class="pre">50]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_selection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'max'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_freq_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.1,</span> <span class="pre">50]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HV'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#check_peaks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.check_peaks" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">check_peaks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.5,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_selection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'max'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_freq_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.5,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HV'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#check_peaks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.check_peaks" title="Link to this definition">¶</a></dt>
 <dd><p>Function to run tests on HVSR peaks to find best one and see if it passes SESAME quality checks</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -825,7 +841,7 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.export_hvsr">
-<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">export_hvsr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hvsr'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#export_hvsr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.export_hvsr" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">export_hvsr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hvsr'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_plots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#export_hvsr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.export_hvsr" title="Link to this definition">¶</a></dt>
 <dd><dl class="simple">
 <dt>Export data into pickle format that can be read back in using import_data().</dt><dd><p>Intended so data does not need to be processed each time it needs to be used. 
 Default extension is .hvsr but it is still a pickled file that can be read in using pickle.load().</p>
@@ -997,7 +1013,7 @@ See here for more information: <a class="reference external" href="https://docs.
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.generate_psds">
-<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">generate_psds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlap_pct</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hann'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_length_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'length'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_response</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_on_gaps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_freq_bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">512</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obspy_ppsds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuthal_psds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_psds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">obspy_ppsd_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#generate_psds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.generate_psds" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">generate_psds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlap_pct</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hann'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_length_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'length'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_response</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_on_gaps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_freq_bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">512</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.5,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obspy_ppsds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuthal_psds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_psds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">obspy_ppsd_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#generate_psds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.generate_psds" title="Link to this definition">¶</a></dt>
 <dd><p>Calculate Power Spectral Density (PSD) curves for each channel.
 Uses the [scipy.signal.welch()](<a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html">https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html</a>) function 
 to generate PSDs by default, or can use Obspy’s PPSD class.
@@ -1124,7 +1140,7 @@ The following report_formats return the following items in the following attribu
 <blockquote>
 <div><ul class="simple">
 <li><p>‘plot’: hvsr_results[‘Print_Report’] as a str</p></li>
-<li><p>‘print’: hvsr_results[‘HV_Plot’] - matplotlib.Figure object</p></li>
+<li><p>‘print’: hvsr_results[‘Plot_Report’] - matplotlib.Figure object</p></li>
 <li><dl class="simple">
 <dt>‘table’:  hvsr_results[‘Table_Report’]- pandas.DataFrame object</dt><dd><ul>
 <li><p>list/tuple - a list or tuple of the above objects, in the same order they are in the report_formats list</p></li>
@@ -1229,7 +1245,7 @@ with key:value pairs for each parameter name:value in that function.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.input_params">
-<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">input_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HVSRSite'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">network</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'AM'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">station</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'NONE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'00'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['EHZ',</span> <span class="pre">'EHN',</span> <span class="pre">'EHE']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acq_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">starttime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tzone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xcoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-88.229</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ycoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40.101</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">225</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'EPSG:4326'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elev_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'meters'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Seismometer'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metapath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.1,</span> <span class="pre">50]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_freq_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.1,</span> <span class="pre">50]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processing_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#input_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.input_params" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">input_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HVSRSite'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">network</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'AM'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">station</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'NONE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'00'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['EHZ',</span> <span class="pre">'EHN',</span> <span class="pre">'EHE']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acq_date</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">starttime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tzone</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'UTC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xcoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-88.229</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ycoord</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40.101</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elevation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">225</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'EPSG:4326'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elev_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'meters'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Seismometer'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_band</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.5,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_freq_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.5,</span> <span class="pre">40]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processing_parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#input_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.input_params" title="Link to this definition">¶</a></dt>
 <dd><p>Function for designating input parameters for reading in and processing data</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1245,7 +1261,7 @@ f”{project}-{acq_date.strftime(“%Y%m%d”)}-{starttime.strftime(“%H%M”)}
 </dd>
 <dt><strong>network</strong><span class="classifier">str, default=’AM’</span></dt><dd><p>The network designation of the seismometer. This is necessary for data from Raspberry Shakes. ‘AM’ is for Amateur network, which fits Raspberry Shakes.</p>
 </dd>
-<dt><strong>station</strong><span class="classifier">str, default=’RAC84’</span></dt><dd><p>The station name of the seismometer. This is necessary for data from Raspberry Shakes.</p>
+<dt><strong>station</strong><span class="classifier">str, default=’None’</span></dt><dd><p>The station name of the seismometer. This is necessary for data from Raspberry Shakes.</p>
 </dd>
 <dt><strong>location</strong><span class="classifier">str, default=’00’</span></dt><dd><p>Location information of the seismometer.</p>
 </dd>
@@ -1277,7 +1293,7 @@ This is necessary for Raspberry Shake data in ‘raw’ format.</p>
 </dd>
 <dt><strong>instrument</strong><span class="classifier">str {‘Raspberry Shake’, “Tromino”}</span></dt><dd><p>Instrument from which the data was acquired.</p>
 </dd>
-<dt><strong>metapath</strong><span class="classifier">str or pathlib.Path object, default=None</span></dt><dd><p>Filepath of metadata, in format supported by obspy.read_inventory. If default value of None, will read from resources folder of repository (only supported for Raspberry Shake).</p>
+<dt><strong>metadata</strong><span class="classifier">str or pathlib.Path object, default=None</span></dt><dd><p>Filepath of metadata, in format supported by obspy.read_inventory. If default value of None, will read from resources folder of repository (only supported for Raspberry Shake).</p>
 </dd>
 <dt><strong>hvsr_band</strong><span class="classifier">list, default=[0.1, 50]</span></dt><dd><p>Two-element list containing low and high “corner” frequencies (in Hz) for processing. This can specified again later.</p>
 </dd>
@@ -1445,7 +1461,7 @@ It takes a lot of time to process the data, but interpolation for vizualization 
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.process_hvsr">
-<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">process_hvsr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizontal_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_smooth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'konno</span> <span class="pre">ohmachi'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_smooth_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlier_curve_rmse_percentile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#process_hvsr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.process_hvsr" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">process_hvsr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizontal_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_smooth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'konno</span> <span class="pre">ohmachi'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_smooth_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlier_curve_percentile_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#process_hvsr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.process_hvsr" title="Link to this definition">¶</a></dt>
 <dd><p>Process the input data and get HVSR data</p>
 <p>This is the main function that uses other (private) functions to do 
 the bulk of processing of the HVSR data and the data quality checks.</p>
@@ -1497,9 +1513,9 @@ If int, the number of data points to interpolate/resample/smooth the component p
 </dd>
 </dl>
 </dd>
-<dt><strong>outlier_curve_rmse_percentile</strong><span class="classifier">bool, float, default = False</span></dt><dd><p>If False, outlier curve removal is not carried out here. 
+<dt><strong>outlier_curve_percentile_threshold</strong><span class="classifier">bool, float, default = False</span></dt><dd><p>If False, outlier curve removal is not carried out here. 
 If True, defaults to 98 (98th percentile). 
-Otherwise, float of percentile used as rmse_thresh of remove_outlier_curve().</p>
+Otherwise, float of percentile used as outlier_threshold of remove_outlier_curve().</p>
 </dd>
 <dt><strong>azimuth</strong><span class="classifier">float, default = None</span></dt><dd><p>The azimuth angle to use when method is single azimuth.</p>
 </dd>
@@ -1621,7 +1637,7 @@ divided by the standard deviation calculated for the entire trace. This rolling 
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.remove_outlier_curves">
-<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">remove_outlier_curves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rmse_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">98</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_percentile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_hv_curve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_engine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'matplotlib'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_outlier_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">generate_outlier_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#remove_outlier_curves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.remove_outlier_curves" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">remove_outlier_curves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlier_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'prototype'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlier_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_percentile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_pts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_hv_curves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_engine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'matplotlib'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_outlier_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">generate_outlier_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#remove_outlier_curves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.remove_outlier_curves" title="Link to this definition">¶</a></dt>
 <dd><p>Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
 Probabilistic Power Spectral Density (PPSD) curve against the median PPSD value at each frequency step for all times.
 It calculates the RMSE for the PPSD curves of each component individually. All curves are removed from analysis.</p>
@@ -1632,13 +1648,19 @@ In general, the recommended workflow is to run this immediately following the ge
 <dd class="field-odd"><dl class="simple">
 <dt><strong>hvsr_data</strong><span class="classifier">dict</span></dt><dd><p>Input dictionary containing all the values and parameters of interest</p>
 </dd>
-<dt><strong>rmse_thresh</strong><span class="classifier">float or int, default=98</span></dt><dd><p>The Root Mean Square Error value to use as a threshold for determining whether a curve is an outlier. 
+<dt><strong>outlier_method</strong><span class="classifier">str, default=’prototype’</span></dt><dd><p>The method to use for outlier detection. Currently, ‘dbscan’ and ‘prototype’ is supported.</p>
+</dd>
+<dt><strong>outlier_threshold</strong><span class="classifier">float or int, default=98</span></dt><dd><p>The Root Mean Square Error value to use as a threshold for determining whether a curve is an outlier. 
 This averages over each individual entire curve so that curves with very abberant data (often occurs when using the remove_noise() method), can be identified.
 Otherwise, specify a float or integer to use as the cutoff RMSE value (all curves with RMSE above will be removed)</p>
 </dd>
-<dt><strong>use_percentile</strong><span class="classifier">float, default=True</span></dt><dd><p>Whether rmse_thresh should be interepreted as a raw RMSE value or as a percentile of the RMSE values.</p>
+<dt><strong>use_percentile</strong><span class="classifier">float, default=True</span></dt><dd><p>Whether outlier_threshold should be interepreted as a raw RMSE value or as a percentile of the RMSE values.</p>
 </dd>
-<dt><strong>use_hv_curve</strong><span class="classifier">bool, default=False</span></dt><dd><p>Whether to use the calculated HV Curve or the individual components. This can only be True after process_hvsr() has been run.</p>
+<dt><strong>min_pts</strong><span class="classifier">int, default=5</span></dt><dd><p>The minimum number of points to use for the outlier detection method.
+This is only used if outlier_method=’dbscan’ 
+This is minimum number of points a point needs in its neighborhood to not be considered an outlier.</p>
+</dd>
+<dt><strong>use_hv_curves</strong><span class="classifier">bool, default=False</span></dt><dd><p>Whether to use the calculated HV Curve or the individual components. This can only be True after process_hvsr() has been run.</p>
 </dd>
 <dt><strong>show_plot</strong><span class="classifier">bool, default=False</span></dt><dd><p>Whether to show a plot of the removed data</p>
 </dd>
@@ -1729,11 +1751,11 @@ See API documentation: [input_params()](<a class="reference external" href="http
 </dd>
 <dt><strong>instrument: any, default = ‘Seismometer’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>metapath: any, default = None</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+<dt><strong>metadata: any, default = None</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>hvsr_band: any, default = [0.1, 50]</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+<dt><strong>hvsr_band: any, default = [0.5, 40]</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
-<dt><strong>peak_freq_range: any, default = [0.1, 50]</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
+<dt><strong>peak_freq_range: any, default = [0.5, 40]</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
 <dt><strong>processing_parameters: any, default = {}</strong></dt><dd><p>See API documentation at link above or at <cite>help(input_params)</cite> for specifics.</p>
 </dd>
@@ -1843,6 +1865,8 @@ See API documentation: [generate_psds()](<a class="reference external" href="htt
 </dd>
 <dt><strong>num_freq_bins: any, default = 512</strong></dt><dd><p>See API documentation at link above or at <cite>help(generate_psds)</cite> for specifics.</p>
 </dd>
+<dt><strong>hvsr_band: any, default = [0.5, 40]</strong></dt><dd><p>See API documentation at link above or at <cite>help(generate_psds)</cite> for specifics.</p>
+</dd>
 <dt><strong>obspy_ppsds: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(generate_psds)</cite> for specifics.</p>
 </dd>
 <dt><strong>azimuthal_psds: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(generate_psds)</cite> for specifics.</p>
@@ -1868,7 +1892,7 @@ See API documentation: [process_hvsr()](<a class="reference external" href="http
 </dd>
 <dt><strong>resample: any, default = True</strong></dt><dd><p>See API documentation at link above or at <cite>help(process_hvsr)</cite> for specifics.</p>
 </dd>
-<dt><strong>outlier_curve_rmse_percentile: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(process_hvsr)</cite> for specifics.</p>
+<dt><strong>outlier_curve_percentile_threshold: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(process_hvsr)</cite> for specifics.</p>
 </dd>
 <dt><strong>azimuth: any, default = None</strong></dt><dd><p>See API documentation at link above or at <cite>help(process_hvsr)</cite> for specifics.</p>
 </dd>
@@ -1879,11 +1903,15 @@ See API documentation: [remove_outlier_curves()](<a class="reference external" h
 </dd>
 <dt><strong>hvsr_data: any, default = ‘&lt;output of previous function&gt;’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.remove_outlier_curves)</cite> for specifics.</p>
 </dd>
-<dt><strong>rmse_thresh: any, default = 98</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_outlier_curves)</cite> for specifics.</p>
+<dt><strong>outlier_method: any, default = ‘prototype’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.remove_outlier_curves)</cite> for specifics.</p>
+</dd>
+<dt><strong>outlier_threshold: any, default = 50</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_outlier_curves)</cite> for specifics.</p>
 </dd>
 <dt><strong>use_percentile: any, default = True</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_outlier_curves)</cite> for specifics.</p>
 </dd>
-<dt><strong>use_hv_curve: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_outlier_curves)</cite> for specifics.</p>
+<dt><strong>min_pts: any, default = 5</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_outlier_curves)</cite> for specifics.</p>
+</dd>
+<dt><strong>use_hv_curves: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(remove_outlier_curves)</cite> for specifics.</p>
 </dd>
 <dt><strong>plot_engine: any, default = ‘matplotlib’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.remove_outlier_curves)</cite> for specifics.</p>
 </dd>
@@ -1900,11 +1928,11 @@ See API documentation: [check_peaks()](<a class="reference external" href="https
 </dd>
 <dt><strong>hvsr_data: any, default = ‘&lt;output of previous function&gt;’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.check_peaks)</cite> for specifics.</p>
 </dd>
-<dt><strong>hvsr_band: any, default = [0.1, 50]</strong></dt><dd><p>See API documentation at link above or at <cite>help(check_peaks)</cite> for specifics.</p>
+<dt><strong>hvsr_band: any, default = [0.5, 40]</strong></dt><dd><p>See API documentation at link above or at <cite>help(check_peaks)</cite> for specifics.</p>
 </dd>
 <dt><strong>peak_selection: any, default = ‘max’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.check_peaks)</cite> for specifics.</p>
 </dd>
-<dt><strong>peak_freq_range: any, default = [0.1, 50]</strong></dt><dd><p>See API documentation at link above or at <cite>help(check_peaks)</cite> for specifics.</p>
+<dt><strong>peak_freq_range: any, default = [0.5, 40]</strong></dt><dd><p>See API documentation at link above or at <cite>help(check_peaks)</cite> for specifics.</p>
 </dd>
 <dt><strong>azimuth: any, default = ‘HV’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.check_peaks)</cite> for specifics.</p>
 </dd>
@@ -1955,6 +1983,8 @@ See API documentation: [export_hvsr()](<a class="reference external" href="https
 <dt><strong>hvsr_export_path: any, default = None</strong></dt><dd><p>See API documentation at link above or at <cite>help(export_hvsr)</cite> for specifics.</p>
 </dd>
 <dt><strong>ext: any, default = ‘hvsr’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.export_hvsr)</cite> for specifics.</p>
+</dd>
+<dt><strong>export_plots: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(export_hvsr)</cite> for specifics.</p>
 </dd>
 <dt><strong>verbose: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(export_hvsr)</cite> for specifics.</p>
 </dd>
@@ -2010,6 +2040,84 @@ See API documentation: [export_hvsr()](<a class="reference external" href="https
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.test_function">
 <span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">test_function</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#test_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.test_function" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sprit.sprit_hvsr.update_elevation">
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">update_elevation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">updated_surface_elevation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">updated_elevation_unit</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#update_elevation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.update_elevation" title="Link to this definition">¶</a></dt>
+<dd><p>Function to quickly update all attributes associated with elevation of an HVSRData object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>hvsr_data</strong><span class="classifier">HVSRData or HVSRBatch</span></dt><dd><p>HVSRData or HVSRBatch object containing attributes related to elevation.
+If HVSRBatch, updated_surface_elevation should be list or tuple and 
+updated_elevation_unit may either be str or  list/tuple of strings.</p>
+</dd>
+<dt><strong>updated_surface_elevation</strong><span class="classifier">numbers.Number</span></dt><dd><p>Number (float or int) with the updated elevation.
+Meters is the preferred unit. If feet are used instead, it will be converted to meters.</p>
+</dd>
+<dt><strong>updated_elevation_unit</strong><span class="classifier">str</span></dt><dd><p>Unit used for updated_surface_elevation. If ‘feet’, it will be converted to meters.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>HVSRData</dt><dd><p>HVSRData object with all attributes related to elevation updated</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sprit.sprit_hvsr.update_resp_file">
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">update_resp_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resp_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_network</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_station</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_inv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'CHZ'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">starttime_new</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endtime_new</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_resp_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">existing_starttime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'2015,001,00:00:00.0000'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">existing_endtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'No</span> <span class="pre">Ending</span> <span class="pre">Time'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">existing_network</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'XX'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">existing_station</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'NS124'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">existing_channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'CHZ'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">existing_location</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'??'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#update_resp_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.update_resp_file" title="Link to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Function to update headers in .RESP instrument response files for easy copying.</dt><dd><p>It is recommended to read this into a variable and set it as the metadata parameter of input_params
+if it is desired to correct for instrument response, for example.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>resp_file</strong><span class="classifier">str</span></dt><dd><p>Filepath to input response file</p>
+</dd>
+<dt><strong>new_network</strong><span class="classifier">str</span></dt><dd><p>Name of network to update header to.</p>
+</dd>
+<dt><strong>new_station</strong><span class="classifier">str</span></dt><dd><p>Name of station to update header to.</p>
+</dd>
+<dt><strong>return_inv</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to return an obspy inventory object.
+If False, a .RESP file will be saved in the same directory as resp_file, by default True</p>
+</dd>
+<dt><strong>new_channels</strong><span class="classifier">str, optional</span></dt><dd><p>Name or list of channels to update the header to.
+If list, multiple inventory objects will be created/saved, by default ‘CHZ’</p>
+</dd>
+<dt><strong>new_location</strong><span class="classifier">str, optional</span></dt><dd><p>New instrument location attribute to update header to, by default “”</p>
+</dd>
+<dt><strong>starttime</strong><span class="classifier">obspy.UTCDateTime, optional</span></dt><dd><p>Input to update starttime. Must be readable by obspy.UTCDateTime(), by default None</p>
+</dd>
+<dt><strong>endtime</strong><span class="classifier">obspy.UTCDateTime, optional</span></dt><dd><p>Input to update endtime. Must be readable by obspy.UTCDateTime(), by default None</p>
+</dd>
+<dt><strong>new_resp_file</strong><span class="classifier">str, optional</span></dt><dd><p>Filepath to designate for .RESP file output, if desired (and return_inv=False)
+If None, uses same directory as resp_file, by default None</p>
+</dd>
+<dt><strong>existing_network</strong><span class="classifier">str, optional</span></dt><dd><p>Name of network as specified in input file, by default ‘XX’</p>
+</dd>
+<dt><strong>existing_station</strong><span class="classifier">str, optional</span></dt><dd><p>name of station as specified in input file, by default ‘NS124’</p>
+</dd>
+<dt><strong>existing_channel</strong><span class="classifier">str, optional</span></dt><dd><p>Name of channel as specified in input file, by default ‘CHZ’</p>
+</dd>
+<dt><strong>existing_location</strong><span class="classifier">str, optional</span></dt><dd><p>Name of location as specified in input file, by default ‘??’</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>obspy.Inventory</dt><dd><p>Only returned if return_inv = True</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 </section>
 

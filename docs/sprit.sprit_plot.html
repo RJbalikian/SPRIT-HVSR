@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_plot module &mdash; sprit 2.8.9 documentation</title>
+  <title>sprit.sprit_plot module &mdash; sprit 2.9.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
 
@@ -13,7 +13,7 @@
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="_static/documentation_options.js?v=ee1499ef"></script>
+        <script src="_static/documentation_options.js?v=182a64a0"></script>
         <script src="_static/doctools.js?v=9a2dae69"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -78,6 +78,8 @@
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.remove_noise"><code class="docutils literal notranslate"><span class="pre">remove_noise()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.remove_outlier_curves"><code class="docutils literal notranslate"><span class="pre">remove_outlier_curves()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.update_elevation"><code class="docutils literal notranslate"><span class="pre">update_elevation()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.html#sprit.update_resp_file"><code class="docutils literal notranslate"><span class="pre">update_resp_file()</span></code></a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="sprit.html#submodules">Submodules</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_calibration.html">sprit.sprit_calibration module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_cli.html">sprit.sprit_cli module</a></li>
@@ -258,8 +260,8 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.sprit_plot.plot_outlier_curves">
-<span class="sig-prename descclassname"><span class="pre">sprit.sprit_plot.</span></span><span class="sig-name descname"><span class="pre">plot_outlier_curves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_engine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'plotly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotly_module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'go'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_outliers_during_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rmse_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.98</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_percentile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_hv_curve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_roc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discarded_curves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_plot.html#plot_outlier_curves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_plot.plot_outlier_curves" title="Link to this definition">¶</a></dt>
-<dd><p>Functio to plot outlier curves, including which have been excluded</p>
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_plot.</span></span><span class="sig-name descname"><span class="pre">plot_outlier_curves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_engine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'plotly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotly_module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'go'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_outliers_during_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlier_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.98</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_percentile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_hv_curves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_roc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discarded_curves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_plot.html#plot_outlier_curves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_plot.plot_outlier_curves" title="Link to this definition">¶</a></dt>
+<dd><p>Function to plot outlier curves, including which have been excluded</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
@@ -271,11 +273,11 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 </dd>
 <dt><strong>remove_outliers_during_plot</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether curves should also be removed when plotted. During sprit.run(), removal happens separately, so this is False.</p>
 </dd>
-<dt><strong>rmse_thresh</strong><span class="classifier">float, optional</span></dt><dd><p>RMSE threshold (for removing outliers), by default 0.98</p>
+<dt><strong>outlier_threshold</strong><span class="classifier">float, optional</span></dt><dd><p>RMSE threshold (for removing outliers), by default 0.98</p>
 </dd>
 <dt><strong>use_percentile</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to use percentile or raw value, by default True</p>
 </dd>
-<dt><strong>use_hv_curve</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to perform analysis on HV curves (if True) or PSD curves (if False), by default False</p>
+<dt><strong>use_hv_curves</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to perform analysis on HV curves (if True) or PSD curves (if False), by default False</p>
 </dd>
 <dt><strong>from_roc</strong><span class="classifier">bool, optional</span></dt><dd><p>Helper parameter to determine if this is being called from sprit.remove_outlier_curves function, by default False</p>
 </dd>

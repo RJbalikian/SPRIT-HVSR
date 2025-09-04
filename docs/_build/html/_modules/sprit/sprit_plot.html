@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_plot &mdash; sprit 2.8.9 documentation</title>
+  <title>sprit.sprit_plot &mdash; sprit 2.9.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
 
@@ -12,7 +12,7 @@
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../../_static/documentation_options.js?v=ee1499ef"></script>
+        <script src="../../_static/documentation_options.js?v=182a64a0"></script>
         <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -792,9 +792,9 @@
 <div class="viewcode-block" id="plot_outlier_curves">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.plot_outlier_curves">[docs]</a>
 <span class="k">def</span> <span class="nf">plot_outlier_curves</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span> <span class="n">plotly_module</span><span class="o">=</span><span class="s1">&#39;go&#39;</span><span class="p">,</span> <span class="n">remove_outliers_during_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                        <span class="n">rmse_thresh</span><span class="o">=</span><span class="mf">0.98</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_hv_curve</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+                        <span class="n">outlier_threshold</span><span class="o">=</span><span class="mf">0.98</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_hv_curves</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
                         <span class="n">from_roc</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">discarded_curves</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Functio to plot outlier curves, including which have been excluded</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to plot outlier curves, including which have been excluded</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -806,11 +806,11 @@
 <span class="sd">        Which plotly module to use if applicable, by default &#39;go&#39;</span>
 <span class="sd">    remove_outliers_during_plot : bool, optional</span>
 <span class="sd">        Whether curves should also be removed when plotted. During sprit.run(), removal happens separately, so this is False.</span>
-<span class="sd">    rmse_thresh : float, optional</span>
+<span class="sd">    outlier_threshold : float, optional</span>
 <span class="sd">        RMSE threshold (for removing outliers), by default 0.98</span>
 <span class="sd">    use_percentile : bool, optional</span>
 <span class="sd">        Whether to use percentile or raw value, by default True</span>
-<span class="sd">    use_hv_curve : bool, optional</span>
+<span class="sd">    use_hv_curves : bool, optional</span>
 <span class="sd">        Whether to perform analysis on HV curves (if True) or PSD curves (if False), by default False</span>
 <span class="sd">    from_roc : bool, optional</span>
 <span class="sd">        Helper parameter to determine if this is being called from sprit.remove_outlier_curves function, by default False</span>
@@ -831,12 +831,12 @@
     <span class="n">plotlyList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span> <span class="s1">&#39;plty&#39;</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">]</span>
     <span class="n">mplList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;matplotlib&#39;</span><span class="p">,</span> <span class="s1">&#39;mpl&#39;</span><span class="p">,</span> <span class="s1">&#39;pyplot&#39;</span><span class="p">,</span> <span class="s1">&#39;mtpltlb&#39;</span><span class="p">,</span> <span class="s1">&#39;m&#39;</span><span class="p">]</span>
     
-    <span class="k">if</span> <span class="n">rmse_thresh</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">rmse_thresh</span> <span class="o">=</span> <span class="n">rmse_thresh</span> <span class="o">*</span> <span class="mi">100</span>
+    <span class="k">if</span> <span class="n">outlier_threshold</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">outlier_threshold</span> <span class="o">=</span> <span class="n">outlier_threshold</span> <span class="o">*</span> <span class="mi">100</span>
     
-    <span class="n">roc_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;rmse_thresh&#39;</span><span class="p">:</span><span class="n">rmse_thresh</span><span class="p">,</span>
+    <span class="n">roc_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;outlier_threshold&#39;</span><span class="p">:</span><span class="n">outlier_threshold</span><span class="p">,</span>
                     <span class="s1">&#39;use_percentile&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
-                    <span class="s1">&#39;use_hv_curve&#39;</span><span class="p">:</span><span class="n">use_hv_curve</span><span class="p">,</span>
+                    <span class="s1">&#39;use_hv_curves&#39;</span><span class="p">:</span><span class="n">use_hv_curves</span><span class="p">,</span>
                     <span class="s1">&#39;show_outlier_plot&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
                     <span class="s1">&#39;plot_engine&#39;</span><span class="p">:</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
                     <span class="s1">&#39;verbose&#39;</span><span class="p">:</span><span class="n">verbose</span>
@@ -851,7 +851,7 @@
         <span class="n">outlier_fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
         
         <span class="n">titleText</span> <span class="o">=</span> <span class="s1">&#39;Outlier Curve Plot&#39;</span>
-        <span class="k">if</span> <span class="n">use_hv_curve</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">use_hv_curves</span><span class="p">:</span>
             <span class="n">titleText</span> <span class="o">+=</span> <span class="s1">&#39; (H/V Curves)&#39;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">titleText</span> <span class="o">+=</span> <span class="s1">&#39; PSD Curves&#39;</span>
@@ -865,7 +865,7 @@
             <span class="c1">#log_textArea.value += f&quot;\n\n{datetime.datetime.now()}\nremove_outlier_curves() attempted, but not completed. hvsr_data.processing_status[&#39;generate_psds_status&#39;]=False\n&#39;{roc_kwargs}&quot;</span>
             <span class="k">return</span> <span class="n">outlier_fig</span>
 
-        <span class="k">if</span> <span class="n">roc_kwargs</span><span class="p">[</span><span class="s1">&#39;use_hv_curve&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">roc_kwargs</span><span class="p">[</span><span class="s1">&#39;use_hv_curves&#39;</span><span class="p">]:</span>
             <span class="n">no_subplots</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="s1">&#39;HV_Curves&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">hvsr_windows_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
                 <span class="n">outlier_fig</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
@@ -938,7 +938,7 @@
                     <span class="c1"># Calculate RMSE</span>
                     <span class="n">rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(((</span><span class="n">np</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="n">curr_data</span><span class="p">,</span> <span class="n">medCurveArr</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span><span class="o">/</span><span class="n">curr_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 
-                    <span class="n">rmse_threshold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">rmse</span><span class="p">,</span> <span class="n">roc_kwargs</span><span class="p">[</span><span class="s1">&#39;rmse_thresh&#39;</span><span class="p">])</span>
+                    <span class="n">rmse_threshold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">rmse</span><span class="p">,</span> <span class="n">roc_kwargs</span><span class="p">[</span><span class="s1">&#39;outlier_threshold&#39;</span><span class="p">])</span>
                     
                     <span class="c1"># Retrieve index of those RMSE values that lie outside the threshold</span>
                     <span class="n">timeIndex</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
@@ -1001,7 +1001,7 @@
         <span class="c1">#        print(b)</span>
 
         <span class="c1"># Determine names of hvsr_windows_df columns to use</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">use_hv_curve</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">use_hv_curves</span><span class="p">:</span>
             <span class="n">compNames</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">]</span>
             <span class="k">for</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
                 <span class="k">if</span> <span class="s1">&#39;psd_values&#39;</span> <span class="ow">in</span> <span class="n">col_name</span> <span class="ow">and</span> <span class="s1">&#39;RMSE&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">col_name</span><span class="p">:</span>
@@ -1019,7 +1019,7 @@
             <span class="n">col_prefix</span> <span class="o">=</span> <span class="s1">&#39;HV_Curves&#39;</span>
     
         <span class="n">spMosaic</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">if</span> <span class="n">use_hv_curve</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">use_hv_curves</span><span class="p">:</span>
             <span class="n">spMosaic</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="s1">&#39;HV Curve&#39;</span><span class="p">])</span>
             <span class="n">fSize</span> <span class="o">=</span> <span class="p">(</span><span class="mf">8.5</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1037,11 +1037,10 @@
         <span class="n">bad_rmse</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">column</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">colNames</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">compNames</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">use_hv_curve</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">use_hv_curves</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
                     <span class="n">column</span> <span class="o">=</span> <span class="n">col_prefix</span> <span class="o">+</span> <span class="n">column</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">column</span> <span class="o">=</span> <span class="n">column</span>
-
 
             <span class="c1"># Retrieve data from dataframe (use all windows, just in case)</span>
             <span class="n">curr_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="n">column</span><span class="p">])</span>
@@ -1049,17 +1048,17 @@
             <span class="c1"># Calculate a median curve, and reshape so same size as original</span>
             <span class="n">medCurve</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">curr_data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="n">medCurveArr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">medCurve</span><span class="p">,</span> <span class="p">(</span><span class="n">curr_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">))</span>
-            
+
             <span class="c1"># Calculate RMSE</span>
             <span class="n">rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(((</span><span class="n">np</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="n">curr_data</span><span class="p">,</span> <span class="n">medCurveArr</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span><span class="o">/</span><span class="n">curr_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
             <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;RMSE_&#39;</span><span class="o">+</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">rmse</span>
             <span class="k">if</span> <span class="n">use_percentile</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
-                <span class="n">rmse_threshold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">rmse</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">rmse</span><span class="p">)],</span> <span class="n">rmse_thresh</span><span class="p">)</span>
+                <span class="n">rmse_threshold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">rmse</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">rmse</span><span class="p">)],</span> <span class="n">outlier_threshold</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">RMSE at </span><span class="si">{</span><span class="n">rmse_thresh</span><span class="si">}</span><span class="s1">th percentile for </span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s1"> calculated at: </span><span class="si">{</span><span class="n">rmse_threshold</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">RMSE at </span><span class="si">{</span><span class="n">outlier_threshold</span><span class="si">}</span><span class="s1">th percentile for </span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s1"> calculated at: </span><span class="si">{</span><span class="n">rmse_threshold</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">rmse_threshold</span> <span class="o">=</span> <span class="n">rmse_thresh</span>
-             
+                <span class="n">rmse_threshold</span> <span class="o">=</span> <span class="n">outlier_threshold</span>
+
             <span class="c1"># Retrieve index of those RMSE values that lie outside the threshold</span>
             <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">curve</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">curr_data</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">rmse</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">rmse_threshold</span><span class="p">:</span>
@@ -1088,21 +1087,40 @@
                         <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Retained Curve&#39;</span>
 
                 <span class="c1"># Plot each individual curve</span>
-                <span class="k">if</span> <span class="s1">&#39;x_freqs&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">x_freqs</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span> <span class="n">curve</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">linecolor</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">use_hv_curves</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s1">&#39;x_freqs&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">x_freqs</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span> <span class="n">curve</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">linecolor</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">ppsds</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">],</span> <span class="n">curve</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">linecolor</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">ppsds</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">],</span> <span class="n">curve</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">linecolor</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="s1">&#39;x_freqs&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">ax</span><span class="p">[</span><span class="s2">&quot;HV Curve&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">x_freqs</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">curve</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">linecolor</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">ax</span><span class="p">[</span><span class="s2">&quot;HV Curve&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">ppsds</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">curve</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">linecolor</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>                    
             
             <span class="c1"># Plot the median curve</span>
-            <span class="k">if</span> <span class="s1">&#39;x_freqs&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">x_freqs</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span> <span class="n">medCurve</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Median Curve&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s1">&#39;HV_Curves&#39;</span> <span class="ow">in</span> <span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">axName</span> <span class="o">=</span> <span class="s1">&#39;HV Curve&#39;</span>
+                <span class="n">keyName</span> <span class="o">=</span> <span class="s1">&#39;Z&#39;</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">ppsds</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">],</span><span class="n">medCurve</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Median Curve&#39;</span><span class="p">)</span>
+                <span class="n">axName</span> <span class="o">=</span> <span class="n">keyName</span> <span class="o">=</span> <span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">use_hv_curves</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;x_freqs&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">x_freqs</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span> <span class="n">medCurve</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Median Curve&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">ppsds</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">],</span><span class="n">medCurve</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Median Curve&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;x_freqs&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;HV Curve&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">x_freqs</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">medCurve</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Median Curve&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">ax</span><span class="p">[</span><span class="s1">&#39;HV Curve&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">ppsds</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">medCurve</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Median Curve&#39;</span><span class="p">)</span>
+
+
             <span class="c1"># Format axis</span>
-            <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">labelspacing</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
-            <span class="n">ax</span><span class="p">[</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">semilogx</span><span class="p">()</span>             
+            <span class="n">ax</span><span class="p">[</span><span class="n">axName</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">compNames</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="p">[</span><span class="n">axName</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">labelspacing</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+            <span class="n">ax</span><span class="p">[</span><span class="n">axName</span><span class="p">]</span><span class="o">.</span><span class="n">semilogx</span><span class="p">()</span>
 
         <span class="n">outlier_fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2"> Curves Removed from Analysis&quot;</span><span class="p">)</span>
         <span class="n">outlier_fig</span><span class="o">.</span><span class="n">set_layout_engine</span><span class="p">(</span><span class="s1">&#39;constrained&#39;</span><span class="p">)</span>
@@ -2680,19 +2698,19 @@
 
 
 <span class="c1"># Helper function for plotting outlier curves using the express module of plotly</span>
-<span class="k">def</span> <span class="nf">__plotly_outlier_curves_px</span><span class="p">(</span><span class="o">**</span><span class="n">input_args</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">__plotly_outlier_curves_px</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="o">**</span><span class="n">input_args</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Support function for using plotly express to make outlier curves chart. Intended for use with streamlit API</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    plotly.express figure</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1">#input_args: hvsr_data, plot_engine=&#39;plotly&#39;, plotly_module=&#39;go&#39;, rmse_thresh=0.98, use_percentile=True, use_hv_curve=False, from_roc=False, show_plot=True, verbose=False</span>
+    <span class="c1">#input_args: hvsr_data, plot_engine=&#39;plotly&#39;, plotly_module=&#39;go&#39;, outlier_threshold=0.98, use_percentile=True, use_hv_curves=False, from_roc=False, show_plot=True, verbose=False</span>
     <span class="n">hvData</span> <span class="o">=</span> <span class="n">input_args</span><span class="p">[</span><span class="s1">&#39;hvsr_data&#39;</span><span class="p">]</span>
     <span class="n">x_data</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;x_freqs&#39;</span><span class="p">]</span>
    
     
-    <span class="k">if</span> <span class="n">input_args</span><span class="p">[</span><span class="s1">&#39;use_hv_curve&#39;</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">input_args</span><span class="p">[</span><span class="s1">&#39;use_hv_curves&#39;</span><span class="p">]:</span>
         <span class="n">no_subplots</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="n">outlierFig</span> <span class="o">=</span> <span class="n">subplots</span><span class="o">.</span><span class="n">make_subplots</span><span class="p">(</span><span class="n">rows</span><span class="o">=</span><span class="n">no_subplots</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                                             <span class="n">shared_xaxes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">horizontal_spacing</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
