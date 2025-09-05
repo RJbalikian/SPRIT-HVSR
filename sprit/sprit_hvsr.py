@@ -1079,10 +1079,10 @@ def gui(kind: str = 'browser'):
         * "window" opens windowed gui (using tkinter)
         
     """
-    browserList = ['browser', 'remi', 'default', 'd']
-    windowList = ['windowed', 'window', 'qt', 'tkinter', 'tk']
+    browserList = ['browser', 'streamlit', 'default', 'd', 'b', 's']
+    windowList = ['windowed', 'window', 'tkinter', 'tk', 't', 'win']
     widgetList = ['widget', 'jupyter', 'notebook', 'nb']
-    liteList = ['lite', 'light', 'basic', 'l', 'b']
+    liteList = ['lite', 'light', 'basic', 'l']
 
     if kind.lower() in browserList:
         import subprocess
