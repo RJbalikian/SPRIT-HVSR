@@ -775,7 +775,7 @@ class HVSRData:
         return self.__str__()
 
     # METHODS (many reflect dictionary methods)    
-    def to_json(self, json_filepath, **kwargs):
+    def to_json(self, json_filepath=None, export_json=True, return_json=False, **kwargs):
         """Not yet supported, will export HVSRData object to json"""
 
         class_keys_to_convert = (datetime.date, obspy.UTCDateTime, 
@@ -836,14 +836,19 @@ class HVSRData:
             del kwargs['sort_keys']
 
         indent = 4
-        if 'indent' in kwarg:
+        if 'indent' in kwargs:
             indent = kwargs['indent']
             del kwargs['indent']
 
-        with open(json_filepath, 'w') as f:
-            # dump the JSON string to the file
-            json.dump(self, fp=f, default=iterative_json_parser, 
-                      sort_keys=True, indent=indent, **kwargs)
+        if export_json and json_filepath is not None:
+            with open(json_filepath, 'w') as f:
+                # dump the JSON string to the file
+                json.dump(self, fp=f, default=iterative_json_parser, 
+                        sort_keys=True, indent=indent, **kwargs)
+
+        if return_json or json_filepath is None:
+            return json.dumps(self, default=iterative_json_parser,
+                              sort_keys=True, indent=indent, **kwargs)
 
     def export(self, hvsr_export_path=None, ext='hvsr'):
         """Method to export HVSRData objects to .hvsr pickle files.
