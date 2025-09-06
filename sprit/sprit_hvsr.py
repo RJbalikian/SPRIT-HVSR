@@ -2711,6 +2711,7 @@ def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr', export_type='gzip'
             print('EXPORT COMPLETE')
         print(f"Processed data exported as pickled data to: {_export_path} [~{round(float(pathlib.Path(_export_path).stat().st_size)/2**20,1)} Mb]")    
 
+    hvData = hvsr_data
     #hvData = copy.deepcopy(hvsr_data)
     #if export_plots is False:
     #    for pk in PLOT_KEYS:

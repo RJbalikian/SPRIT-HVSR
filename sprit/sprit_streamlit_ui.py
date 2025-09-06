@@ -441,7 +441,7 @@ def main():
                                  'endtime':datetime.time(23, 59, 0),
                                  'peak_freq_range':tuple(DEFAULT_BAND_LIST),
                                  'stalta_thresh':(8, 16),
-                                 'period_limits':(DEFAULT_BAND_LIST[1], DEFAULT_BAND_LIST[0]),
+                                 'period_limits':(1/DEFAULT_BAND_LIST[1], 1/DEFAULT_BAND_LIST[0]),
                                  'remove_method':['None'],
                                  'report_export_format':None,
                                  'report_formats':  ['print', 'table', 'plot', 'html', 'pdf'] ,
@@ -777,11 +777,9 @@ def main():
             def _convert_hvsr_for_download(_hvsr_data):
                 hvData = copy.deepcopy(_hvsr_data)
 
-                #print("FRESHDIR!", dir(hvData))
-                #for pk in sprit_hvsr.PLOT_KEYS:
-                #    if hasattr(hvData, pk):
-                #        del hvData[pk]
-                #print("FRESHDIR2!", dir(hvData))
+                for pk in sprit_hvsr.PLOT_KEYS:
+                    if hasattr(hvData, pk):
+                        delattr(hvData, pk)
 
                 _hvsrPickle = pickle.dumps(hvData)
 
