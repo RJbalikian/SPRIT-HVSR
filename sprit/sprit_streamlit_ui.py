@@ -39,12 +39,13 @@ except Exception:
     from sprit import sprit_hvsr
     from sprit import sprit_plot
     
-    
 VERBOSE = False
 
 RESOURCE_DIR = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources'))
 SAMPLE_DATA_DIR = RESOURCE_DIR.joinpath('sample_data')
 SETTINGS_DIR = RESOURCE_DIR.joinpath('settings')
+
+DEFAULT_BAND_LIST = list(sprit_hvsr.DEFAULT_BAND)
 
 spritLogoPath = RESOURCE_DIR.joinpath("icon").joinpath("SpRITLogo.png")
 
@@ -435,21 +436,21 @@ def main():
             excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'verbose', 'show_outlier_plot']
             NOWTIME = datetime.datetime.now()
             secondaryDefaults = {'acq_date': datetime.date(NOWTIME.year, NOWTIME.month, NOWTIME.day),
-                                    'hvsr_band':(0.1, 50), 'use_hv_curves':True,
-                                    'starttime':datetime.time(0,0,0),
-                                    'endtime':datetime.time(23, 59, 0),
-                                    'peak_freq_range':(0.1, 50),
-                                    'stalta_thresh':(8, 16),
-                                    'period_limits':(0.02, 10),
-                                    'remove_method':['None'],
-                                    'report_export_format':None,
-                                    'report_formats':  ['print', 'table', 'plot', 'html', 'pdf'] ,
-                                    'show_pdf_report':False,
-                                    'show_print_report':True,
-                                    'show_plot_report':False,
-                                    'elev_unit':'m',
-                                    'plot_type':'HVSR p ann C+ p ann Spec p',
-                                    'suppress_report_outputs':True
+                                 'hvsr_band':tuple(DEFAULT_BAND_LIST), 'use_hv_curves':True,
+                                 'starttime':datetime.time(0,0,0),
+                                 'endtime':datetime.time(23, 59, 0),
+                                 'peak_freq_range':tuple(DEFAULT_BAND_LIST),
+                                 'stalta_thresh':(8, 16),
+                                 'period_limits':(DEFAULT_BAND_LIST[1], DEFAULT_BAND_LIST[0]),
+                                 'remove_method':['None'],
+                                 'report_export_format':None,
+                                 'report_formats':  ['print', 'table', 'plot', 'html', 'pdf'] ,
+                                 'show_pdf_report':False,
+                                 'show_print_report':True,
+                                 'show_plot_report':False,
+                                 'elev_unit':'m',
+                                 'plot_type':'HVSR p ann C+ p ann Spec p',
+                                 'suppress_report_outputs':True
                                     }
             
             nonDefaultParams = False
@@ -509,12 +510,12 @@ def main():
 
         st.session_state.stream = st.session_state.hvsr_data['stream']
         st.session_state.stream_edited = st.session_state.hvsr_data['stream_edited']
-
+        
+        
         display_download_buttons()
         st.toast('Displaying results (download available)')
         display_results()
         st.session_state.prev_datapath = st.session_state.input_data
-
 
     def on_read_data():
         if 'read_button' not in st.session_state.keys() or not st.session_state.read_button:
@@ -559,8 +560,6 @@ def main():
             st.session_state.plot_engine = "Plotly"
         else:
             st.session_state.plot_engine = "Matplotlib"
-
-
 
     def display_read_data(do_setup_tabs=False):
         
@@ -774,11 +773,20 @@ def main():
 
         # HVSR File
         try:
-            @st.cache_data
+            #@st.cache_data
             def _convert_hvsr_for_download(_hvsr_data):
-                _hvsrPickle = pickle.dumps(_hvsr_data)
-                return _hvsrPickle
+                hvData = copy.deepcopy(_hvsr_data)
 
+                #print("FRESHDIR!", dir(hvData))
+                #for pk in sprit_hvsr.PLOT_KEYS:
+                #    if hasattr(hvData, pk):
+                #        del hvData[pk]
+                #print("FRESHDIR2!", dir(hvData))
+
+                _hvsrPickle = pickle.dumps(hvData)
+
+                return _hvsrPickle
+    
             hvsrPickle = _convert_hvsr_for_download(st.session_state.hvsr_data)
 
             ##st.session_state.dlHVSR.download_button(
@@ -1459,7 +1467,7 @@ def main():
                             on_click=on_reset, key='reset_button')
             readCol.button(readLabel, disabled=False, use_container_width=True,
                         on_click=on_read_data, key='read_button')
-            runCol.button(runLabel, type='primary', use_container_width=True,
+            runCol.button(runLabel, type='primary',  use_container_width=True,
                         on_click=on_run_data, key='run_button')
         
 
@@ -1620,7 +1628,7 @@ def main():
 
                 rawNoiseCol.toggle("Raw data", disabled=noiseRemDisabled, help='Whether to use the raw input data to remove noise.', key='remove_raw_noise')
 
-                remNoisePopover = st.popover('Remove Noise options', disabled=noiseRemDisabled, use_container_width=True)
+                remNoisePopover = st.popover('Remove Noise options', disabled=noiseRemDisabled,  use_container_width=True)
                 with remNoisePopover:
                     # Auto noise
                     st.toggle("Auto Noise Removal", value=False, disabled=noiseRemDisabled, 
@@ -1721,7 +1729,7 @@ def main():
                 outlierCurveDisabled = not st.session_state.outlier_curves_removal
 
                 # Outlier curves
-                remCurvePopover = st.popover('Remove Outlier Curve Options', disabled=outlierCurveDisabled, use_container_width=True)
+                remCurvePopover = st.popover('Remove Outlier Curve Options', disabled=outlierCurveDisabled,  use_container_width=True)
                 with remCurvePopover:
                     st.number_input("Outlier Threshold", disabled=outlierCurveDisabled, value=98, key='rmse_thresh')
                     st.radio('Threshold type', horizontal=True, disabled=outlierCurveDisabled, options=['Percentile', 'Value'], key='threshRadio')

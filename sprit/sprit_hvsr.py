@@ -8,6 +8,7 @@ See documentation for individual functions for more information.
 import base64
 import copy
 import datetime
+import gzip
 import inspect
 import io
 import json
@@ -781,7 +782,7 @@ class HVSRData:
         class_keys_to_convert = (datetime.date, obspy.UTCDateTime, 
                              datetime.time, CRS, obspy.Inventory)
 
-        def iterative_json_parser(input_attrib, level=0):
+        def iterative_json_parser(input_attrib=self, level=0):
             outValue = input_attrib
             
             if isinstance(input_attrib, dict):  # simplified condition for demo
@@ -882,7 +883,7 @@ class HVSRData:
     
         """
         if copy_type.lower() == 'deep':
-            return HVSRData(copy.deepcopy(self.params))
+            return copy.deepcopy(self)
         else:
             return HVSRData(copy.copy(self.params))
 
@@ -1266,12 +1267,12 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     """
     
     if input_data is None or input_data == '':
-        print("*** PROCESSING SAMPLE DATA ***")
+        print("********************* PROCESSING SAMPLE DATA *****************************************")
         print("To read in your own data, use sprit.run(input_data='/path/to/your/seismic/data.mseed')")
         print("See SpRIT Wiki or API documentation for more information:")
         print("\t Wiki: https://github.com/RJbalikian/SPRIT-HVSR/wiki")
         print("\t API Documentation: https://sprit.readthedocs.io/en/latest/#")
-        print("******************************")
+        print("**************************************************************************************")
         print()
         input_data = 'sample'
     
@@ -2670,7 +2671,7 @@ def export_data(hvsr_data, data_export_path, data_export_format='mseed', startti
     
 
 # Function to export data to .hvsr file (pickled)
-def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr', 
+def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr', export_type='gzip',
                 export_plots=False,
                 verbose=False):
     """Export data into pickle format that can be read back in using import_data().
@@ -2688,7 +2689,6 @@ def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr',
     """
     def _hvsr_export(_hvsr_data=hvsr_data, _export_path=hvsr_export_path, _ext=ext):
         
-        print(dir(_hvsr_data))
         fname = f"{_hvsr_data['site']}_HVSRData_{_hvsr_data['hvsr_id']}_{datetime.date.today()}_pickled.{ext}"
         if _export_path is None or _export_path is True:
             _export_path = _hvsr_data['input_data']
@@ -2699,18 +2699,23 @@ def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr',
                 _export_path = _export_path.joinpath(fname)    
 
         _export_path = str(_export_path)
-        with open(_export_path, 'wb') as f:
-            pickle.dump(_hvsr_data, f) 
-            
+
+        if export_type == 'pickle':
+            with open(_export_path, 'wb') as f:
+                pickle.dump(_hvsr_data, f)
+        else:
+            with gzip.open(_export_path, 'wb') as f:
+                f.write(pickle.dumps(_hvsr_data))
+
         if verbose:
             print('EXPORT COMPLETE')
         print(f"Processed data exported as pickled data to: {_export_path} [~{round(float(pathlib.Path(_export_path).stat().st_size)/2**20,1)} Mb]")    
 
-    hvData = hvsr_data.copy()
-    if export_plots is False:
-        for pk in PLOT_KEYS:
-            if hasattr(hvData, pk):
-                del hvData[pk]
+    #hvData = copy.deepcopy(hvsr_data)
+    #if export_plots is False:
+    #    for pk in PLOT_KEYS:
+    #        if hasattr(hvData, pk):
+    #            del hvData[pk]
 
     if isinstance(hvData, HVSRBatch):
         for sitename in hvData.keys():
@@ -4669,7 +4674,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
 
 
 # Import data
-def import_data(import_filepath, data_format='pickle', show_data=False):
+def import_data(import_filepath, data_format='gzip', show_data=True):
     """Function to import .hvsr (or other extension) data exported using export_hvsr() function
 
     Parameters
@@ -4695,10 +4700,15 @@ def import_data(import_filepath, data_format='pickle', show_data=False):
     elif data_format.lower() == 'dataframe':
         dataIN = pd.read_csv(import_filepath)
     else:
-        dataIN = import_filepath
+        try:
+            with gzip.open(import_filepath, 'rb') as f:
+                dataIN = pickle.loads(f.read())
+        except Exception as e:
+            with open(import_filepath, 'rb') as f:
+                dataIN = pickle.load(f)
     
-    if show_data is False:
-        plt.close()
+    if show_data:
+        print(dataIN)
     
     return dataIN
 
