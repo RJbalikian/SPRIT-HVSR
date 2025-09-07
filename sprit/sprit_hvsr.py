@@ -1753,6 +1753,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         if not kwargs['show_plot']:
             plt.close()
 
+
     return hvsr_results
 
 
@@ -5339,7 +5340,7 @@ def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=
     plotlyList = ['plotly', 'plty', 'p']
 
     if plot_engine.lower() in plotlyList:
-        plotlyFigure = sprit_plot.plot_results(hvsr_data, plot_string=plot_type, azimuth=azimuth,
+        plotlyFigure = sprit_plot.plot_results_plotly(hvsr_data, plot_string=plot_type, azimuth=azimuth,
                                             results_fig=fig, return_fig=return_fig, use_figure_widget=False,
                                             show_results_plot=show_plot)
         if return_fig:
@@ -10236,7 +10237,8 @@ def _generate_html_report(hvsr_results, azimuth='HV', show_html_report=False, ve
     else:
         #htmlstring = plotly.io.to_html(hvsr_results.Plot_Report, include_plotlyjs=False)
         #print(type(htmlstring))
-        img = plotly.io.to_image(hvsr_results.Plot_Report, format='png', engine='kaleido')
+
+        img = hvsr_results.Plot_Report.to_image(format='png', engine='kaleido')
         hvplot_base64 = base64.b64encode(img).decode('utf8')
 
         html = html.replace("./output.png", f'data:image/png;base64,{hvplot_base64}')
@@ -10301,7 +10303,6 @@ def _generate_html_report(hvsr_results, azimuth='HV', show_html_report=False, ve
     html = html.replace("Deg_N", yaxisinfo.unit_name)
 
     hvsr_results['HTML_Report'] = html
-
     # View in browser, if indicated to
     if show_html_report:
         try:

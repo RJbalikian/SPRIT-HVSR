@@ -1133,7 +1133,7 @@ def parse_plot_string(plot_string):
 
 
 # Parse the SPEC part of the plot string
-def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', azimuth='HV',
+def plot_results_plotly(hv_data, plot_string='HVSR p ann C+ p SPEC ann', azimuth='HV',
                 results_fig=None, results_graph_widget=None, use_figure_widget=False,
                 return_fig=False, show_results_plot=False, html_plot=False,
                 verbose=False,):
@@ -1330,10 +1330,10 @@ def plot_results(hv_data, plot_string='HVSR p ann C+ p SPEC ann', azimuth='HV',
                             title=titleString)
     
     # Reset results_graph_widget and display 
-    if results_graph_widget is not None:
-        with results_graph_widget:
-            clear_output(wait=True)
-            display(results_fig)
+    #if results_graph_widget is not None:
+    #    with results_graph_widget:
+    #        clear_output(wait=True)
+    #        display(results_fig)
 
     if show_results_plot:
         if html_plot:

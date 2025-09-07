@@ -24,9 +24,11 @@ from scipy import signal
 try: #For distribution
     from sprit import sprit_utils
     from sprit import sprit_hvsr
+    from sprit import sprit_plot
 except: #For local testing
     import sprit_hvsr 
     import sprit_utils
+    import sprit_plot
 
 global hvsr_data
     
@@ -1954,79 +1956,93 @@ def create_jupyter_ui():
 
         return results_fig
 
-    def update_results_fig(hv_data, plot_string):
+    def update_results_fig(hv_data, plot_string, use_sprit_plot=True):
         global results_fig
         global results_subp
         hvsr_data = hv_data
 
-        if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
-            hvsr_data=hvsr_data[0]
-
-        hvsrDF = hvsr_data.hvsr_windows_df
-
-        plot_list = parse_plot_string(plot_string)
-
-        combinedComp=False
-        noSubplots = 3 - plot_list.count([])
-        if plot_list[1] != [] and '+' not in plot_list[1][0]:
-            combinedComp = True
-            noSubplots -= 1
-        
-        # Get all data for each plotted item
-        # COMP Plot
-        # Figure out which subplot is which
-        if combinedComp:
-            comp_plot_row = 1
-            spec_plot_row = 2
+        if use_sprit_plot:
+            results_fig = sprit_plot.plot_results_plotly(hv_data=hv_data, plot_string=plot_string, azimuth='HV',
+                                              results_fig=results_subp, results_graph_widget=results_fig, use_figure_widget=True,
+                                              return_fig=True, show_results_plot=False, html_plot=False,
+                                              verbose=verbose_check.value)
         else:
-            comp_plot_row = 2
-            spec_plot_row = 3
+            if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
+                hvsr_data=hvsr_data[0]
 
-        # Re-initialize results_fig
-        results_fig.data = []
-        results_fig.update_layout(grid=None)  # Clear the existing grid layout
-        if not combinedComp: 
-            results_subp = subplots.make_subplots(rows=3, cols=1, horizontal_spacing=0.01, vertical_spacing=0.05,
-                                                row_heights=[2, 1.5, 1.5])
-        else:
-            results_subp = subplots.make_subplots(rows=2, cols=1, horizontal_spacing=0.01, vertical_spacing=0.07,
-                                    specs =[[{'secondary_y': True}],
-                                            [{'secondary_y': False}]],
-                                            row_heights=[1, 1])
-        results_fig.update_layout(grid={'rows': noSubplots})
-        #del results_fig
-        results_fig = go.FigureWidget(results_subp)
+            hvsrDF = hvsr_data.hvsr_windows_df
 
-        results_fig = _parse_comp_plot_list(hvsr_data, comp_plot_list=plot_list[1])
+            plot_list = parse_plot_string(plot_string)
 
-        # HVSR Plot (plot this after COMP so it is on top COMP and to prevent deletion with no C+)
-        results_fig = _parse_hv_plot_list(hvsr_data, hvsr_plot_list=plot_list[0])
-        # Will always plot the HV Curve
-        results_fig.add_trace(go.Scatter(x=hvsr_data.x_freqs['Z'],y=hvsr_data.hvsr_curve,
-                            line={'color':'black', 'width':1.5},marker=None, name='HVSR Curve'),
-                            row=1, col='all')
+            combinedComp=False
+            noSubplots = 3 - plot_list.count([])
+            if plot_list[1] != [] and '+' not in plot_list[1][0]:
+                combinedComp = True
+                noSubplots -= 1
+            
+            # Get all data for each plotted item
+            # COMP Plot
+            # Figure out which subplot is which
+            if combinedComp:
+                comp_plot_row = 1
+                spec_plot_row = 2
+            else:
+                comp_plot_row = 2
+                spec_plot_row = 3
 
-        # SPEC plot
-        results_fig = _parse_spec_plot_list(hvsr_data, spec_plot_list=plot_list[2], subplot_num=spec_plot_row)
+            # Re-initialize results_fig
+            results_fig.data = []
+            results_fig.update_layout(grid=None)  # Clear the existing grid layout
+            if not combinedComp: 
+                results_subp = subplots.make_subplots(rows=3, cols=1, horizontal_spacing=0.01, vertical_spacing=0.05,
+                                                    row_heights=[2, 1.5, 1.5])
+            else:
+                results_subp = subplots.make_subplots(rows=2, cols=1, horizontal_spacing=0.01, vertical_spacing=0.07,
+                                        specs =[[{'secondary_y': True}],
+                                                [{'secondary_y': False}]],
+                                                row_heights=[1, 1])
+            results_fig.update_layout(grid={'rows': noSubplots})
+            #del results_fig
+            results_fig = go.FigureWidget(results_subp)
 
-        # Final figure updating
-        showtickLabels = (plot_list[1]==[] or '+' not in plot_list[1][0])
-        if showtickLabels:
-            side='bottom'
-        else:
-            side='top'
-        results_fig.update_xaxes(type='log',
-                        range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
-                        side='top',
-                        row=1, col=1)
-        
-        results_fig.update_xaxes(type='log',overlaying='x',
-                        range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
-                        side='bottom',
-                        row=1, col=1)
-        if comp_plot_row!=1:
-            results_fig.update_xaxes(showticklabels=showtickLabels, row=comp_plot_row, col=1)
-        
+            results_fig = _parse_comp_plot_list(hvsr_data, comp_plot_list=plot_list[1])
+
+            # HVSR Plot (plot this after COMP so it is on top COMP and to prevent deletion with no C+)
+            results_fig = _parse_hv_plot_list(hvsr_data, hvsr_plot_list=plot_list[0])
+            # Will always plot the HV Curve
+            results_fig.add_trace(go.Scatter(x=hvsr_data.x_freqs['Z'],y=hvsr_data.hvsr_curve,
+                                line={'color':'black', 'width':1.5},marker=None, name='HVSR Curve'),
+                                row=1, col='all')
+
+            # SPEC plot
+            results_fig = _parse_spec_plot_list(hvsr_data, spec_plot_list=plot_list[2], subplot_num=spec_plot_row)
+
+            # Final figure updating
+            showtickLabels = (plot_list[1]==[] or '+' not in plot_list[1][0])
+            if showtickLabels:
+                side='bottom'
+            else:
+                side='top'
+            results_fig.update_xaxes(type='log',
+                            range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
+                            side='top',
+                            row=1, col=1)
+            
+            results_fig.update_xaxes(type='log',overlaying='x',
+                            range=[np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1])],
+                            side='bottom',
+                            row=1, col=1)
+            if comp_plot_row!=1:
+                results_fig.update_xaxes(showticklabels=showtickLabels, row=comp_plot_row, col=1)
+
+            results_fig.update_yaxes(title_text='H/V Ratio', row=1, col=1)
+            results_fig.update_yaxes(title_text='H/V Over Time', row=noSubplots, col=1)
+            if comp_plot_row==1:
+                results_fig.update_yaxes(title_text="PSD Amp\n[m2/s4/Hz][dB]", secondary_y=True, row=comp_plot_row, col=1)
+            else:
+                results_fig.update_yaxes(title_text="PSD Amp\n[m2/s4/Hz][dB]", row=comp_plot_row, col=1)
+
+            
         if preview_fig.layout.width is None:
             if outlier_fig.layout.width is None:
                 chartwidth = 1200
@@ -2037,15 +2053,9 @@ def create_jupyter_ui():
             chartwidth = preview_fig.layout.width
 
         results_fig.update_layout(margin={"l":10, "r":10, "t":35, 'b':0}, width=chartwidth,
-                                showlegend=False, height = 0.5625 * float(chartwidth),
-                                title=f"{hvsr_data['site']} Results")
-        results_fig.update_yaxes(title_text='H/V Ratio', row=1, col=1)
-        results_fig.update_yaxes(title_text='H/V Over Time', row=noSubplots, col=1)
-        if comp_plot_row==1:
-            results_fig.update_yaxes(title_text="PSD Amp\n[m2/s4/Hz][dB]", secondary_y=True, row=comp_plot_row, col=1)
-        else:
-            results_fig.update_yaxes(title_text="PSD Amp\n[m2/s4/Hz][dB]", row=comp_plot_row, col=1)
-        
+                                  showlegend=False, height = 0.5625 * float(chartwidth),
+                                  title=f"{hvsr_data['site']} Results")
+
         # Reset results_graph_widget and display 
         with results_graph_widget:
             clear_output(wait=True)
