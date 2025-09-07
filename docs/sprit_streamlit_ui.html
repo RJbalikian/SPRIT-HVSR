@@ -3,19 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
-<meta name="generator" content="pdoc3 0.11.1">
+<meta name="generator" content="pdoc3 0.11.6">
 <title>sprit.sprit_streamlit_ui API documentation</title>
 <meta name="description" content="This file contains the code to run the SpRIT app (via streamlit) both locally and on the web.">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
-<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
 <style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
 <script>window.addEventListener('DOMContentLoaded', () => {
 hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
 hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
 })</script>
 </head>
 <body>
@@ -38,12 +49,1825 @@ hljs.highlightAll();
 <span>def <span class="ident">main</span></span>(<span>)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def main():
+
+    if spritLogoPath.exists():
+        st.logo(image=spritLogoPath, size=&#39;large&#39;,
+                link=r&#34;https://github.com/RJbalikian/SPRIT-HVSR&#34;,
+                icon_image=spritLogoPath)
+        icon = spritLogoPath
+    else:
+        icon = &#34;:material/electric_bolt:&#34;
+        
+    if &#39;sprit&#39; in sys.modules and hasattr(sprit, &#39;__version__&#39;):
+        spritversion = sprit.__version__
+    else:
+        spritversion = &#39;2.0+&#39;
+    aboutStr = &#34;&#34;&#34;
+    # About SpRIT
+    ### This app uses SpRIT v0.0.0
+
+    SpRIT is developed by Riley Balikian at the Illinois State Geological Survey.
+
+    Please visit the following links for any questions:
+    * [App user guide](https://github.com/RJbalikian/sprit-streamlit/wiki)
+    * [API Documentation](https://sprit.readthedocs.io/en/latest/sprit.html)
+    * [Wiki](https://github.com/RJbalikian/SPRIT-HVSR/wiki) 
+    * [Pypi Repository](https://pypi.org/project/sprit/)
+
+    &#34;&#34;&#34;
+    aboutStr = aboutStr.replace(&#39;0.0.0&#39;, spritversion)
+
+    if VERBOSE:
+        print(&#39;Start setting up page config, session state length: &#39;, len(st.session_state.keys()))
+    st.set_page_config(&#39;SpRIT HVSR&#39;,
+                        page_icon=icon,
+                        layout=&#39;wide&#39;,
+                        menu_items={&#39;Get help&#39;: &#39;https://github.com/RJbalikian/SPRIT-HVSR/wiki&#39;,
+                                    &#39;Report a bug&#39;: &#34;https://github.com/RJbalikian/SPRIT-HVSR/issues&#34;,
+                                    &#39;About&#39;: aboutStr})
+
+    if VERBOSE:
+        print(&#39;Start setting up constants/variables, session state length: &#39;, len(st.session_state.keys()))
+    OBSPYFORMATS = [&#39;AH&#39;, &#39;ALSEP_PSE&#39;, &#39;ALSEP_WTH&#39;, &#39;ALSEP_WTN&#39;, &#39;CSS&#39;, &#39;DMX&#39;,
+                    &#39;GCF&#39;, &#39;GSE1&#39;, &#39;GSE2&#39;, &#39;KINEMETRICS_EVT&#39;, &#39;KNET&#39;, &#39;MSEED&#39;,
+                    &#39;NNSA_KB_CORE&#39;, &#39;PDAS&#39;, &#39;PICKLE&#39;, &#39;Q&#39;, &#39;REFTEK130&#39;, &#39;RG16&#39;,
+                    &#39;SAC&#39;, &#39;SACXY&#39;, &#39;SEG2&#39;, &#39;SEGY&#39;, &#39;SEISAN&#39;, &#39;SH_ASC&#39;, &#39;SLIST&#39;,
+                    &#39;SU&#39;, &#39;TRC&#39;,
+                    &#39;TSPAIR&#39;, &#39;WAV&#39;, &#39;WIN&#39;, &#39;Y&#39;]
+    bandVals = [0.05, 0.06, 0.07, 0.08, 0.09,
+                0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
+                1, 2, 3, 4, 5, 6, 7, 8, 9,
+                10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+
+    # SETUP KWARGS
+    if VERBOSE:
+        print(&#39;Start setting up kwargs dicts, session state length: &#39;, len(st.session_state.keys()))
+
+    run_kwargs = {}
+    ip_kwargs = {}
+    fd_kwargs = {}
+    ca_kwargs = {}
+    rn_kwargs = {}
+    gpsd_kwargs = {}
+    phvsr_kwargs = {}
+    roc_kwargs = {}
+    cp_kwargs = {}
+    gr_kwargs = {}
+    run_kwargs = {}
+
+    if VERBOSE:
+        print(&#39;Start getting default values, session state length: &#39;, len(st.session_state.keys()))
+        print_param(PARAM2PRINT)
+
+    # Get default values
+    funList = [[sprit_hvsr.run, run_kwargs], [sprit_hvsr.input_params, ip_kwargs],
+            [sprit_hvsr.fetch_data, fd_kwargs], [sprit_hvsr.calculate_azimuth, ca_kwargs],
+            [sprit_hvsr.remove_noise, rn_kwargs], [sprit_hvsr.generate_psds, gpsd_kwargs],
+            [PPSD, gpsd_kwargs], [sprit_hvsr.process_hvsr, phvsr_kwargs],
+            [sprit_hvsr.remove_outlier_curves, roc_kwargs],
+            [sprit_hvsr.check_peaks, cp_kwargs], [sprit_hvsr.get_report, gr_kwargs]]
+
+
+    # Function to initialize session state variables
+    def initial_setup_fun(session_state_key, initial_value, running_value=&#39;Do not use&#39;):
+        if not hasattr(st.session_state, session_state_key):
+            st.session_state[session_state_key] = initial_value
+        elif running_value != &#34;Do not use&#34;:
+            st.session_state[session_state_key] = running_value
+
+    # Initialize variables
+    initial_setup_fun(&#39;initial_setup&#39;, True, False)
+    initial_setup_fun(&#39;tabs_setup&#39;, False)
+    initial_setup_fun(&#39;mainContain_setup&#39;, False)
+
+
+    def setup_session_state():
+        if st.session_state.initial_setup:
+            # &#34;Splash screen&#34; (only shows at initial startup)
+
+            mainContainerInitText = &#34;&#34;&#34;
+            # SpRIT HVSR
+
+            sprit_logo
+
+            ## About
+            SpRIT HVSR is developed by the Illinois State Geological Survey, part of the Prairie Research Institute at the University of Illinois.
+            
+
+            ## For help with app usage, please visit the app user guide [here](https://github.com/RJbalikian/sprit-streamlit/wiki).
+            
+            ### Related Links
+            * API Documentation may be accessed here: [ReadtheDocs](https://sprit.readthedocs.io/en/latest/sprit.html) and [Github Pages](https://rjbalikian.github.io/SPRIT-HVSR/main.html)
+            * The Wiki and Tutorials may be accessed here: [https://github.com/RJbalikian/SPRIT-HVSR/wiki](https://github.com/RJbalikian/SPRIT-HVSR/wiki)
+            * Source Code may be accessed here: [https://github.com/RJbalikian/SPRIT-HVSR](https://github.com/RJbalikian/SPRIT-HVSR)
+            * PyPI repository may be accessed here: [https://pypi.org/project/sprit/](https://pypi.org/project/sprit/)
+            &#34;&#34;&#34;
+            if spritLogoPath.exists():
+                #encodedImage = 
+                mainContainerInitText = mainContainerInitText.replace(&#39;sprit_logo&#39;, f&#34;&lt;img src=&#39;data:image/png;base64,{base64.b64encode(spritLogoPath.read_bytes()).decode()}&#39; class=&#39;img-fluid&#39;&gt;&#34;)
+            else:
+                mainContainerInitText = mainContainerInitText.replace(&#39;sprit_logo&#39;, &#34;&#34;)
+            
+
+            st.markdown(mainContainerInitText, unsafe_allow_html=True)
+            
+            licenseExpander = st.expander(label=&#39;License information&#39;)
+            licenseInfo = &#34;&#34;&#34;
+            ## MIT License
+            SpRIT is licensed under the MIT License:
+            &gt; Permission is hereby granted, free of charge, to any person obtaining a copy 
+            &gt; of this software and associated documentation files (the &#34;Software&#34;), to deal
+            &gt; in the Software without restriction, including without limitation the rights
+            &gt; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+            &gt; copies of the Software, and to permit persons to whom the Software is
+            &gt; furnished to do so, subject to the following conditions:
+            &gt; 
+            &gt; The above copyright notice and this permission notice shall be included in all
+            &gt; copies or substantial portions of the Software.
+            &gt; 
+            &gt; THE SOFTWARE IS PROVIDED &#34;AS IS&#34;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+            &gt; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+            &gt; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+            &gt; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+            &gt; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+            &gt; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+            &gt; SOFTWARE.&#34;&#34;&#34;
+            licenseExpander.markdown(licenseInfo, unsafe_allow_html=True)
+            
+            versionText = &#34;### This app is using SpRIT v0.0.0&#34;
+            versionText = versionText.replace(&#39;0.0.0&#39;, spritversion)
+            st.markdown(versionText)     
+                        
+            if VERBOSE:
+                print(&#39;Start sig loop, session state length: &#39;, len(st.session_state.keys()))
+                print_param(PARAM2PRINT)
+
+            # Get all function defaults
+            for fun, funDict in funList:
+                funSig = inspect.signature(fun)
+                for arg in funSig.parameters.keys():
+                    if not (funSig.parameters[arg].default is funSig.parameters[arg].empty):
+                        funDict[arg] = funSig.parameters[arg].default
+                        run_kwargs[arg] = funSig.parameters[arg].default
+
+            gpsd_kwargs[&#39;ppsd_length&#39;] = run_kwargs[&#39;ppsd_length&#39;] = 30
+            gpsd_kwargs[&#39;skip_on_gaps&#39;] = run_kwargs[&#39;skip_on_gaps&#39;] = True
+            gpsd_kwargs[&#39;period_step_octaves&#39;] = run_kwargs[&#39;period_step_octaves&#39;] = 0.03125
+            gpsd_kwargs[&#39;period_limits&#39;] = run_kwargs[&#39;period_limits&#39;] = [1/run_kwargs[&#39;hvsr_band&#39;][1], 1/run_kwargs[&#39;hvsr_band&#39;][0]]
+            
+            if VERBOSE:
+                print(&#39;Done getting kwargs: &#39;, len(st.session_state.keys()))
+                print_param(PARAM2PRINT)
+
+                print(&#39;Setting up session state: &#39;, len(st.session_state.keys()))
+            #st.session_state[&#34;updated_kwargs&#34;] = {}
+            for key, value in run_kwargs.items():
+                if VERBOSE:
+                    print(&#39;resetting&#39;)
+                    print_param(PARAM2PRINT)
+                    print(key, &#34;: &#34;, value)
+                #    if key in st.session_state.keys() and (st.session_state[key] != value):
+                st.session_state[key] = value
+
+            #listItems = [&#39;source&#39;, &#39;tzone&#39;, &#39;elev_unit&#39;, &#39;data_export_format&#39;, &#39;detrend&#39;, &#39;special_handling&#39;, &#39;peak_selection&#39;, &#39;freq_smooth&#39;, &#39;horizontal_method&#39;, &#39;stalta_thresh&#39;]
+            ## Convert items to lists
+            #for arg, value in st.session_state.items():
+            #    if arg in listItems:
+            #        valList = [value]
+            #        st.session_state[arg] = valList
+            #        run_kwargs[arg] = st.session_state[arg]
+
+            # Convert lists and numbers to strings
+            strItems = [&#39;channels&#39;, &#39;xcoord&#39;, &#39;ycoord&#39;, &#39;elevation&#39;, &#39;detrend_options&#39;, &#39;filter_options&#39;, &#39;horizontal_method&#39;]
+            for arg, value in st.session_state.items():
+                if arg in strItems:
+                    if isinstance(value, (list, tuple)):
+                        newVal = &#39;[&#39;
+                        for item in value:
+                            newVal = newVal+item+&#39;, &#39;
+                        newVal = newVal[:-2]+&#39;]&#39;
+
+                        st.session_state[arg] = newVal
+                        run_kwargs[arg] = newVal
+                    else:
+                        st.session_state[arg] = str(value)
+                        run_kwargs[arg] = str(value)
+
+            if VERBOSE:
+                print_param(PARAM2PRINT)
+
+            # Convert all times to python datetime objects
+            dtimeItems=[&#39;acq_date&#39;, &#39;starttime&#39;, &#39;endtime&#39;]
+            for arg , value in st.session_state.items():
+                if arg in dtimeItems:
+                    if isinstance(value, str):
+                        st.session_state[arg] = datetime.datetime.strptime(value, &#34;%Y-%m-%d&#34;)
+                        run_kwargs[arg] = datetime.datetime.strptime(value, &#34;%Y-%m-%d&#34;)
+                    elif isinstance(st.session_state[arg], UTCDateTime):
+                        st.session_state[arg] = value.datetime
+                        run_kwargs[arg] = value.datetime
+                    else:
+                        st.session_state[arg] = value
+                        run_kwargs[arg] = value
+            
+            if VERBOSE:
+                print_param(PARAM2PRINT)
+
+            # Case matching
+            st.session_state.data_export_format = run_kwargs[&#39;data_export_format&#39;] = st.session_state.data_export_format.upper()
+            st.session_state.detrend = run_kwargs[&#39;detrend&#39;] = st.session_state.detrend.title()
+            st.session_state.azimuth_type = run_kwargs[&#39;azimuth_type&#39;] = st.session_state.azimuth_type.title()
+            st.session_state.peak_selection = run_kwargs[&#39;peak_selection&#39;] = st.session_state.peak_selection.title()
+            st.session_state.freq_smooth = run_kwargs[&#39;freq_smooth&#39;] = st.session_state.freq_smooth.title()
+            st.session_state.source = run_kwargs[&#39;source&#39;] = st.session_state.source.title()
+            st.session_state.plot_engine = run_kwargs[&#39;plot_engine&#39;] = st.session_state.plot_engine.title()
+                
+            # Update Nones
+            # Remove method
+            if st.session_state.remove_method is None:
+                st.session_state.remove_method = run_kwargs[&#39;remove_method&#39;] = &#39;None&#39;
+            else:
+                st.session_state.remove_method = run_kwargs[&#39;remove_method&#39;] = st.session_state.remove_method.title()
+
+            # Other updates
+            st.session_state.azimuth_unit = run_kwargs[&#39;azimuth_unit&#39;] = &#39;°&#39;
+            st.session_state.plot_engine = run_kwargs[&#39;plot_engine&#39;] = &#34;Matplotlib&#34;
+            
+
+            # Horizontal_method
+            methodDict = {&#39;0&#39;:&#39;Diffuse Field Assumption&#39;, &#39;1&#39;:&#39;Arithmetic Mean&#39;, &#39;2&#39;:&#39;Geometric Mean&#39;, &#39;3&#39;:&#39;Vector Summation&#39;, &#39;4&#39;:&#39;Quadratic Mean&#39;, &#39;5&#39;:&#39;Maximum Horizontal Value&#39;, &#39;6&#39;:&#39;Azimuth&#39;, &#34;None&#34;:&#34;Vector Summation&#34;}            
+            if st.session_state.horizontal_method is None:
+                st.session_state.horizontal_method = run_kwargs[&#39;horizontal_method&#39;] = methodDict[&#34;3&#34;]            
+            else:
+                st.session_state.horizontal_method = run_kwargs[&#39;horizontal_method&#39;] = methodDict[st.session_state.horizontal_method]
+
+            # Set Defaults
+            st.session_state.default_params = run_kwargs
+
+            if VERBOSE:
+                print_param(PARAM2PRINT)
+
+            st.session_state.run_kws = list(run_kwargs.keys())
+            
+            if VERBOSE:
+                for key, value in st.session_state.items():
+                    print(&#34;session st: &#34;, st.session_state[key], type( st.session_state[key]), &#39;| rkwargs:&#39;, value, type(value))
+
+
+            if VERBOSE:
+                print(&#39;Done with setup, session state length: &#39;, len(st.session_state.keys()))
+                print_param(PARAM2PRINT)
+
+            st.session_state[&#39;NewSessionState&#39;] = copy.copy(st.session_state)
+
+
+    def check_if_default():
+        if len(st.session_state.keys()) &gt; 0:
+            print(&#39;Checking defaults, session state length: &#39;, len(st.session_state.keys()))
+            print_param(PARAM2PRINT)
+
+
+    if VERBOSE:
+        check_if_default()
+
+
+    def text_change(VERBOSE=VERBOSE):
+        #Just a function to run so something is done when text changes
+        if VERBOSE:
+            print(&#39;TEXTCHange&#39;)
+
+
+    def on_file_upload():
+        file = st.session_state.datapath_uploader
+        temp_dir = tempfile.mkdtemp()
+        path = pathlib.Path(temp_dir).joinpath(file.name)
+        with open(path, &#34;wb&#34;) as f:
+                f.write(file.getvalue())
+        if VERBOSE:
+            print(file.name)
+        st.session_state.input_data = path.as_posix()
+
+
+    # Set up main container
+    def setup_main_container(do_setup_tabs=False):
+        mainContainer = st.container()
+        st.session_state.mainContainer = mainContainer
+
+        if do_setup_tabs:
+            setup_tabs(mainContainer)
+        
+        st.session_state.mainContain_setup = True
+
+
+    if not st.session_state.initial_setup:
+        setup_main_container(do_setup_tabs=False)
+
+
+    # Set up tabs
+    def setup_tabs(mainContainer):
+        
+        resultsTab, inputTab, outlierTab, infoTab = mainContainer.tabs([&#39;Results&#39;, &#39;Data&#39;, &#39;Outliers&#39;, &#39;Info&#39;])
+        plotReportTab, csvReportTab, strReportTab = resultsTab.tabs([&#39;Summary/Plot&#39;, &#39;Results Table&#39;, &#39;Print Report&#39;])
+
+        st.session_state.inputTab = inputTab
+        st.session_state.outlierTab = outlierTab
+        st.session_state.infoTab = infoTab
+        st.session_state.resultsTab = resultsTab
+        st.session_state.plotReportTab = plotReportTab
+        st.session_state.csvReportTab = csvReportTab
+        st.session_state.strReportTab = strReportTab
+
+        st.session_state.tabs_setup = True
+
+
+    def on_run_data():
+        # Runs sample data if nothing specified
+        if st.session_state.input_data == &#39;&#39;:
+            st.session_state.input_data = &#39;sample&#39;
+
+        # Now run the data
+        srun = {}
+        for key, value in st.session_state.items():
+            if key in st.session_state.run_kws:
+                if value != st.session_state.default_params[key]:
+                    if str(value) != str(st.session_state.default_params[key]):
+                        srun[key] = value
+            
+            if key == &#39;plot_engine&#39;:
+                srun[key] = value
+                
+        # Get plots all right
+        #srun[&#39;plot_engine&#39;] = &#39;matplotlib&#39;
+        srun[&#39;plot_input_stream&#39;] = True
+        srun[&#39;show_outlier_plot&#39;] = False
+        srun[&#39;show_plot&#39;] = False
+        srun[&#39;verbose&#39;] = False #True
+
+        # Update outputs
+        srun[&#39;report_export_format&#39;] = None
+        srun[&#39;show_pdf_report&#39;] = False
+        srun[&#39;show_print_report&#39;] = True
+        srun[&#39;show_plot_report&#39;] = False
+        
+        if VERBOSE:
+            print(&#39;SPRIT RUN&#39;, srun)
+        st.toast(&#39;Data is processing&#39;, icon=&#34;⌛&#34;)
+        
+        setup_main_container(do_setup_tabs=False)
+        with st.session_state.mainContainer:
+            spinnerText = &#39;## Data is processing with default parameters.&#39;
+            excludedKeys = [&#39;plot_engine&#39;, &#39;plot_input_stream&#39;, &#39;show_plot&#39;, &#39;verbose&#39;, &#39;show_outlier_plot&#39;]
+            NOWTIME = datetime.datetime.now()
+            secondaryDefaults = {&#39;acq_date&#39;: datetime.date(NOWTIME.year, NOWTIME.month, NOWTIME.day),
+                                 &#39;hvsr_band&#39;:tuple(DEFAULT_BAND_LIST), &#39;use_hv_curves&#39;:True,
+                                 &#39;starttime&#39;:datetime.time(0,0,0),
+                                 &#39;endtime&#39;:datetime.time(23, 59, 0),
+                                 &#39;peak_freq_range&#39;:tuple(DEFAULT_BAND_LIST),
+                                 &#39;stalta_thresh&#39;:(8, 16),
+                                 &#39;period_limits&#39;:(1/DEFAULT_BAND_LIST[1], 1/DEFAULT_BAND_LIST[0]),
+                                 &#39;remove_method&#39;:[&#39;None&#39;],
+                                 &#39;report_export_format&#39;:None,
+                                 &#39;report_formats&#39;:  [&#39;print&#39;, &#39;table&#39;, &#39;plot&#39;, &#39;html&#39;, &#39;pdf&#39;] ,
+                                 &#39;show_pdf_report&#39;:False,
+                                 &#39;show_print_report&#39;:True,
+                                 &#39;show_plot_report&#39;:False,
+                                 &#39;elev_unit&#39;:&#39;m&#39;,
+                                 &#39;plot_type&#39;:&#39;HVSR p ann C+ p ann Spec p&#39;,
+                                 &#39;suppress_report_outputs&#39;:True
+                                    }
+            
+            nonDefaultParams = False
+
+            srun[&#39;report_formats&#39;] = [&#39;print&#39;, &#39;table&#39;, &#39;plot&#39;, &#39;html&#39;, &#39;pdf&#39;]
+            srun[&#39;suppress_report_outputs&#39;] = True
+            if &#39;input_data&#39; in srun:
+                del srun[&#39;input_data&#39;]
+
+            # Display non-default parameters, if applicable
+            for key, value in srun.items():
+                if key not in excludedKeys:
+                    if key in secondaryDefaults and secondaryDefaults[key] == value:
+                        pass
+                    else:
+                        if nonDefaultParams is False:
+                            spinnerDFList = []
+                        nonDefaultParams = True
+
+                        def _get_centered_text(text, just=&#39;center&#39;, add_parenth=False, size=20):
+                            if len(str(text)) &gt; size:
+                                keyText = str(text)[:size-5]+ &#39;...&#39;
+                            else:
+                                keyText = str(text)
+                            
+                            if add_parenth:
+                                keyText = f&#34;({keyText})&#34;
+
+                            if just==&#39;center&#39;:
+                                return keyText.center(size)
+                            elif just==&#39;right&#39;:
+                                return keyText.rjust(size)
+                            elif just==&#39;left&#39;:
+                                return keyText.ljust(size)
+                        
+
+                        keyText = _get_centered_text(key)
+                        valText = _get_centered_text(value, just=&#39;center&#39;)
+                        valTypeText = _get_centered_text(type(value), just=&#39;left&#39;, add_parenth=True)
+                        defValText = _get_centered_text(st.session_state.default_params[key], just=&#39;center&#39;)
+                        defValTypeText = _get_centered_text(type(st.session_state.default_params[key]), just=&#39;left&#39;, add_parenth=True)
+
+                        spinnerText = spinnerText + f&#34;\n\t| {keyText} | {valText} {valTypeText} | {defValText} {defValTypeText}     |&#34;
+                        spinnerDFList.append([key, value, type(value), st.session_state.default_params[key], type(st.session_state.default_params[key])])
+
+            if nonDefaultParams:
+                spinnerText = spinnerText.replace(&#39;default&#39;, &#39;the following non-default&#39;)
+                tableHeader =  &#34;\n\t|      Parameter       |           Input Value (and type)          |            Default value (and type)           |&#34;
+                tableHeader2 = &#34;\n\t|----------------------|-------------------------------------------|-----------------------------------------------|\n\t&#34;
+                spinnerText = spinnerText.replace(&#34;\n\t&#34;, tableHeader+tableHeader2, 1)
+
+                spinnerDF = pd.DataFrame(spinnerDFList, columns=[&#39;Parameter&#39;, &#34;Value Selected&#34;, &#34;Selected value type&#34;, &#39;Default Value&#39;, &#39;Default value type&#39;])
+            with st.spinner(spinnerText, show_time=True):
+                st.session_state.hvsr_data = sprit_hvsr.run(input_data=st.session_state.input_data, **srun)
+        
+        st.balloons()
+
+        st.session_state.stream = st.session_state.hvsr_data[&#39;stream&#39;]
+        st.session_state.stream_edited = st.session_state.hvsr_data[&#39;stream_edited&#39;]
+        
+        
+        display_download_buttons()
+        st.toast(&#39;Displaying results (download available)&#39;)
+        display_results()
+        st.session_state.prev_datapath = st.session_state.input_data
+
+    def on_read_data():
+        if &#39;read_button&#39; not in st.session_state.keys() or not st.session_state.read_button:
+            return
+
+
+        if st.session_state.input_data == &#39;&#39; or st.session_state.input_data is None:
+            st.session_state.input_data = &#39;sample&#39;
+
+        st.session_state.mainContainer = st.container()
+        st.session_state.inputTab, st.session_state.infoTab = st.session_state.mainContainer.tabs([&#39;Raw Seismic Data&#39;, &#39;Info&#39;])
+
+        if st.session_state.input_data != &#39;&#39;:
+            srun = {}
+            for key, value in st.session_state.items():
+                if key in st.session_state.run_kws:
+                    if value != st.session_state.default_params[key]:
+                        if str(value) != str(st.session_state.default_params[key]):
+                            srun[key] = value
+                
+                if key == &#39;plot_engine&#39;:
+                    srun[key] = value
+        
+        ipKwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.input_params).parameters.keys())}
+        fdKwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.fetch_data).parameters.keys())}
+
+        st.toast(&#39;Reading data&#39;, icon=&#34;⌛&#34;)
+        with st.spinner(f&#34;Reading data: {ipKwargs[&#39;input_data&#39;]}&#34;):
+            inParams = sprit_hvsr.input_params(**ipKwargs)
+            st.session_state.hvsr_data = sprit_hvsr.fetch_data(inParams, **fdKwargs)
+        st.session_state.stream = st.session_state.hvsr_data.stream
+        if hasattr(st.session_state.hvsr_data, &#39;stream_edited&#39;):
+            st.session_state.stream_edited = st.session_state.hvsr_data.stream_edited
+        else:
+            st.session_state.stream_edited = st.session_state.hvsr_data.stream.copy()
+
+        display_read_data(do_setup_tabs=False)
+
+
+    def do_interactive_display():
+        if st.session_state.interactive_display:
+            st.session_state.plot_engine = &#34;Plotly&#34;
+        else:
+            st.session_state.plot_engine = &#34;Matplotlib&#34;
+
+    def display_read_data(do_setup_tabs=False):
+        
+        if do_setup_tabs:
+            st.session_state.mainContainer = st.container()
+            st.session_state.inputTab, st.session_state.infoTab = st.session_state.mainContainer.tabs([&#39;Raw Seismic Data&#39;, &#39;Info&#39;])
+        
+        st.session_state.input_fig = make_input_fig_plotly()
+        
+        if st.session_state.plot_engine == &#39;Matplotlib&#39;:
+            st.session_state.input_fig = make_input_fig_pyplot()
+            
+            if not hasattr(st.session_state, &#39;data_plot&#39;):
+                st.session_state.data_chart_event = st.session_state.inputTab.pyplot(st.session_state.input_fig, use_container_width=True)
+                st.session_state.data_plot = None
+        else:
+            if not hasattr(st.session_state, &#39;data_plot&#39;):
+                st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
+                                                on_select=update_data, key=&#39;data_plot&#39;, 
+                                                selection_mode=&#39;box&#39;, use_container_width=True, theme=&#39;streamlit&#39;)
+            else:
+                st.session_state.data_chart_event = st.session_state.data_plot
+
+            st.session_state.inputTab.write(&#34;Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.&#34;)
+            st.session_state.input_selection_mode = st.session_state.inputTab.pills(&#39;Window Selection Mode&#39;, options=[&#39;Add&#39;, &#34;Delete&#34;], key=&#39;input_selection_toggle&#39;,
+                                                        default=&#39;Add&#39;, on_change=update_selection_type, disabled=True,
+                                                        help=&#39;If in &#34;Add&#34; mode, windows for removal will be added at your selection. If &#34;Delete&#34; mode, these windows will be deleted. Currently only &#34;Add&#34; supported&#39;)
+        
+
+        # Print information about the data to Info tab
+        st.session_state.infoTab.header(&#34;Information About Input Data&#34;)
+        st.session_state.infoTab.write(f&#34;Acquisition Date: {st.session_state.hvsr_data[&#39;acq_date&#39;]}&#34;)
+
+        recLength = (UTCDateTime(st.session_state.hvsr_data[&#39;stream&#39;][0].stats.endtime) - UTCDateTime(st.session_state.hvsr_data[&#39;stream&#39;][0].stats.starttime))
+        st.session_state.infoTab.write(f&#34;Record Length: {recLength/60:.2f} minutes ({recLength} seconds)&#34;)
+        st.session_state.infoTab.write(&#34;---&#34;)
+        st.session_state.infoTab.code(str(st.session_state.hvsr_data))
+
+
+    def display_buttons_and_results():
+        display_download_buttons()
+        display_results()
+
+
+    def display_results():
+        # Set up container for output data
+        setup_main_container(do_setup_tabs=True)
+        st.toast(&#39;Displaying results&#39;)
+
+        if st.session_state.interactive_display:
+           st.session_state.plot_engine = &#34;Plotly&#34;
+        
+        if st.session_state.plot_engine == &#34;Plotly&#34;:
+            # Print main results right away if taking time to plot others
+            if st.session_state.interactive_display:
+                st.session_state.mainContainer.code(body=st.session_state.hvsr_data[&#39;Print_Report&#39;],
+                                                language=&#39;text&#39;)
+                st.session_state.mainContainer.dataframe(data=st.session_state.hvsr_data[&#39;Table_Report&#39;])
+
+            # Input data
+            if st.session_state.interactive_display or (hasattr(st.session_state, &#39;data_results_toggle&#39;) and st.session_state.data_results_toggle):
+                st.session_state.input_fig = make_input_fig_plotly()
+                st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
+                                                    on_select=update_data, key=&#39;data_plot&#39;,
+                                                    selection_mode=&#39;box&#39;, use_container_width=True, theme=&#39;streamlit&#39;)
+
+                st.session_state.inputTab.write(&#34;Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.&#34;)
+                st.session_state.input_selection_mode = st.session_state.inputTab.pills(&#39;Window Selection Mode&#39;, options=[&#39;Add&#39;, &#34;Delete&#34;], key=&#39;input_selection_toggle&#39;,
+                                                        default=&#39;Add&#39;, on_change=update_selection_type, disabled=True, 
+                                                        help=&#39;If in &#34;Add&#34; mode, windows for removal will be added at your selection. If &#34;Delete&#34; mode, these windows will be deleted. Currently only &#34;Add&#34; supported&#39;)
+            
+            else:
+                st.session_state.inputTab.toggle(label=&#39;Display input data stream and windows used&#39;,
+                                                value=False,
+                                                on_change=display_buttons_and_results,
+                                                help=&#39;Toggle on to display interactive chart with input data stream for selecting windows for removal.&#39;,
+                                                key=&#39;data_results_toggle&#39;)
+                
+            write_to_info_tab(st.session_state.infoTab)
+
+            if st.session_state.interactive_display or (hasattr(st.session_state, &#39;outlier_toggle&#39;) and st.session_state.outlier_toggle):
+                outlier_plot_in_tab()
+            else:
+                st.session_state.outlierTab.toggle(label=&#39;Display outlier chart&#39;,
+                                                value=False,
+                                                help=&#39;Turn on to display outlier chart (you may need to navigate back to this tab)&#39;,
+                                                key=&#39;outlier_toggle&#39;,
+                                                on_change=display_buttons_and_results)
+
+            if st.session_state.interactive_display:
+                st.session_state.plotReportTab.plotly_chart(st.session_state.hvsr_data[&#39;Plot_Report&#39;], use_container_width=True)
+            else:
+                st.session_state.plotReportTab.html(st.session_state.hvsr_data[&#34;HTML_Report&#34;])
+
+            st.session_state.csvReportTab.dataframe(data=st.session_state.hvsr_data[&#39;Table_Report&#39;])
+            st.session_state.strReportTab.code(st.session_state.hvsr_data[&#39;Print_Report&#39;], language=None)
+
+        else:  # Matplotlib
+            # Input plot
+            st.session_state.input_fig = make_input_fig_pyplot()
+            st.session_state.data_chart_event = st.session_state.inputTab.pyplot(st.session_state.input_fig,
+                                                                                 use_container_width=True)
+
+            # Info tab
+            write_to_info_tab(st.session_state.infoTab)
+
+            # Outlier chart
+            outlier_plot_in_tab()
+
+            if st.session_state.interactive_display:
+                st.session_state.plotReportTab.pyplot(st.session_state.hvsr_data[&#39;Plot_Report&#39;], use_container_width=True)
+            else:
+                st.session_state.plotReportTab.html(st.session_state.hvsr_data[&#34;HTML_Report&#34;])
+                #st.session_state.plotReportTab.pyplot(st.session_state.hvsr_data[&#39;Plot_Report&#39;], use_container_width=True)
+            st.session_state.csvReportTab.dataframe(data=st.session_state.hvsr_data[&#39;Table_Report&#39;])
+            st.session_state.strReportTab.code(st.session_state.hvsr_data[&#39;Print_Report&#39;], language=None)
+
+    @st.fragment
+    def display_download_buttons():
+        ##dlText, dlPDFReport, dlStream, dlTable, dlPlot, dlHVSR = st.session_state.mainContainer.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])
+        dlText, dlStream, dlHVSR, dlPDFReport, dlTable, dlPlot = st.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])
+        st.divider()
+
+        # Download Buttons
+        ##st.session_state.dlText.text(&#34;Download Results: &#34;)
+        dlText.text(&#34;Download Results: &#34;)
+
+        # Set up variables for download section
+        hvData = st.session_state.hvsr_data
+        hvID = &#39;&#39;
+        if hasattr(hvData, &#39;hvsr_id&#39;):
+            hvID = hvData[&#39;hvsr_id&#39;]
+
+        nowTimeStr = datetime.datetime.now().strftime(&#34;%Y-%m-%d&#34;)
+
+        # PDF Report download
+        #@st.cache_data
+        def _convert_pdf_for_download(_hv_data):
+            pdfPath = sprit_hvsr._generate_pdf_report(_hv_data, return_pdf_path=True)
+            with open(pdfPath, &#34;rb&#34;) as pdf_file:
+                PDFbyte = pdf_file.read()
+            return PDFbyte
+
+        pdf_byte = _convert_pdf_for_download(hvData)
+
+        dlPDFReport.download_button(label=&#34;Report (.pdf)&#34;,
+                    data=pdf_byte,
+                    #on_click=display_results,
+                    file_name=f&#34;{hvData.site}_Report_{hvID}_{nowTimeStr}.pdf&#34;,
+                    mime=&#39;application/octet-stream&#39;,
+                    icon=&#34;:material/summarize:&#34;)
+
+        # Data Stream
+        #@st.cache_data
+        def _convert_stream_for_download(_stream):
+            strm = io.BytesIO()
+            _stream = _stream.split()
+            _stream.write(strm, format=&#39;MSEED&#39;)
+            return strm.getvalue()
+        streamBytes = _convert_stream_for_download(hvData.stream)
+
+        ##st.session_state.dlStream.download_button(
+        dlStream.download_button(
+            label=&#39;Data (.mseed)&#39;,
+            data=streamBytes,
+            #on_click=display_results,
+            file_name=f&#34;{hvData.site}_Stream_{hvID}_{nowTimeStr}.mseed&#34;,
+            icon=&#34;:material/graphic_eq:&#34;
+        )
+
+        # Table download
+        #@st.cache_data
+        def _convert_table_for_download(df):
+            return df.to_csv().encode(&#34;utf-8&#34;)
+
+        csv = _convert_table_for_download(st.session_state.hvsr_data[&#39;Table_Report&#39;])
+
+        ##st.session_state.dlTable.download_button(
+        dlTable.download_button(
+            label=&#34;Table (.csv)&#34;,
+            data=csv,
+            file_name=f&#34;{hvData.site}_TableReport_{hvID}_{nowTimeStr}.csv&#34;,
+            #on_click=display_results,
+            mime=&#34;text/csv&#34;,
+            icon=&#34;:material/table:&#34;,
+        )
+
+        # Plot
+        #@st.cache_data
+        def _convert_plot_for_download(_HV_Plot):            
+            _img = io.BytesIO()
+            if st.session_state.plot_engine == &#39;Matplotlib&#39;:
+                _HV_Plot.savefig(_img, format=&#39;png&#39;)
+            else:
+                _img = _HV_Plot.to_image(format=&#39;png&#39;)
+            
+            return _img
+
+        img = _convert_plot_for_download(hvData[&#39;Plot_Report&#39;])
+
+        ##st.session_state.dlPlot.download_button(
+        dlPlot.download_button(
+            label=&#34;Plot (.png)&#34;,
+            data=img,
+            file_name=f&#34;{hvData.site}_HV-Plot_{hvID}_{nowTimeStr}.png&#34;,
+            mime=&#34;image/png&#34;,
+            #on_click=display_results,
+            icon=&#34;:material/analytics:&#34;
+            )
+
+
+        # HVSR File
+        try:
+            #@st.cache_data
+            def _convert_hvsr_for_download(_hvsr_data):
+                hvData = copy.deepcopy(_hvsr_data)
+
+                for pk in sprit_hvsr.PLOT_KEYS:
+                    if hasattr(hvData, pk):
+                        delattr(hvData, pk)
+
+                _hvsrPickle = pickle.dumps(hvData)
+
+                return _hvsrPickle
+    
+            hvsrPickle = _convert_hvsr_for_download(st.session_state.hvsr_data)
+
+            ##st.session_state.dlHVSR.download_button(
+            dlHVSR.download_button(
+                label=&#34;Pickled (.hvsr)&#34;,
+                data=hvsrPickle,
+                file_name=f&#34;{hvData.site}_HVSRData_{hvID}_{nowTimeStr}_pickled_app.hvsr&#34;,
+                #on_click=display_results,
+                mime=&#39;application/octet-stream&#39;,
+                icon=&#34;:material/database:&#34;)
+        except Exception as e:
+            print(e)
+            ##st.session_state.dlHVSR.button(
+            dlHVSR.download_button(
+                label=&#34;.hvsr not available&#34;,
+                data=&#39;HVSR Data &#39;,
+                disabled=True,
+                icon=&#34;:material/database:&#34;)
+
+
+    def on_reset():
+        st.toast(&#34;Session state cleared&#34;)
+        st.session_state = st.session_state[&#39;NewSessionState&#39;]
+
+
+    def _get_use_array(hvsr_data, f=None, timeWindowArr=None, psdArr=None):
+        streamEdit = st.session_state.stream_edited.copy()
+
+        earliestStart = UTCDateTime(3000, 12, 31)
+        for trace in streamEdit:
+            if trace.stats.starttime &lt; earliestStart:
+                earliestStart = trace.stats.starttime
+
+        zList = []
+        eList = []
+        nList = []
+        streamEdit = streamEdit.split()
+        for trace in streamEdit:
+            traceSTime = trace.stats.starttime
+            traceETime = trace.stats.endtime
+
+            if trace.stats.component == &#39;Z&#39;:
+                zList.append([traceSTime, traceETime])
+            if trace.stats.component == &#39;E&#39;:
+                eList.append([traceSTime, traceETime])
+            if trace.stats.component == &#39;N&#39;:
+                nList.append([traceSTime, traceETime])
+
+        gapListUTC = []
+        for i, currWindow in enumerate(zList):
+            if i &gt; 0:
+                prevWindow = zList[i-1]
+
+                gapListUTC.append([prevWindow[1], currWindow[0]])
+
+        gapList = [[np.datetime64(gTimeUTC.datetime) for gTimeUTC in gap] for gap in gapListUTC]
+
+        if hasattr(hvsr_data, &#39;hvsr_windows_df&#39;):
+            hvdf = hvsr_data.hvsr_windows_df
+            tps = pd.Series(hvdf.index.copy(), name=&#39;TimesProcessed_Start&#39;, index=hvdf.index)
+            hvdf[&#34;TimesProcessed_Start&#34;] = tps
+            useArrShape = np.array(f).shape[0]
+            
+        else:
+            useSeriesList = []
+            sTimeSeriesList = []
+            eTimeSeriesList = []
+            useArrShape = 0
+            for i, tArr in enumerate(timeWindowArr):
+                useSeriesList.extend([True]*(np.array(tArr).shape[0]-1))
+                sTimeSeriesList.extend(tArr[:-1])
+                eTimeSeriesList.extend(tArr[1:])
+                
+                useArrShape += np.array(psdArr[i]).shape[0]
+
+            useSeries = pd.Series(useSeriesList, name=&#39;Use&#39;)
+            sTimeSeries = pd.Series(sTimeSeriesList, name=&#39;TimesProcessed&#39;)
+            eTimeSeries = pd.Series(eTimeSeriesList, name=&#39;TimesProcessed_End&#39;)
+
+            hvdf = pd.DataFrame({&#39;TimesProcessed&#39;:sTimeSeries,
+                                &#39;TimesProcessed_End&#39;:eTimeSeries,
+                                &#39;Use&#39;:useSeries})
+
+            hvdf.set_index(&#39;TimesProcessed&#39;, inplace=True, drop=True)
+            hvdf[&#39;TimesProcessed_Start&#39;] = sTimeSeriesList
+            
+
+        if &#39;TimesProcessed_Obspy&#39; not in hvdf.columns:
+            hvdf[&#39;TimesProcessed_Obspy&#39;] = [UTCDateTime(dt64) for dt64 in sTimeSeries]
+            hvdf[&#39;TimesProcessed_ObspyEnd&#39;] = [UTCDateTime(dt64) for dt64 in eTimeSeries]
+
+        # Do processing
+        if len(gapListUTC) &gt; 0:
+            for gap in gapListUTC:
+
+                stOutEndIn = hvdf[&#39;TimesProcessed_Obspy&#39;].gt(gap[0]) &amp; hvdf[&#39;TimesProcessed_Obspy&#39;].lt(gap[1])
+                stInEndOut = hvdf[&#39;TimesProcessed_ObspyEnd&#39;].gt(gap[0]) &amp; hvdf[&#39;TimesProcessed_ObspyEnd&#39;].lt(gap[1])
+                bothIn = hvdf[&#39;TimesProcessed_Obspy&#39;].lt(gap[0]) &amp; hvdf[&#39;TimesProcessed_ObspyEnd&#39;].gt(gap[1])
+                bothOut = hvdf[&#39;TimesProcessed_Obspy&#39;].gt(gap[0]) &amp; hvdf[&#39;TimesProcessed_ObspyEnd&#39;].lt(gap[1])
+
+                hvdf.loc[hvdf[stOutEndIn | stInEndOut | bothIn | bothOut].index, &#39;Use&#39;] = False
+
+        return hvdf, useArrShape
+
+
+    @st.cache_data
+    def _generate_stream_specgram(_trace):
+
+        return signal.spectrogram(x=_trace.data,
+                                fs=_trace.stats.sampling_rate,
+                                mode=&#39;magnitude&#39;)
+
+
+    def make_input_fig_pyplot():
+        hvsr_data = st.session_state.hvsr_data
+        stream = hvsr_data.stream
+        
+        inputFig = sprit_plot._plot_input_stream_mpl(stream=stream,
+                                                     hv_data=hvsr_data,
+                                                     return_fig=True)
+        
+        st.session_state.input_fig = inputFig
+        st.session_state.hvsr_data.Input_Plot = inputFig
+
+        return inputFig
+
+    def make_input_fig_plotly():
+        no_subplots = 5
+        inputFig = make_subplots(rows=no_subplots, cols=1,
+                                        row_heights=[0.5, 0.02, 0.16, 0.16, 0.16],
+                                        shared_xaxes=True,
+                                        horizontal_spacing=0.01,
+                                        vertical_spacing=0.01
+                                        )
+
+        hvsr_data = st.session_state.hvsr_data
+
+        # Windows PSD and Used
+        #psdArr = np.flip(hvsr_data.ppsds[&#34;Z&#34;][&#39;psd_values&#39;].T)
+        zStream = st.session_state.stream.select(component=&#39;Z&#39;).merge() 
+        zTraces = zStream.split()
+        zTrace = zStream[0]
+
+        eStream = st.session_state.stream.select(component=&#39;E&#39;).merge() 
+        eTraces = eStream.split()
+        eTrace = eStream[0]
+
+        nStream = st.session_state.stream.select(component=&#39;N&#39;).merge()
+        nTraces = nStream.split()
+        nTrace = nStream[0]
+
+        specKey = &#39;Z&#39;
+
+        xTraceTimesAppZ = []
+        f = []
+        specTimes = []
+        psdArr = []
+        timeWindowArr = []
+
+        sTimeZ = zTraces[0].stats.starttime
+        sTimeE = eTraces[0].stats.starttime
+        sTimeN = nTraces[0].stats.starttime        
+      
+        # E
+        for i, eTr in enumerate(eTraces):
+            if i == 0:
+                xTraceTimesE = [np.datetime64((sTimeE + tT).datetime) for tT in eTr.times()]
+                xTraceTimesAppE = [[np.datetime64((sTimeE + tT).datetime) for tT in eTr.times()]]
+            else:
+                xTraceTimesAppE.append([np.datetime64((sTimeE + tT).datetime) for tT in eTr.times()])
+                xTraceTimesE.extend([np.datetime64((sTimeE + tT).datetime) for tT in eTr.times()])
+
+        # N
+        for i, nTr in enumerate(nTraces):
+            if i == 0:
+                xTraceTimesN = [np.datetime64((sTimeN + tT).datetime) for tT in nTr.times()]
+                xTraceTimesAppN = [[np.datetime64((sTimeN + tT).datetime) for tT in nTr.times()]]
+            else:
+                xTraceTimesAppN.append([np.datetime64((sTimeN + tT).datetime) for tT in nTr.times()])
+                xTraceTimesN.extend([np.datetime64((sTimeN + tT).datetime) for tT in nTr.times()])
+
+
+
+        for i, zTrace in enumerate(zTraces):
+            sTimeZ = zTrace.stats.starttime
+
+            if i == 0:
+                xTraceTimesZ = [np.datetime64((sTimeZ + tT).datetime) for tT in zTrace.times()]
+                xTraceTimesAppZ = [[np.datetime64((sTimeZ + tT).datetime) for tT in zTrace.times()]]
+            else:
+                xTraceTimesAppZ.append([np.datetime64((sTimeZ + tT).datetime) for tT in zTrace.times()])
+                xTraceTimesZ.extend([np.datetime64((sTimeZ + tT).datetime) for tT in zTrace.times()])
+
+            fTemp, specTimesTemp, psdArrTemp = _generate_stream_specgram(_trace=zTrace)
+
+            if fTemp[0] == 0:
+                fTemp[0] = fTemp[1]/10 # Fix so bottom number is not 0
+            f.append(fTemp)
+
+            specTimesTemp = list(specTimesTemp)
+            specTimesTemp.insert(0, 0)
+            specTimes.append(specTimesTemp)
+
+            timeWindowArr.append(np.array([np.datetime64((sTimeZ + tT).datetime) for tT in specTimesTemp]))
+            
+            psdArr.append(psdArrTemp)
+
+
+            minz = np.percentile(psdArrTemp, 1)
+            maxz = np.percentile(psdArrTemp, 99)
+
+            hmap = goHeatmap(z=psdArrTemp,
+                        x=timeWindowArr[i][:-1],
+                        y=fTemp,
+                        colorscale=&#39;Turbo&#39;, #opacity=0.8,
+                        showlegend=False,
+                        hovertemplate=&#39;Time [UTC]: %{x}&lt;br&gt;Frequency [Hz]: %{y:.2f}&lt;br&gt;Spectrogram Magnitude: %{z:.2f}&lt;extra&gt;&lt;/extra&gt;&#39;,
+                        zmin=minz, zmax=maxz, showscale=False, name=f&#39;{specKey} Component Spectrogram; Trace {i}&#39;)
+
+
+            inputFig.add_trace(hmap, row=1, col=1)
+            
+        st.session_state.stream_spec_freqs = f
+        st.session_state.stream_spec_times = specTimes
+        st.session_state.psdArr = psdArr
+
+        hvsrBand = hvsr_data[&#39;hvsr_band&#39;]
+
+        inputFig.update_yaxes(type=&#39;log&#39;, range=[np.log10(hvsrBand[0]), np.log10(hvsrBand[-1])], row=1, col=1)
+        inputFig.update_yaxes(title={&#39;text&#39;:f&#39;Spectrogram ({specKey})&#39;}, row=1, col=1)
+
+        # Get Use Array and hvdf
+        hvdf, useArrShape = _get_use_array(hvsr_data, f=f, timeWindowArr=timeWindowArr, psdArr=psdArr)
+
+        timelineFig = pxTimeline(data_frame=hvdf,
+                                x_start=&#39;TimesProcessed_Start&#39;,
+                                x_end=&#39;TimesProcessed_End&#39;,
+                                y=[&#39;Used&#39;]*hvdf.shape[0],
+                                #y=&#34;Use&#34;,#range_y=[-20, -10],
+                                color=&#39;Use&#39;,
+                                color_discrete_map={True: &#39;rgba(0,255,0,1)&#39;,
+                                                    False: &#39;rgba(255,0,0,1)&#39;})
+        for timelineTrace in timelineFig.data:
+            inputFig.add_trace(timelineTrace, row=2, col=1)
+
+        useArr = np.tile(hvdf.Use, (useArrShape, 1))
+        useArr = np.where(useArr == True, np.ones_like(useArr), np.zeros_like(useArr)).astype(int)
+
+
+        specOverlay = goHeatmap(z=useArr,
+                            x=hvdf[&#39;TimesProcessed_Start&#39;],
+                            y=f,
+                            colorscale=[[0, &#39;rgba(0,0,0,0.8)&#39;], [0.1, &#39;rgba(255,255,255, 0.00001)&#39;], [1, &#39;rgba(255,255,255, 0.00001)&#39;]],
+                            showlegend=False,
+                            #hovertemplate=&#39;Time [UTC]: %{x}&lt;br&gt;Frequency [Hz]: %{y:.2f}&lt;br&gt;Spectrogram Magnitude: %{z:.2f}&lt;extra&gt;&lt;/extra&gt;&#39;,
+                            showscale=False, name=f&#39;{specKey} Component Spectrogram&#39;)
+        inputFig.add_trace(specOverlay, row=1, col=1)
+        
+        minTraceData = min(min(zTrace.data), min(eTrace.data), min(nTrace.data))
+        maxTraceData = max(max(zTrace.data), max(eTrace.data), max(nTrace.data))
+
+        streamOverlay = goHeatmap(z=useArr,
+                        x=hvdf[&#39;TimesProcessed_Start&#39;],
+                        y=np.linspace(minTraceData, maxTraceData, useArr.shape[0]),
+                        colorscale=[[0, &#39;rgba(0,0,0,0.8)&#39;], [0.1, &#39;rgba(255,255,255, 0.00001)&#39;], [1, &#39;rgba(255,255,255, 0.00001)&#39;]],
+                        showlegend=False,
+                        #hovertemplate=&#39;Time [UTC]: %{x}&lt;br&gt;Frequency [Hz]: %{y:.2f}&lt;br&gt;Spectrogram Magnitude: %{z:.2f}&lt;extra&gt;&lt;/extra&gt;&#39;,
+                        showscale=False, name=f&#39;{specKey} Component Spectrogram&#39;)
+        inputFig.add_trace(streamOverlay, row=3, col=1)
+        inputFig.add_trace(streamOverlay, row=4, col=1)
+        inputFig.add_trace(streamOverlay, row=5, col=1)
+
+        inputFig.update_yaxes(type=&#39;log&#39;, range=[np.log10(hvsrBand[0]), np.log10(hvsrBand[-1])], row=1, col=1)
+        inputFig.update_yaxes(title={&#39;text&#39;:f&#39;Spectrogram ({specKey})&#39;}, row=1, col=1)
+
+
+        # Data traces
+        # Z Traces
+        for i, zTr in enumerate(zTraces):
+            if i == 0:
+                zDataFig = pxScatter(x=xTraceTimesAppZ[i], y=zTr.data)
+            else:
+                zTempFig = pxScatter(x=xTraceTimesAppZ[i], y=zTr.data)
+                for zFigTrace in zTempFig.data:
+                    zDataFig.add_trace(zFigTrace)
+        
+        zDataFig.update_traces(mode=&#39;markers+lines&#39;,
+                            marker=dict(size=1, color=&#39;rgba(0,0,0,1)&#39;),
+                            line=dict(width=1, color=&#39;rgba(0,0,0,1)&#39;),
+                            selector=dict(mode=&#39;markers&#39;))
+        for zTrace in zDataFig.data:
+            inputFig.add_trace(zTrace, row=3, col=1)
+
+        # E Traces
+        for i, eTr in enumerate(eTraces):
+            if i == 0:
+                eDataFig = pxScatter(x=xTraceTimesAppE[i], y=eTr.data)
+            else:
+                eTempFig = pxScatter(x=xTraceTimesAppE[i], y=eTr.data)
+                for eFigTrace in eTempFig.data:
+                    eDataFig.add_trace(eFigTrace)
+        
+
+        #eDataFig = pxScatter(x=xTraceTimes, y=eTrace.data)
+        eDataFig.update_traces(mode=&#39;markers+lines&#39;,
+                            marker=dict(size=1, color=&#39;rgba(0,0,255,1)&#39;),
+                            line=dict(width=1, color=&#39;rgba(0,0,255,1)&#39;),
+                            selector=dict(mode=&#39;markers&#39;))
+        for eTrace in eDataFig.data:
+            inputFig.add_trace(eTrace, row=4, col=1)
+
+        # N Traces
+        for i, nTr in enumerate(nTraces):
+            if i == 0:
+                nDataFig = pxScatter(x=xTraceTimesAppN[i], y=nTr.data)
+            else:
+                nTempFig = pxScatter(x=xTraceTimesAppN[i], y=nTr.data)
+                for nFigTrace in nTempFig.data:
+                    nDataFig.add_trace(nFigTrace)
+        
+        #nDataFig = pxScatter(x=xTraceTimes, y=nTrace.data)
+        nDataFig.update_traces(mode=&#39;markers+lines&#39;,
+                            marker=dict(size=1, color=&#39;rgba(255,0,0,1)&#39;),
+                            line=dict(width=1, color=&#39;rgba(255,0,0,1)&#39;),
+                            selector=dict(mode=&#39;markers&#39;))
+        for nTrace in nDataFig.data:
+            inputFig.add_trace(nTrace, row=5, col=1)
+
+
+
+        #zDataFig = pxScatter(x=xTraceTimes, y=zTrace.data)
+        #zDataFig.update_traces(mode=&#39;markers+lines&#39;,
+        #                    marker=dict(size=1, color=&#39;rgba(0,0,0,1)&#39;),
+        #                    line=dict(width=1, color=&#39;rgba(0,0,0,1)&#39;),
+        #                    selector=dict(mode=&#39;markers&#39;))
+        #for zTrace in zDataFig.data:
+        #    inputFig.add_trace(zTrace, row=3, col=1)
+
+
+        #eDataFig = pxScatter(x=xTraceTimes, y=eTrace.data)
+        #eDataFig.update_traces(mode=&#39;markers+lines&#39;,
+        #                    marker=dict(size=1, color=&#39;rgba(0,0,255,1)&#39;),
+        #                    line=dict(width=1, color=&#39;rgba(0,0,255,1)&#39;),
+        #                    selector=dict(mode=&#39;markers&#39;))
+        #for eTrace in eDataFig.data:
+        #    inputFig.add_trace(eTrace, row=4, col=1)
+
+
+        #nDataFig = pxScatter(x=xTraceTimes, y=nTrace.data)
+        #nDataFig.update_traces(mode=&#39;markers+lines&#39;,
+        #                    marker=dict(size=1, color=&#39;rgba(255,0,0,1)&#39;),
+        #                    line=dict(width=1, color=&#39;rgba(255,0,0,1)&#39;),
+        #                    selector=dict(mode=&#39;markers&#39;))
+        #for nTrace in nDataFig.data:
+        #    inputFig.add_trace(nTrace, row=5, col=1)
+
+        #inputFig.update_yaxes(title=&#39;In Use&#39;, row=5, col=1)
+        #inputFig.update_xaxes(title=&#39;Time&#39;, row=5, col=1,
+        #                      dtick=1000*60,)
+        inputFig.update_layout(title_text=&#34;Frequency and Data values over time&#34;, 
+                            height=650, showlegend=False)
+
+        chartStartT = min(xTraceTimesZ[0], xTraceTimesE[0], xTraceTimesN[0])
+        chartEndT = max(xTraceTimesZ[-1], xTraceTimesE[-1], xTraceTimesN[-1])
+        inputFig.update_xaxes(type=&#39;date&#39;, range=[chartStartT, chartEndT])
+
+        st.session_state.input_fig = inputFig
+        st.session_state.hvsr_data.Input_Plot = inputFig
+
+        return inputFig
+
+
+    def update_from_data_selection():
+        st.toast(&#34;Updating H/V Curve statistics&#34;)
+
+        if &#39;PPSDStatus&#39; in st.session_state.hvsr_data.processing_status and st.session_state.hvsr_data.processing_status[&#39;PPSDStatus&#39;]:
+            gpsd_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.generate_psds).parameters.keys()) and k != &#39;hvsr_data&#39;}
+            st.session_state.hvsr_data = sprit_hvsr.generate_psds(hvsr_data=st.session_state.hvsr_data, **gpsd_kwargs)
+            
+
+        prochvsr_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.process_hvsr).parameters.keys()) and k != &#39;hvsr_data&#39;}
+        checkPeaks_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.check_peaks).parameters.keys()) and k != &#39;hvsr_data&#39;}
+        getRep_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.get_report).parameters.keys()) and k != &#39;hvsr_data&#39;}
+
+        st.session_state.hvsr_data = sprit_hvsr.process_hvsr(hvsr_data=st.session_state.hvsr_data, **prochvsr_kwargs)
+        st.session_state.hvsr_data = sprit_hvsr.check_peaks(hvsr_data=st.session_state.hvsr_data, **checkPeaks_kwargs)
+        st.session_state.hvsr_data = sprit_hvsr.get_report(hvsr_results=st.session_state.hvsr_data, **getRep_kwargs)
+
+        display_results()
+
+
+    def update_data():
+        st.session_state.data_chart_event = st.session_state.data_plot
+        specKey = &#39;Z&#39;
+        hvsrBand = st.session_state.hvsr_data.hvsr_band
+        # Still figuring stuff out
+        
+        # This seems to work well at the moment
+        windows = []
+        if len(st.session_state.data_chart_event[&#39;selection&#39;][&#39;box&#39;]) &gt; 0:
+            esb = st.session_state.data_chart_event[&#39;selection&#39;][&#39;box&#39;]
+            for b in esb:
+                if b[&#39;x&#39;][0] &gt; b[&#39;x&#39;][1]:
+                    windows.append((b[&#39;x&#39;][1], b[&#39;x&#39;][0]))
+                else:
+                    windows.append((b[&#39;x&#39;][0], b[&#39;x&#39;][1]))
+
+        # Reset the variables
+        st.session_state.data_chart_event = {&#34;selection&#34;:{&#34;points&#34;:[],
+                                            &#34;point_indices&#34;:[],
+                                            &#39;box&#39;:[],
+                                            &#39;lasso&#39;:[]}}
+
+        if &#39;x_windows_out&#39; not in st.session_state.hvsr_data.keys():
+            st.session_state.hvsr_data[&#39;x_windows_out&#39;] = []
+        
+        # Convert times to obspy.UTCDateTime
+        utcdtWin = []
+        for currWin in windows:
+            currUTCWin = []
+
+            # Get 
+            stream1 = st.session_state.stream_edited.copy()
+            stream2 = st.session_state.stream_edited.copy()
+
+            stream1 = stream1.merge()
+            stream2 = stream2.merge()
+            
+            for pdtimestamp in currWin:
+                currUTCWin.append(UTCDateTime(pdtimestamp))
+            utcdtWin.append(currUTCWin)
+            st.session_state.hvsr_data[&#39;x_windows_out&#39;].append(currUTCWin)
+
+            # Trim data with gap in the middle where we remvoed data
+            if st.session_state.input_selection_mode == &#39;Add&#39;:
+                stream1.trim(starttime=stream1[0].stats.starttime, endtime=currUTCWin[0])
+                stream2.trim(starttime=currUTCWin[1], endtime=stream2[0].stats.endtime)
+
+            # Merge data back
+            newStream = (stream1 + stream2).merge()
+            st.session_state.hvsr_data[&#39;stream_edited&#39;] = newStream
+            st.session_state.stream_edited = newStream
+
+        # Use edited data to update location of bars
+        # Update useArr
+        hvdf, useArrShape = _get_use_array(hvsr_data=st.session_state.hvsr_data,
+                                        f=st.session_state.stream_spec_freqs,
+                                        timeWindowArr=st.session_state.stream_spec_times,
+                                        psdArr=st.session_state.psdArr)
+        
+        useArr = np.tile(hvdf.Use, (useArrShape, 1))
+        useArr = np.where(useArr == True, np.ones_like(useArr), np.zeros_like(useArr)).astype(int)
+
+        newSpecOverlay = goHeatmap(z = useArr,
+                                    x = hvdf[&#39;TimesProcessed_Start&#39;],
+                                    y=st.session_state.stream_spec_freqs,
+                                    colorscale=[[0, &#39;rgba(0,0,0,0.8)&#39;], [0.1, &#39;rgba(255,255,255, 0.00001)&#39;], [1, &#39;rgba(255,255,255, 0.00001)&#39;]],
+                                    showlegend=False,
+                                    #hovertemplate=&#39;Time [UTC]: %{x}&lt;br&gt;Frequency [Hz]: %{y:.2f}&lt;br&gt;Spectrogram Magnitude: %{z:.2f}&lt;extra&gt;&lt;/extra&gt;&#39;,
+                                    showscale=False,
+                                    )
+
+        st.session_state.input_fig.add_trace(newSpecOverlay, row=1, col=1)
+        st.session_state.input_fig.update_yaxes(type=&#39;log&#39;, range=[np.log10(hvsrBand[0]), np.log10(hvsrBand[-1])], row=1, col=1)
+        st.session_state.input_fig.update_yaxes(title={&#39;text&#39;:f&#39;Spectrogram ({specKey})&#39;}, row=1, col=1)
+        st.session_state.input_fig.update_layout(showlegend=False)
+
+        def has_attributes(obj, *attributes):
+            return all(hasattr(obj, attr) for attr in attributes)
+
+        procCond1 = st.session_state.hvsr_data[&#39;processing_status&#39;][&#39;process_hvsr_status&#39;]
+        procCond2 = st.session_state.hvsr_data[&#39;processing_status&#39;][&#39;overall_status&#39;]
+        procCond3 = has_attributes(st.session_state.hvsr_data, &#34;Plot_Report&#34;, &#34;Print_Report&#34;, &#34;Table_Report&#34;)
+
+        readCond1 = st.session_state.hvsr_data[&#39;processing_status&#39;][&#39;input_params_status&#39;]
+        readCond2 = st.session_state.hvsr_data[&#39;processing_status&#39;][&#39;fetch_data_status&#39;]
+
+        if procCond1 and procCond2 and procCond3:
+            statusMsg = &#39;Excluding the following window&#39;
+            if len(utcdtWin) != 1:
+                statusMsg += &#39;s&#39;
+
+            updateCol, statusCol = st.columns([0.2, 0.8])
+            with statusCol.status(statusMsg):
+                st.dataframe(pd.DataFrame(utcdtWin, columns=[&#39;Window Start Time (UTC)&#39;, &#39;Window End Time (UTC)&#39;]))
+            updateCol.button(&#34;Rerun results statistics&#34;,
+                            on_click=update_from_data_selection,
+                            type=&#39;primary&#39;, icon=&#34;:material/update:&#34;)
+            #display_results()
+            
+        elif readCond1 and readCond2:
+            display_read_data(do_setup_tabs=True)
+        else:
+            # For dat that did not process correctly
+            st.session_state.mainContainer.warning(&#39;Data not read or processed correctly&#39;)
+
+
+    def update_selection_type():
+        st.session_state.input_selection_mode = st.session_state.input_selection_toggle
+
+
+    def write_to_info_tab(infoTab):
+        with infoTab:
+            st.markdown(&#34;# Processing Parameters Used&#34;)
+            hvsrDataList = [&#39;params&#39;, &#39;hvsr_data&#39;, &#39;hvsr_results&#39;]
+            for fun, kwargDict in funList:
+                funSig = inspect.signature(fun)
+                # excludeKeys = [&#39;params&#39;, &#39;hvsr_data&#39;, &#39;hvsr_results&#39;]
+                funMD = &#34;&#34;
+                for arg in funSig.parameters.keys():
+                    if arg in st.session_state.keys() and arg not in hvsrDataList:
+                        funMD = funMD + f&#34;&#34;&#34;\n    * {arg} = {st.session_state[arg]}&#34;&#34;&#34;
+
+                with st.expander(f&#34;{fun.__name__}&#34;):
+                    st.markdown(funMD, unsafe_allow_html=True)
+
+
+    def update_from_outlier_selection():
+        &#34;&#34;&#34;This is intended as a callback for updating the main results tab, etc. after updating outlier curves&#34;&#34;&#34;
+        
+        st.toast(&#34;Updating H/V Curve statistics&#34;)
+        prochvsr_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.process_hvsr).parameters.keys()) and k != &#39;hvsr_data&#39;}
+        checkPeaks_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.check_peaks).parameters.keys()) and k != &#39;hvsr_data&#39;}
+        getRep_kwargs = {k: v for k, v in st.session_state.items() if k in tuple(inspect.signature(sprit_hvsr.get_report).parameters.keys()) and k != &#39;hvsr_data&#39;}
+
+        st.session_state.hvsr_data = sprit_hvsr.process_hvsr(hvsr_data=st.session_state.hvsr_data, **prochvsr_kwargs)
+        st.session_state.hvsr_data = sprit_hvsr.check_peaks(hvsr_data=st.session_state.hvsr_data, **checkPeaks_kwargs)
+        st.session_state.hvsr_data = sprit_hvsr.get_report(hvsr_results=st.session_state.hvsr_data, **getRep_kwargs)
+
+        display_download_buttons()
+        display_results()
+
+
+    def update_outlier():
+        hvDF = st.session_state.hvsr_data[&#39;hvsr_windows_df&#39;]
+        
+        st.session_state.outlier_chart_event = st.session_state.outlier_plot
+        curves2Remove = np.unique([p[&#39;curve_number&#39;] for p in st.session_state.outlier_chart_event[&#39;selection&#39;][&#39;points&#39;]])
+        st.session_state.outlier_curves_to_remove = list(curves2Remove)
+
+        if len(st.session_state.outlier_curves_to_remove) &gt; 0:
+            
+            outlierMsgList = []
+            outlierMsgCols = [&#39;Window Number&#39;, &#34;Window Start Time&#34;]
+            for remCurve in st.session_state.outlier_curves_to_remove:
+                currInd = hvDF.iloc[remCurve].name
+                outlierMsgList.append([remCurve, currInd])
+                hvDF.loc[currInd, &#34;Use&#34;] = False
+
+            statusMsg = &#34;Removing specified outlier curve&#34;
+            if len(st.session_state.outlier_curves_to_remove) != 1:
+                statusMsg += &#39;s&#39;
+
+            #st.toast(statusMsg)
+            updateCol, statusCol = st.columns([0.2, 0.8])
+            with statusCol.status(statusMsg):
+                st.dataframe(pd.DataFrame(outlierMsgList, columns=outlierMsgCols))
+            updateCol.button(&#34;Rerun results statistics&#34;, on_click=update_from_outlier_selection,
+                            type=&#39;primary&#39;, icon=&#34;:material/update:&#34;)
+        display_results()
+
+
+    def outlier_plot_in_tab():
+        if st.session_state.plot_engine == &#39;Matplotlib&#39;:
+            outlierFig = sprit_plot.plot_outlier_curves(st.session_state.hvsr_data, 
+                                                        plot_engine=&#39;Matplotlib&#39;)
+            st.session_state.outlierTab.pyplot(outlierFig, 
+                                               use_container_width=True)
+            st.session_state.outlier_plot = None
+        else:
+            hvDF = st.session_state.hvsr_data[&#39;hvsr_windows_df&#39;]
+            x_data = st.session_state.hvsr_data[&#39;x_freqs&#39;][&#39;Z&#39;][:-1]
+            
+            no_subplots = 1
+            outlierFig = make_subplots(rows=no_subplots, cols=1,
+                                                shared_xaxes=True, horizontal_spacing=0.01,
+                                                vertical_spacing=0.1)
+
+            scatterFig = pxScatter()
+            scatter_traces = []
+            line_traces = []
+
+
+            for row, hvsr_data in enumerate(hvDF[&#39;HV_Curves&#39;]):
+                currInd = hvDF.iloc[row].name
+                if hvDF.loc[currInd, &#39;Use&#39;]:  
+                    scatterArray = np.array(list(hvsr_data)[::5])
+                    x_data_Scatter = np.array(list(x_data)[::5])
+                    currFig = pxScatter(x=x_data_Scatter, y=scatterArray)
+                    currFig.update_traces(mode=&#39;markers+lines&#39;,
+                                    marker=dict(size=1, color=&#39;rgba(0,0,0,0.1)&#39;),
+                                    line=dict(width=1, color=&#39;rgba(0,0,0,0.1)&#39;),
+                                    selector=dict(mode=&#39;markers&#39;))
+                    
+                    scatter_traces.append(currFig)
+
+                else:
+                    scatterArray = np.array(list(hvsr_data)[::5])
+                    x_data_Scatter = np.array(list(x_data)[::5])
+                    currFig = pxScatter(x=x_data_Scatter, y=scatterArray,
+                                        opacity=0.5)
+                    currFig.update_traces(mode=&#39;markers+lines&#39;,
+                                        marker=dict(size=1, color=&#39;rgba(195,87,0,0.4)&#39;),
+                                        line=dict(width=1, color=&#39;rgba(195,87,0,0.4)&#39;),
+                                        selector=dict(mode=&#39;markers&#39;))
+                    scatter_traces.append(currFig)
+
+
+            # Add median line
+            medArr = np.nanmedian(np.stack(hvDF[&#39;HV_Curves&#39;][hvDF[&#39;Use&#39;]]), axis=0)
+            scatterArray = np.array(list(medArr)[::10])
+            x_data_Scatter = np.array(list(x_data)[::10])
+            currFig = px.line(x=x_data_Scatter, y=scatterArray,
+                            color_discrete_sequence=[&#39;red&#39;])
+            currFig.update_traces(line=dict(width=3, color=&#39;black&#39;))
+            scatter_traces.append(currFig)
+
+            for tr in scatter_traces:
+                for trace in tr.data:
+                    outlierFig.add_traces(trace, rows=1, cols=1)
+
+            outlierFig.update_xaxes(title=&#39;Frequency [Hz]&#39;, type=&#34;log&#34;, row=1, col=1)
+            outlierFig.update_yaxes(title=&#39;H/V Ratio&#39;, row=1, col=1)
+            outlierFig.update_layout(title_text=&#34;H/V Curve Outlier Display &amp; Selection&#34;)
+
+            st.session_state.outlierTab.write(&#34;Select any curve(s) with your cursor or the Box or Lasso Selectors (hover over the top right of chart) to remove from the statistics and analysis of results.&#34;)
+            # Output figure to correct tab
+            st.session_state.outlierTab.plotly_chart(outlierFig, 
+                                    on_select=update_outlier, 
+                                    key=&#39;outlier_plot&#39;, 
+                                    use_container_width=True, 
+                                    theme=&#39;streamlit&#39;) 
+
+
+    def write_to_outlierTab():
+        pass
+
+
+    # Initial setup
+    setup_session_state()
+
+
+    # DEFINE SIDEBAR
+    if VERBOSE:
+        print(&#39;About to start setting up sidebar, session state length: &#39;, len(st.session_state.keys()))
+        print_param(PARAM2PRINT)
+
+    # Set up sidebar
+    with st.sidebar:
+        if VERBOSE:
+            print(&#39;Start setting up sidebar, session state length: &#39;, len(st.session_state.keys()))
+            print_param(PARAM2PRINT)
+
+        st.header(&#39;SpRIT HVSR&#39;, divider=&#39;rainbow&#39;)
+        inputDataCol, sourceCol = st.columns([0.7, 0.3])
+        datapathInput = inputDataCol.text_input(&#34;Input Data&#34;, key=&#39;input_data&#39;, 
+                                            placeholder=&#39;Enter data filepath&#39;, 
+                                            help=&#34;Enter a filepath to be read by obspy.read(). On the web app, a temporary copy of this file will be made.&#34;)    
+        sourceCol.selectbox(&#39;Source&#39;, options=[&#39;File&#39;, &#39;Raw&#39;, &#39;Directory&#39;, &#34;Batch&#34;], index=0, key=&#39;source&#39;,
+                            help=&#39;File: a single file for analysis. All the rest are experimental in the web app. Raw is used with Raspberry Shake data to read native file structure. Directory gets all relevant files in a directory. Batch is for loading a .csv file for batch analysis.&#39;)
+
+        with st.expander(&#34;Click to access data uploader&#34;):
+            st.file_uploader(&#34;Upload data file(s)&#34;, type=OBSPYFORMATS, accept_multiple_files=False, key=&#39;datapath_uploader&#39;, on_change=on_file_upload)
+
+        bottom_container = st.container()
+
+        # Create top menu
+        with bottom_container:
+            resetCol, readCol, runCol = st.columns([0.3, 0.3, 0.4])
+
+            runLabel = &#39;Run&#39;
+            readLabel = &#39;Read&#39;
+            if st.session_state.input_data == &#39;&#39; or st.session_state.input_data is None:
+                runLabel = &#39;Demo Run&#39;
+                readLabel = &#39;Demo Read&#39;
+
+            resetCol.button(&#39;Reset&#39;, disabled=False, use_container_width=True,
+                            on_click=on_reset, key=&#39;reset_button&#39;)
+            readCol.button(readLabel, disabled=False, use_container_width=True,
+                        on_click=on_read_data, key=&#39;read_button&#39;)
+            runCol.button(runLabel, type=&#39;primary&#39;,  use_container_width=True,
+                        on_click=on_run_data, key=&#39;run_button&#39;)
+        
+
+        if VERBOSE:
+            print(&#39;Done setting up bottom container, session state length: &#39;, len(st.session_state.keys()))
+            print_param(PARAM2PRINT)
+
+        st.header(&#39;Settings&#39;)
+        mainSettings = st.container()
+
+        with mainSettings:
+
+            siteNameCol, projCol = st.columns([0.5, 0.5])
+            siteNameCol.text_input(&#34;Site Name&#34;, placeholder=&#39;HVSR Site&#39;, on_change=text_change, key=&#39;site&#39;)
+            projCol.text_input(&#34;Project/County Name&#34;, on_change=text_change, key=&#39;project&#39;)
+            #instCol.text_input(&#39;Instrument&#39;, help=&#39;Raspberry Shake and Tromino are currently the only values with special treatment. If a filepath, can use a .inst instrument file (json format)&#39;, key=&#39;instrument&#39;)
+
+            stationCol, instCol = st.columns([0.5, 0.5])
+            stationCol.text_input(&#34;Station/Partition&#34;, placeholder=&#39;RAC84&#39;, key=&#39;station&#39;)
+            instCol.selectbox(&#39;Instrument&#39;, key=&#39;instrument&#39;,
+                            options=[&#39;Seismometer&#39;, &#39;Raspberry Shake&#39;, &#39;Tromino Yellow&#39;, &#39;Tromino Blue&#39;],
+                            help=&#39;Some instruments require special inputs to read in the data correctly. If not one of the instruments listed, or if reading in an obspy-supported file directly, leave as &#34;Seismometer&#34;&#39;)
+
+            xCoordCol, yCoordCol, inCRSCol = st.columns([0.3333, 0.3333, 0.3333])
+            xCoordCol.text_input(&#39;X Coordinate&#39;, help=&#39;i.e., Longitude or Easting&#39;, key=&#39;xcoord&#39;)
+            yCoordCol.text_input(&#39;Y Coordinate&#39;, help=&#39;i.e., Latitude or Northing&#39;, key=&#39;ycoord&#39;)
+            inCRSCol.text_input(&#39;CRS&#39;, help=&#39;By default, &#34;EPSG:4326&#34;. Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()&#39;, key=&#39;input_crs&#39;)        
+            
+            zCoordCol, elevUnitCol, outCRSCol = st.columns([0.333, 0.333, 0.333])
+            zCoordCol.text_input(&#39;Z Coordinate&#39;, help=&#39;i.e., Elevation&#39;, key=&#39;elevation&#39;)
+            elevUnitCol.selectbox(&#39;Elev. (Z) Unit&#39;, options=[&#39;meters&#39;, &#39;feet&#39;], key=&#39;elev_unit&#39;, help=&#39;i.e., Elevation unit&#39;)
+            outCRSCol.text_input(&#39;CRS for Export&#39;, help=&#39;Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()&#39;, key=&#39;output_crs&#39;)
+
+            # Date/time settings
+            dateCol, sTimeCol, eTimeCol, tzoneCol = st.columns([0.3,0.25,0.25,0.2])
+
+            dateCol.date_input(&#39;Acquisition Date&#39;, format=&#39;YYYY-MM-DD&#39;, key=&#39;acq_date&#39;)
+            sTimeCol.time_input(&#39;Start time&#39;, step=60, key=&#39;starttime&#39;)
+            eTimeCol.time_input(&#39;End time&#39;, step=60, key=&#39;endtime&#39;)
+
+            tZoneList = list(zoneinfo.available_timezones())
+            tZoneList.sort()
+            tZoneList.insert(0, &#34;localtime&#34;)
+            tZoneList.insert(0, &#34;US/Pacific&#34;)
+            tZoneList.insert(0, &#34;US/Mountain&#34;)
+            tZoneList.insert(0, &#34;US/Eastern&#34;)
+            tZoneList.insert(0, &#34;US/Central&#34;)
+            tZoneList.insert(0, &#34;UTC&#34;)
+            tzoneCol.selectbox(&#39;Timezone&#39;, options=tZoneList, key=&#39;tzone&#39;)
+
+            # Processing limits
+            pfrDef = tuple(inspect.signature(sprit_hvsr.input_params).parameters[&#39;peak_freq_range&#39;].default)
+            
+            st.session_state.peak_freq_range = st.select_slider(&#39;Peak Frequency Range&#39;, options=bandVals,
+                            value=pfrDef,
+                            #key=&#39;peak_freq_range&#39;
+                            )
+
+            st.session_state.hvsr_band = st.select_slider(&#39;HVSR Band&#39;, options=bandVals, #key=&#39;hvsr_band&#39;,
+                            value=st.session_state.hvsr_band
+                            )
+
+            st.toggle(label=&#39;Display interactive charts (slower)&#39;, value=False, key=&#39;interactive_display&#39;,
+                      on_change=do_interactive_display,
+                      help=&#34;Whether to display interactive charts for the data, outliers, and results charts. Interactive charts take longer to display, but allow graphical editing of the data.&#34;)
+
+            if VERBOSE:
+                print_param(PARAM2PRINT)
+
+
+        st.header(&#39;Additional Settings&#39;, divider=&#39;gray&#39;)
+        with st.expander(&#39;Expand to modify additional settings&#39;):
+            if VERBOSE:
+                print(&#39;Setting up sidebar expander, session state length: &#39;, len(st.session_state.keys()))
+                print_param(PARAM2PRINT)
+
+            ipSetTab, fdSetTab, azSetTab, rmnocSetTab, gpSetTab, phvsrSetTab, plotSetTab = st.tabs([&#39;Instrument&#39;, &#39;Data&#39;, &#34;Azimuths&#34;, &#34;Noise&#34;, &#39;PPSDs&#39;, &#39;H/V&#39;, &#39;Plot&#39;])
+            
+            #@st.experimental_dialog(&#34;Update Input Parameters&#34;, width=&#39;large&#39;)
+            #def open_ip_dialog():
+            with ipSetTab:
+                if VERBOSE:
+                    print(&#39;Setting up input tab, session state length: &#39;, len(st.session_state.keys()))
+                
+                #with st.expander(&#39;Instrument settings&#39;):
+                st.text_input(&#34;Network&#34;, placeholder=&#39;AM&#39;, key=&#39;network&#39;)
+                st.text_input(&#34;Location&#34;, placeholder=&#39;00&#39;, key=&#39;loc&#39;)
+                st.text_input(&#34;Channels&#34;, placeholder=&#39;EHZ, EHE, EHN&#39;, key=&#39;channels&#39;)
+        
+                st.text_input(&#39;Metadata Filepath&#39;, help=&#39;Filepath to instrument response file&#39;, key=&#39;metadata&#39;)
+
+                #with st.expander(&#39;Primary Input Parameters&#39;, expanded=True):
+                #if &#34;hvsr_band&#34; not in st.session_state:
+                #    st.session_state.hvsr_band = [0.4, 40]
+
+
+            #@st.experimental_dialog(&#34;Update Parameters to Fetch Data&#34;, width=&#39;large&#39;)
+            #def open_fd_dialog():
+            with fdSetTab:
+                if VERBOSE:
+                    print(&#39;Setting up fd tab, session state length: &#39;, len(st.session_state.keys()))
+                #source: str = &#39;file&#39;,
+                st.text_input(&#39;Data export directory&#39;, help=&#39;Directory for exporting raw/trimmed data&#39;, key=&#39;data_export_dir&#39;)
+                st.selectbox(&#39;Data export format&#39;, options=OBSPYFORMATS, index=11, key=&#39;data_export_format&#39;)
+
+                # Detrending options
+                st.selectbox(&#39;Detrend Type&#39;, options=[&#39;None&#39;, &#39;Simple&#39;, &#39;Linear&#39;, &#39;Constant/Demean&#39;, &#39;Polynomial&#39;, &#39;Spline&#39;], index=5, 
+                            help=&#39;Detrend Type use by `type` parameter of obspy.trace.Trace.detrend()&#39;, key=&#39;detrend&#39;)
+                st.text_input(&#39;Detrend options&#39;, value=&#39;order=2&#39;, 
+                            help=&#34;Value(s) to pass to the **options argument of obspy.trace.Trace.detrend()&#34;, 
+                            key=&#39;detrend_options&#39;)
+
+                # Filter options
+                st.selectbox(&#39;Filter Type&#39;, options=[&#39;None&#39;, &#39;bandpass&#39;, &#39;bandstop&#39;, 
+                                                    &#39;lowpass&#39;, &#39;highpass&#39;, 
+                                                    &#39;lowpass_cheby_2&#39;, &#39;lowpass_fir&#39;, &#39;remez_fir&#39;], 
+                            index=0, 
+                            help=&#39;Detrend Type use by `type` parameter of obspy.trace.Trace.filter()&#39;, key=&#39;filter&#39;)
+                
+                st.text_input(&#39;Filter options&#39;,
+                            help=&#34;Value(s) to pass to the **options argument of obspy.trace.Trace.filter()&#34;, 
+                            key=&#39;filter_options&#39;)
+
+                if VERBOSE:
+                    print_param(PARAM2PRINT)
+
+            with azSetTab:
+                if VERBOSE:
+                    print(&#39;Setting up az tab, session state length: &#39;, len(st.session_state.keys()))
+
+                st.toggle(&#34;Calculate Azimuths&#34;, value=False,
+                        help=&#39;Whether to calculate azimuths for data.&#39;,
+                        key=&#39;azimuth_calculation&#39;)
+                
+                az_disabled = True
+                if hasattr(st.session_state, &#39;azimuth_calculation&#39;):
+                    az_disabled = not st.session_state.azimuth_calculation
+            
+                st.selectbox(&#39;Azimuth type&#39;, disabled=az_disabled, options=[&#39;Multiple&#39;, &#39;Single&#39;], index=0, key=&#39;azimuth_type&#39;)
+
+                azAngCol, azUnitCol = st.columns([0.7,0.3])
+                azAngCol.number_input(&#34;Azimuth angle&#34;, value=30, key=&#39;azimuth_angle&#39;, disabled=az_disabled)
+                azUnitCol.selectbox(&#39;Azimuth unit&#39;, options=[&#39;°&#39;, &#39;rad&#39;], index=0, key=&#39;azimuth_unit&#39;, disabled=az_disabled)
+
+                if VERBOSE:
+                    print_param(PARAM2PRINT)
+            
+            #@st.experimental_dialog(&#34;Update Parameters to Remove Noise and Outlier Curves&#34;, width=&#39;large&#39;)
+            #def open_outliernoise_dialog():
+            with rmnocSetTab:
+                if VERBOSE:
+                    print(&#39;Setting up noise tab, session state length: &#39;, len(st.session_state.keys()))
+                # Set up toggles and options
+                remNoiseCol, rawNoiseCol = st.columns([0.55, 0.45])
+                remNoiseCol.toggle(&#34;Remove Noise&#34;, value=False, 
+                            help=&#39;Whether to remove noise from input data.&#39;, key=&#39;noise_removal&#39;)
+                noiseRemDisabled = not st.session_state.noise_removal
+
+                rawNoiseCol.toggle(&#34;Raw data&#34;, disabled=noiseRemDisabled, help=&#39;Whether to use the raw input data to remove noise.&#39;, key=&#39;remove_raw_noise&#39;)
+
+                remNoisePopover = st.popover(&#39;Remove Noise options&#39;, disabled=noiseRemDisabled,  use_container_width=True)
+                with remNoisePopover:
+                    # Auto noise
+                    st.toggle(&#34;Auto Noise Removal&#34;, value=False, disabled=noiseRemDisabled, 
+                                help=&#39;Whether to remove noise from input data.&#39;, key=&#39;auto_noise_removal&#39;)
+                                
+                    st.divider()
+
+                    do_stalta = False
+                    do_sat = False
+                    do_noise = False
+                    do_stdev = False
+                    do_warm = False
+                    do_cool = False
+                    do_outCurve = False
+
+                    doNoiseRemList = [do_stalta, do_sat, do_noise, do_stdev, do_warm, do_cool]
+                    autoRemList = [do_stdev, do_sat]
+
+                    if not st.session_state.noise_removal:
+                        for doNR in doNoiseRemList:
+                            doNR = False
+
+                    if st.session_state.auto_noise_removal and not any(autoRemList):
+                        do_stdev = True
+                        do_sat = True
+
+                    # Standard devation ratio
+                    st.toggle(&#34;StDev Ratio Noise Detection&#34;, value=do_stdev, disabled=noiseRemDisabled, 
+                                help=&#39;Whether to remove noise from input data.&#39;, key=&#39;stdev_noise_removal&#39;)
+                    stDevDisabled = (not st.session_state.stdev_noise_removal) or noiseRemDisabled
+                    #std_ratio_thresh=2.0, std_window_size=20.0, min_std_win=5.0,
+                    st.number_input(&#39;Moving StDev. Threshold&#39;, min_value=0.0, max_value=100.0, step=0.1, value=2.0,
+                                    help=&#39;The threshold value of StDev_Moving / StDev_Total to use as a removal threshold&#39;,
+                                    format=&#34;%.1f&#34;, disabled=stDevDisabled, key=&#39;std_ratio_thresh&#39;)
+                    mvStDWinCol, minStDWinCol = st.columns([0.5, 0.5])
+                    mvStDWinCol.number_input(&#39;Moving StDev. Win Size (samples)&#39;, value=20, 
+                                    help=&#39;The size of the window to use to calculate the rolling standard deviation&#39;,
+                                    disabled=stDevDisabled, step=1, key=&#39;std_window_size&#39;)
+                    minStDWinCol.number_input(&#39;Min. Win. Size (samples)&#39;, value=5, 
+                                    help=&#34;The minimum number of samples in a row that exceed the ratio threshold for that window to be removed&#34;,
+                                    disabled=stDevDisabled, step=1, key=&#39;min_std_win&#39;)
+
+                    # Saturation threshold
+                    st.toggle(&#34;Saturation Threshold Noise Detection&#34;, value=do_sat, disabled=noiseRemDisabled, 
+                                help=&#39;Whether to remove noise from input data.&#39;, key=&#39;sat_noise_removal&#39;)
+                    satRemDisabled = (not st.session_state.sat_noise_removal) or noiseRemDisabled
+
+
+                    st.number_input(&#39;Saturation Percent&#39;, value=0.99, min_value=0.0, max_value=1.0, step=0.01,
+                                    format=&#34;%.2f&#34;, disabled=satRemDisabled, key=&#39;sat_percent&#39;)
+
+                    # STALTA
+                    st.toggle(&#34;STALTA Noise Detection&#34;, value=do_stalta, disabled=noiseRemDisabled, 
+                                help=&#39;Whether to remove noise from input data.&#39;, key=&#39;stalta_noise_removal&#39;)
+                    staltaDisabled = (not st.session_state.stalta_noise_removal) or noiseRemDisabled
+
+                    staCol, ltaCol = st.columns([0.5,0.5])
+                    staCol.number_input(&#39;Short Term Average (STA)&#39;, step=0.5, value=2.0,
+                                    help=&#39;Length of moving window (in seconds) for calculating STA average&#39;,
+                                    disabled=staltaDisabled, key=&#39;sta&#39;)
+                    ltaCol.number_input(&#39;Long Term Average (LTA)&#39;, value=30.0,
+                                    help=&#39;Length of moving window (in seconds) for calculating LTA average&#39;,
+                                    disabled=staltaDisabled, step=0.5, key=&#39;lta&#39;)
+                    staltaVals = np.arange(0, 51).tolist()
+                    st.select_slider(&#39;STA/LTA Thresholds&#39;, disabled=staltaDisabled, 
+                                    help=&#39;Trigger thresholds for STA/LTA calculation&#39;,
+                                    value=st.session_state.stalta_thresh, options=staltaVals, key=&#39;stalta_thresh&#39;)
+
+                    # Noise threshold
+                    st.toggle(&#34;Noise Threshold Noise Detection&#34;, value=do_noise, disabled=noiseRemDisabled, 
+                                help=&#39;Whether to remove noise from input data.&#39;, key=&#39;noise_thresh_noise_removal&#39;)
+                    noiseDisabled = (not st.session_state.noise_thresh_noise_removal) or noiseRemDisabled
+
+                    st.number_input(&#39;Noise Percent&#39;, value=0.8, min_value=0.0, max_value=1.0, step=0.05, 
+                                    format=&#34;%.2f&#34;, disabled=noiseDisabled, key=&#39;noise_percent&#39;)
+
+                    st.number_input(&#39;Minimum Window Size (samples)&#39;, value=1, step=1,
+                                    disabled=noiseDisabled, key=&#39;min_win_size&#39;)
+
+
+                    # Warmup
+                    st.toggle(&#34;Warmup Time Removal&#34;, value=do_warm, disabled=noiseRemDisabled, 
+                                help=&#39;Whether to remove noise from input data.&#39;, key=&#39;warmup_noise_removal&#39;)
+                    warmupDisabled = (not st.session_state.warmup_noise_removal) or noiseRemDisabled
+
+                    st.number_input(&#39;Warmup Time (seconds)&#39;, disabled=warmupDisabled, step=1, key=&#39;warmup_time&#39;)
+
+                    # Cooldown
+                    st.toggle(&#34;Cooldown Time Removal&#34;, value=do_cool, disabled=noiseRemDisabled, 
+                                help=&#39;Whether to remove noise from input data.&#39;, key=&#39;cooldown_noise_removal&#39;)
+                    cooldownDisabled = (not st.session_state.cooldown_noise_removal) or noiseRemDisabled
+
+                    st.number_input(&#39;Cooldown Time (seconds)&#39;, disabled=cooldownDisabled, step=1, key=&#39;cooldown_time&#39;)
+
+
+                st.toggle(&#34;Remove Outlier Curves&#34;, value=False,
+                            help=&#39;Whether to remove outlier curves from input data.&#39;, key=&#39;outlier_curves_removal&#39;)
+                outlierCurveDisabled = not st.session_state.outlier_curves_removal
+
+                # Outlier curves
+                remCurvePopover = st.popover(&#39;Remove Outlier Curve Options&#39;, disabled=outlierCurveDisabled,  use_container_width=True)
+                with remCurvePopover:
+                    st.number_input(&#34;Outlier Threshold&#34;, disabled=outlierCurveDisabled, value=98, key=&#39;rmse_thresh&#39;)
+                    st.radio(&#39;Threshold type&#39;, horizontal=True, disabled=outlierCurveDisabled, options=[&#39;Percentile&#39;, &#39;Value&#39;], key=&#39;threshRadio&#39;)
+                    st.session_state.use_percentile = st.session_state.threshRadio==&#39;Percentile&#39;
+                    st.radio(&#39;Threshold curve&#39;, horizontal=True, disabled=outlierCurveDisabled, options=[&#39;HV Curve&#39;, &#39;Component Curves&#39;], key=&#39;curveRadio&#39;)
+                    st.session_state.use_hv_curves = (st.session_state.curveRadio==&#39;HV Curve&#39;)
+
+
+
+                #noise_rem_method_list = [&#39;None&#39;, &#39;Auto&#39;, &#39;Manual&#39;, &#39;Stalta&#39;, &#39;Saturation Threshold&#39;, &#39;Noise Threshold&#39;, &#39;Warmup&#39;, &#39;Cooldown&#39;, &#39;Buffer&#39;]
+                #st.multiselect(&#34;Noise Removal Method&#34;,
+                #            options=,
+                #            key=&#39;remove_method&#39;)
+
+                if VERBOSE:
+                    print_param(PARAM2PRINT)
+
+            #@st.experimental_dialog(&#34;Update Parameters to Generate PPSDs&#34;, width=&#39;large&#39;)
+            #def open_ppsd_dialog():
+            with gpSetTab:
+                if VERBOSE:
+                    print(&#39;Setting up ppsd tab, session state length: &#39;, len(st.session_state.keys()))
+                st.toggle(&#39;Skip on gaps&#39;, help=&#39;Determines whether time segments with gaps should be skipped entirely. Select skip_on_gaps=True for not filling gaps with zeros which might result in some data segments shorter than ppsd_length not used in the PPSD.&#39;,
+                        key=&#39;skip_on_gaps&#39;)
+                st.number_input(&#34;Minimum Decibel Value&#34;, value=-200, step=1, key=&#39;min_deb&#39;)
+                st.number_input(&#34;Maximum Decibel Value&#34;, value=-50, step=1, key=&#39;max_deb&#39;)
+                st.number_input(&#34;Decibel bin size&#34;, value=1.0, step=0.1, key=&#39;deb_step&#39;)
+                st.session_state.db_bins = (st.session_state.min_deb, st.session_state.max_deb, st.session_state.deb_step)
+
+                st.number_input(&#39;PPSD Length (seconds)&#39;, step=1, key=&#39;ppsd_length&#39;)
+                st.number_input(&#39;PPSD Window overlap (%, 0-1)&#39;, step=0.01, min_value=0.0, max_value=1.0, key=&#39;overlap&#39;)
+                st.number_input(&#39;Period Smoothing Width (octaves)&#39;, step=0.1, key=&#39;period_smoothing_width_octaves&#39;)
+                st.number_input(&#39;Period Step (octaves)&#39;, step=0.005, format=&#34;%.5f&#34;, key=&#39;period_step_octaves&#39;)
+                periodVals=[round(1/x,3) for x in bandVals]
+                periodVals.sort()
+
+                st.select_slider(&#39;Period Limits (s)&#39;, options=periodVals, value=st.session_state.period_limits, key=&#39;period_limits&#39;)
+                st.selectbox(&#34;Special Handling&#34;, options=[&#39;None&#39;, &#39;Ringlaser&#39;, &#39;Hydrophone&#39;], key=&#39;special_handling&#39;)
+                if VERBOSE:
+                    print_param(PARAM2PRINT)
+
+            #@st.experimental_dialog(&#34;Update Parameters to Process HVSR&#34;, width=&#39;large&#39;)
+            #def open_processHVSR_dialog():
+            with phvsrSetTab:
+                if VERBOSE:
+                    print(&#39;Setting up hvsr tab, session state length: &#39;, len(st.session_state.keys()))
+                st.selectbox(&#39;Peak Selection Method&#39;, options=[&#39;Max&#39;, &#39;Scored&#39;], key=&#39;peak_selection&#39;)
+                st.selectbox(&#34;Method to combine hoizontal components&#34;, 
+                            options=[&#39;Diffuse Field Assumption&#39;, &#39;Arithmetic Mean&#39;, &#39;Geometric Mean&#39;, &#39;Vector Summation&#39;, &#39;Quadratic Mean&#39;, &#39;Maximum Horizontal Value&#39;, &#39;Azimuth&#39;], 
+                            index=2, key=&#39;horizontal_method&#39;)
+                rList = np.arange(1001).tolist()
+                rList[0] = False
+                st.selectbox(&#34;Curve Smoothing&#34;, options=[&#39;None&#39;, &#39;Savgoy Filter&#39;, &#39;Konno Ohmachi&#39;, &#34;Proportional&#34;, &#34;Constant&#34;], index=2, key=&#39;freq_smooth&#39;)
+                st.select_slider(&#34;Curve Smoothing Parameter&#34;, options=np.arange(1000).tolist(), value=40, key=&#39;f_smooth_width&#39;)
+                st.select_slider(&#34;Resample&#34;, options=rList, value=1000, key=&#39;resample&#39;)
+                st.select_slider(&#39;Outlier Curve Removal&#39;, options=rList[:100], key=&#39;outlier_curve_percentile_threshold&#39;)
+                if VERBOSE:
+                    print_param(PARAM2PRINT)
+
+            def update_plot_string():
+                plotStringDict={&#39;Peak Frequency&#39;:&#39; p&#39;, &#39;Peak Amplitude&#39;:&#39; pa&#39;, &#39;Annotation&#39;:&#39; ann&#39;,
+                                &#39;Time windows&#39;:&#39; t&#39;, &#34;Peaks of Time Windows&#34;: &#39; tp&#39;,
+                                &#39;Test 1: Peak &gt; 2x trough below&#39;:&#39;1&#39;, 
+                                &#34;Test 2: Peak &gt; 2x trough above&#34;:&#39;2&#39;,
+                                &#34;Test 3: Peak &gt; 2&#34;:&#39;3&#39;, 
+                                &#34;Test 4&#34;:&#39;4&#39;, &#34;Test 5&#34;:&#39;5&#39;, &#34;Test 6&#34;:&#39;6&#39;,
+                                }
+                
+                plotString = &#39;&#39;
+                for plot in st.session_state.plotPlotStr:
+                    if plot==&#39;HVSR&#39;:
+                        plotString=plotString+&#39;HVSR&#39;
+                        for pc in st.session_state.hvsrPlotStr:
+                            if &#39;test&#39; in pc.lower():
+                                if &#39;test&#39; not in plotString.lower():
+                                    plotString = plotString + &#39; Test&#39;
+                                test_end_index = plotString.rfind(&#34;Test&#34;) + len(&#34;Test&#34;)
+                                nextSpaceIndex = plotString[test_end_index:].rfind(&#34; &#34;)
+                                if nextSpaceIndex == -1:
+                                    nextSpaceIndex=len(plotString)
+                                noString = plotString[test_end_index:nextSpaceIndex]
+                                noString = noString + plotStringDict[pc]
+
+                                # Order test numbers correctly
+                                testNos = &#39;&#39;.join(sorted(noString))
+                                plotString = plotString[:test_end_index] + testNos                             
+        
+                            else:
+                                plotString = plotString + plotStringDict[pc]
+                    if plot==&#39;Components&#39;:
+                        plotString=plotString+&#39; C+&#39;
+                        for pc in st.session_state.compPlotStr:
+                            plotString = plotString + plotStringDict[pc]
+                    if plot==&#39;Spectrogram&#39;:
+                        plotString=plotString+&#39; SPEC&#39;
+                        for pc in st.session_state.specPlotStr:
+                            plotString = plotString + plotStringDict[pc]
+                    if plot==&#39;Azimuth&#39;:
+                        plotString=plotString+&#39; AZ&#39;    
+                st.session_state.plot_type = plotString
+
+
+            #@st.experimental_dialog(&#34;Update Plot Settings&#34;, width=&#39;large&#39;)
+            #def plot_settings_dialog():
+            with plotSetTab:
+                if VERBOSE:
+                    print(&#39;Setting up plot tab, session state length: &#39;, len(st.session_state.keys()))
+
+                st.selectbox(&#34;Plot Engine&#34;, options=[&#39;Plotly&#39;, &#34;Matplotlib&#34;], key=&#39;plot_engine&#39;, disabled=False, help=&#34;Currently, interactive plots are only supported in plotly.&#34;)
+                st.text_input(&#34;Plot type (plot string)&#34;, value=&#39;HVSR p ann C+ p ann Spec p&#39;, key=&#39;plot_type&#39;)
+                st.multiselect(&#34;Charts to show&#34;, options=[&#39;HVSR&#39;, &#34;Components&#34;, &#39;Spectrogram&#39;, &#39;Azimuth&#39;], default=[&#39;HVSR&#39;, &#39;Components&#39;, &#34;Spectrogram&#34;], 
+                                                on_change=update_plot_string, key=&#39;plotPlotStr&#39;)
+                
+                st.header(&#34;HVSR Chart&#34;, divider=&#39;rainbow&#39;)
+                st.multiselect(&#39;Items to plot&#39;, options=[&#39;Peak Frequency&#39;, &#39;Peak Amplitude&#39;, &#39;Annotation&#39;, &#39;Time windows&#39;, &#34;Peaks of Time Windows&#34;,
+                                                        &#39;Test 1: Peak &gt; 2x trough below&#39; , &#34;Test 2: Peak &gt; 2x trough above&#34;, &#34;Test 3: Peak &gt; 2&#34;, &#34;Test 4&#34;, &#34;Test 5&#34;, &#34;Test 6&#34;],
+                                                        on_change=update_plot_string,
+                                                        default=[&#34;Peak Frequency&#34;, &#34;Annotation&#34;], key=&#39;hvsrPlotStr&#39;)
+
+                st.header(&#34;Component Chart&#34;, divider=&#39;rainbow&#39;)
+                st.multiselect(&#39;Items to plot&#39;, options=[&#39;Peak Frequency&#39;, &#39;Annotation&#39;, &#39;Time windows&#39;], on_change=update_plot_string,
+                                                        default=[&#34;Peak Frequency&#34;, &#34;Annotation&#34;], key=&#39;compPlotStr&#39;)
+                
+                st.header(&#39;Spectrogram Chart&#39;, divider=&#39;rainbow&#39;)
+                st.multiselect(&#39;Items to plot&#39;, options=[&#39;Peak Frequency&#39;, &#39;Annotation&#39;], key=&#39;specPlotStr&#39;, on_change=update_plot_string,
+                                                default=[&#34;Peak Frequency&#34;, &#34;Annotation&#34;])
+                if VERBOSE:
+                    print_param(PARAM2PRINT)
+
+        if VERBOSE:
+            print(&#39;Done setting up sidebar, session state length: &#39;, len(st.session_state.keys()))
+            print(&#39;Done setting up everything (end of main), session state length: &#39;, len(st.session_state.keys()))
+            print_param(PARAM2PRINT)</code></pre>
+</details>
 <div class="desc"></div>
 </dd>
 <dt id="sprit.sprit_streamlit_ui.print_param"><code class="name flex">
 <span>def <span class="ident">print_param</span></span>(<span>key=None, write_key=False)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def print_param(key=PARAM2PRINT, write_key=False):
+    if key is None:
+        pass
+    elif key in st.session_state.keys():
+        print(key, st.session_state[key], &#39;type:&#39;, type(st.session_state[key]))
+        if write_key:
+            st.write(key, st.session_state[key], &#39;type:&#39;, type(st.session_state[key]))</code></pre>
+</details>
 <div class="desc"></div>
 </dd>
 </dl>
@@ -71,7 +1895,7 @@ hljs.highlightAll();
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.1</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
 </footer>
 </body>
 </html>

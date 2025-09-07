@@ -1,20 +1,18 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_streamlit_ui &mdash; sprit 2.9.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+  <title>sprit.sprit_streamlit_ui &mdash; sprit 3.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-  <!--[if lt IE 9]>
-    <script src="../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../_static/documentation_options.js?v=182a64a0"></script>
-        <script src="../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -73,51 +71,52 @@
   <h1>Source code for sprit.sprit_streamlit_ui</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;This file contains the code to run the SpRIT app (via streamlit) both locally and on the web.&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">base64</span>
-<span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">datetime</span>
-<span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">import</span> <span class="nn">io</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">pathlib</span>
-<span class="kn">import</span> <span class="nn">pickle</span>
-<span class="kn">import</span> <span class="nn">pkg_resources</span>
-<span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">import</span> <span class="nn">tempfile</span>
-<span class="kn">import</span> <span class="nn">zoneinfo</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">base64</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">importlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">zoneinfo</span>
 
-<span class="kn">import</span> <span class="nn">matplotlib</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">plotly.express</span> <span class="k">as</span> <span class="nn">px</span>
-<span class="kn">from</span> <span class="nn">plotly.express</span> <span class="kn">import</span> <span class="n">scatter</span> <span class="k">as</span> <span class="n">pxScatter</span>
-<span class="kn">from</span> <span class="nn">plotly.express</span> <span class="kn">import</span> <span class="n">timeline</span> <span class="k">as</span> <span class="n">pxTimeline</span>
-<span class="kn">from</span> <span class="nn">plotly.graph_objects</span> <span class="kn">import</span> <span class="n">Heatmap</span> <span class="k">as</span> <span class="n">goHeatmap</span>
-<span class="kn">from</span> <span class="nn">plotly.graph_objs._figurewidget</span> <span class="kn">import</span> <span class="n">FigureWidget</span>
-<span class="kn">from</span> <span class="nn">plotly.subplots</span> <span class="kn">import</span> <span class="n">make_subplots</span>
-<span class="kn">import</span> <span class="nn">streamlit</span> <span class="k">as</span> <span class="nn">st</span>
-<span class="kn">from</span> <span class="nn">obspy</span> <span class="kn">import</span> <span class="n">UTCDateTime</span>
-<span class="kn">from</span> <span class="nn">obspy.signal.spectral_estimation</span> <span class="kn">import</span> <span class="n">PPSD</span>
-<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">signal</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="kn">import</span> <span class="n">scatter</span> <span class="k">as</span> <span class="n">pxScatter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="kn">import</span> <span class="n">timeline</span> <span class="k">as</span> <span class="n">pxTimeline</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="kn">import</span> <span class="n">Heatmap</span> <span class="k">as</span> <span class="n">goHeatmap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">plotly.graph_objs._figurewidget</span><span class="w"> </span><span class="kn">import</span> <span class="n">FigureWidget</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">plotly.subplots</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_subplots</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">streamlit</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">st</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">obspy</span><span class="w"> </span><span class="kn">import</span> <span class="n">UTCDateTime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">obspy.signal.spectral_estimation</span><span class="w"> </span><span class="kn">import</span> <span class="n">PPSD</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">signal</span>
 
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">sprit</span>
-    <span class="kn">from</span> <span class="nn">sprit</span> <span class="kn">import</span> <span class="n">sprit_hvsr</span>
-    <span class="kn">from</span> <span class="nn">sprit</span> <span class="kn">import</span> <span class="n">sprit_plot</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sprit</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_hvsr</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sprit</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_plot</span>
 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
     <span class="n">parent_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)))</span>
     <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">parent_dir</span><span class="p">)</span>
-    <span class="kn">import</span> <span class="nn">sprit</span>
-    <span class="kn">from</span> <span class="nn">sprit</span> <span class="kn">import</span> <span class="n">sprit_hvsr</span>
-    <span class="kn">from</span> <span class="nn">sprit</span> <span class="kn">import</span> <span class="n">sprit_plot</span>
-    
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sprit</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_hvsr</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sprit</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_plot</span>
     
 <span class="n">VERBOSE</span> <span class="o">=</span> <span class="kc">False</span>
 
-<span class="n">RESOURCE_DIR</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;resources&#39;</span><span class="p">))</span>
+<span class="n">RESOURCE_DIR</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">files</span><span class="p">(</span><span class="s1">&#39;sprit&#39;</span><span class="p">)))</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;resources&#39;</span><span class="p">)</span>
 <span class="n">SAMPLE_DATA_DIR</span> <span class="o">=</span> <span class="n">RESOURCE_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;sample_data&#39;</span><span class="p">)</span>
 <span class="n">SETTINGS_DIR</span> <span class="o">=</span> <span class="n">RESOURCE_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;settings&#39;</span><span class="p">)</span>
+
+<span class="n">DEFAULT_BAND_LIST</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">DEFAULT_BAND</span><span class="p">)</span>
 
 <span class="n">spritLogoPath</span> <span class="o">=</span> <span class="n">RESOURCE_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s2">&quot;icon&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s2">&quot;SpRITLogo.png&quot;</span><span class="p">)</span>
 
@@ -128,7 +127,7 @@
 
 <div class="viewcode-block" id="print_param">
 <a class="viewcode-back" href="../../sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.print_param">[docs]</a>
-<span class="k">def</span> <span class="nf">print_param</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">PARAM2PRINT</span><span class="p">,</span> <span class="n">write_key</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">print_param</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">PARAM2PRINT</span><span class="p">,</span> <span class="n">write_key</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">pass</span>
     <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -142,7 +141,7 @@
 
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.main">[docs]</a>
-<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
 
     <span class="k">if</span> <span class="n">spritLogoPath</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
         <span class="n">st</span><span class="o">.</span><span class="n">logo</span><span class="p">(</span><span class="n">image</span><span class="o">=</span><span class="n">spritLogoPath</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="s1">&#39;large&#39;</span><span class="p">,</span>
@@ -223,7 +222,7 @@
 
 
     <span class="c1"># Function to initialize session state variables</span>
-    <span class="k">def</span> <span class="nf">initial_setup_fun</span><span class="p">(</span><span class="n">session_state_key</span><span class="p">,</span> <span class="n">initial_value</span><span class="p">,</span> <span class="n">running_value</span><span class="o">=</span><span class="s1">&#39;Do not use&#39;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">initial_setup_fun</span><span class="p">(</span><span class="n">session_state_key</span><span class="p">,</span> <span class="n">initial_value</span><span class="p">,</span> <span class="n">running_value</span><span class="o">=</span><span class="s1">&#39;Do not use&#39;</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">,</span> <span class="n">session_state_key</span><span class="p">):</span>
             <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">session_state_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">initial_value</span>
         <span class="k">elif</span> <span class="n">running_value</span> <span class="o">!=</span> <span class="s2">&quot;Do not use&quot;</span><span class="p">:</span>
@@ -235,7 +234,7 @@
     <span class="n">initial_setup_fun</span><span class="p">(</span><span class="s1">&#39;mainContain_setup&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">setup_session_state</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_session_state</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">initial_setup</span><span class="p">:</span>
             <span class="c1"># &quot;Splash screen&quot; (only shows at initial startup)</span>
 
@@ -415,23 +414,23 @@
             <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s1">&#39;NewSessionState&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">check_if_default</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_if_default</span><span class="p">():</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Checking defaults, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
-            <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span>
+            <span class="n">print_param</span><span class="p">(</span><span class="n">PARAM2PRINT</span><span class="p">)</span>
 
 
     <span class="k">if</span> <span class="n">VERBOSE</span><span class="p">:</span>
         <span class="n">check_if_default</span><span class="p">()</span>
 
 
-    <span class="k">def</span> <span class="nf">text_change</span><span class="p">(</span><span class="n">VERBOSE</span><span class="o">=</span><span class="n">VERBOSE</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">text_change</span><span class="p">(</span><span class="n">VERBOSE</span><span class="o">=</span><span class="n">VERBOSE</span><span class="p">):</span>
         <span class="c1">#Just a function to run so something is done when text changes</span>
         <span class="k">if</span> <span class="n">VERBOSE</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;TEXTCHange&#39;</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">on_file_upload</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_file_upload</span><span class="p">():</span>
         <span class="n">file</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">datapath_uploader</span>
         <span class="n">temp_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
@@ -443,7 +442,7 @@
 
 
     <span class="c1"># Set up main container</span>
-    <span class="k">def</span> <span class="nf">setup_main_container</span><span class="p">(</span><span class="n">do_setup_tabs</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_main_container</span><span class="p">(</span><span class="n">do_setup_tabs</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="n">mainContainer</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">container</span><span class="p">()</span>
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">mainContainer</span> <span class="o">=</span> <span class="n">mainContainer</span>
 
@@ -458,7 +457,7 @@
 
 
     <span class="c1"># Set up tabs</span>
-    <span class="k">def</span> <span class="nf">setup_tabs</span><span class="p">(</span><span class="n">mainContainer</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_tabs</span><span class="p">(</span><span class="n">mainContainer</span><span class="p">):</span>
         
         <span class="n">resultsTab</span><span class="p">,</span> <span class="n">inputTab</span><span class="p">,</span> <span class="n">outlierTab</span><span class="p">,</span> <span class="n">infoTab</span> <span class="o">=</span> <span class="n">mainContainer</span><span class="o">.</span><span class="n">tabs</span><span class="p">([</span><span class="s1">&#39;Results&#39;</span><span class="p">,</span> <span class="s1">&#39;Data&#39;</span><span class="p">,</span> <span class="s1">&#39;Outliers&#39;</span><span class="p">,</span> <span class="s1">&#39;Info&#39;</span><span class="p">])</span>
         <span class="n">plotReportTab</span><span class="p">,</span> <span class="n">csvReportTab</span><span class="p">,</span> <span class="n">strReportTab</span> <span class="o">=</span> <span class="n">resultsTab</span><span class="o">.</span><span class="n">tabs</span><span class="p">([</span><span class="s1">&#39;Summary/Plot&#39;</span><span class="p">,</span> <span class="s1">&#39;Results Table&#39;</span><span class="p">,</span> <span class="s1">&#39;Print Report&#39;</span><span class="p">])</span>
@@ -474,7 +473,7 @@
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">tabs_setup</span> <span class="o">=</span> <span class="kc">True</span>
 
 
-    <span class="k">def</span> <span class="nf">on_run_data</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_run_data</span><span class="p">():</span>
         <span class="c1"># Runs sample data if nothing specified</span>
         <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">input_data</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
             <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">input_data</span> <span class="o">=</span> <span class="s1">&#39;sample&#39;</span>
@@ -513,21 +512,21 @@
             <span class="n">excludedKeys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;plot_engine&#39;</span><span class="p">,</span> <span class="s1">&#39;plot_input_stream&#39;</span><span class="p">,</span> <span class="s1">&#39;show_plot&#39;</span><span class="p">,</span> <span class="s1">&#39;verbose&#39;</span><span class="p">,</span> <span class="s1">&#39;show_outlier_plot&#39;</span><span class="p">]</span>
             <span class="n">NOWTIME</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
             <span class="n">secondaryDefaults</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;acq_date&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="n">NOWTIME</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">NOWTIME</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">NOWTIME</span><span class="o">.</span><span class="n">day</span><span class="p">),</span>
-                                    <span class="s1">&#39;hvsr_band&#39;</span><span class="p">:(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span> <span class="s1">&#39;use_hv_curves&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
-                                    <span class="s1">&#39;starttime&#39;</span><span class="p">:</span><span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span>
-                                    <span class="s1">&#39;endtime&#39;</span><span class="p">:</span><span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="mi">23</span><span class="p">,</span> <span class="mi">59</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-                                    <span class="s1">&#39;peak_freq_range&#39;</span><span class="p">:(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span>
-                                    <span class="s1">&#39;stalta_thresh&#39;</span><span class="p">:(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span>
-                                    <span class="s1">&#39;period_limits&#39;</span><span class="p">:(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
-                                    <span class="s1">&#39;remove_method&#39;</span><span class="p">:[</span><span class="s1">&#39;None&#39;</span><span class="p">],</span>
-                                    <span class="s1">&#39;report_export_format&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
-                                    <span class="s1">&#39;report_formats&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="s1">&#39;print&#39;</span><span class="p">,</span> <span class="s1">&#39;table&#39;</span><span class="p">,</span> <span class="s1">&#39;plot&#39;</span><span class="p">,</span> <span class="s1">&#39;html&#39;</span><span class="p">,</span> <span class="s1">&#39;pdf&#39;</span><span class="p">]</span> <span class="p">,</span>
-                                    <span class="s1">&#39;show_pdf_report&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
-                                    <span class="s1">&#39;show_print_report&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
-                                    <span class="s1">&#39;show_plot_report&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
-                                    <span class="s1">&#39;elev_unit&#39;</span><span class="p">:</span><span class="s1">&#39;m&#39;</span><span class="p">,</span>
-                                    <span class="s1">&#39;plot_type&#39;</span><span class="p">:</span><span class="s1">&#39;HVSR p ann C+ p ann Spec p&#39;</span><span class="p">,</span>
-                                    <span class="s1">&#39;suppress_report_outputs&#39;</span><span class="p">:</span><span class="kc">True</span>
+                                 <span class="s1">&#39;hvsr_band&#39;</span><span class="p">:</span><span class="nb">tuple</span><span class="p">(</span><span class="n">DEFAULT_BAND_LIST</span><span class="p">),</span> <span class="s1">&#39;use_hv_curves&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+                                 <span class="s1">&#39;starttime&#39;</span><span class="p">:</span><span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span>
+                                 <span class="s1">&#39;endtime&#39;</span><span class="p">:</span><span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="mi">23</span><span class="p">,</span> <span class="mi">59</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                                 <span class="s1">&#39;peak_freq_range&#39;</span><span class="p">:</span><span class="nb">tuple</span><span class="p">(</span><span class="n">DEFAULT_BAND_LIST</span><span class="p">),</span>
+                                 <span class="s1">&#39;stalta_thresh&#39;</span><span class="p">:(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span>
+                                 <span class="s1">&#39;period_limits&#39;</span><span class="p">:(</span><span class="mi">1</span><span class="o">/</span><span class="n">DEFAULT_BAND_LIST</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="o">/</span><span class="n">DEFAULT_BAND_LIST</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                                 <span class="s1">&#39;remove_method&#39;</span><span class="p">:[</span><span class="s1">&#39;None&#39;</span><span class="p">],</span>
+                                 <span class="s1">&#39;report_export_format&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;report_formats&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="s1">&#39;print&#39;</span><span class="p">,</span> <span class="s1">&#39;table&#39;</span><span class="p">,</span> <span class="s1">&#39;plot&#39;</span><span class="p">,</span> <span class="s1">&#39;html&#39;</span><span class="p">,</span> <span class="s1">&#39;pdf&#39;</span><span class="p">]</span> <span class="p">,</span>
+                                 <span class="s1">&#39;show_pdf_report&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
+                                 <span class="s1">&#39;show_print_report&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+                                 <span class="s1">&#39;show_plot_report&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
+                                 <span class="s1">&#39;elev_unit&#39;</span><span class="p">:</span><span class="s1">&#39;m&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;plot_type&#39;</span><span class="p">:</span><span class="s1">&#39;HVSR p ann C+ p ann Spec p&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;suppress_report_outputs&#39;</span><span class="p">:</span><span class="kc">True</span>
                                     <span class="p">}</span>
             
             <span class="n">nonDefaultParams</span> <span class="o">=</span> <span class="kc">False</span>
@@ -547,7 +546,7 @@
                             <span class="n">spinnerDFList</span> <span class="o">=</span> <span class="p">[]</span>
                         <span class="n">nonDefaultParams</span> <span class="o">=</span> <span class="kc">True</span>
 
-                        <span class="k">def</span> <span class="nf">_get_centered_text</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">just</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">add_parenth</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+                        <span class="k">def</span><span class="w"> </span><span class="nf">_get_centered_text</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">just</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">add_parenth</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
                             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">text</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">size</span><span class="p">:</span>
                                 <span class="n">keyText</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">text</span><span class="p">)[:</span><span class="n">size</span><span class="o">-</span><span class="mi">5</span><span class="p">]</span><span class="o">+</span> <span class="s1">&#39;...&#39;</span>
                             <span class="k">else</span><span class="p">:</span>
@@ -587,14 +586,14 @@
 
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">stream</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;stream&#39;</span><span class="p">]</span>
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">stream_edited</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;stream_edited&#39;</span><span class="p">]</span>
-
+        
+        
         <span class="n">display_download_buttons</span><span class="p">()</span>
         <span class="n">st</span><span class="o">.</span><span class="n">toast</span><span class="p">(</span><span class="s1">&#39;Displaying results (download available)&#39;</span><span class="p">)</span>
         <span class="n">display_results</span><span class="p">()</span>
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">prev_datapath</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">input_data</span>
 
-
-    <span class="k">def</span> <span class="nf">on_read_data</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_read_data</span><span class="p">():</span>
         <span class="k">if</span> <span class="s1">&#39;read_button&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">read_button</span><span class="p">:</span>
             <span class="k">return</span>
 
@@ -632,15 +631,13 @@
         <span class="n">display_read_data</span><span class="p">(</span><span class="n">do_setup_tabs</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">do_interactive_display</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">do_interactive_display</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">interactive_display</span><span class="p">:</span>
             <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">plot_engine</span> <span class="o">=</span> <span class="s2">&quot;Plotly&quot;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">plot_engine</span> <span class="o">=</span> <span class="s2">&quot;Matplotlib&quot;</span>
 
-
-
-    <span class="k">def</span> <span class="nf">display_read_data</span><span class="p">(</span><span class="n">do_setup_tabs</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">display_read_data</span><span class="p">(</span><span class="n">do_setup_tabs</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         
         <span class="k">if</span> <span class="n">do_setup_tabs</span><span class="p">:</span>
             <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">mainContainer</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">container</span><span class="p">()</span>
@@ -678,12 +675,12 @@
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">infoTab</span><span class="o">.</span><span class="n">code</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">))</span>
 
 
-    <span class="k">def</span> <span class="nf">display_buttons_and_results</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">display_buttons_and_results</span><span class="p">():</span>
         <span class="n">display_download_buttons</span><span class="p">()</span>
         <span class="n">display_results</span><span class="p">()</span>
 
 
-    <span class="k">def</span> <span class="nf">display_results</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">display_results</span><span class="p">():</span>
         <span class="c1"># Set up container for output data</span>
         <span class="n">setup_main_container</span><span class="p">(</span><span class="n">do_setup_tabs</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">st</span><span class="o">.</span><span class="n">toast</span><span class="p">(</span><span class="s1">&#39;Displaying results&#39;</span><span class="p">)</span>
@@ -757,7 +754,7 @@
             <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">strReportTab</span><span class="o">.</span><span class="n">code</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;Print_Report&#39;</span><span class="p">],</span> <span class="n">language</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
     <span class="nd">@st</span><span class="o">.</span><span class="n">fragment</span>
-    <span class="k">def</span> <span class="nf">display_download_buttons</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">display_download_buttons</span><span class="p">():</span>
         <span class="c1">##dlText, dlPDFReport, dlStream, dlTable, dlPlot, dlHVSR = st.session_state.mainContainer.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])</span>
         <span class="n">dlText</span><span class="p">,</span> <span class="n">dlStream</span><span class="p">,</span> <span class="n">dlHVSR</span><span class="p">,</span> <span class="n">dlPDFReport</span><span class="p">,</span> <span class="n">dlTable</span><span class="p">,</span> <span class="n">dlPlot</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.16</span><span class="p">,</span> <span class="mf">0.16</span><span class="p">,</span> <span class="mf">0.16</span><span class="p">,</span> <span class="mf">0.16</span><span class="p">,</span> <span class="mf">0.16</span><span class="p">])</span>
         <span class="n">st</span><span class="o">.</span><span class="n">divider</span><span class="p">()</span>
@@ -776,7 +773,7 @@
 
         <span class="c1"># PDF Report download</span>
         <span class="c1">#@st.cache_data</span>
-        <span class="k">def</span> <span class="nf">_convert_pdf_for_download</span><span class="p">(</span><span class="n">_hv_data</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">_convert_pdf_for_download</span><span class="p">(</span><span class="n">_hv_data</span><span class="p">):</span>
             <span class="n">pdfPath</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">_generate_pdf_report</span><span class="p">(</span><span class="n">_hv_data</span><span class="p">,</span> <span class="n">return_pdf_path</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pdfPath</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pdf_file</span><span class="p">:</span>
                 <span class="n">PDFbyte</span> <span class="o">=</span> <span class="n">pdf_file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
@@ -793,7 +790,7 @@
 
         <span class="c1"># Data Stream</span>
         <span class="c1">#@st.cache_data</span>
-        <span class="k">def</span> <span class="nf">_convert_stream_for_download</span><span class="p">(</span><span class="n">_stream</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">_convert_stream_for_download</span><span class="p">(</span><span class="n">_stream</span><span class="p">):</span>
             <span class="n">strm</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">()</span>
             <span class="n">_stream</span> <span class="o">=</span> <span class="n">_stream</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
             <span class="n">_stream</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">strm</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;MSEED&#39;</span><span class="p">)</span>
@@ -811,7 +808,7 @@
 
         <span class="c1"># Table download</span>
         <span class="c1">#@st.cache_data</span>
-        <span class="k">def</span> <span class="nf">_convert_table_for_download</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">_convert_table_for_download</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
 
         <span class="n">csv</span> <span class="o">=</span> <span class="n">_convert_table_for_download</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;Table_Report&#39;</span><span class="p">])</span>
@@ -828,7 +825,7 @@
 
         <span class="c1"># Plot</span>
         <span class="c1">#@st.cache_data</span>
-        <span class="k">def</span> <span class="nf">_convert_plot_for_download</span><span class="p">(</span><span class="n">_HV_Plot</span><span class="p">):</span>            
+        <span class="k">def</span><span class="w"> </span><span class="nf">_convert_plot_for_download</span><span class="p">(</span><span class="n">_HV_Plot</span><span class="p">):</span>            
             <span class="n">_img</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">plot_engine</span> <span class="o">==</span> <span class="s1">&#39;Matplotlib&#39;</span><span class="p">:</span>
                 <span class="n">_HV_Plot</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">_img</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;png&#39;</span><span class="p">)</span>
@@ -852,11 +849,18 @@
 
         <span class="c1"># HVSR File</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="nd">@st</span><span class="o">.</span><span class="n">cache_data</span>
-            <span class="k">def</span> <span class="nf">_convert_hvsr_for_download</span><span class="p">(</span><span class="n">_hvsr_data</span><span class="p">):</span>
-                <span class="n">_hvsrPickle</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">_hvsr_data</span><span class="p">)</span>
-                <span class="k">return</span> <span class="n">_hvsrPickle</span>
+            <span class="c1">#@st.cache_data</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">_convert_hvsr_for_download</span><span class="p">(</span><span class="n">_hvsr_data</span><span class="p">):</span>
+                <span class="n">hvData</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">_hvsr_data</span><span class="p">)</span>
 
+                <span class="k">for</span> <span class="n">pk</span> <span class="ow">in</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">PLOT_KEYS</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvData</span><span class="p">,</span> <span class="n">pk</span><span class="p">):</span>
+                        <span class="nb">delattr</span><span class="p">(</span><span class="n">hvData</span><span class="p">,</span> <span class="n">pk</span><span class="p">)</span>
+
+                <span class="n">_hvsrPickle</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">hvData</span><span class="p">)</span>
+
+                <span class="k">return</span> <span class="n">_hvsrPickle</span>
+    
             <span class="n">hvsrPickle</span> <span class="o">=</span> <span class="n">_convert_hvsr_for_download</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">)</span>
 
             <span class="c1">##st.session_state.dlHVSR.download_button(</span>
@@ -877,12 +881,12 @@
                 <span class="n">icon</span><span class="o">=</span><span class="s2">&quot;:material/database:&quot;</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">on_reset</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_reset</span><span class="p">():</span>
         <span class="n">st</span><span class="o">.</span><span class="n">toast</span><span class="p">(</span><span class="s2">&quot;Session state cleared&quot;</span><span class="p">)</span>
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s1">&#39;NewSessionState&#39;</span><span class="p">]</span>
 
 
-    <span class="k">def</span> <span class="nf">_get_use_array</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">timeWindowArr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">psdArr</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_use_array</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">timeWindowArr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">psdArr</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">streamEdit</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">stream_edited</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
         <span class="n">earliestStart</span> <span class="o">=</span> <span class="n">UTCDateTime</span><span class="p">(</span><span class="mi">3000</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">31</span><span class="p">)</span>
@@ -963,14 +967,14 @@
 
 
     <span class="nd">@st</span><span class="o">.</span><span class="n">cache_data</span>
-    <span class="k">def</span> <span class="nf">_generate_stream_specgram</span><span class="p">(</span><span class="n">_trace</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_generate_stream_specgram</span><span class="p">(</span><span class="n">_trace</span><span class="p">):</span>
 
         <span class="k">return</span> <span class="n">signal</span><span class="o">.</span><span class="n">spectrogram</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">_trace</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
                                 <span class="n">fs</span><span class="o">=</span><span class="n">_trace</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">sampling_rate</span><span class="p">,</span>
                                 <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;magnitude&#39;</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">make_input_fig_pyplot</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_input_fig_pyplot</span><span class="p">():</span>
         <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span>
         <span class="n">stream</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">stream</span>
         
@@ -983,7 +987,7 @@
 
         <span class="k">return</span> <span class="n">inputFig</span>
 
-    <span class="k">def</span> <span class="nf">make_input_fig_plotly</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_input_fig_plotly</span><span class="p">():</span>
         <span class="n">no_subplots</span> <span class="o">=</span> <span class="mi">5</span>
         <span class="n">inputFig</span> <span class="o">=</span> <span class="n">make_subplots</span><span class="p">(</span><span class="n">rows</span><span class="o">=</span><span class="n">no_subplots</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                                         <span class="n">row_heights</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.16</span><span class="p">,</span> <span class="mf">0.16</span><span class="p">,</span> <span class="mf">0.16</span><span class="p">],</span>
@@ -1229,7 +1233,7 @@
         <span class="k">return</span> <span class="n">inputFig</span>
 
 
-    <span class="k">def</span> <span class="nf">update_from_data_selection</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_from_data_selection</span><span class="p">():</span>
         <span class="n">st</span><span class="o">.</span><span class="n">toast</span><span class="p">(</span><span class="s2">&quot;Updating H/V Curve statistics&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="s1">&#39;PPSDStatus&#39;</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">processing_status</span> <span class="ow">and</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">processing_status</span><span class="p">[</span><span class="s1">&#39;PPSDStatus&#39;</span><span class="p">]:</span>
@@ -1248,7 +1252,7 @@
         <span class="n">display_results</span><span class="p">()</span>
 
 
-    <span class="k">def</span> <span class="nf">update_data</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_data</span><span class="p">():</span>
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">data_chart_event</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">data_plot</span>
         <span class="n">specKey</span> <span class="o">=</span> <span class="s1">&#39;Z&#39;</span>
         <span class="n">hvsrBand</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">hvsr_band</span>
@@ -1324,7 +1328,7 @@
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">input_fig</span><span class="o">.</span><span class="n">update_yaxes</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;text&#39;</span><span class="p">:</span><span class="sa">f</span><span class="s1">&#39;Spectrogram (</span><span class="si">{</span><span class="n">specKey</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">},</span> <span class="n">row</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">input_fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">showlegend</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">has_attributes</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="o">*</span><span class="n">attributes</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">has_attributes</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="o">*</span><span class="n">attributes</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attributes</span><span class="p">)</span>
 
         <span class="n">procCond1</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;processing_status&#39;</span><span class="p">][</span><span class="s1">&#39;process_hvsr_status&#39;</span><span class="p">]</span>
@@ -1354,11 +1358,11 @@
             <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">mainContainer</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Data not read or processed correctly&#39;</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">update_selection_type</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_selection_type</span><span class="p">():</span>
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">input_selection_mode</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">input_selection_toggle</span>
 
 
-    <span class="k">def</span> <span class="nf">write_to_info_tab</span><span class="p">(</span><span class="n">infoTab</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_to_info_tab</span><span class="p">(</span><span class="n">infoTab</span><span class="p">):</span>
         <span class="k">with</span> <span class="n">infoTab</span><span class="p">:</span>
             <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;# Processing Parameters Used&quot;</span><span class="p">)</span>
             <span class="n">hvsrDataList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">,</span> <span class="s1">&#39;hvsr_data&#39;</span><span class="p">,</span> <span class="s1">&#39;hvsr_results&#39;</span><span class="p">]</span>
@@ -1374,7 +1378,7 @@
                     <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="n">funMD</span><span class="p">,</span> <span class="n">unsafe_allow_html</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 
-    <span class="k">def</span> <span class="nf">update_from_outlier_selection</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_from_outlier_selection</span><span class="p">():</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;This is intended as a callback for updating the main results tab, etc. after updating outlier curves&quot;&quot;&quot;</span>
         
         <span class="n">st</span><span class="o">.</span><span class="n">toast</span><span class="p">(</span><span class="s2">&quot;Updating H/V Curve statistics&quot;</span><span class="p">)</span>
@@ -1390,7 +1394,7 @@
         <span class="n">display_results</span><span class="p">()</span>
 
 
-    <span class="k">def</span> <span class="nf">update_outlier</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_outlier</span><span class="p">():</span>
         <span class="n">hvDF</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span>
         
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">outlier_chart_event</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">outlier_plot</span>
@@ -1419,7 +1423,7 @@
         <span class="n">display_results</span><span class="p">()</span>
 
 
-    <span class="k">def</span> <span class="nf">outlier_plot_in_tab</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">outlier_plot_in_tab</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">plot_engine</span> <span class="o">==</span> <span class="s1">&#39;Matplotlib&#39;</span><span class="p">:</span>
             <span class="n">outlierFig</span> <span class="o">=</span> <span class="n">sprit_plot</span><span class="o">.</span><span class="n">plot_outlier_curves</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">,</span> 
                                                         <span class="n">plot_engine</span><span class="o">=</span><span class="s1">&#39;Matplotlib&#39;</span><span class="p">)</span>
@@ -1491,7 +1495,7 @@
                                     <span class="n">theme</span><span class="o">=</span><span class="s1">&#39;streamlit&#39;</span><span class="p">)</span> 
 
 
-    <span class="k">def</span> <span class="nf">write_to_outlierTab</span><span class="p">():</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_to_outlierTab</span><span class="p">():</span>
         <span class="k">pass</span>
 
 
@@ -1537,7 +1541,7 @@
                             <span class="n">on_click</span><span class="o">=</span><span class="n">on_reset</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;reset_button&#39;</span><span class="p">)</span>
             <span class="n">readCol</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="n">readLabel</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_container_width</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                         <span class="n">on_click</span><span class="o">=</span><span class="n">on_read_data</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;read_button&#39;</span><span class="p">)</span>
-            <span class="n">runCol</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="n">runLabel</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;primary&#39;</span><span class="p">,</span> <span class="n">use_container_width</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">runCol</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="n">runLabel</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;primary&#39;</span><span class="p">,</span>  <span class="n">use_container_width</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                         <span class="n">on_click</span><span class="o">=</span><span class="n">on_run_data</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;run_button&#39;</span><span class="p">)</span>
         
 
@@ -1698,7 +1702,7 @@
 
                 <span class="n">rawNoiseCol</span><span class="o">.</span><span class="n">toggle</span><span class="p">(</span><span class="s2">&quot;Raw data&quot;</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="n">noiseRemDisabled</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Whether to use the raw input data to remove noise.&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;remove_raw_noise&#39;</span><span class="p">)</span>
 
-                <span class="n">remNoisePopover</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">popover</span><span class="p">(</span><span class="s1">&#39;Remove Noise options&#39;</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="n">noiseRemDisabled</span><span class="p">,</span> <span class="n">use_container_width</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">remNoisePopover</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">popover</span><span class="p">(</span><span class="s1">&#39;Remove Noise options&#39;</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="n">noiseRemDisabled</span><span class="p">,</span>  <span class="n">use_container_width</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="k">with</span> <span class="n">remNoisePopover</span><span class="p">:</span>
                     <span class="c1"># Auto noise</span>
                     <span class="n">st</span><span class="o">.</span><span class="n">toggle</span><span class="p">(</span><span class="s2">&quot;Auto Noise Removal&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="n">noiseRemDisabled</span><span class="p">,</span> 
@@ -1799,7 +1803,7 @@
                 <span class="n">outlierCurveDisabled</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">outlier_curves_removal</span>
 
                 <span class="c1"># Outlier curves</span>
-                <span class="n">remCurvePopover</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">popover</span><span class="p">(</span><span class="s1">&#39;Remove Outlier Curve Options&#39;</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="n">outlierCurveDisabled</span><span class="p">,</span> <span class="n">use_container_width</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">remCurvePopover</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">popover</span><span class="p">(</span><span class="s1">&#39;Remove Outlier Curve Options&#39;</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="n">outlierCurveDisabled</span><span class="p">,</span>  <span class="n">use_container_width</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="k">with</span> <span class="n">remCurvePopover</span><span class="p">:</span>
                     <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s2">&quot;Outlier Threshold&quot;</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="n">outlierCurveDisabled</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">98</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;rmse_thresh&#39;</span><span class="p">)</span>
                     <span class="n">st</span><span class="o">.</span><span class="n">radio</span><span class="p">(</span><span class="s1">&#39;Threshold type&#39;</span><span class="p">,</span> <span class="n">horizontal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="n">outlierCurveDisabled</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Percentile&#39;</span><span class="p">,</span> <span class="s1">&#39;Value&#39;</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;threshRadio&#39;</span><span class="p">)</span>
@@ -1859,7 +1863,7 @@
                 <span class="k">if</span> <span class="n">VERBOSE</span><span class="p">:</span>
                     <span class="n">print_param</span><span class="p">(</span><span class="n">PARAM2PRINT</span><span class="p">)</span>
 
-            <span class="k">def</span> <span class="nf">update_plot_string</span><span class="p">():</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">update_plot_string</span><span class="p">():</span>
                 <span class="n">plotStringDict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Peak Frequency&#39;</span><span class="p">:</span><span class="s1">&#39; p&#39;</span><span class="p">,</span> <span class="s1">&#39;Peak Amplitude&#39;</span><span class="p">:</span><span class="s1">&#39; pa&#39;</span><span class="p">,</span> <span class="s1">&#39;Annotation&#39;</span><span class="p">:</span><span class="s1">&#39; ann&#39;</span><span class="p">,</span>
                                 <span class="s1">&#39;Time windows&#39;</span><span class="p">:</span><span class="s1">&#39; t&#39;</span><span class="p">,</span> <span class="s2">&quot;Peaks of Time Windows&quot;</span><span class="p">:</span> <span class="s1">&#39; tp&#39;</span><span class="p">,</span>
                                 <span class="s1">&#39;Test 1: Peak &gt; 2x trough below&#39;</span><span class="p">:</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> 
@@ -1932,7 +1936,7 @@
         <span class="k">if</span> <span class="n">VERBOSE</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done setting up sidebar, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done setting up everything (end of main), session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
-            <span class="n">print_param</span><span class="p">(</span><span class="n">param2print</span><span class="p">)</span></div>
+            <span class="n">print_param</span><span class="p">(</span><span class="n">PARAM2PRINT</span><span class="p">)</span></div>
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>

@@ -3,19 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
-<meta name="generator" content="pdoc3 0.11.1">
+<meta name="generator" content="pdoc3 0.11.6">
 <title>sprit.sprit_jupyter_UI API documentation</title>
 <meta name="description" content="Functions to create jupyter notebook widget UI">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
-<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
 <style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
 <script>window.addEventListener('DOMContentLoaded', () => {
 hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
 hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
 })</script>
 </head>
 <body>
@@ -38,9 +49,2878 @@ hljs.highlightAll();
 <span>def <span class="ident">create_jupyter_ui</span></span>(<span>)</span>
 </code></dt>
 <dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def create_jupyter_ui():
+    &#34;&#34;&#34;Function that generates the user interface for Jupyter Notebooks.
+    
+    This interface uses ipywidgets, plotly, and IPython to create a user interface for processing data in a Jupyter notebook.
+
+    This is functionally equivalent to sprit.gui(&#39;nb&#39;).
+
+    SEE ALSO
+    --------
+    gui
+    &#34;&#34;&#34;
+    global hvsr_data
+    global results_fig
+    global log_textArea
+
+    ui_width = 20
+    ui_height= 12
+    log_textArea = widgets.Textarea(value=&#34;SESSION LOG&#34;, disabled=True, layout={&#39;height&#39;: &#39;300px&#39;,&#39;width&#39;: &#39;99%&#39;, &#39;overflow&#39;: &#39;scroll&#39;})
+
+    # INPUT TAB
+    # Create a VBox for the accordions
+    input_HBox = widgets.HBox()
+    input_accordion_label_box = widgets.VBox()
+    input_accordion_box = widgets.VBox()
+    input_accordion = widgets.Accordion()
+
+    # Input Params Accordion
+    input_params_grid = widgets.GridspecLayout(5, 10)
+    fetch_data_grid = widgets.GridspecLayout(7, 10)
+    calculate_azimuths_grid = widgets.GridspecLayout(5, 10)
+    noise_removal_grid = widgets.GridspecLayout(10, 10)
+    generate_psds_grid = widgets.GridspecLayout(6, 5)
+    process_hvsr_grid = widgets.GridspecLayout(5, 10)
+    remove_outliers_grid = widgets.GridspecLayout(5, 10)
+
+    # A text box for the site name
+    site_textbox = widgets.Text(description=&#39;Site Name&#39;,
+                            value=&#39;HVSR_Site&#39;,
+                            placeholder=&#39;HVSR_Site&#39;)
+                            
+    # Text box for project/county name
+    project_textbox = widgets.Text(description=&#39;Project&#39;, 
+                           placeholder= &#34;Project or County Name&#34;)
+
+    # A text box labeled Metadata Filepath
+    metadata_filepath = widgets.Text(description=&#39;Metadata&#39;,
+                                     placeholder=&#39;Filepath to file to be read by obspy.read_inventory()&#39;,
+                                     layout=widgets.Layout(width=&#39;auto&#39;))
+
+    # A button next to it labeled &#34;Browse&#34;
+    browse_metadata_button = widgets.Button(description=&#39;Browse&#39;, layout=widgets.Layout(width=&#39;auto&#39;))
+    def select_metapath(event):
+        try:
+            root = tk.Tk()
+            root.wm_attributes(&#39;-topmost&#39;, True)
+            root.withdraw()
+            metadata_filepath.value = str(filedialog.askopenfilenames(title=&#39;Select Metadata File(s)&#39;))
+            root.destroy()
+        except Exception as e:
+            print(e)
+            browse_metadata_button.disabled=True
+            browse_metadata_button.description=&#39;Use Text Field&#39;
+    browse_metadata_button.on_click(select_metapath)
+
+    # Dropdown with instrument types
+    instrument_dropdown = widgets.Dropdown(options=[(&#39;Raspberry Shake&#39;, &#39;raspberry shake&#39;), 
+                                                    (&#39;Tromino Yellow&#39;, &#39;tromino yellow&#39;), 
+                                                    (&#39;Tromino Blue&#39;, &#39;tromino blue&#39;), 
+                                                    (&#39;Other Seismometer&#39;, &#39;seismometer&#39;)],
+                                           #style={&#39;description_width&#39;: &#39;initial&#39;},
+                                           description=&#39;Instrument:&#39;,
+                                           layout=widgets.Layout(width=&#39;100%&#39;))
+
+    network_textbox = widgets.Text(description=&#39;Network:&#39;,
+                                    placeholder=_get_default(sprit_hvsr.input_params, &#39;network&#39;),
+                                    value=_get_default(sprit_hvsr.input_params, &#39;network&#39;),
+                                    tooltip=&#34;input_params(network)&#34;)
+
+    station_textbox = widgets.Text(description=&#39;Station:&#39;,
+                                    placeholder=_get_default(sprit_hvsr.input_params, &#39;station&#39;),
+                                    value=_get_default(sprit_hvsr.input_params, &#39;station&#39;))
+
+    location_textbox = widgets.Text(description=&#39;Location:&#39;,
+                                    placeholder=_get_default(sprit_hvsr.input_params, &#39;location&#39;),
+                                    value=_get_default(sprit_hvsr.input_params, &#39;location&#39;))
+
+    z_channel_textbox = widgets.Text(description=&#39;Z Channel:&#39;,
+                                    placeholder=_get_default(sprit_hvsr.input_params, &#39;channels&#39;)[0],
+                                    value=_get_default(sprit_hvsr.input_params, &#39;channels&#39;)[0])
+
+    e_channel_textbox = widgets.Text(description=&#39;E Channel:&#39;,
+                                    placeholder=_get_default(sprit_hvsr.input_params, &#39;channels&#39;)[2],
+                                    value=_get_default(sprit_hvsr.input_params, &#39;channels&#39;)[2])
+
+    n_channel_textbox = widgets.Text(description=&#39;N Channel:&#39;,
+                                    placeholder=_get_default(sprit_hvsr.input_params, &#39;channels&#39;)[1],
+                                    value=_get_default(sprit_hvsr.input_params, &#39;channels&#39;)[1])
+
+    # Instrument Settings
+    inst_settings_text = widgets.Text(description=&#39;Inst. Settings&#39;, 
+                                      placeholder=&#39;Filepath to data with instrument settings&#39;, 
+                                      layout=widgets.Layout(width=&#39;auto&#39;))
+    instrument_read_button = widgets.Button(description=&#39;Browse&#39;, icon=&#39;fa-file-import&#39;,
+                                            layout=widgets.Layout(width=&#39;auto&#39;))
+
+    
+    def select_inst(event):
+        try:
+            if event.description == &#39;Select .inst file&#39;:
+                root = tk.Tk()
+                root.wm_attributes(&#39;-topmost&#39;, True)
+                root.withdraw()
+                inst_files = filedialog.askopenfilenames(defaultextension=&#39;.inst&#39;, filetypes=[(&#39;Inst&#39;, &#39;.inst&#39;)],
+                                                                    title=&#34;Select Instrument Settings File&#34;)
+                if isinstance(inst_files, tuple):
+                    pass
+                else:
+                    inst_files = tuple(inst_files)
+                root.destroy()
+            else:
+                inst_files = tuple([inst_settings_text.value])
+
+            for i, inst_f in enumerate(inst_files):
+                inst_settings_text.value = pathlib.Path(inst_f).as_posix()
+                inst_settings = sprit_hvsr.import_settings(settings_import_path=pathlib.Path(inst_f).as_posix(), settings_import_type=&#39;instrument&#39;)
+                
+                # Go through all items and add them
+                if &#39;instrument&#39; in inst_settings.keys():
+                    if inst_settings[&#39;instrument&#39;] not in instrument_dropdown.options:
+                        instrument_dropdown.options.append(inst_settings[&#39;instrument&#39;])
+                    instrument_dropdown.value = inst_settings[&#39;instrument&#39;]
+                
+                if &#39;net&#39; in inst_settings.keys():
+                    network_textbox.value = inst_settings[&#39;net&#39;]
+
+                if &#39;sta&#39; in inst_settings.keys():
+                    station_textbox.value = inst_settings[&#39;sta&#39;]
+
+                if &#39;location&#39; in inst_settings.keys():
+                    location_textbox.value = inst_settings[&#39;location&#39;]
+
+                if &#39;cha&#39; in inst_settings.keys():
+                    for c in inst_settings[&#39;cha&#39;]:
+                        if c.lower()[2]==&#39;z&#39;:
+                            z_channel_textbox.value = c
+                        if c.lower()[2]==&#39;e&#39;:
+                            e_channel_textbox.value = c
+                        if c.lower()[2] ==&#39;n&#39;:
+                            n_channel_textbox.value = c
+                
+                if &#39;metadata&#39; in inst_settings.keys():
+                    metadata_filepath.value = inst_settings[&#39;metadata&#39;]
+
+                if &#39;hvsr_band&#39; in inst_settings.keys():
+                    hvsr_band_rangeSlide.value = (inst_settings[&#39;hvsr_band&#39;][0], inst_settings[&#39;hvsr_band&#39;][1])
+
+        except Exception as e:
+            print(e)
+            instrument_read_button.disabled = True
+            instrument_read_button.description = &#39;Use Text Field&#39;
+    
+    instrument_read_button.on_click(select_inst)
+
+    # Input parameters parameters
+    input_params_grid[0, 0:2] = network_textbox
+    input_params_grid[0, 6:8] = location_textbox
+
+    input_params_grid[1, 0:2] = z_channel_textbox
+    input_params_grid[1, 2:4] = e_channel_textbox
+    input_params_grid[1, 4:6] = n_channel_textbox
+
+
+    input_params_grid[2, :9] = metadata_filepath
+    input_params_grid[2, 9:] = browse_metadata_button
+
+    input_params_grid[3, :9] = inst_settings_text
+    input_params_grid[3, 9:] = instrument_read_button
+
+    # Acquisition Accordion
+    instrument_grid = widgets.GridspecLayout(5, 10)
+    # Date Picker labelled &#34;Acquisition Date&#34;
+    acquisition_date_picker = widgets.DatePicker(description=&#39;Acq. Date:&#39;,
+                                            placeholder=datetime.datetime.today().date(),
+                                            value=datetime.datetime.today().date())
+    #acquisition_date_picker = widgets.NaiveDatetimePicker(description=&#39;Start time and Date&#39;,
+    #                                                      placeholder=datetime.datetime.now(),
+    #                                                      value=datetime.datetime.now())
+
+    # Label that shows the Date currently selected in the Date Picker
+    acquisition_doy = widgets.IntText(description=&#39;Day of Year&#39;,
+                                                placeholder=f&#34;{acquisition_date_picker.value.timetuple().tm_yday}&#34;,
+                                                value=f&#34;{acquisition_date_picker.value.timetuple().tm_yday}&#34;,
+                                                layout=widgets.Layout(width=&#39;auto&#39;))
+
+    def on_acq_date_change(change):
+        acquisition_doy.value = acquisition_date_picker.value.timetuple().tm_yday
+    acquisition_date_picker.observe(on_acq_date_change)
+
+    def on_doy_change(change):
+        curr_year = datetime.datetime.today().year
+        if acquisition_doy.value &gt; datetime.datetime.today().timetuple().tm_yday:
+            curr_year -= 1
+        acquisition_date_picker.value = (datetime.datetime(curr_year, 1, 1) + datetime.timedelta(days = acquisition_doy.value-1)).date()
+    acquisition_doy.observe(on_doy_change)
+
+    # Time selector (hour and minute) labelled &#34;Start Time&#34;.
+    try:
+        start_time_picker = widgets.TimePicker(description=&#39;Start Time:&#39;,
+                                            placeholder=datetime.time(0,0,0),
+                                            value=datetime.time(0,0,0),)
+                                            #layout=widgets.Layout(width=&#39;auto&#39;))
+    except Exception as e:
+        start_time_picker = widgets.Text(description=&#39;Start Time:&#39;,
+                                        placeholder=&#39;00:00&#39;,
+                                        value=&#39;00:00&#39;)
+                                        #layout=widgets.Layout(width=&#39;auto&#39;))
+
+    # Time selector (hour and minute) labelled &#34;End Time&#34;. Same as Start Time otherwise.
+    try:
+        end_time_picker = widgets.TimePicker(description=&#39;End Time:&#39;,
+                                        placeholder=datetime.time(23,59),
+                                        value=datetime.time(23,59),)
+                                        #layout=widgets.Layout(width=&#39;auto&#39;))
+    except Exception as e:
+        end_time_picker = widgets.Text(description=&#39;End Time:&#39;,
+                                        placeholder=&#39;23:59:59.999999&#39;,
+                                        value=&#39;23:59:59.999999&#39;,)
+                                        #layout=widgets.Layout(width=&#39;auto&#39;))
+
+    tzlist = list(available_timezones())
+    tzlist.sort()
+    tzlist.remove(&#39;UTC&#39;)
+    tzlist.remove(&#39;US/Central&#39;)
+    tzlist.insert(0, &#39;US/Central&#39;)
+    tzlist.insert(0, &#39;UTC&#39;)
+    # A dropdown list with all the items from zoneinfo.available_timezones(), default &#39;UTC&#39;
+    time_zone_dropdown = widgets.Dropdown(description=&#39;Time Zone:&#39;,
+                                          options=tzlist,
+                                          value=_get_default(sprit_hvsr.input_params, &#39;tzone&#39;))
+
+    instrument_grid[0,0] = acquisition_date_picker
+    instrument_grid[0,1] = acquisition_doy
+    instrument_grid[1,0] = start_time_picker
+    instrument_grid[2,0] = end_time_picker
+    instrument_grid[3,0] = time_zone_dropdown
+
+    # LOCATION ACCORDION
+    location_grid = widgets.GridspecLayout(4, 10)
+    # X coordinate input
+    xcoord_textbox = widgets.FloatText(description=&#39;X Coordinate:&#39;, tooltip=&#39;xcoord&#39;,
+                                       value=_get_default(sprit_hvsr.input_params, &#39;xcoord&#39;),
+                                        layout=widgets.Layout(width=&#39;100%&#39;),
+                                       placeholder=_get_default(sprit_hvsr.input_params, &#39;xcoord&#39;))
+    #location_grid[0, 0] = xcoord_textbox
+
+    # Y coordinate input
+    ycoord_textbox = widgets.FloatText(description=&#39;Y Coordinate&#39;, tooltip=&#39;ycoord:&#39;,
+                                       value=_get_default(sprit_hvsr.input_params, &#39;ycoord&#39;),
+                                        layout=widgets.Layout(width=&#39;100%&#39;),                                       
+                                       placeholder=_get_default(sprit_hvsr.input_params, &#39;ycoord&#39;))
+    #location_grid[1, 0] = ycoord_textbox
+
+    # Z coordinate input
+    zcoord_textbox = widgets.FloatText(description=&#39;Z Coordinate&#39;, tooltip=&#39;elevation:&#39;,
+                                       layout=widgets.Layout(width=&#39;100%&#39;),
+                                       value=_get_default(sprit_hvsr.input_params, &#39;elevation&#39;),
+                                       placeholder=_get_default(sprit_hvsr.input_params, &#39;elevation&#39;))
+    #location_grid[2, 0] = zcoord_textbox
+
+    # Input CRS input
+    input_crs_textbox = widgets.Text(description=&#39;Input CRS:&#39;,
+                                     layout=widgets.Layout(width=&#39;75%&#39;),
+                                     placholder=_get_default(sprit_hvsr.input_params, &#39;input_crs&#39;),
+                                     value=_get_default(sprit_hvsr.input_params, &#39;input_crs&#39;))
+    #location_grid[3, 0] = input_crs_textbox
+
+    # Output CRS input
+    output_crs_textbox = widgets.Text(description=&#39;Output CRS:&#39;,
+                                        layout=widgets.Layout(width=&#39;75%&#39;),
+                                        placholder=_get_default(sprit_hvsr.input_params, &#39;output_crs&#39;),
+                                        value=_get_default(sprit_hvsr.input_params, &#39;output_crs&#39;))
+    #location_grid[3, 1] = output_crs_textbox
+
+    # Z coordinate unit input
+    elev_unit_dropdown = widgets.Dropdown(options=[(&#39;Feet&#39;, &#39;feet&#39;), (&#39;Meters&#39;, &#39;meters&#39;)],
+                                         layout=widgets.Layout(width=&#39;75%&#39;),
+                                          value=_get_default(sprit_hvsr.input_params, &#39;elev_unit&#39;),
+                                          description=&#39;Z Unit:&#39;, tooltip=&#39;elev_unit&#39;)
+    #location_grid[2, 1] = elev_unit_dropdown
+
+    # Data format (for obspy format to use to read in)
+    peak_freq_rangeSlide = widgets.FloatRangeSlider(value=sprit_hvsr.DEFAULT_BAND,
+                                                        min=0.1,
+                                                        max=64, 
+                                                        step=0.1,
+                                                        description=&#39;Peak Range&#39;,
+                                                        tooltip=&#39;Define the frequency range over which to search for peaks&#39;,
+                                                        readout_format=&#39;.1f&#39;,
+                                                        layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;),
+                                                        )
+
+
+    hvsr_band_rangeSlide = widgets.FloatRangeSlider(value=sprit_hvsr.DEFAULT_BAND,
+                                               min=0.1,
+                                               max=64, 
+                                               step=0.1,
+                                               description=&#39;HVSR Band&#39;,
+                                               tooltip=&#39;Define the frequency range over which HVSR data is processed&#39;,
+                                               readout_format=&#39;.1f&#39;,
+                                               layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;),
+                                               )
+
+    # FETCH DATA ACCORDION
+    # A dropdown labeled &#34;Detrend type&#34; with &#34;Spline&#34;, &#34;Polynomial&#34;, or &#34;None&#34;
+    detrend_type_dropdown = widgets.Dropdown(options=[(&#39;Spline&#39;, &#39;spline&#39;), (&#39;Polynomial&#39;, &#39;polynomial&#39;), (&#39;None&#39;, &#39;none&#39;)],
+                            description=&#39;Detrend type&#39;,  layout=widgets.Layout(width=&#39;auto&#39;))
+    detrend_options = widgets.Text(description=&#39;Options&#39;, tooltip=&#39;detrend_options&#39;, 
+                                   placeholder=&#34;order=&#34;+str(_get_default(sprit_hvsr.fetch_data, &#39;detrend_options&#39;)), 
+                                   value=&#34;order=&#34;+str(_get_default(sprit_hvsr.fetch_data, &#39;detrend_options&#39;)),
+                                   layout=widgets.Layout(width=&#39;auto&#39;))
+
+    filter_type_dropdown = widgets.Dropdown(options=[(&#39;Bandpass&#39;, &#39;bandpass&#39;), 
+                                                      (&#39;Bandstop&#39;, &#39;bandstop&#39;), 
+                                                      (&#39;Highpass&#39;, &#39;highpass&#39;), 
+                                                      (&#39;Lowpass&#39;, &#39;lowpass&#39;), 
+                                                      (&#39;Lowpass (Cheby 2)&#39;, &#39;lowpass_cheby_2&#39;), 
+                                                      (&#39;Lowpass (FIR)&#39;, &#39;lowpass_fir&#39;), 
+                                                      (&#39;Remez (FIR)&#39;, &#39;remez_fir&#39;), 
+                                                      (&#39;None&#39;, &#39;none&#39;)],
+                                             value=&#34;none&#34;,
+                                             description=&#39;Filter type&#39;,  layout=widgets.Layout(width=&#39;auto&#39;))
+
+    filter_options = widgets.Text(description=&#39;Options&#39;, 
+                                      tooltip=&#34;Options for obspy.filter() method in a format: &#39;option_name=option_value, 2ndoptname=2ndoptvalue&#39;&#34;, 
+                                      placeholder=str(_get_default(sprit_hvsr.fetch_data, &#39;filter_options&#39;)),
+                                      value=str(_get_default(sprit_hvsr.fetch_data, &#39;filter_options&#39;)),
+                                      layout=widgets.Layout(width=&#39;auto&#39;))
+
+    # A text to specify the trim directory
+    data_export_path_textbox = widgets.Text(description=&#39;Export Path&#39;, value=&#34;None&#34;,#pathlib.Path().home().as_posix(),
+                                    layout=widgets.Layout(width=&#39;auto&#39;))
+
+    data_export_format_dropdown = widgets.Dropdown(options=OBSPY_FORMATS,
+                                                   value=&#39;MSEED&#39;,
+                                                   description=&#39;Format&#39;, 
+                                                   layout=widgets.Layout(width=&#39;auto&#39;))
+    
+    update_metadata_checkbox = widgets.Checkbox(value=True,
+                                                description=&#39;Update Metadata&#39;,
+                                                disabled=False,
+                                                indent=False,
+                                                tooltip=&#39;Only applicable if metadata specified&#39;)
+                                                
+
+    # Processing Settings
+    proc_settings_text = widgets.Text(placeholder=&#39;Instrument Settings Filepath&#39;, layout=widgets.Layout(width=&#39;55%&#39;))
+    proc_settings_read_button = widgets.Button(icon=&#39;fa-file-import&#39;,button_style=&#39;success&#39;,
+                                            layout=widgets.Layout(width=&#39;4%&#39;))
+    proc_settings_browse_button = widgets.Button(description=&#39;Select .proc file&#39;,
+                                            layout=widgets.Layout(width=&#39;10%&#39;))
+    proc_settings_hbox = widgets.HBox([proc_settings_text, proc_settings_read_button, proc_settings_browse_button])
+    
+    excluded_params = [&#39;hvsr_data&#39;, &#39;params&#39;, &#39;hvsr_results&#39;]
+    funcList = [sprit_hvsr.fetch_data, sprit_hvsr.remove_noise,
+                sprit_hvsr.generate_psds, sprit_hvsr.process_hvsr,
+                sprit_hvsr.remove_outlier_curves, sprit_hvsr.check_peaks,
+                sprit_hvsr.get_report]
+
+    def select_proc(event):
+        try:
+            if event.description == &#39;Select .proc file&#39;:
+                root = tk.Tk()
+                root.wm_attributes(&#39;-topmost&#39;, True)
+                root.withdraw()
+                proc_files = filedialog.askopenfilenames(defaultextension=&#39;.proc&#39;, filetypes=[(&#39;PROC&#39;, &#39;.proc&#39;)],
+                                                                    title=&#34;Select Processing Settings File&#34;)
+                if isinstance(proc_files, tuple):
+                    pass
+                else:
+                    proc_files = tuple(proc_files)
+                root.destroy()
+            else:
+                proc_files = tuple([proc_settings_text.value])
+
+            for i, proc_f in enumerate(proc_files):
+                proc_settings_text.value = pathlib.Path(proc_f).as_posix()
+                proc_settings = sprit_hvsr.import_settings(settings_import_path=pathlib.Path(proc_f).as_posix(), settings_import_type=&#39;processing&#39;)
+                
+                for func, params in proc_settings.items():
+                    if func in widget_param_dict.keys():
+                        for prm, val in params.items():
+                            if prm in widget_param_dict[func].keys():
+                                #print(prm, &#39;:&#39;, widget_param_dict[func][prm],&#39; |  &#39;, val)
+                                if val is None or val==&#39;None&#39;:
+                                    val=&#39;none&#39;
+                                if prm == &#39;export_format&#39;:
+                                    val = val.upper()
+                                if prm == &#39;smooth&#39;:
+                                    if val is True:
+                                        val = 51
+                                if prm == &#39;resample&#39;:
+                                    if val is True:
+                                        val = 1000
+                                if isinstance(widget_param_dict[func][prm], list):
+                                    for i, item in enumerate(widget_param_dict[func][prm]):
+                                        item.value = val[i]
+                                else:
+                                    widget_param_dict[func][prm].value = val
+        except Exception as e:
+            print(e)
+            proc_settings_browse_button.disabled = True
+            proc_settings_browse_button.description = &#39;Use Text Field&#39;
+    
+    proc_settings_read_button.on_click(select_proc)
+    proc_settings_browse_button.on_click(select_proc)
+
+    fetch_data_grid[0, :] = proc_settings_hbox
+    fetch_data_grid[1, 0] = data_export_format_dropdown
+
+    fetch_data_grid[2, 0] = detrend_type_dropdown
+    fetch_data_grid[2, 1] = detrend_options
+
+    fetch_data_grid[3, 0] = filter_type_dropdown
+    fetch_data_grid[3, 1] = filter_options
+
+    fetch_data_grid[4, :] = update_metadata_checkbox
+
+    fetch_data_grid[5, 0] = widgets.Label(&#39;Data Export&#39;)
+    fetch_data_grid[5, 1:6] = data_export_path_textbox
+    fetch_data_grid[5, 6:8] = data_export_format_dropdown
+
+    # Calculate Azimuth
+    #azimuth_angle=45, azimuth_type=&#39;multiple&#39;, azimuth_unit=&#39;degrees&#39;, verbose=False
+    azimuth_angle_slide = widgets.IntSlider(value=45,
+                                    min=0,
+                                    max=360,
+                                    step=1,
+                                    description=&#39;Angle&#39;,
+                                    disabled=False,
+                                    continuous_update=False,
+                                    orientation=&#39;horizontal&#39;,
+                                    readout=True)
+
+    azimuth_type_dropdown = widgets.Dropdown(options=[(&#39;Multiple/steps&#39;, &#39;multiple&#39;), (&#39;Single&#39;, &#39;single&#39;), (&#34;None&#34;, None)],
+                                            value=None,
+                                            description=&#39;Type&#39;)
+
+    azimuth_unit_dropdown = widgets.Dropdown(options=[(&#39;°&#39;, &#39;degrees&#39;), (&#39;rad&#39;, &#39;radians&#39;)],
+                                            value=&#39;degrees&#39;,
+                                            description=&#39;Unit&#39;)
+
+    calculate_azimuths_grid[0, 0] = widgets.Label(&#34;Azimuth information&#34;)
+    calculate_azimuths_grid[1, 0] = azimuth_type_dropdown
+    calculate_azimuths_grid[2, 0] = azimuth_unit_dropdown
+    calculate_azimuths_grid[3, :] = azimuth_angle_slide
+
+    # Noise removal
+    # remove_method=None, 
+    # processing_window=None, 
+    # sat_percent=0.995, 
+    # noise_percent=0.8, 
+    # sta=2, lta=30, stalta_thresh=[8, 16], 
+    # std_ratio_thresh=2.0, std_window_size=20.0, min_std_win=5.0, 
+    # warmup_time=0, cooldown_time=0, min_win_size=1, 
+    # remove_raw_noise=False,
+    remove_method_select = widgets.SelectMultiple(options=[(&#39;None&#39;, None),
+                                                            (&#34;Moving St. Dev.&#34;, &#34;moving_std&#34;),
+                                                            (&#39;Saturation Threshold&#39;, &#39;saturation&#39;),
+                                                            (&#34;Noise Threshold&#34;,&#34;noise&#34;),
+                                                            (&#39;STA/LTA&#39;, &#39;stalta&#39;),
+                                                            (&#39;Warmup&#39;, &#34;warmup&#34;),
+                                                            (&#34;Cooldown&#34;, &#34;cooldown&#34;),
+                                                            (&#34;Processing Windows&#34;, &#39;processing_window&#39;)],
+                                                    value=[None],
+                                                    rows=8,
+                                                    description=&#39;Method&#39;,
+                                                    disabled=False
+                                                    )
+
+    std_ratio_thresh_float = widgets.BoundedFloatText(value=float(_get_default(sprit_hvsr.remove_noise, &#34;std_ratio_thresh&#34;)),
+                                                      min=0.0,
+                                                      max=50,
+                                                      step=0.25,
+                                                      description=&#39;StDev Ratio&#39;,
+                                                      tooltip=&#39;The threshold for the ratio between the moving standard deviation/total standard deviation of the record to use as a threshold&#39;,
+                                                      disabled=True)
+    
+    std_window_size_float = widgets.BoundedFloatText(value=float(_get_default(sprit_hvsr.remove_noise, &#34;std_window_size&#34;)),
+                                                     min=0.0,
+                                                     max=60,
+                                                     step=0.5,
+                                                     description=&#39;StDev Window Size&#39;,
+                                                     tooltip=&#39;The size of the moving standard deviation window, in seconds&#39;,
+                                                     disabled=True)
+    
+    min_std_win = widgets.BoundedFloatText(value=float(_get_default(sprit_hvsr.remove_noise, &#34;min_std_win&#34;)),
+                                                        min=0.0,
+                                                        max=30,
+                                                        step=0.25,
+                                                        description=&#39;Min. StDev Window Size&#39;,
+                                                        tooltip=&#39;The minimum size of the window that can be removed by the moving standard deviation method, in seconds&#39;,
+                                                        disabled=True)
+
+
+    sat_percent_float = widgets.BoundedFloatText(value=float(_get_default(sprit_hvsr.remove_noise, &#34;sat_percent&#34;)),
+                                                min=0.0,
+                                                max=1.0,
+                                                step=0.05,
+                                                description=&#39;Saturation %&#39;,
+                                                tooltip=&#39;Percent (0-1) of absolute value of maximum value in dataset, above which value data is excluded from analysis&#39;,
+                                                disabled=True)
+
+    noise_percent_float = widgets.BoundedFloatText(value=float(_get_default(sprit_hvsr.remove_noise, &#34;noise_percent&#34;)),
+                                                min=0.0,
+                                                max=1.0,
+                                                step=0.05,
+                                                description=&#39;Noise %&#39;,
+                                                tooltip=&#39;Percent (0-1) of absolute value of maximum value in dataset, above which value data is excluded from analysis if persistent for min_win_size&#39;,
+                                                disabled=True)
+
+
+    sta_float = widgets.FloatText(value=float(_get_default(sprit_hvsr.remove_noise, &#34;sta&#34;)),
+                                  step=0.1,
+                                  description=&#39;STA&#39;,
+                                  tooltip=&#39;Length of window to use for short term average&#39;,
+                                  disabled=True)
+
+    lta_float = widgets.FloatText(value=float(_get_default(sprit_hvsr.remove_noise, &#34;lta&#34;)),
+                                                step=0.1,
+                                                description=&#39;LTA&#39;,
+                                                tooltip=&#39;Length of window to use for long term average&#39;,
+                                                disabled=True)
+
+    stalta_floatSlide = widgets.FloatRangeSlider(
+                                        value=_get_default(sprit_hvsr.remove_noise, &#34;stalta_thresh&#34;),
+                                        min=0,
+                                        max=100,
+                                        step=0.1,
+                                        description=&#39;STALTA Thresh.&#39;,
+                                        disabled=True,
+                                        continuous_update=False,
+                                        orientation=&#39;horizontal&#39;,
+                                        readout=True,
+                                        tooltip=&#39;The threshold at which an event is triggered, and at which the event is no longer considered active&#39;,
+                                        readout_format=&#39;.1f&#39;)
+
+    warmup_time_int = widgets.IntText(
+                                value=int(_get_default(sprit_hvsr.remove_noise, &#34;warmup_time&#34;)),
+                                description=&#39;Warmup [s]&#39;,
+                                tooltip= &#39;Warmup time in seconds (time to exclude from start of record)&#39;,
+                                disabled=True
+                            )
+    
+    cooldown_time_int = widgets.IntText(
+                                value=int(_get_default(sprit_hvsr.remove_noise, &#34;cooldown_time&#34;)),
+                                description=&#39;Cooldown [s]&#39;,
+                                tooltip= &#39;Cooldown time in seconds (time to exclude from end of record)&#39;,
+                                disabled=True
+                            )
+
+    min_win_size_float = widgets.FloatText(value=float(_get_default(sprit_hvsr.remove_noise, &#34;min_win_size&#34;)),
+                                           description=&#39;Min Window Size&#39;,
+                                           tooltip=&#39;Minimum length (in seconds) of windows that can be removed&#39;,
+                                           disabled=True)
+
+    proc_wind_text = widgets.Text(value=&#39;None&#39;,
+                                  tooltip=&#39;Manual specification of windows in the format: [[Starttime0, EndTime0], [Starttime1, Endtime1],....]&#39;,
+                                  description=&#39;Windows&#39;,
+                                  disabled=True)
+
+    raw_noise_checkbox = widgets.Checkbox(value=False,
+                                          description=&#39;Use raw stream&#39;,
+                                          disabled=True,
+                                          indent=False)
+
+
+
+    def on_remove_method_change(event):
+        print(&#39;disabling&#39;)
+        stalta_disabled = True
+        mst_disabled = True
+        sat_disabled = True
+        noise_disabled = True
+        warm_disabled = True
+        cool_disabled = True
+        proc_win_disabled = True
+        any_method_disabled = True
+
+        if &#39;stalta&#39; in remove_method_select.value:
+            stalta_disabled = False
+            any_method_disabled = False
+
+        if &#39;moving_std&#39; in remove_method_select.value:
+            mst_disabled = False
+            any_method_disabled = False
+
+        if &#39;saturation&#39; in remove_method_select.value:
+            sat_disabled = False
+            any_method_disabled = False
+
+        if &#39;noise&#39; in remove_method_select.value:
+            noise_disabled = False
+            any_method_disabled = False
+
+        if &#39;warmup&#39; in remove_method_select.value:
+            warm_disabled = False
+            any_method_disabled = False
+
+        if &#39;cooldown&#39; in remove_method_select.value:
+            cool_disabled = False
+            any_method_disabled = False
+
+        if &#39;processing_window&#39; in remove_method_select.value:
+            proc_win_disabled = False
+            any_method_disabled = False
+
+        # Now disable them all...or not
+        min_std_win.disabled = std_window_size_float.disabled = std_ratio_thresh_float.disabled = mst_disabled
+        sat_percent_float.disabled = sat_disabled
+        noise_percent_float.disabled = noise_disabled
+        sta_float.disabled = lta_float.disabled = stalta_floatSlide.disabled = stalta_disabled
+        warmup_time_int.disabled = warm_disabled
+        cooldown_time_int.disabled = cool_disabled
+        min_win_size_float.disabled = any_method_disabled
+        proc_wind_text.disabled = proc_win_disabled
+        raw_noise_checkbox.disabled = any_method_disabled
+    remove_method_select.observe(on_remove_method_change)
+
+    # Set up arrangement
+    noise_removal_grid[0:5, :2] = remove_method_select
+    noise_removal_grid[0:5, 2:4] = raw_noise_checkbox
+
+    noise_removal_grid[5, :1] = widgets.Label(&#34;St. Dev. Ratio (Total / Moving)&#34;)
+    noise_removal_grid[5, 2:4] = std_ratio_thresh_float
+    noise_removal_grid[5, 4:6] = std_window_size_float
+    noise_removal_grid[5, 6:8] = min_std_win
+
+    noise_removal_grid[6, :2] = sat_percent_float
+    noise_removal_grid[6, 2:4] = noise_percent_float
+
+    noise_removal_grid[7, 0:2] = sta_float
+    noise_removal_grid[7, 2:4] = lta_float
+    noise_removal_grid[7, 4:6] = stalta_floatSlide
+
+    noise_removal_grid[8, 0:2] = warmup_time_int
+    noise_removal_grid[8, 2:4] = cooldown_time_int
+
+    noise_removal_grid[9, :] = proc_wind_text
+
+    # Generate PSDs
+    # window_length=30.0, 
+    # overlap_pct=0.5, 
+    # window_type=&#39;hann&#39;, window_length_method=&#39;length&#39;, 
+    # remove_response=False, skip_on_gaps=True, 
+    # num_freq_bins=512, 
+    # obspy_ppsds=False, azimuthal_psds=False, verbose=False
+    
+    window_length_float = widgets.FloatText(value=float(_get_default(sprit_hvsr.generate_psds, &#34;window_length&#34;)),
+                                        description=&#39;Length&#39;,
+                                        tooltip=&#39;Length of windows used for FFT analysis, in seconds or number (depending on window_length_method)&#39;,
+                                        disabled=False)
+
+    window_length_method_dropdown = widgets.Dropdown(options=[(&#39;Length&#39;, &#39;length&#39;), (&#39;Number of windows&#39;, &#39;number&#39;)],
+                                            value=&#39;length&#39;,
+                                            tooltip=&#34;How to define the window length (by length or by number of windows)&#34;,
+                                            description=&#39;Method&#39;,)
+
+    overlap_pct_float = widgets.BoundedFloatText(value=float(_get_default(sprit_hvsr.generate_psds, &#34;overlap_pct&#34;)),
+                                                 min=0,
+                                                 max=1.0,
+                                                 step=0.01,
+                                                 description=&#39;Overlap %&#39;,
+                                                 tooltip=&#39;Percentage by which to overlap windows used for FFT analysis&#39;,
+                                                 disabled=False)
+    
+    window_type_dropdown = widgets.Dropdown(options=[(&#39;Hann&#39;, &#39;hann&#39;), 
+                                                     (&#34;Boxcar&#34;, &#39;boxcar&#39;),
+                                                     (&#39;Triangle&#39;, &#39;triang&#39;),
+                                                     (&#39;Blackman&#39;, &#39;blackman&#39;),
+                                                     (&#39;Hamming&#39;, &#39;hamming&#39;),
+                                                     (&#39;Bartlett&#39;, &#39;bartlett&#39;),
+                                                     (&#39;Flattop&#39;, &#39;flattop&#39;),
+                                                     (&#39;Parzen&#39;, &#39;parzen&#39;),
+                                                     (&#39;Bohman&#39;, &#39;bohman&#39;),
+                                                     (&#39;Blackman-Harris&#39;, &#39;blackmanharris&#39;),
+                                                     (&#39;Nuttal&#39;, &#39;nuttall&#39;),
+                                                     (&#39;Barthan&#39;, &#39;barthann&#39;),
+                                                     (&#39;Cosine&#39;, &#39;cosine&#39;),
+                                                     (&#39;Exponential&#39;, &#39;exponential&#39;),
+                                                     (&#39;Tukey&#39;, &#39;tukey&#39;),
+                                                     (&#39;Taylor&#39;, &#39;taylor&#39;),
+                                                     (&#39;Lanczos&#39;, &#39;lanczos&#39;)],
+                                            value=&#39;hann&#39;,
+                                            tooltip=&#39;Type of window to use. See scip.signal.get_window() for more information.&#39;,
+                                            description=&#39;Window Type&#39;,)
+
+    remove_response_check = widgets.Checkbox(value=False,
+                                             description=&#39;Remove Response&#39;,
+                                             tooltip=&#39;Whether to remove instrument response. Must have metadata attached to data.&#39;,
+                                             disabled=False)
+
+    skip_on_gaps_check  = widgets.Checkbox(value=False,
+                                           description=&#39;Skip on Gaps&#39;,
+                                           tooltip=&#39;Whether to skip windows if there are gaps&#39;,
+                                           disabled=False)
+
+    obspy_ppsds_check = widgets.Checkbox(value=False,
+                                         description=&#39;Use Obspy PPSDs&#39;,
+                                         tooltip=&#39;Whether to use the Obspy PPSD class to create PPSDs&#39;,
+                                         disabled=False)
+    
+    azimuthal_psds_check = widgets.Checkbox(value=False,
+                                            description=&#39;Use Azimuths&#39;,
+                                            tooltip=&#39;Whether to generate PSDs based on azimuths&#39;,
+                                            disabled=False)
+
+    num_freq_bins_dropdown = widgets.Dropdown(options=[64,128,512,1024,2048],
+                                            value=512,
+                                            tooltip=&#39;The number of frequency bins to use in creating PSDs&#39;,
+                                            description=&#39;# Freq. Bins&#39;,)
+
+    hvsr_band_gpsd_Rangeslide = widgets.FloatRangeSlider(value=sprit_hvsr.DEFAULT_BAND,
+                                                         min=0.1,
+                                                         max=64, 
+                                                         step=0.1,
+                                                         description=&#39;HVSR Band&#39;,
+                                                         tooltip=&#39;Define the frequency range over which HVSR data is processed&#39;,
+                                                         readout_format=&#39;.1f&#39;,
+                                                         layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;))
+    widgets.link((hvsr_band_gpsd_Rangeslide, &#39;value&#39;), (hvsr_band_rangeSlide, &#39;value&#39;))
+
+    peak_freq_gpsd_rangeSlide = widgets.FloatRangeSlider(value=sprit_hvsr.DEFAULT_BAND,
+                                                         min=0.1,
+                                                         max=64, 
+                                                         step=0.1,
+                                                         description=&#39;Peak Range&#39;,
+                                                         tooltip=&#39;Define the frequency range over which to search for peaks&#39;,
+                                                         readout_format=&#39;.1f&#39;,
+                                                         layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;))
+    widgets.link((peak_freq_gpsd_rangeSlide, &#39;value&#39;), (peak_freq_rangeSlide, &#39;value&#39;))
+
+    # Obspy PPSD SETTINGS
+    ppsd_length_label = widgets.Label(value=&#39;Window Length for PPSDs:&#39;)
+    ppsd_length = widgets.FloatText(style={&#39;description_width&#39;: &#39;initial&#39;}, 
+                                    placeholder=20, value=20,layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
+    
+    overlap_pct_label = widgets.Label(value=&#39;Overlap %:&#39;)
+    overlap_pct = widgets.FloatText(style={&#39;description_width&#39;: &#39;initial&#39;}, 
+                                    placeholder=0.5, value=0.5, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
+
+    period_step_label = widgets.Label(value=&#39;Period Step Octaves:&#39;)
+    period_step_octave = widgets.FloatText(style={&#39;description_width&#39;: &#39;initial&#39;}, 
+                                           placeholder=0.0625, value=0.0625, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
+
+    skip_on_gaps_label = widgets.Label(value=&#39;Skip on gaps:&#39;)
+    skip_on_gaps = widgets.Checkbox(value=False, disabled=False, indent=False)
+
+    db_step_label = widgets.Label(value=&#39;dB bins:&#39;)
+    db_bins_min = widgets.FloatText(description=&#39;Min. dB&#39;, style={&#39;description_width&#39;: &#39;initial&#39;},
+                                    placeholder=-200, value=-200, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
+    db_bins_max = widgets.FloatText(description=&#39;Max. dB&#39;, style={&#39;description_width&#39;: &#39;initial&#39;},
+                                    placeholder=-50, value=-50, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
+    db_bins_step = widgets.FloatText(description=&#39;dB Step&#39;, style={&#39;description_width&#39;: &#39;initial&#39;},
+                                    placeholder=1, value=1, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
+    
+    period_limit_label = widgets.Label(value=&#39;Period Limits:&#39;)
+    minPLim = round(1/(hvsr_band_rangeSlide.value[1]), 3)
+    maxPLim = round(1/(hvsr_band_rangeSlide.value[0]), 3)
+    period_limits_min = widgets.FloatText(description=&#39;Min. Period Limit&#39;, style={&#39;description_width&#39;: &#39;initial&#39;},
+                                    placeholder=minPLim, value=minPLim, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
+    period_limits_max = widgets.FloatText(description=&#39;Max. Period Limit&#39;, style={&#39;description_width&#39;: &#39;initial&#39;},
+                                    placeholder=maxPLim, value=maxPLim, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
+    period_smoothing_width = widgets.FloatText(description=&#39;Period Smoothing Width&#39;, style={&#39;description_width&#39;: &#39;initial&#39;},
+                                    placeholder=1, value=1, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
+
+    special_handling_dropdown = widgets.Dropdown(description=&#39;Special Handling&#39;, value=&#39;none&#39;,
+                                                options=[(&#39;None&#39;, &#39;none&#39;), (&#39;Ringlaser&#39;, &#39;ringlaser&#39;), (&#39;Hydrophone&#39;, &#39;hydrophone&#39;)],
+                                            style={&#39;description_width&#39;: &#39;initial&#39;},  layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
+
+    generate_psds_grid[0, 0] = widgets.Label(&#34;Window settings&#34;)
+    generate_psds_grid[0, 1] = window_length_float
+    generate_psds_grid[0, 2] = window_length_method_dropdown
+    generate_psds_grid[1, 1] = overlap_pct_float
+    generate_psds_grid[1, 2] = window_type_dropdown
+    generate_psds_grid[2, 0] = remove_response_check
+    generate_psds_grid[2, 1] = skip_on_gaps_check
+    generate_psds_grid[2, 2] = obspy_ppsds_check
+    generate_psds_grid[2, 3] = azimuthal_psds_check
+    generate_psds_grid[3, 0] = num_freq_bins_dropdown
+    generate_psds_grid[4, 0:2] = peak_freq_gpsd_rangeSlide
+    generate_psds_grid[5, 0:2] = hvsr_band_gpsd_Rangeslide
+    
+    # Process HVSR
+    # horizontal_method=None, 
+    # smooth=True, freq_smooth=&#39;konno ohmachi&#39;, f_smooth_width=40, 
+    # resample=True, 
+    # outlier_curve_rmse_percentile=False, 
+    # azimuth=None, 
+    # verbose=False
+
+    # HVSR SETTINGS SUBTAB
+    h_combine_meth_dropdown = widgets.Dropdown(description=&#39;&#39;, value=3,
+                                      tooltip=&#34;Select how to combine the horizontal components&#34;,
+                                      options=[(&#39;1. Differential Field Assumption&#39;, 1),
+                                               (&#39;2. Arithmetic Mean |  H = (N + E)/2&#39;, 2), 
+                                               (&#39;3. Geometric Mean | H = √(N * E) (SESAME recommended)&#39;, 3),
+                                               (&#39;4. Vector Summation | H = √(N^2 + E^2)&#39;, 4),
+                                               (&#39;5. Quadratic Mean | H = √(N^2 + E^2)/2&#39;, 5),
+                                               (&#39;6. Maximum Horizontal Value | H = max(N, E)&#39;, 6),
+                                               (&#39;7. Minimum Horizontal Value | H = max(N, E)&#39;, 7),
+                                               (&#39;8. Single Azimuth |  H = H2·cos(az) + H1·sin(az)&#39;, 8)])
+
+    freq_smoothing_dropdown = widgets.Dropdown(description=&#39;&#39;, value=&#39;konno ohmachi&#39;,
+                                      tooltip=&#34;Select which type of frequency smoothing algorithm to use&#34;,
+                                      options=[(&#39;Konno-Ohmachi&#39;, &#39;konno ohmachi&#39;),
+                                               (&#39;Constant&#39;,&#39;constant&#39;),
+                                               (&#39;Proportional&#39;, &#39;proportional&#39;),
+                                               (&#39;None&#39;, None)])
+    
+    freq_smooth_width_float = widgets.FloatText(description=&#39;Width&#39;,
+                                          tooltip=&#34;Specify the width for the smoothing algorithm&#34;,
+                                          placeholder=40, value=40)
+
+    resample_hv_curve_bool = widgets.Checkbox(value=True, description=&#39;Resample&#39;,
+                                              tooltip=&#34;Whether to resample the data to a speicified number of frequency bins.&#34;)
+    resample_hv_curve = widgets.IntText(description=&#39;&#39;, tooltip=&#34;If resampling, how many frequency points/bins to use.&#34;,
+                                        placeholder=512, value=512)
+
+    smooth_hv_curve_bool = widgets.Checkbox(value=True,description=&#39;Smooth&#39;,
+                                            tooltip=&#39;Whether to smooth the data (this does not account for logarithmic frequency width increases.)&#39;)
+    smooth_hv_curve = widgets.IntText(description=&#39;&#39;, tooltip=&#34;The window width to use for smoothing.&#34;,
+                                    placeholder=51, value=51)
+
+    peak_selection_type = widgets.Dropdown(description=&#39;Peak Method&#39;, value=&#39;max&#39;,
+                                        options=[(&#39;Highest Peak&#39;, &#39;max&#39;),
+                                             (&#39;Best Scored&#39;,&#39;scored&#39;)],
+                                        )#style={&#39;description_width&#39;: &#39;initial&#39;},  layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
+
+    process_hvsr_grid[0, 0] = widgets.Label(&#34;Horizontal Combination Method&#34;)
+    process_hvsr_grid[0, 1:] = h_combine_meth_dropdown
+    process_hvsr_grid[1, 0] = widgets.Label(&#34;Frequency Smoothing Operation&#34;)
+    process_hvsr_grid[1, 1] = freq_smoothing_dropdown
+    process_hvsr_grid[1, 2] = freq_smooth_width_float
+    process_hvsr_grid[2, 0] = resample_hv_curve_bool
+    process_hvsr_grid[2, 1] = resample_hv_curve
+    process_hvsr_grid[3, 0] = smooth_hv_curve_bool
+    process_hvsr_grid[3, 1] = smooth_hv_curve
+    process_hvsr_grid[4, 0] = peak_selection_type
+
+    # Remove outlier curves
+    # outlier_method=&#39;prototype&#39;,
+    # use_percentile=True, 
+    # use_hv_curve=False, 
+    # outiler_threshold=98, 
+    # min_pts=5,
+    # plot_engine=&#39;matplotlib&#39;, show_outlier_plot=False, generate_outlier_plot=True, 
+    # verbose=False
+    
+
+    outlier_method_dropdown = widgets.Dropdown(description=&#39;Method&#39;, value=None,
+                                               tooltip=&#34;Select which type of outlier removal algorithm to use.&#34;,
+                                               options=[(&#39;Prototype/RMSE&#39;, &#39;prototype&#39;),
+                                                        (&#39;DBSCAN&#39;,&#39;dbscan&#39;),
+                                                        (&#39;None&#39;, None)])
+    outlier_pctile_check = widgets.Checkbox(description=&#39;Use percentile&#39;, 
+                                            value=True)
+    
+    use_hv_curve_outliers_check = widgets.Checkbox(description=&#34;Use HV Curves&#34;,
+                                             tooltip=&#39;Whether to use HV Curve Outliers or PSD curves. HV Curves are only used after they have been calculated during the process_hvsr() step&#39;, 
+                                             layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), 
+                                             #style={&#39;description_width&#39;: &#39;initial&#39;}, 
+                                             value=False, 
+                                             disabled=False)
+    
+    outlier_threshold_slider = widgets.FloatSlider(value=_get_default(sprit_hvsr.remove_outlier_curves, &#39;outlier_threshold&#39;), min=0, max=100, step=0.1,
+                                                description=&#39;Threshold&#39;,
+                                                layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;),
+                                                disabled=False)
+    
+    min_pts_float = widgets.FloatText(description=&#39;Min. Pts.&#39;,
+                                      tooltip=&#34;The minimum number of points in a neighborhood, when &#39;DBSCAN&#39; is used for the outlier method.&#34;,
+                                      placeholder=5, value=5, disabled=True)
+    def outlier_method_update(event):
+        if &#39;dbscan&#39; in str(outlier_method_dropdown.value).lower():
+            min_pts_float.disabled=False
+        else:
+            min_pts_float.disabled=True
+    outlier_method_dropdown.observe(outlier_method_update)
+
+    # Define Outlier Fig
+    global outlier_fig
+    outlier_fig = go.FigureWidget()
+    outlier_graph_widget = widgets.Output()
+
+    remove_outliers_grid[0, 0] = widgets.Label(&#34;Outlier Curve Removal&#34;)
+    remove_outliers_grid[1, 0] = use_hv_curve_outliers_check
+    remove_outliers_grid[1, 1] = outlier_method_dropdown
+    remove_outliers_grid[1, 2] = min_pts_float
+    remove_outliers_grid[2, 0] = outlier_pctile_check
+    remove_outliers_grid[2, 1:] = outlier_threshold_slider
+
+    # PYTHON API ACCORDION
+    inputAPI_grid = widgets.GridspecLayout(6, 10)
+
+    # A text label with &#34;input_params()&#34;
+    #run_prefix = widgets.HTML(value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + &#39;sprit.run&#39; + &#39;&lt;/p&gt;&#39;, 
+    #                                   layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-end&#39;,align_content=&#39;flex-start&#39;))
+    #run_call = widgets.HTML(value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + &#39;()&#39; + &#39;&lt;/p&gt;&#39;,
+    #                                 layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-start&#39;,align_content=&#39;flex-start&#39;),)
+    #input_params_call =  widgets.Label(value=&#39;input_params()&#39;, layout=widgets.Layout(width=&#39;auto&#39;))
+    #inputAPI_grid[0, 0] = run_prefix
+    #inputAPI_grid[0, 1:] = run_call
+
+    # A text label with &#34;input_params()&#34;
+    input_params_prefix = widgets.HTML(value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + &#39;input_params&#39; + &#39;&lt;/p&gt;&#39;, 
+                                       layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-end&#39;,align_content=&#39;flex-start&#39;))
+    input_params_call = widgets.HTML(value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + &#39;()&#39; + &#39;&lt;/p&gt;&#39;,
+                                     layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-start&#39;,align_content=&#39;flex-start&#39;),)
+    #input_params_call =  widgets.Label(value=&#39;input_params()&#39;, layout=widgets.Layout(width=&#39;auto&#39;))
+    inputAPI_grid[0, 0] = input_params_prefix
+    inputAPI_grid[0, 1:] = input_params_call
+
+    # A text label with &#34;fetch_data()&#34;
+    fetch_data_prefix = widgets.HTML(value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + &#39;fetch_data&#39; + &#39;&lt;/p&gt;&#39;, 
+                                     layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-end&#39;,align_content=&#39;flex-start&#39;))
+    fetch_data_call = widgets.HTML(value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + &#39;()&#39; + &#39;&lt;/p&gt;&#39;,
+                                   layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-start&#39;,align_content=&#39;flex-start&#39;),)
+    inputAPI_grid[1, 0] = fetch_data_prefix
+    inputAPI_grid[1, 1:] = fetch_data_call
+
+    # Generate PPSDs python call
+    generate_psds_prefix = widgets.HTML(value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + &#39;generate_psds&#39; + &#39;&lt;/p&gt;&#39;, 
+                                     layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-end&#39;,align_content=&#39;flex-start&#39;))
+    generate_psds_call = widgets.HTML(value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + &#39;()&#39; + &#39;&lt;/p&gt;&#39;,
+                                   layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-start&#39;,align_content=&#39;flex-start&#39;),)
+    inputAPI_grid[2, 0] = generate_psds_prefix
+    inputAPI_grid[2, 1:] = generate_psds_call
+
+    # Process HVSR call
+    process_hvsr_call_prefix = widgets.HTML(value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + &#39;process_hvsr&#39; + &#39;&lt;/p&gt;&#39;, )
+                                            #layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-end&#39;, align_content=&#39;flex-start&#39;))
+    process_hvsr_call = widgets.HTML(value=&#39;()&#39;)
+    inputAPI_grid[3, 0] = process_hvsr_call_prefix
+    inputAPI_grid[3, 1:] = process_hvsr_call
+
+    # Remove Outlier Curves call
+    remove_outlier_curves_prefix = widgets.HTML(value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + &#39;remove_outlier_curves&#39; + &#39;&lt;/p&gt;&#39;, )
+                                            #layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-end&#39;, align_content=&#39;flex-start&#39;))
+    remove_outlier_curves_call = widgets.HTML(value=&#39;()&#39;)
+    inputAPI_grid[4, 0] = remove_outlier_curves_prefix
+    inputAPI_grid[4, 1:] = remove_outlier_curves_call
+
+    # Check peaks
+    check_peaks_call_prefix = widgets.HTML(value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39;+&#39;check_peaks&#39; + &#39;&lt;/p&gt;&#39;,
+                                       layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-end&#39;,align_content=&#39;flex-start&#39;))
+    check_peaks_call = widgets.HTML(value=&#39;()&#39;)
+    #check_peaks_call_hbox = widgets.HBox([check_peaks_call_prefix, check_peaks_call])
+    inputAPI_grid[5, 0] = check_peaks_call_prefix
+    inputAPI_grid[5, 1:] = check_peaks_call
+
+    # Set it all in place
+    #metaLabel = widgets.Label(&#39;Input Params&#39;, layout=widgets.Layout(height=&#39;20%&#39;, align_content=&#39;center&#39;, justify_content=&#39;flex-end&#39;))
+    #fetchLabel = widgets.Label(&#39;Fetch Data&#39;, layout=widgets.Layout(height=&#39;20%&#39;, align_content=&#39;center&#39;, justify_content=&#39;flex-end&#39;))
+    #remNoiseLabel = widgets.Label(&#39;Noise Removal&#39;, layout=widgets.Layout(height=&#39;20%&#39;, align_content=&#39;center&#39;, justify_content=&#39;flex-end&#39;))
+    #azimuthLabel = widgets.Label(&#39;Calculate Azimuths&#39;, layout=widgets.Layout(height=&#39;20%&#39;, align_content=&#39;center&#39;, justify_content=&#39;flex-end&#39;))
+    #genPSDLabel = widgets.Label(&#39;Generate PSDs&#39;, layout=widgets.Layout(height=&#39;20%&#39;, align_content=&#39;center&#39;, justify_content=&#39;flex-end&#39;))
+    #procHVSRLabel = widgets.Label(&#39;Process HVSR&#39;, layout=widgets.Layout(height=&#39;20%&#39;, align_content=&#39;center&#39;, justify_content=&#39;flex-end&#39;))
+    #remCurveLabel = widgets.Label(&#39;Remove Outlier Curves&#39;, layout=widgets.Layout(height=&#39;20%&#39;, align_content=&#39;center&#39;, justify_content=&#39;flex-end&#39;))
+    #checkPeakLabel = widgets.Label(&#39;Check Peaks&#39;, layout=widgets.Layout(height=&#39;20%&#39;, align_content=&#39;center&#39;, justify_content=&#39;flex-end&#39;))
+    #reportLabel = widgets.Label(&#39;Get Reports&#39;, layout=widgets.Layout(height=&#39;20%&#39;, align_content=&#39;center&#39;, justify_content=&#39;flex-end&#39;))
+    #apiLabel = widgets.Label(&#39;API Call&#39;, layout=widgets.Layout(height=&#39;20%&#39;, align_content=&#39;center&#39;, justify_content=&#39;flex-end&#39;))
+    #input_accordion_label_box.children = [metaLabel, instLabel, locLabel, ioparmLabel, apiLabel]
+    #input_accordion_label_box.layout = widgets.Layout(align_content=&#39;space-between&#39;, width=&#39;5%&#39;)
+
+    input_accordion.children = [input_params_grid, 
+                                fetch_data_grid,
+                                calculate_azimuths_grid,
+                                noise_removal_grid,
+                                generate_psds_grid,
+                                process_hvsr_grid,
+                                remove_outliers_grid,
+                                inputAPI_grid]
+    input_accordion.titles = [&#34;Input Params&#34;, 
+                              &#34;Fetch Data&#34;,
+                              &#34;Calculate Azimuths&#34;,
+                              &#34;Noise Removal&#34;, 
+                              &#34;Generate PSDs&#34;,
+                              &#34;Process HVSR&#34;,
+                              &#34;Remove Outlier Curves&#34;,
+                              &#34;See Python API Call&#34;]
+    input_accordion_box.layout = widgets.Layout(align_content=&#39;space-between&#39;, width=&#39;99%&#39;)
+    
+    input_accordion.layout = widgets.Layout(width=&#39;99%&#39;)
+
+    # ADD THE REST OF THE WIDGETS AROUND THE ACCORDIONS
+    tenpct_spacer = widgets.Button(description=&#39;&#39;, layout=widgets.Layout(width=&#39;20%&#39;, visibility=&#39;hidden&#39;))
+    fivepct_spacer = widgets.Button(description=&#39;&#39;, layout=widgets.Layout(width=&#39;5%&#39;, visibility=&#39;hidden&#39;))
+
+    # A text box labeled Data Filepath
+    data_filepath = widgets.Text(description=&#39;Data Filepath&#39;,
+                                    placeholder=&#39;sample&#39;, value=&#39;sample&#39;,
+                                    #style={&#39;description_width&#39;: &#39;initial&#39;},
+                                    layout=widgets.Layout(width=&#39;100%&#39;))
+    # A button next to input_data text labeled &#34;Browse&#34;
+    browse_data_button = widgets.Button(description=&#39;Browse&#39;, layout=widgets.Layout(width=&#39;100%&#39;))
+    def select_datapath(event):
+        try:
+            root = tk.Tk()
+            root.wm_attributes(&#39;-topmost&#39;, True)
+            root.withdraw()
+            if data_source_type.value == &#39;file&#39; or data_source_type.value == &#39;batch&#39;:
+                filepaths = filedialog.askopenfilenames(defaultextension=&#39;.MSEED&#39;, title=&#39;Select Data File&#39;)
+                if isinstance(filepaths, tuple):
+                    if len(filepaths) == 1:
+                        filepaths = str(filepaths[0])
+                data_filepath.value = str(filepaths)
+            else:
+                data_filepath.value = str(filedialog.askdirectory(mustexist=True, title=&#34;Select Data Directory&#34;))
+            root.destroy()
+        except Exception as e:
+            print(e)
+            browse_data_button.disabled=True
+            browse_data_button.description=&#39;Use Text Field&#39;
+    browse_data_button.on_click(select_datapath)
+
+    def on_input_data_change(event):
+        export_directory_text.value = pathlib.Path(data_filepath.value).parent.as_posix()
+        if export_directory_text.value == &#39;.&#39; or not pathlib.Path(export_directory_text.value).exists():
+            export_directory_text.value = pathlib.Path().home().as_posix()
+    data_filepath.observe(on_input_data_change)
+    # Dropdown with different source types 
+    data_source_type = widgets.Dropdown(options=[(&#39;File&#39;, &#39;file&#39;), (&#39;Raw&#39;, &#39;raw&#39;), (&#39;Batch&#39;, &#39;batch&#39;), (&#39;Directory&#39;, &#39;dir&#39;)],
+                                            description=&#39;Data Source type:&#39;,
+                                            value=&#39;file&#39;,orientation=&#39;horizontal&#39;,
+                                            style={&#39;description_width&#39;: &#39;initial&#39;},
+                                            layout=widgets.Layout(width=&#39;90%&#39;))
+    def on_ds_change(event):
+        if data_source_type.value == &#39;file&#39; or data_source_type.value== &#39;batch&#39;:
+            browse_data_button.description = &#39;Select Files&#39;
+        else:
+            browse_data_button.description = &#39;Select Folders&#39;
+    data_source_type.observe(on_ds_change)
+
+    # Processing Settings
+    processing_settings_button = widgets.FileUpload(accept=&#39;.proc&#39;, description=&#39;Processing Settings&#39;,
+                                            multiple=False,layout=widgets.Layout(width=&#39;10%&#39;))
+
+    # Whether to show plots outside of widget
+    show_plot_check =  widgets.Checkbox(description=&#39;Print Plots&#39;, value=False, disabled=False, indent=False,
+                                    layout=widgets.Layout(width=&#39;8%&#39;, justify_content=&#39;flex-end&#39;))
+
+
+    # Whether to print to terminal
+    verbose_check = widgets.Checkbox(description=&#39;Verbose&#39;, value=False, disabled=False, indent=False,
+                                    layout=widgets.Layout(width=&#39;5%&#39;, justify_content=&#39;flex-end&#39;))
+
+    # A progress bar
+    progress_bar = widgets.FloatProgress(value=0.0,min=0.0,max=1.0,
+                                    bar_style=&#39;info&#39;,
+                                    orientation=&#39;horizontal&#39;,layout=widgets.Layout(width=&#39;100%&#39;))
+
+    # A dark yellow button labeled &#34;Read Data&#34;
+    read_data_button = widgets.Button(description=&#39;Read Data&#39;,
+                                    button_style=&#39;warning&#39;)
+
+
+    # A forest green button labeled &#34;Run&#34;
+    process_hvsr_button = widgets.Button(description=&#39;Run&#39;,
+                                         button_style=&#39;success&#39;)
+
+    # Update input_param call
+    def update_input_param_call():
+        input_param_text = f&#34;&#34;&#34;(input_data=&#39;{data_filepath.value}&#39;, metadata=&#39;{metadata_filepath.value}&#39;, site=&#39;{site_textbox.value}&#39;, project=&#39;{project_textbox.value}&#39;, network=&#39;{network_textbox.value}&#39;,
+                    station=&#39;{station_textbox.value}&#39;, location=&#39;{location_textbox.value}&#39;, loc=&#39;{location_textbox.value}&#39;, channels={[z_channel_textbox.value, e_channel_textbox.value, n_channel_textbox.value]},
+                    acq_date=&#39;{acquisition_date_picker.value}&#39;, starttime=&#39;{start_time_picker.value}&#39;, endtime=&#39;{end_time_picker.value}&#39;, tzone=&#39;{time_zone_dropdown.value}&#39;,
+                    xcoord={xcoord_textbox.value}, ycoord={ycoord_textbox.value}, elevation={zcoord_textbox.value}, depth=0
+                    input_crs=&#39;{input_crs_textbox.value}&#39;, output_crs=&#39;{output_crs_textbox.value}&#39;, elev_unit=&#39;{elev_unit_dropdown.value}&#39;,
+                    instrument=&#39;{instrument_dropdown.value}&#39;, hvsr_band={hvsr_band_rangeSlide.value},
+                    peak_freq_range={[peak_freq_rangeSlide.value[0], peak_freq_rangeSlide.value[1]]}, verbose={verbose_check.value})&#34;&#34;&#34;
+        input_params_call.value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + input_param_text + &#39;&lt;/p&gt;&#39;
+    update_input_param_call()
+    
+    # Update fetch_data call
+    def update_fetch_data_call():
+        fetch_data_text = f&#34;&#34;&#34;(params=hvsr_data, source={data_source_type.value}, data_export_path={data_export_path_textbox.value},
+                            data_export_format={data_export_format_dropdown.value}, 
+                            detrend_type={detrend_type_dropdown.value}, detrend_options={detrend_options.value}, 
+                            filter_type={filter_type_dropdown.value}, filter_options={filter_options.value},
+                            update_metadata={update_metadata_checkbox.value},
+                            verbose={verbose_check.value}, ...)&#34;&#34;&#34;
+        fetch_data_call.value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + fetch_data_text + &#39;&lt;/p&gt;&#39;
+    update_fetch_data_call()
+
+
+    main_settings_grid = widgets.GridspecLayout(15, 10)
+    
+    main_settings_grid[0, 0:6] = data_filepath
+    main_settings_grid[0, 6:7] = browse_data_button
+    main_settings_grid[0, 8:] = data_source_type
+    
+    main_settings_grid[1,:] = widgets.HTML(&#39;&lt;hr&gt;&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;))
+
+    main_settings_grid[2, 0:2] = site_textbox
+    main_settings_grid[2, 2:4] = project_textbox
+
+    main_settings_grid[3, 0:2] = station_textbox
+    main_settings_grid[3, 2:4] = instrument_dropdown
+
+    main_settings_grid[4,:6] = widgets.HTML(&#39;&lt;hr&gt;&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;))
+
+    main_settings_grid[5, 0:1] = xcoord_textbox
+    main_settings_grid[5, 2:3] = ycoord_textbox
+    main_settings_grid[5, 4:5] = zcoord_textbox
+
+    main_settings_grid[6, 0] = input_crs_textbox
+    main_settings_grid[6, 2] = output_crs_textbox
+    main_settings_grid[6, 4] = elev_unit_dropdown
+    
+    main_settings_grid[7,:6] = widgets.HTML(&#39;&lt;hr&gt;&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;))
+    
+    main_settings_grid[8, 0:2] = acquisition_date_picker
+    main_settings_grid[8, 2] = acquisition_doy
+
+    main_settings_grid[9,0:2] = start_time_picker
+    main_settings_grid[9,2] = end_time_picker
+    main_settings_grid[9,3:5] = time_zone_dropdown
+    
+    main_settings_grid[10,:6] = widgets.HTML(&#39;&lt;hr&gt;&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;))
+    
+    main_settings_grid[11,0:4] = peak_freq_rangeSlide
+    main_settings_grid[12,0:4] = hvsr_band_rangeSlide
+    
+    main_settings_grid[13,:] = widgets.HTML(&#39;&lt;hr&gt;&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;))
+
+    input_accordion_box.children = [input_accordion]
+    #main_settings_grid[6:9, :] = input_accordion_box
+
+    main_settings_grid[14, 0:8] = progress_bar
+    main_settings_grid[14, 8] = read_data_button
+    main_settings_grid[14, 9] = process_hvsr_button
+
+
+    # Create a GridBox with 12 rows and 20 columns
+    global input_tab
+    input_tab = widgets.GridBox(layout=widgets.Layout(grid_template_columns=&#39;repeat(10, 1)&#39;,
+                                                grid_template_rows=&#39;repeat(12, 1)&#39;))
+
+    input_subtabs = widgets.Tab([main_settings_grid, input_accordion_box])
+    input_subtabs.set_title(0, &#34;Main Inputs&#34;)
+    input_subtabs.set_title(1, &#34;Additional Settings&#34;)
+    
+    input_tab = widgets.VBox(children=[input_subtabs])
+
+    def get_input_params():
+        input_params_kwargs={
+            &#39;input_data&#39;:data_filepath.value,
+            &#39;project&#39;:project_textbox.value,
+            &#39;metadata&#39;:metadata_filepath.value,
+            &#39;site&#39;:site_textbox.value,
+            &#39;instrument&#39;:instrument_dropdown.value,
+            &#39;network&#39;:network_textbox.value, &#39;station&#39;:station_textbox.value, &#39;location&#39;:location_textbox.value, 
+            &#39;channels&#39;:[z_channel_textbox.value, e_channel_textbox.value, n_channel_textbox.value],
+            &#39;starttime&#39;:start_time_picker.value,
+            &#39;endtime&#39;:end_time_picker.value,
+            &#39;tzone&#39;:time_zone_dropdown.value,
+            &#39;xcoord&#39;:xcoord_textbox.value,
+            &#39;ycoord&#39;:ycoord_textbox.value,
+            &#39;elevation&#39;:zcoord_textbox.value, &#39;elev_unit&#39;:elev_unit_dropdown.value,&#39;depth&#39;:0,
+            &#39;input_crs&#39;:input_crs_textbox.value,&#39;output_crs&#39;:output_crs_textbox.value,
+            &#39;hvsr_band&#39;:hvsr_band_rangeSlide.value,
+            &#39;peak_freq_range&#39;:peak_freq_rangeSlide.value}
+        return input_params_kwargs
+
+    def get_fetch_data_params():
+        fetch_data_kwargs = {
+            &#39;source&#39;:data_source_type.value, 
+            &#39;data_export_path&#39;:data_export_path_textbox.value,
+            &#39;export_format&#39;:data_export_format_dropdown.value,
+            &#39;detrend_type&#39;:detrend_type_dropdown.value,
+            &#39;detrend_options&#39;:detrend_options.value,
+            &#39;filter_type&#39;:filter_type_dropdown.value,
+            &#39;filter_options&#39;:filter_options.value,
+            &#39;update_metadata&#39;:update_metadata_checkbox.value           
+            }
+
+        if str(fetch_data_kwargs[&#39;detrend_type&#39;]).lower() == &#39;none&#39;:
+            fetch_data_kwargs[&#39;detrend_type&#39;] = None
+        
+        if str(fetch_data_kwargs[&#39;data_export_path&#39;]).lower() == &#39;none&#39;:
+            fetch_data_kwargs[&#39;data_export_path&#39;] = None
+
+        if str(fetch_data_kwargs[&#39;filter_type&#39;]).lower() == &#39;none&#39;:
+            fetch_data_kwargs[&#39;filter_type&#39;] = None
+
+        return fetch_data_kwargs
+
+    def read_data(button):
+        progress_bar.value = 0
+        log_textArea.value += f&#34;\n\nREADING DATA [{datetime.datetime.now()}]&#34;
+
+        ip_kwargs = get_input_params()
+        hvsr_data = sprit_hvsr.input_params(**ip_kwargs, verbose=verbose_check.value)
+        log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\ninput_params():\n&#39;{ip_kwargs}&#34;
+        if button.description==&#39;Read Data&#39;:
+            progress_bar.value=0.333
+        else:
+            progress_bar.value=0.1
+        fd_kwargs = get_fetch_data_params()
+        hvsr_data = sprit_hvsr.fetch_data(hvsr_data, **fd_kwargs, verbose=verbose_check.value)
+        log_textArea.value += &#39;\n\n&#39;+str(datetime.datetime.now())+&#39;\nfetch_data():\n\t&#39;+str(fd_kwargs)
+        if button.description==&#39;Read Data&#39;:
+            progress_bar.value=0.666
+        else:
+            progress_bar.value=0.2
+        
+        use_hv_curve_outliers_check.value=False
+        use_hv_curve_outliers_check.disabled=True
+
+        update_preview_fig(hvsr_data, preview_fig)
+
+        if button.description==&#39;Read Data&#39;:
+            sprit_tabs.selected_index = 1
+            progress_bar.value=0
+        return hvsr_data
+    
+    read_data_button.on_click(read_data)
+
+    def get_remove_noise_kwargs():
+        def get_remove_method():
+            remove_method_list=[]
+            do_stalta = stalta_check.value
+            do_sat_pct = max_saturation_check.value
+            do_noiseWin=noisy_windows_check.value
+            do_warmcool=warmcool_check.value
+            
+            if auto_remove_check.value:
+                remove_method_list=[&#39;stalta&#39;, &#39;saturation&#39;, &#39;noise&#39;, &#39;warmcool&#39;]
+            else:
+                if do_stalta:
+                    remove_method_list.append(&#39;stalta&#39;)
+                if do_sat_pct:
+                    remove_method_list.append(&#39;saturation&#39;)
+                if do_noiseWin:
+                    remove_method_list.append(&#39;noise&#39;)
+                if do_warmcool:
+                    remove_method_list.append(&#39;warmcool&#39;)
+            
+            if not remove_method_list:
+                remove_method_list = None
+            return remove_method_list
+        
+        remove_noise_kwargs = {&#39;remove_method&#39;:get_remove_method(),
+                                &#39;sat_percent&#39;:max_saturation_pct.value, 
+                                &#39;noise_percent&#39;:max_window_pct.value,
+                                &#39;sta&#39;:sta.value,
+                                &#39;lta&#39;:lta.value, 
+                                &#39;stalta_thresh&#39;:[stalta_thresh_low.value, stalta_thresh_hi.value], 
+                                &#39;warmup_time&#39;:warmup_time.value,
+                                &#39;cooldown_time&#39;:cooldown_time.value,
+                                &#39;min_win_size&#39;:noisy_window_length.value,
+                                &#39;remove_raw_noise&#39;:raw_data_remove_check.value,
+                                &#39;verbose&#39;:verbose_check.value}
+        return remove_noise_kwargs
+
+    def get_generate_ppsd_kwargs():
+        ppsd_kwargs = {
+                    &#39;window_length&#39;:window_length_float.value,
+                    &#39;overlap_pct&#39;:overlap_pct_float.value,
+                    &#39;window_type&#39;:window_type_dropdown.value,
+                    &#39;window_length_method&#39;:window_length_method_dropdown.value,
+                    &#39;remove_response&#39;:remove_response_check.value,
+                    &#39;skip_on_gaps&#39;:skip_on_gaps_check.value,
+                    &#39;num_freq_bins&#39;:num_freq_bins_dropdown.value,
+                    &#39;obspy_ppsds&#39;:obspy_ppsds_check.value,
+                    &#39;azimuthal_psds&#39;:azimuthal_psds_check.value,
+                    &#39;verbose&#39;:verbose_check.value,
+                    &#39;obspy_ppsds_kwargs&#39;:{&#39;db_bins&#39;:[db_bins_min.value, db_bins_max.value, db_bins_step.value],
+                                 &#39;ppsd_length&#39;:ppsd_length.value,
+                                 &#39;special_handling&#39;:special_handling_dropdown.value,
+                                 &#39;period_smoothing_width_octaves&#39;:period_smoothing_width.value,
+                                 &#39;period_step_octaves&#39;:period_step_octave.value,
+                                 &#39;period_limits&#39;:[period_limits_min.value, period_limits_max.value]}
+                    }
+
+        if str(ppsd_kwargs[&#39;obspy_ppsds_kwargs&#39;][&#39;special_handling&#39;]).lower() == &#39;none&#39;:
+            ppsd_kwargs[&#39;obspy_ppsds_kwargs&#39;][&#39;special_handling&#39;] = None        
+        return ppsd_kwargs
+
+
+    # Update process_hvsr call
+    def update_generate_psds_call():
+        #gp_kwargs = get_generate_ppsd_kwargs()
+        gp_text = f&#34;&#34;&#34;(hvsr_data=hvsr_data, 
+                        window_length={window_length_float.value}, 
+                        overlap_pct={overlap_pct_float.value},
+                        window_type={window_type_dropdown.value},
+                        window_length_method={window_length_method_dropdown.value},
+                        remove_response={remove_response_check.value},
+                        skip_on_gaps={skip_on_gaps_check.value},
+                        num_freq_bins={num_freq_bins_dropdown.value},
+                        obspy_ppsds={obspy_ppsds_check.value},
+                        azimuthal_psds={azimuthal_psds_check.value},
+                        ...
+                        obspy_ppsd_kwargs=...,
+                        verbose={verbose_check.value})&#34;&#34;&#34;
+        generate_psds_call.value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + gp_text + &#39;&lt;/p&gt;&#39;
+    update_generate_psds_call()
+
+    def get_remove_outlier_curve_kwargs():
+        roc_kwargs = {
+                &#39;outlier_method&#39;:outlier_method_dropdown.value,
+                &#39;use_percentile&#39;:outlier_pctile_check.value,
+                &#39;use_hv_curves&#39;:use_hv_curve_outliers_check.value,
+                &#39;outlier_threshold&#39;:outlier_threshold_slider.value,
+                &#39;min_pts&#39;:min_pts_float.value,
+                &#39;verbose&#39;:verbose_check.value
+            }
+        return roc_kwargs
+
+    def get_process_hvsr_kwargs():
+        if smooth_hv_curve_bool.value:
+            smooth_value = smooth_hv_curve.value
+        else:
+            smooth_value = smooth_hv_curve_bool.value
+
+        if resample_hv_curve_bool.value:
+            resample_value = resample_hv_curve.value
+        else:
+            resample_value = resample_hv_curve_bool.value
+
+        ph_kwargs={&#39;horizontal_method&#39;:h_combine_meth_dropdown.value,
+                    &#39;smooth&#39;:smooth_value,
+                    &#39;freq_smooth&#39;:freq_smoothing_dropdown.value,
+                    &#39;f_smooth_width&#39;:freq_smooth_width_float.value,
+                    &#39;resample&#39;:resample_value,
+                    &#39;verbose&#39;:verbose_check.value}
+        return ph_kwargs
+
+    # Update process_hvsr call
+    def update_process_hvsr_call():
+        #ph_kwargs = get_process_hvsr_kwargs()
+        ph_text = f&#34;&#34;&#34;(hvsr_data=hvsr_data, 
+                        horizontal_method={h_combine_meth_dropdown.value}, 
+                        smooth={smooth_hv_curve_bool.value}, 
+                        freq_smooth={freq_smoothing_dropdown.value}, 
+                        f_smooth_width={freq_smooth_width_float.value}, 
+                        resample={resample_hv_curve_bool.value}, 
+                        verbose={verbose_check.value})&#34;&#34;&#34;
+        process_hvsr_call.value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + ph_text + &#39;&lt;/p&gt;&#39;
+    #update_process_hvsr_call()
+
+
+    def get_check_peaks_kwargs():
+        cp_kwargs = {&#39;hvsr_band&#39;:hvsr_band_rangeSlide.value,
+                    &#39;peak_freq_range&#39;:peak_freq_rangeSlide.value,
+                    &#39;peak_selection&#39;:peak_selection_type.value,
+                    &#39;verbose&#39;:verbose_check.value}
+        return cp_kwargs
+
+    def _get_get_report_kwargs():
+        def get_formatted_plot_str():
+            # Initialize plot string
+            hvsr_plot_str = &#39;&#39;
+            comp_plot_str = &#39;&#39;
+            spec_plot_str = &#39;&#39;
+
+            # Whether to use each plot
+            if use_plot_hv.value:
+                hvsr_plot_str=hvsr_plot_str + &#34;HVSR&#34;
+            if use_plot_comp.value:
+                comp_plot_str=comp_plot_str + &#34;C&#34;
+            if use_plot_spec.value:
+                spec_plot_str=spec_plot_str + &#34;SPEC&#34;
+
+            # Whether components be on the same plot as HV curve?
+            if not combine_hv_comp.value:
+                comp_plot_str=comp_plot_str + &#34;+&#34;
+            else:
+                comp_plot_str=comp_plot_str.replace(&#39;+&#39;,&#39;&#39;)
+
+            # Whether to show (log) standard deviations
+            if not show_std_hv.value:
+                hvsr_plot_str=hvsr_plot_str + &#34; -s&#34;
+            if not show_std_comp.value:
+                comp_plot_str=comp_plot_str + &#34; -s&#34;                
+
+            # Whether to show all peaks
+            if show_all_peaks_hv.value:
+                hvsr_plot_str=hvsr_plot_str + &#34; all&#34;
+
+            # Whether curves from each time window are shown
+            if show_all_curves_hv.value:
+                hvsr_plot_str=hvsr_plot_str + &#34; t&#34;
+            if show_all_curves_comp.value:
+                comp_plot_str=comp_plot_str + &#34; t&#34;
+
+            # Whether the best peak is displayed
+            if show_best_peak_hv.value:
+                hvsr_plot_str=hvsr_plot_str + &#34; p&#34;
+            if show_best_peak_comp.value:
+                comp_plot_str=comp_plot_str + &#34; p&#34;
+            if show_best_peak_spec.value:
+                spec_plot_str=spec_plot_str + &#34; p&#34;
+
+            # Whether best peak value is annotated
+            if ann_best_peak_hv.value:
+                hvsr_plot_str=hvsr_plot_str + &#34; ann&#34;
+            if ann_best_peak_comp.value:
+                comp_plot_str=comp_plot_str + &#34; ann&#34;
+            if ann_best_peak_spec.value:
+                spec_plot_str=spec_plot_str + &#34; ann&#34;
+
+            # Whether peaks from individual time windows are shown
+            if show_ind_peaks_hv.value:
+                hvsr_plot_str=hvsr_plot_str + &#34; tp&#34;
+            if show_ind_peaks_spec.value:
+                spec_plot_str=spec_plot_str + &#39; tp&#39;
+            
+            # Whether to show legend
+            if show_legend_hv.value:
+                hvsr_plot_str=hvsr_plot_str + &#34; leg&#34;
+            if ann_best_peak_comp.value:
+                comp_plot_str=comp_plot_str + &#34; leg&#34;
+            if show_legend_spec.value:
+                spec_plot_str=spec_plot_str + &#34; leg&#34;            
+
+            # Combine string into one
+            plot_str = hvsr_plot_str + &#39; &#39; + comp_plot_str+ &#39; &#39; + spec_plot_str
+            return plot_str
+
+        gr_kwargs = {&#39;report_formats&#39;:[&#39;print&#39;,&#39;table&#39;],
+                     &#39;plot_type&#39;:get_formatted_plot_str(),
+                     &#39;plot_engine&#39;:&#39;plotly&#39;,
+                     &#39;report_export_path&#39;:None,
+                     &#39;csv_overwrite_opt&#39;:&#39;overwrite&#39;,
+                     &#39;suppress_report_outputs&#39;:False,
+                    &#39;verbose&#39;:verbose_check.value
+                     }
+        return gr_kwargs
+
+    def process_data(button):
+        startProc=datetime.datetime.now()
+        progress_bar.value = 0
+        log_textArea.value += f&#34;\n\nPROCESSING DATA [{startProc}]&#34;
+        global hvsr_data
+        # Read data again only if internal hvsr_data input_data variable is different from what is in the gui
+        if not &#39;hvsr_data&#39; in globals() or not hasattr(hvsr_data, &#39;input_data&#39;) or \
+                (pathlib.Path(hvsr_data.input_data).as_posix() != pathlib.Path(data_filepath.value).as_posix()):
+            hvsr_data = read_data(button)
+
+        remove_noise_kwargs = get_remove_noise_kwargs()
+        hvsr_data = sprit_hvsr.remove_noise(hvsr_data, **remove_noise_kwargs)
+        log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\nremove_noise()\n\t{remove_noise_kwargs}&#34;
+        progress_bar.value = 0.3
+
+        generate_ppsd_kwargs = get_generate_ppsd_kwargs()
+        hvsr_data = sprit_hvsr.generate_psds(hvsr_data, **generate_ppsd_kwargs)
+        progress_bar.value = 0.5
+        log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\ngenerate_ppsds()\n\t{generate_ppsd_kwargs}&#34;
+        
+       
+        # If this was started by clicking &#34;Generate PPSDs&#34;, stop here
+        if button.description == &#39;Generate PPSDs&#39;:
+            return
+
+        ph_kwargs = get_process_hvsr_kwargs()
+        hvsr_data = sprit_hvsr.process_hvsr(hvsr_data, **ph_kwargs)
+        log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\nprocess_hvsr()\n\t{ph_kwargs}&#34;
+        progress_bar.value = 0.75
+        update_outlier_fig()
+
+        roc_kwargs = get_remove_outlier_curve_kwargs()
+        hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
+        log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\nremove_outlier_curves()\n\t{roc_kwargs}&#34;
+        progress_bar.value = 0.85
+        outlier_fig, hvsr_data = update_outlier_fig()
+
+        use_hv_curve_outliers_check.value=False
+        use_hv_curve_outliers_check.disabled=False
+
+        def get_rmse_range():
+            minRMSE = 10000
+            maxRMSE = -1
+            if roc_kwargs[&#39;use_hv_curves&#39;]:
+                colnames = [&#39;HV_Curves&#39;]
+            else:
+                colnames = [&#39;psd_values_Z&#39;,
+                            &#39;psd_values_E&#39;,
+                            &#39;psd_values_N&#39;]
+            dataList = []
+            for col in colnames:
+                dataArr = np.stack(hvsr_data.hvsr_windows_df[col])
+                medCurveArr = np.nanmedian(dataArr, axis=0)
+                rmse = np.sqrt(((np.subtract(dataArr, medCurveArr)**2).sum(axis=1))/dataArr.shape[1])
+                if rmse.min() &lt; minRMSE:
+                    minRMSE = rmse.min()
+                if rmse.max() &gt; maxRMSE:
+                    maxRMSE = rmse.max()
+            outlier_threshold_slider.min = minRMSE
+            outlier_threshold_slider.max = maxRMSE
+            outlier_threshold_slider.step = round((maxRMSE-minRMSE)/100, 2)
+            outlier_threshold_slider.value = maxRMSE
+        get_rmse_range()
+
+        cp_kwargs = get_check_peaks_kwargs()
+        hvsr_data = sprit_hvsr.check_peaks(hvsr_data, **cp_kwargs)
+        log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\ncheck_peaks()\n\t{cp_kwargs}&#34;
+        progress_bar.value = 0.9
+
+        gr_kwargs = _get_get_report_kwargs()
+        hvsr_data = sprit_hvsr.get_report(hvsr_data, **gr_kwargs)
+        log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\nget_report()\n\t{gr_kwargs}\n\n&#34;
+        hvsr_data.get_report(report_formats=[&#39;print&#39;]) # Just in case print wasn&#39;t included
+        log_textArea.value += hvsr_data[&#39;Print_Report&#39;]
+        printed_results_textArea.value = hvsr_data[&#39;Print_Report&#39;]
+        hvsr_data.get_report(report_formats=[&#39;table&#39;]) 
+        results_table.value = hvsr_data[&#39;Table_Report&#39;].to_html()
+        
+        log_textArea.value += f&#39;Processing time: {datetime.datetime.now() - startProc}&#39;
+        progress_bar.value = 0.95
+
+        update_results_fig(hvsr_data, gr_kwargs[&#39;plot_type&#39;])
+        
+        progress_bar.value = 1
+        global hvsr_results
+        hvsr_results = hvsr_data
+        return hvsr_results
+        
+    def parse_plot_string(plot_string):
+        plot_list = plot_string.split()
+
+        hvsrList = [&#39;hvsr&#39;, &#39;hv&#39;, &#39;h&#39;]
+        compList = [&#39;component&#39;, &#39;comp&#39;, &#39;c&#39;]
+        compPlus = [item + &#39;+&#39; for item in compList]
+        specList = [&#39;spectrogram&#39;, &#39;specgram&#39;, &#39;spec&#39;,&#39;sg&#39;, &#39;s&#39;]
+
+        hvInd = np.nan
+        compInd = np.nan
+        specInd = np.nan
+
+        hvIndFound = False
+        compIndFound = False
+        specIndFound = False
+
+        for i, item in enumerate(plot_list):
+            if item.lower() in hvsrList and not hvIndFound:
+                # assign the index
+                hvInd = i
+                hvIndFound = True
+            if (item.lower() in compList or item.lower() in compPlus) and not compIndFound:
+                # assign the index
+                compInd = i
+                compIndFound = True
+            if item.lower() in specList and not specIndFound:
+                # assign the index
+                specInd = i
+                specIndFound = True
+
+        # Get individual plot lists (should already be correctly ordered)
+        if hvInd is np.nan:
+            hvsr_plot_list = [&#39;HVSR&#39;]
+
+        if compInd is np.nan:
+            comp_plot_list = []
+            if specInd is np.nan:
+                if hvInd is not np.nan:
+                    hvsr_plot_list = plot_list
+                spec_plot_list = []
+            else:
+                if hvInd is not np.nan:
+                    hvsr_plot_list = plot_list[hvInd:specInd]
+                spec_plot_list = plot_list[specInd:]
+        else:
+            if hvInd is not np.nan:
+                hvsr_plot_list = plot_list[hvInd:compInd]
+            
+            if specInd is np.nan:
+                comp_plot_list = plot_list[compInd:]
+                spec_plot_list = []
+            else:
+                comp_plot_list = plot_list[compInd:specInd]
+                spec_plot_list = plot_list[specInd:]
+
+        # Figure out how many subplots there will be
+        plot_list_list = [hvsr_plot_list, comp_plot_list, spec_plot_list]
+
+        return plot_list_list
+
+    def _parse_hv_plot_list(hv_data, hvsr_plot_list, azimuth=&#39;HV&#39;):
+        hvsr_data = hv_data
+        x_data = hvsr_data.x_freqs[&#39;Z&#39;]
+        hvsrDF = hvsr_data.hvsr_windows_df
+        if azimuth == &#39;HV&#39;:
+            HVCol = &#39;HV_Curves&#39;
+        else:
+            HVCol = &#39;HV_Curves_&#39;+azimuth
+
+        if &#39;tp&#39; in hvsr_plot_list:
+            allpeaks = []
+            for row in hvsrDF[hvsrDF[&#39;Use&#39;]][&#39;CurvesPeakFreqs_&#39;+azimuth].values:
+                for peak in row:
+                    allpeaks.append(peak)
+            allInd = []
+            for row, peakList in enumerate(hvsrDF[hvsrDF[&#39;Use&#39;]][&#39;CurvesPeakIndices_&#39;+azimuth].values):
+                for ind in peakList:
+                    allInd.append((row, ind))
+            x_vals = []
+            y_vals = []
+            y_max = np.nanmax(hvsr_data.hvsrp[azimuth])
+            hvCurveInd = list(hvsrDF.columns).index(HVCol)
+
+            for i, tp in enumerate(allpeaks):
+                x_vals.extend([tp, tp, None]) # add two x values and a None
+                y_vals.extend([0, hvsrDF.iloc[allInd[i][0], hvCurveInd][allInd[i][1]], None]) # add the first and last y values and a None            
+
+            results_fig.add_trace(go.Scatter(x=x_vals, y=y_vals, mode=&#39;lines&#39;,
+                                            line=dict(width=4, dash=&#34;solid&#34;, 
+                                            color=&#34;rgba(128,0,0,0.1)&#34;), 
+                                            name=&#39;Best Peaks Over Time&#39;),
+                                            row=1, col=1)
+
+        if &#39;t&#39; in hvsr_plot_list:
+            alltimecurves = np.stack(hvsrDF[hvsrDF[&#39;Use&#39;]][HVCol])
+            for i, row in enumerate(alltimecurves):
+                if i==0:
+                    showLeg = True
+                else:
+                    showLeg= False
+                results_fig.add_trace(go.Scatter(x=x_data[:-1], y=row, mode=&#39;lines&#39;,
+                                            line=dict(width=0.5, dash=&#34;solid&#34;, 
+                                            color=&#34;rgba(100, 110, 100, 0.8)&#34;), 
+                                            showlegend=showLeg,
+                                            name=&#39;Ind. time win. curve&#39;, 
+                                            hoverinfo=&#39;none&#39;),
+                                            row=1, col=1)
+
+        if &#39;all&#39; in hvsr_plot_list:
+            for i, p in enumerate(hvsr_data[&#39;hvsr_peak_freqs&#39;][azimuth]):
+                if i==0:
+                    showLeg = True
+                else:
+                    showLeg= False
+
+                results_fig.add_trace(go.Scatter(
+                    x=[p, p, None], # set x to None
+                    y=[0, np.nanmax(np.stack(hvsrDF[HVCol])),None], # set y to None
+                    mode=&#34;lines&#34;, # set mode to lines
+                    line=dict(width=1, dash=&#34;dot&#34;, color=&#34;gray&#34;), # set line properties
+                    name=&#34;All checked peaks&#34;, # set legend name
+                    showlegend=showLeg),
+                    row=1, col=1)
+
+        if &#39;-s&#39; not in hvsr_plot_list:
+            # Show standard deviation
+            results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.hvsrp2[azimuth],
+                                    line={&#39;color&#39;:&#39;black&#39;, &#39;width&#39;:0.1},marker=None, 
+                                    showlegend=False, name=&#39;Log. St.Dev. Upper&#39;,
+                                    hoverinfo=&#39;none&#39;),
+                                    row=1, col=1)
+            
+            results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.hvsrm2[azimuth],
+                                    line={&#39;color&#39;:&#39;black&#39;, &#39;width&#39;:0.1},marker=None,
+                                    fill=&#39;tonexty&#39;, fillcolor=&#34;rgba(128, 128, 128, 0.6)&#34;,
+                                    name=&#39;Log. St.Dev.&#39;, hoverinfo=&#39;none&#39;),
+                                    row=1, col=1)
+                
+        if &#39;p&#39; in hvsr_plot_list:
+            results_fig.add_trace(go.Scatter(
+                x=[hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;], hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;], None], # set x to None
+                y=[0,np.nanmax(np.stack(hvsrDF[&#39;HV_Curves&#39;])),None], # set y to None
+                mode=&#34;lines&#34;, # set mode to lines
+                line=dict(width=1, dash=&#34;dash&#34;, color=&#34;black&#34;), # set line properties
+                name=&#34;Best Peak&#34;),
+                row=1, col=1)
+
+        if &#39;ann&#39; in hvsr_plot_list:
+            # Annotate best peak
+            results_fig.add_annotation(x=np.log10(hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;]),
+                                    y=0, yanchor=&#39;bottom&#39;, xanchor=&#39;center&#39;,
+                                    text=f&#34;{hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;]:.3f} Hz&#34;,
+                                    bgcolor=&#39;rgba(255, 255, 255, 0.7)&#39;,
+                                    showarrow=False,
+                                    row=1, col=1)
+        return results_fig
+
+    def _parse_comp_plot_list(hv_data, comp_plot_list, azimuth=&#39;HV&#39;):
+        
+        hvsr_data = hv_data
+        # Initial setup
+        x_data = hvsr_data.x_freqs[&#39;Z&#39;]
+        hvsrDF = hvsr_data.hvsr_windows_df
+        same_plot = ((comp_plot_list != []) and (&#39;+&#39; not in comp_plot_list[0]))
+
+        if same_plot:
+            yaxis_to_use = &#39;y2&#39;
+            use_secondary = True
+            transparency_modifier = 0.5
+        else:
+            yaxis_to_use = &#39;y&#39;
+            use_secondary=False
+            transparency_modifier = 1
+
+        alpha = 0.4 * transparency_modifier
+        components = [&#39;Z&#39;, &#39;E&#39;, &#39;N&#39;]
+
+        compColor_semi_light = {&#39;Z&#39;:f&#39;rgba(128,128,128,{alpha})&#39;,
+                    &#39;E&#39;:f&#39;rgba(0,0,128,{alpha})&#39;,
+                    &#39;N&#39;:f&#39;rgba(128,0,0,{alpha})&#39;}
+
+        alpha = 0.7 * transparency_modifier
+        compColor_semi = {&#39;Z&#39;:f&#39;rgba(128,128,128,{alpha})&#39;,
+                        &#39;E&#39;:f&#39;rgba(100,100,128,{alpha})&#39;, 
+                        &#39;N&#39;:f&#39;rgba(128,100,100,{alpha})&#39;}
+
+        compColor = {&#39;Z&#39;:f&#39;rgba(128,128,128,{alpha})&#39;, 
+                    &#39;E&#39;:f&#39;rgba(100,100,250,{alpha})&#39;, 
+                    &#39;N&#39;:f&#39;rgba(250,100,100,{alpha})&#39;}
+
+        for az in hvsr_data.hvsr_az.keys():
+            components.append(az)
+            compColor_semi_light[az] = f&#39;rgba(0,128,0,{alpha})&#39;
+            compColor_semi[az] = f&#39;rgba(100,128,100,{alpha})&#39;
+            compColor[az] = f&#39;rgba(100,250,100,{alpha})&#39;
+
+        # Whether to plot in new subplot or not
+        if  comp_plot_list != [] and &#39;+&#39; in comp_plot_list[0]:
+            compRow=2
+        else:
+            compRow=1
+
+        # Whether to plot individual time curves
+        if &#39;t&#39; in comp_plot_list:
+            for comp in components:
+                alltimecurves = np.stack(hvsrDF[hvsrDF[&#39;Use&#39;]][&#39;psd_values_&#39;+comp])
+                for i, row in enumerate(alltimecurves):
+                    if i==0:
+                        showLeg = True
+                    else:
+                        showLeg= False
+                    
+                    results_fig.add_trace(go.Scatter(x=x_data[:-1], y=row, mode=&#39;lines&#39;,
+                                    line=dict(width=0.5, dash=&#34;solid&#34;, 
+                                    color=compColor_semi[comp]),
+                                    name=&#39;Ind. time win. curve&#39;,
+                                    showlegend=False,
+                                    hoverinfo=&#39;none&#39;,
+                                    yaxis=yaxis_to_use),
+                                    secondary_y=use_secondary,
+                                    row=compRow, col=1)
+
+        # Code to plot standard deviation windows, if not removed
+        if &#39;-s&#39; not in comp_plot_list:
+            for comp in components:
+                # Show standard deviation
+                results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.ppsd_std_vals_p[comp],
+                                        line={&#39;color&#39;:compColor_semi_light[comp], &#39;width&#39;:0.1},marker=None, 
+                                        showlegend=False, name=&#39;Log. St.Dev. Upper&#39;,
+                                        hoverinfo=&#39;none&#39;,    
+                                        yaxis=yaxis_to_use),
+                                        secondary_y=use_secondary,
+                                        row=compRow, col=1)
+                
+                results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.ppsd_std_vals_m[comp],
+                                        line={&#39;color&#39;:compColor_semi_light[comp], &#39;width&#39;:0.1},marker=None,
+                                        fill=&#39;tonexty&#39;, fillcolor=compColor_semi_light[comp],
+                                        name=f&#39;St.Dev. [{comp}]&#39;, hoverinfo=&#39;none&#39;, showlegend=False, 
+                                        yaxis=yaxis_to_use),
+                                        secondary_y=use_secondary,
+                                        row=compRow, col=1)
+                
+        # Code to plot location of best peak
+        if &#39;p&#39; in comp_plot_list:
+            minVal = 10000
+            maxVal = -10000
+            for comp in components:
+                currPPSDCurve = hvsr_data[&#39;psd_values_tavg&#39;][comp]
+                if np.nanmin(currPPSDCurve) &lt; minVal:
+                    minVal = np.nanmin(currPPSDCurve)
+                if np.nanmax(currPPSDCurve) &gt; maxVal:
+                    maxVal = np.nanmax(currPPSDCurve)
+
+            results_fig.add_trace(go.Scatter(
+                x=[hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;], hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;], None], # set x to None
+                y=[minVal,maxVal,None], # set y to None
+                mode=&#34;lines&#34;, # set mode to lines
+                line=dict(width=1, dash=&#34;dash&#34;, color=&#34;black&#34;), # set line properties
+                name=&#34;Best Peak&#34;,
+                yaxis=yaxis_to_use),
+                secondary_y=use_secondary,
+                row=compRow, col=1)
+            
+        # Code to annotate value of best peak
+        if &#39;ann&#39; in comp_plot_list:
+            minVal = 10000
+            for comp in components:
+                currPPSDCurve = hvsr_data[&#39;psd_values_tavg&#39;][comp]
+                if np.nanmin(currPPSDCurve) &lt; minVal:
+                    minVal = np.nanmin(currPPSDCurve)
+            results_fig.add_annotation(x=np.log10(hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;]),
+                            y=minVal,
+                            text=f&#34;{hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;]:.3f} Hz&#34;,
+                            bgcolor=&#39;rgba(255, 255, 255, 0.7)&#39;,
+                            showarrow=False,
+                            yref=yaxis_to_use,
+                            secondary_y=use_secondary,
+                            row=compRow, col=1)
+
+        # Plot the main averaged component PPSDs
+        for comp in components:
+            results_fig.add_trace(go.Scatter(x=hvsr_data.x_freqs[comp],
+                                            y=hvsr_data[&#39;psd_values_tavg&#39;][comp],
+                                            line=dict(width=2, dash=&#34;solid&#34;, 
+                                            color=compColor[comp]),marker=None, 
+                                            name=comp, showlegend=True,
+                                            yaxis=yaxis_to_use), 
+                                            secondary_y=use_secondary,
+                                            row=compRow, col=&#39;all&#39;)
+
+        # If new subplot, update accordingly
+        if compRow==2:
+            results_fig.update_xaxes(type=&#39;log&#39;,
+                            range=[np.log10(hvsr_data[&#39;hvsr_band&#39;][0]), np.log10(hvsr_data[&#39;hvsr_band&#39;][1])],
+                            row=compRow, col=1)
+        return results_fig
+
+    def _parse_spec_plot_list(hv_data, spec_plot_list, subplot_num, azimuth=&#39;HV&#39;):
+        hvsr_data = hv_data
+        if azimuth == &#39;HV&#39;:
+            HVCol = &#39;HV_Curves&#39;
+        else:
+            HVCol = &#39;HV_Curves_&#39;+azimuth
+
+        # Initial setup
+        hvsrDF = hvsr_data.hvsr_windows_df
+        specAxisTimes = np.array([dt.isoformat() for dt in hvsrDF.index.to_pydatetime()])
+        y_data = hvsr_data.x_freqs[&#39;Z&#39;][1:]
+        image_data = np.stack(hvsrDF[HVCol]).T
+
+        maxZ = np.percentile(image_data, 100)
+        minZ = np.percentile(image_data, 0)
+
+        use_mask = hvsr_data.hvsr_windows_df.Use.values
+        use_mask = np.tile(use_mask, (image_data.shape[0],1))
+        use_mask = np.where(use_mask is False, np.nan, use_mask)
+
+        hmap = go.Heatmap(z=image_data,
+                    x=specAxisTimes,
+                    y=y_data,
+                    colorscale=&#39;Turbo&#39;,
+                    showlegend=False,
+                    #opacity=0.7,
+                    hovertemplate=&#39;Time [UTC]: %{x}&lt;br&gt;Frequency [Hz]: %{y:.2f}&lt;br&gt;H/V Amplitude: %{z:.2f}&lt;extra&gt;&lt;/extra&gt;&#39;,
+                    zmin=minZ,zmax=maxZ, showscale=False, name=&#39;HV Curve Amp. over Time&#39;)
+        results_fig.add_trace(hmap, row=subplot_num, col=1)
+
+        data_used = go.Heatmap(
+            x=specAxisTimes,
+            y=y_data,
+            z=use_mask,
+            showlegend=False,
+            colorscale=[[0, &#39;rgba(0,0,0,0.66)&#39;], [0.25, &#39;rgba(0,0,0,0.66)&#39;], [1, &#39;rgba(250,250,250,0)&#39;]],
+            showscale=False, name=&#39;Used&#39;)
+        results_fig.add_trace(data_used, row=subplot_num, col=1)
+
+
+        # tp currently is not being added to spec_plot_list
+        if &#39;tp&#39; in spec_plot_list:
+            yvals = []
+            for row in hvsrDF[HVCol].values:
+                maxInd = np.argmax(row)
+                yvals.append(y_data[maxInd])
+            tp_trace = go.Scatter(x=specAxisTimes, y=yvals, mode=&#39;markers&#39;,
+                                    line=None, marker=dict(color=&#39;white&#39;, size=2, line=dict(color=&#39;black&#39;, width=0.1)), name=&#39;Individual H/V Peaks&#39;)
+            results_fig.add_trace(tp_trace, row=subplot_num, col=&#39;all&#39;)
+
+        if &#39;p&#39; in spec_plot_list:
+            results_fig.add_hline(y=hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;], line_width=1, line_dash=&#39;dash&#39;, line_color=&#39;black&#39;, row=subplot_num, col=&#39;all&#39;)
+
+        if &#39;ann&#39; in spec_plot_list:
+            results_fig.add_annotation(x=specAxisTimes[-1],
+                                    y=hvsr_data[&#39;hvsr_band&#39;][1],
+                                    text=f&#34;Peak: {hvsr_data[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;]:.3f} Hz&#34;,
+                                    bgcolor=&#39;rgba(255, 255, 255, 0.7)&#39;,
+                                    showarrow=False, xanchor=&#39;right&#39;, yanchor=&#39;top&#39;,
+                                    row=subplot_num, col=&#39;all&#39;)
+
+        if &#39;leg&#39; in spec_plot_list:
+            pass
+
+        results_fig.update_yaxes(type=&#39;log&#39;,
+                        range=[np.log10(hvsr_data[&#39;hvsr_band&#39;][0]), np.log10(hvsr_data[&#39;hvsr_band&#39;][1])],
+                        row=subplot_num, col=1)
+
+        results_fig.add_annotation(
+            text=f&#34;{hvsrDF[&#39;Use&#39;].astype(bool).sum()}/{hvsrDF.shape[0]} windows used&#34;,
+            x=max(specAxisTimes),
+            y=np.log10(min(y_data))+(np.log10(max(y_data))-np.log10(min(y_data)))*0.01,
+            xanchor=&#34;right&#34;, yanchor=&#34;bottom&#34;,bgcolor=&#39;rgba(256,256,256,0.7)&#39;,
+            showarrow=False,row=subplot_num, col=1)
+
+        return results_fig
+
+    def update_results_fig(hv_data, plot_string, use_sprit_plot=True):
+        global results_fig
+        global results_subp
+        hvsr_data = hv_data
+
+        if use_sprit_plot:
+            results_fig = sprit_plot.plot_results_plotly(hv_data=hv_data, plot_string=plot_string, azimuth=&#39;HV&#39;,
+                                              results_fig=results_subp, results_graph_widget=results_fig, use_figure_widget=True,
+                                              return_fig=True, show_results_plot=False, html_plot=False,
+                                              verbose=verbose_check.value)
+        else:
+            if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
+                hvsr_data=hvsr_data[0]
+
+            hvsrDF = hvsr_data.hvsr_windows_df
+
+            plot_list = parse_plot_string(plot_string)
+
+            combinedComp=False
+            noSubplots = 3 - plot_list.count([])
+            if plot_list[1] != [] and &#39;+&#39; not in plot_list[1][0]:
+                combinedComp = True
+                noSubplots -= 1
+            
+            # Get all data for each plotted item
+            # COMP Plot
+            # Figure out which subplot is which
+            if combinedComp:
+                comp_plot_row = 1
+                spec_plot_row = 2
+            else:
+                comp_plot_row = 2
+                spec_plot_row = 3
+
+            # Re-initialize results_fig
+            results_fig.data = []
+            results_fig.update_layout(grid=None)  # Clear the existing grid layout
+            if not combinedComp: 
+                results_subp = subplots.make_subplots(rows=3, cols=1, horizontal_spacing=0.01, vertical_spacing=0.05,
+                                                    row_heights=[2, 1.5, 1.5])
+            else:
+                results_subp = subplots.make_subplots(rows=2, cols=1, horizontal_spacing=0.01, vertical_spacing=0.07,
+                                        specs =[[{&#39;secondary_y&#39;: True}],
+                                                [{&#39;secondary_y&#39;: False}]],
+                                                row_heights=[1, 1])
+            results_fig.update_layout(grid={&#39;rows&#39;: noSubplots})
+            #del results_fig
+            results_fig = go.FigureWidget(results_subp)
+
+            results_fig = _parse_comp_plot_list(hvsr_data, comp_plot_list=plot_list[1])
+
+            # HVSR Plot (plot this after COMP so it is on top COMP and to prevent deletion with no C+)
+            results_fig = _parse_hv_plot_list(hvsr_data, hvsr_plot_list=plot_list[0])
+            # Will always plot the HV Curve
+            results_fig.add_trace(go.Scatter(x=hvsr_data.x_freqs[&#39;Z&#39;],y=hvsr_data.hvsr_curve,
+                                line={&#39;color&#39;:&#39;black&#39;, &#39;width&#39;:1.5},marker=None, name=&#39;HVSR Curve&#39;),
+                                row=1, col=&#39;all&#39;)
+
+            # SPEC plot
+            results_fig = _parse_spec_plot_list(hvsr_data, spec_plot_list=plot_list[2], subplot_num=spec_plot_row)
+
+            # Final figure updating
+            showtickLabels = (plot_list[1]==[] or &#39;+&#39; not in plot_list[1][0])
+            if showtickLabels:
+                side=&#39;bottom&#39;
+            else:
+                side=&#39;top&#39;
+            results_fig.update_xaxes(type=&#39;log&#39;,
+                            range=[np.log10(hvsr_data[&#39;hvsr_band&#39;][0]), np.log10(hvsr_data[&#39;hvsr_band&#39;][1])],
+                            side=&#39;top&#39;,
+                            row=1, col=1)
+            
+            results_fig.update_xaxes(type=&#39;log&#39;,overlaying=&#39;x&#39;,
+                            range=[np.log10(hvsr_data[&#39;hvsr_band&#39;][0]), np.log10(hvsr_data[&#39;hvsr_band&#39;][1])],
+                            side=&#39;bottom&#39;,
+                            row=1, col=1)
+            if comp_plot_row!=1:
+                results_fig.update_xaxes(showticklabels=showtickLabels, row=comp_plot_row, col=1)
+
+            results_fig.update_yaxes(title_text=&#39;H/V Ratio&#39;, row=1, col=1)
+            results_fig.update_yaxes(title_text=&#39;H/V Over Time&#39;, row=noSubplots, col=1)
+            if comp_plot_row==1:
+                results_fig.update_yaxes(title_text=&#34;PSD Amp\n[m2/s4/Hz][dB]&#34;, secondary_y=True, row=comp_plot_row, col=1)
+            else:
+                results_fig.update_yaxes(title_text=&#34;PSD Amp\n[m2/s4/Hz][dB]&#34;, row=comp_plot_row, col=1)
+
+            
+        if preview_fig.layout.width is None:
+            if outlier_fig.layout.width is None:
+                chartwidth = 1200
+            else:
+                chartwidth = outlier_fig.layout.width
+
+        else:
+            chartwidth = preview_fig.layout.width
+
+        results_fig.update_layout(margin={&#34;l&#34;:10, &#34;r&#34;:10, &#34;t&#34;:35, &#39;b&#39;:0}, width=chartwidth,
+                                  showlegend=False, height = 0.5625 * float(chartwidth),
+                                  title=f&#34;{hvsr_data[&#39;site&#39;]} Results&#34;)
+
+        # Reset results_graph_widget and display 
+        with results_graph_widget:
+            clear_output(wait=True)
+            display(results_fig)
+
+        if show_plot_check.value:
+            results_fig.show()
+
+
+        sprit_tabs.selected_index = 2
+        log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\nResults Figure Updated: {plot_string}&#34;
+        hv_data[&#34;Plot_Report&#34;] = results_fig
+
+    process_hvsr_button.on_click(process_data)
+
+    # PREVIEW TAB
+    #Initialize plot
+    preview_subp = subplots.make_subplots(rows=4, cols=1, shared_xaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[3,1,1,1])
+    preview_fig = go.FigureWidget(preview_subp)
+
+    def update_preview_fig(hv_data, preview_fig):
+        preview_fig.data = []
+        
+        hvsr_data = hv_data
+        if isinstance(hvsr_data, sprit_hvsr.HVSRBatch):
+            hvsr_data=hvsr_data[0]
+
+        stream_z = hvsr_data[&#39;stream&#39;].select(component=&#39;Z&#39;) #may be np.ma.masked_array
+        stream_e = hvsr_data[&#39;stream&#39;].select(component=&#39;E&#39;) #may be np.ma.masked_array
+        stream_n = hvsr_data[&#39;stream&#39;].select(component=&#39;N&#39;) #may be np.ma.masked_array
+
+        # Get iso_times and datetime.datetime
+        utcdt = stream_z[0].times(type=&#39;utcdatetime&#39;)
+        iso_times=[]
+        dt_times = []
+        for t in utcdt:
+            if t is not np.ma.masked:
+                iso_times.append(t.isoformat())
+                dt_times.append(datetime.datetime.fromisoformat(t.isoformat()))
+            else:
+                iso_times.append(np.nan)
+        iso_times=np.array(iso_times)
+        dt_times = np.array (dt_times)
+
+        # Generate spectrogram
+        f, t, Sxx = signal.spectrogram(x=stream_z[0].data, fs=stream_z[0].stats.sampling_rate, mode=&#39;magnitude&#39;)
+        
+        # Get times for the axis (one time per window)
+        axisTimes = []
+        for tpass in t:
+            axisTimes.append((dt_times[0]+datetime.timedelta(seconds=tpass)).isoformat())
+
+        # Add data to preview_fig
+        # Add spectrogram of Z component
+        minz = np.percentile(Sxx, 1)
+        maxz = np.percentile(Sxx, 99)
+        hmap = go.Heatmap(z=Sxx,
+                    x=axisTimes,
+                    y=f,
+                    colorscale=&#39;Turbo&#39;,
+                    showlegend=False,
+                    hovertemplate=&#39;Time [UTC]: %{x}&lt;br&gt;Frequency [Hz]: %{y:.2f}&lt;br&gt;Spectrogram Magnitude: %{z:.2f}&lt;extra&gt;&lt;/extra&gt;&#39;,
+                    zmin=minz, zmax=maxz, showscale=False, name=&#39;Z Component Spectrogram&#39;)
+        preview_fig.add_trace(hmap, row=1, col=1)
+        preview_fig.update_yaxes(type=&#39;log&#39;, range=[np.log10(hvsr_data[&#39;hvsr_band&#39;][0]), np.log10(hvsr_data[&#39;hvsr_band&#39;][1])], row=1, col=1)
+        preview_fig.update_yaxes(title={&#39;text&#39;:&#39;Spectrogram (Z)&#39;}, row=1, col=1)
+
+        # Add raw traces
+        dec_factor=5 #This just makes the plotting go faster, by &#34;decimating&#34; the data
+        preview_fig.add_trace(go.Scatter(x=iso_times[::dec_factor], y=stream_z[0].data[::dec_factor],
+                                        line={&#39;color&#39;:&#39;black&#39;, &#39;width&#39;:0.5},marker=None, name=&#39;Z component data&#39;), row=2, col=&#39;all&#39;)
+        preview_fig.update_yaxes(title={&#39;text&#39;:&#39;Z&#39;}, row=2, col=1)
+        preview_fig.add_trace(go.Scatter(x=iso_times[::dec_factor], y=stream_e[0].data[::dec_factor],
+                                        line={&#39;color&#39;:&#39;blue&#39;, &#39;width&#39;:0.5},marker=None, name=&#39;E component data&#39;),row=3, col=&#39;all&#39;)
+        preview_fig.update_yaxes(title={&#39;text&#39;:&#39;E&#39;}, row=3, col=1)
+        preview_fig.add_trace(go.Scatter(x=iso_times[::dec_factor], y=stream_n[0].data[::dec_factor],
+                                        line={&#39;color&#39;:&#39;red&#39;, &#39;width&#39;:0.5},marker=None, name=&#39;N component data&#39;), row=4, col=&#39;all&#39;)
+        preview_fig.update_yaxes(title={&#39;text&#39;:&#39;N&#39;}, row=4, col=1)
+        
+        #preview_fig.add_trace(p)
+        preview_fig.update_layout(margin={&#34;l&#34;:10, &#34;r&#34;:10, &#34;t&#34;:30, &#39;b&#39;:0}, showlegend=False,
+                                  title=f&#34;{hvsr_data[&#39;site&#39;]} Data Preview&#34;,
+                                  width=1200)
+
+        if show_plot_check.value:
+            preview_fig.show()
+
+    # REMOVE NOISE SUBTAB
+    # STA/LTA Antitrigger
+    stalta_check = widgets.Checkbox(value=False, disabled=False, indent=False, description=&#39;STA/LTA Antitrigger&#39;)
+    sta = widgets.FloatText(description=&#39;STA [s]&#39;,  style={&#39;description_width&#39;: &#39;initial&#39;}, placeholder=5, value=5,layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;))
+    lta = widgets.FloatText(description=&#39;LTA [s]&#39;,  style={&#39;description_width&#39;: &#39;initial&#39;}, placeholder=30, value=30,layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;))
+    stalta_thresh_low = widgets.FloatText(description=&#39;STA/LTA Thresholds (low, high)&#39;,  style={&#39;description_width&#39;: &#39;initial&#39;}, placeholder=0.5, value=0.5,layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;))
+    stalta_thresh_hi = widgets.FloatText(style={&#39;description_width&#39;: &#39;initial&#39;}, placeholder=5, value=5,layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;))
+
+    #% Saturation Threshold
+    max_saturation_check = widgets.Checkbox(description=&#39;Percentage Threshold (Instantaneous)&#39;, value=False, disabled=False, indent=False)
+    max_saturation_pct = widgets.FloatText(description=&#39;Max Saturation %:&#39;,  style={&#39;description_width&#39;: &#39;initial&#39;}, placeholder=0.995, value=0.995,layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;))
+
+    #Noise Windows
+    noisy_windows_check = widgets.Checkbox(description=&#39;Noisy Windows&#39;, value=False, disabled=False, indent=False)
+    max_window_pct = widgets.FloatText(description=&#39;Max Window %:&#39;,  style={&#39;description_width&#39;: &#39;initial&#39;}, placeholder=0.8, value=0.8,layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;))
+    noisy_window_length = widgets.FloatText(description=&#39;Window Length [s]:&#39;,  style={&#39;description_width&#39;: &#39;initial&#39;}, placeholder=30, value=30,layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;))
+
+    #Warmup/cooldown
+    warmcool_check = widgets.Checkbox(description=&#39;Warmup &amp; Cooldown Time&#39;, value=False, disabled=False, indent=False)
+    warmup_time = widgets.FloatText(description=&#39;Warmup time [s]:&#39;,  style={&#39;description_width&#39;: &#39;initial&#39;}, placeholder=0, value=0,layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;))
+    cooldown_time = widgets.FloatText(description=&#39;Cooldown time [s]:&#39;,  style={&#39;description_width&#39;: &#39;initial&#39;}, placeholder=0, value=0,layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;))
+
+    # STD Ratio
+    # std_ratio_thresh=2, std_window_s=20, min_win_size=5
+    std_ratio_check = widgets.Checkbox(description=&#39;Standard Deviation Antitrigger (not yet implemented)&#39;, value=False, disabled=False, indent=False)
+    std_ratio_thresh_text = widgets.FloatText(description=&#39;StdDev Ratio:&#39;,  style={&#39;description_width&#39;: &#39;initial&#39;}, placeholder=2, value=2, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
+    std_window_length_text = widgets.FloatText(description=&#39;Moving window Length [s]:&#39;,  style={&#39;description_width&#39;: &#39;initial&#39;}, placeholder=20, value=20, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;),disabled=False)
+    std_window_length_text = widgets.FloatText(description=&#39;Minimum Window Size [s]:&#39;,  style={&#39;description_width&#39;: &#39;initial&#39;}, placeholder=2, value=2, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;),disabled=False)
+
+    #Autoremove
+    auto_remove_check = widgets.Checkbox(description=&#39;Use Auto Remove&#39;, value=False, disabled=False, indent=False)
+
+    #Remove from raw data
+    raw_data_remove_check = widgets.Checkbox(description=&#39;Remove Noise From Raw Data&#39;, value=False, disabled=False, indent=False)
+
+    #remove_noise call
+    remove_noise_prefix = widgets.HTML(value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + &#39;remove_noise&#39; + &#39;&lt;/p&gt;&#39;, 
+                                       layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-end&#39;,align_content=&#39;flex-start&#39;))
+    remove_noise_call = widgets.HTML(value=&#39;()&#39;)
+    remove_noise_call_hbox = widgets.HBox([remove_noise_prefix, remove_noise_call])
+
+    # Update remove_outlier call
+    def update_remove_noise_call():
+        #rnkwargs = get_remove_noise_kwargs()
+        rn_text = f&#34;&#34;&#34;(hvsr_data=hvsr_data, remove_method={remove_method_select.value},
+                    sat_percent={sat_percent_float.value},
+                    noise_percent={noise_percent_float.value},
+                    sta={sta_float.value},
+                    lta={lta_float.value},
+                    stalta_thresh={stalta_floatSlide.value},
+                    warmup_time={warmup_time_int.value},
+                    cooldown_time={cooldown_time_int.value},
+                    min_win_size={min_win_size_float.value},
+                    remove_raw_noise={raw_data_remove_check.value}, 
+                    verbose={verbose_check.value})&#34;&#34;&#34;
+        remove_noise_call.value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + rn_text + &#39;&lt;/p&gt;&#39;
+    update_remove_noise_call()
+
+    #Update noise windows
+    update_noise_windows_button = widgets.Button(description=&#39;Update Noise Windows&#39;,button_style=&#39;info&#39;,layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=True)
+
+    preview_graph_widget = widgets.Output()
+    #progress bar (same as above)
+    preview_progress_hbox = widgets.HBox(children=[progress_bar, update_noise_windows_button, process_hvsr_button])
+
+    # Add it all in to the tab
+    stalta_hbox = widgets.HBox([stalta_check, sta, lta, stalta_thresh_low, stalta_thresh_hi])
+    sat_hbox = widgets.HBox([max_saturation_check, max_saturation_pct])
+    noise_win_hbox = widgets.HBox([noisy_windows_check, max_window_pct, noisy_window_length])
+    warmcool_hbox = widgets.HBox([warmcool_check, warmup_time, cooldown_time])
+    std_ratio_hbox = widgets.HBox([std_ratio_check, std_ratio_thresh_text, std_window_length_text])
+    spacer_hbox = widgets.HBox([tenpct_spacer])
+
+    preview_noise_tab = widgets.VBox([stalta_hbox,
+                                      sat_hbox,
+                                      noise_win_hbox,
+                                      warmcool_hbox,
+                                      std_ratio_hbox,
+                                      auto_remove_check,
+                                      raw_data_remove_check,
+                                      spacer_hbox,
+                                      remove_noise_call_hbox])
+
+    preview_graph_tab = widgets.VBox(children=[preview_graph_widget])
+    preview_subtabs = widgets.Tab([preview_graph_tab, preview_noise_tab])
+    preview_tab = widgets.VBox()
+
+    preview_subtabs.set_title(0, &#34;Data Preview&#34;)
+    preview_subtabs.set_title(1, &#34;Noise Removal&#34;)
+
+    preview_tab.children = [preview_subtabs, preview_progress_hbox]
+    # Initialize tab
+    with preview_graph_widget:
+        display(preview_fig)
+
+    # SETTINGS TAB
+    plot_settings_tab = widgets.GridspecLayout(18, ui_width)
+    settings_progress_hbox = widgets.HBox(children=[progress_bar, tenpct_spacer, process_hvsr_button])
+
+    #remove_noise call
+    generate_ppsd_prefix = widgets.HTML(value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + &#39;generate_psds&#39; + &#39;&lt;/p&gt;&#39;, 
+                                       layout=widgets.Layout(width=&#39;fill&#39;, justify_content=&#39;flex-end&#39;,align_content=&#39;flex-start&#39;))
+    generate_psds_call = widgets.HTML(value=&#39;()&#39;)
+    generate_ppsd_call_hbox = widgets.HBox([generate_ppsd_prefix, generate_psds_call])
+
+    ppsd_length_hbox = widgets.HBox([ppsd_length_label, ppsd_length])
+    overlap_pct_hbox = widgets.HBox([overlap_pct_label, overlap_pct])
+    pstep_hbox = widgets.HBox([period_step_label, period_step_octave])
+    skipgaps_hbox = widgets.HBox([skip_on_gaps_label, skip_on_gaps])
+    db_bins_hbox = widgets.HBox([db_step_label, db_bins_min, db_bins_max, db_bins_step])
+    plim_hbox = widgets.HBox([period_limit_label, period_limits_min, period_limits_max, period_smoothing_width])
+
+    ppsd_settings_tab = widgets.VBox([ppsd_length_hbox,
+                                      overlap_pct_hbox,
+                                      pstep_hbox,
+                                      skipgaps_hbox,
+                                      db_bins_hbox,
+                                      plim_hbox,
+                                      special_handling_dropdown,
+                                      generate_ppsd_call_hbox])
+
+
+    def calc_rmse(array_2d):
+        medArray = np.nanmedian(array_2d, axis=0)
+        rmse = np.sqrt(((np.subtract(array_2d, medArray)**2).sum(axis=1))/array_2d.shape[1])
+        return rmse
+    
+    def on_update_outlier_thresh_slider(change):
+        if use_hv_curve_outliers_check.value:
+            rmse = calc_rmse(np.stack(hvsr_data.hvsr_windows_df[&#39;HV_Curves&#39;]))
+        else:
+            rmsez = calc_rmse(np.stack(hvsr_data.hvsr_windows_df[&#39;psd_values_Z&#39;]))
+            rmsee = calc_rmse(np.stack(hvsr_data.hvsr_windows_df[&#39;psd_values_E&#39;]))
+            rmsen = calc_rmse(np.stack(hvsr_data.hvsr_windows_df[&#39;psd_values_N&#39;]))
+
+            rmse = np.stack([rmsez, rmsee, rmsen]).flatten()
+
+        if outlier_pctile_check.value:
+            outlier_threshold_slider.value = outlier_threshold_slider.value
+        else:
+            outlier_threshold_slider.value = outlier_threshold_slider.value
+            outlier_threshold_slider.value = ((rmse &lt; outlier_threshold_slider.value).sum() / len(rmse)) * 100
+
+    def on_update_thresh_pctile_slider(change):
+        if use_hv_curve_outliers_check.value:
+            rmse = calc_rmse(np.stack(hvsr_data.hvsr_windows_df[&#39;HV_Curves&#39;]))
+        else:
+            rmsez = calc_rmse(np.stack(hvsr_data.hvsr_windows_df[&#39;psd_values_Z&#39;]))
+            rmsee = calc_rmse(np.stack(hvsr_data.hvsr_windows_df[&#39;psd_values_E&#39;]))
+            rmsen = calc_rmse(np.stack(hvsr_data.hvsr_windows_df[&#39;psd_values_N&#39;]))
+
+            rmse = np.stack([rmsez, rmsee, rmsen])
+
+        if outlier_pctile_check.value:
+            outlier_threshold_slider.value = np.percentile(rmse, outlier_threshold_slider.value)
+            outlier_threshold_slider.value = outlier_threshold_slider.value
+        else:
+            outlier_threshold_slider.value = outlier_threshold_slider.value
+
+    #outlier_threshold_chart_slider.observe(on_update_rmse_thresh_slider)
+    #outlier_threshold_chart_slider.observe(on_update_rmse_pctile_slider)
+
+    use_hv_curve_label = widgets.Label(value=&#39;NOTE: Outlier curves may only be identified after PPSDs have been calculated (during the generate_psds() step)&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;80%&#39;))
+    generate_ppsd_button = widgets.Button(description=&#39;Generate PPSDs&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;20%&#39;, justify_content=&#39;flex-end&#39;), disabled=False)
+    update_outlier_plot_button = widgets.Button(description=&#39;Remove Outliers&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;20%&#39;, justify_content=&#39;flex-end&#39;), disabled=False)
+    outlier_ppsd_hbox = widgets.HBox([use_hv_curve_label, generate_ppsd_button, update_outlier_plot_button])
+
+    # Update remove_outlier call
+    def update_remove_outlier_curve_call():
+        roc_text = f&#34;&#34;&#34;(hvsr_data=hvsr_data, 
+                        outlier_method:{outlier_method_dropdown.value},
+                        outlier_threshold={outlier_threshold_slider.value}, 
+                        use_percentile={outlier_pctile_check.value},
+                        min_pts:{min_pts_float.value},
+                        use_hv_curves={use_hv_curve_outliers_check.value},
+                        ...
+                        verbose={verbose_check.value})&#34;&#34;&#34;
+        remove_outlier_curves_call.value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + roc_text + &#39;&lt;/p&gt;&#39;
+    update_remove_outlier_curve_call()
+
+    def update_outlier_fig_button(button):
+        outlier_fig, hvsr_data = update_outlier_fig(button)
+
+    generate_ppsd_button.on_click(process_data)
+
+    update_outlier_plot_button.on_click(update_outlier_fig_button)
+
+    with outlier_graph_widget:
+        display(outlier_fig)
+
+    def update_outlier_fig(input=None, _rmse_thresh=outlier_threshold_slider.value, _use_percentile=True, _use_hv_curve=use_hv_curve_outliers_check.value, _verbose=verbose_check.value):
+        global outlier_fig
+        global hvsr_data
+        hv_data = hvsr_data
+
+
+        roc_kwargs = {&#39;outlier_threshold&#39;:outlier_threshold_slider.value,
+                        &#39;use_percentile&#39;:True,
+                        &#39;use_hv_curves&#39;:use_hv_curve_outliers_check.value,
+                        &#39;plot_engine&#39;:&#39;plotly&#39;,
+                        &#39;show_plot&#39;:False,
+                        &#39;verbose&#39;:verbose_check.value
+                      }
+        if &#39;generate_psds_status&#39; in hvsr_data.processing_status.keys() and hvsr_data.processing_status[&#39;generate_psds_status&#39;]:
+            log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\nremove_outlier_curves():\n&#39;{roc_kwargs}&#34;    
+            hvsr_data = sprit_hvsr.remove_outlier_curves(hvsr_data, **roc_kwargs)
+        else:
+            log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\nremove_outlier_curves() attempted, but not completed. hvsr_data.processing_status[&#39;generate_psds_status&#39;]=False\n&#39;{roc_kwargs}&#34;
+            return outlier_fig, hvsr_data
+
+        if roc_kwargs[&#39;use_hv_curves&#39;]:
+            no_subplots = 1
+            if hasattr(hvsr_data, &#39;hvsr_windows_df&#39;) and &#39;HV_Curves&#39; in hvsr_data.hvsr_windows_df.columns:
+                outlier_fig.data = []
+                outlier_fig.update_layout(grid=None)  # Clear the existing grid layout
+                outlier_subp = subplots.make_subplots(rows=no_subplots, cols=1, horizontal_spacing=0.01, vertical_spacing=0.1)
+                outlier_fig.update_layout(grid={&#39;rows&#39;: 1})
+                outlier_fig = go.FigureWidget(outlier_subp)
+
+                x_data = hvsr_data[&#39;x_freqs&#39;]
+                curve_traces = []
+                for hv in hvsr_data.hvsr_windows_df[&#39;HV_Curves&#39;].iterrows():
+                    curve_traces.append(go.Scatter(x=x_data, y=hv[1]))
+                outlier_fig.add_traces(curve_traces)
+                
+                # Calculate a median curve, and reshape so same size as original
+                medCurve = np.nanmedian(np.stack(hvsr_data.hvsr_windows_df[&#39;HV_Curves&#39;]), axis=0)
+                outlier_fig.add_trace(go.Scatter(x=x_data, y=medCurve, line=dict(color=&#39;rgba(0,0,0,1)&#39;, width=1.5),showlegend=False))
+                
+                minY = np.nanmin(np.stack(hvsr_data.hvsr_windows_df[&#39;HV_Curves&#39;]))
+                maxY = np.nanmax(np.stack(hvsr_data.hvsr_windows_df[&#39;HV_Curves&#39;]))
+                totalWindows = hvsr_data.hvsr_windows_df.shape[0]
+                #medCurveArr = np.tile(medCurve, (curr_data.shape[0], 1))
+
+        else:
+            no_subplots = 3
+            outlier_fig.data = []
+            outlier_fig.update_layout(grid=None)  # Clear the existing grid layout
+            outlier_subp = subplots.make_subplots(rows=no_subplots, cols=1, horizontal_spacing=0.01, vertical_spacing=0.02,
+                                                    row_heights=[1, 1, 1])
+            outlier_fig.update_layout(grid={&#39;rows&#39;: 3})
+            outlier_fig = go.FigureWidget(outlier_subp)
+
+            if hasattr(hvsr_data, &#39;hvsr_windows_df&#39;):
+                rowDict = {&#39;Z&#39;:1, &#39;E&#39;:2, &#39;N&#39;:3}
+                showTLabelsDict={&#39;Z&#39;:False, &#39;E&#39;:False, &#39;N&#39;:True}
+                def comp_rgba(comp, a):
+                    compstr = &#39;&#39;
+                    if comp==&#39;Z&#39;:
+                        compstr = f&#39;rgba(0, 0, 0, {a})&#39;
+                    if comp==&#39;E&#39;:
+                        compstr = f&#39;rgba(50, 50, 250, {a})&#39;
+                    if comp==&#39;N&#39;:
+                        compstr = f&#39;rgba(250, 50, 50, {a})&#39;
+                    return compstr                         
+                compNames = [&#39;Z&#39;, &#39;E&#39;, &#39;N&#39;]
+                rmse_to_plot=[]
+                med_traces=[]
+
+                noRemoved = 0
+                indRemoved = []
+                for i, comp in enumerate(compNames):
+                    if hasattr(hvsr_data, &#39;x_freqs&#39;):
+                        x_data = hvsr_data[&#39;x_freqs&#39;][comp]
+                    else:
+                        x_data = [1/p for p in hvsr_data[&#39;ppsds&#39;][comp][&#39;period_xedges&#39;][1:]]                    
+                    column = &#39;psd_values_&#39;+comp
+                    # Retrieve data from dataframe (use all windows, just in case)
+                    curr_data = np.stack(hvsr_data[&#39;hvsr_windows_df&#39;][column])
+                    
+                    # Calculate a median curve, and reshape so same size as original
+                    medCurve = np.nanmedian(curr_data, axis=0)
+                    medCurveArr = np.tile(medCurve, (curr_data.shape[0], 1))
+                    medTrace = go.Scatter(x=x_data, y=medCurve, line=dict(color=comp_rgba(comp, 1), width=1.5), 
+                                                 name=f&#39;{comp} Component&#39;, showlegend=True)
+                    # Calculate RMSE
+                    rmse = np.sqrt(((np.subtract(curr_data, medCurveArr)**2).sum(axis=1))/curr_data.shape[1])
+
+                    rmse_threshold = np.percentile(rmse, roc_kwargs[&#39;outlier_threshold&#39;])
+                    
+                    # Retrieve index of those RMSE values that lie outside the threshold
+                    timeIndex = hvsr_data[&#39;hvsr_windows_df&#39;].index
+                    for j, curve in enumerate(curr_data):
+                        if rmse[j] &gt; rmse_threshold:
+                            badTrace = go.Scatter(x=x_data, y=curve,
+                                                line=dict(color=comp_rgba(comp, 1), width=1.5, dash=&#39;dash&#39;),
+                                                #marker=dict(color=comp_rgba(comp, 1), size=3),
+                                                name=str(hvsr_data.hvsr_windows_df.index[j]), showlegend=False)
+                            outlier_fig.add_trace(badTrace, row=rowDict[comp], col=1)
+                            if j not in indRemoved:
+                                indRemoved.append(j)
+                            noRemoved += 1
+                        else:
+                            goodTrace = go.Scatter(x=x_data, y=curve,
+                                                  line=dict(color=comp_rgba(comp, 0.01)), name=str(hvsr_data.hvsr_windows_df.index[j]), showlegend=False)
+                            outlier_fig.add_trace(goodTrace, row=rowDict[comp], col=1)
+
+                    timeIndRemoved = pd.DatetimeIndex([timeIndex[ind] for ind in indRemoved])
+                    hvsr_data[&#39;hvsr_windows_df&#39;].loc[timeIndRemoved, &#39;Use&#39;] = False
+
+                    outlier_fig.add_trace(medTrace, row=rowDict[comp], col=1)
+                    
+                    outlier_fig.update_xaxes(showticklabels=False, row=1, col=1)
+                    outlier_fig.update_yaxes(title={&#39;text&#39;:&#39;Z&#39;}, row=1, col=1)
+                    outlier_fig.update_xaxes(showticklabels=False, row=2, col=1)
+                    outlier_fig.update_yaxes(title={&#39;text&#39;:&#39;E&#39;}, row=2, col=1)
+                    outlier_fig.update_xaxes(showticklabels=True, row=3, col=1)
+                    outlier_fig.update_yaxes(title={&#39;text&#39;:&#39;N&#39;}, row=3, col=1)
+
+                    outlier_fig.update_layout(margin={&#34;l&#34;:10, &#34;r&#34;:10, &#34;t&#34;:30, &#39;b&#39;:0}, showlegend=True,
+                                  title=f&#34;{hvsr_data[&#39;site&#39;]} Outliers&#34;)
+                    if comp == &#39;N&#39;:
+                        minY = np.nanmin(curr_data)
+                        maxY = np.nanmax(curr_data)
+                    totalWindows = curr_data.shape[0]
+                
+                outlier_fig.add_annotation(
+                    text=f&#34;{len(indRemoved)}/{totalWindows} outlier windows removed&#34;,
+                    x=np.log10(max(x_data)) - (np.log10(max(x_data))-np.log10(min(x_data))) * 0.01,
+                    y=minY+(maxY-minY)*0.01,
+                    xanchor=&#34;right&#34;, yanchor=&#34;bottom&#34;,#bgcolor=&#39;rgba(256,256,256,0.7)&#39;,
+                    showarrow=False,row=no_subplots, col=1)
+
+
+        outlier_fig.update_xaxes(type=&#39;log&#39;)
+        with outlier_graph_widget:
+            clear_output(wait=True)
+            display(outlier_fig)
+        
+        if show_plot_check.value:
+            outlier_fig.show()
+
+        return outlier_fig, hvsr_data
+
+
+    # Update process_hvsr call
+    def update_check_peaks_call():
+        #cp_kwargs = get_check_peaks_kwargs()
+        cp_text = f&#34;&#34;&#34;(hvsr_data=hvsr_data, 
+                        peak_selection={peak_selection_type.value}, 
+                        hvsr_band={hvsr_band_rangeSlide.value}, 
+                        peak_freq_range={peak_freq_rangeSlide.value}, 
+                        verbose={verbose_check.value})&#34;&#34;&#34;
+        check_peaks_call.value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + cp_text + &#39;&lt;/p&gt;&#39;
+    update_check_peaks_call()
+
+    #freq_smooth_hbox = widgets.HBox([freq_smoothing_dropdown, freq_smooth_width_float])
+    #resample_hbox = widgets.HBox([resample_hv_curve_bool, resample_hv_curve])
+    #smooth_hbox = widgets.HBox([smooth_hv_curve_bool, smooth_hv_curve])
+    
+    # PLOT SETTINGS SUBTAB
+    hv_plot_label = widgets.Label(value=&#39;HVSR Plot&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;))
+    component_plot_label = widgets.Label(value=&#39;Component Plot&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;))
+    spec_plot_label = widgets.Label(value=&#39;Spectrogram Plot&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;))
+
+    use_plot_label = widgets.Label(value=&#39;Use Plot&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;flex-end&#39;, align_items=&#39;center&#39;))
+    use_plot_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+    use_plot_comp = widgets.Checkbox(value=True, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+    use_plot_spec = widgets.Checkbox(value=True, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+
+    comibne_plot_label = widgets.Label(value=&#39;Combine HV and Comp. Plot&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;flex-end&#39;, align_items=&#39;center&#39;))
+    combine_hv_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+
+    show_peak_label = widgets.Label(value=&#39;Show Best Peak&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;flex-end&#39;, align_items=&#39;center&#39;))
+    show_best_peak_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+    show_best_peak_comp = widgets.Checkbox(value=True, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+    show_best_peak_spec = widgets.Checkbox(value=True, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+
+    annotate_peak_label = widgets.Label(value=&#39;Annotate Best Peak&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;flex-end&#39;, align_items=&#39;center&#39;))
+    ann_best_peak_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+    ann_best_peak_comp = widgets.Checkbox(value=True, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+    ann_best_peak_spec = widgets.Checkbox(value=True, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+
+    show_all_peaks_label = widgets.Label(value=&#39;Show All Peaks&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;flex-end&#39;, align_items=&#39;center&#39;))
+    show_all_peaks_hv = widgets.Checkbox(value=False, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+
+    show_all_curves_label = widgets.Label(value=&#39;Show All Curves&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;flex-end&#39;, align_items=&#39;center&#39;))
+    show_all_curves_hv = widgets.Checkbox(value=False, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+    show_all_curves_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+
+    show_ind_peaks_label = widgets.Label(value=&#39;Show Individual Peaks&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;flex-end&#39;, align_items=&#39;center&#39;))
+    show_ind_peaks_hv = widgets.Checkbox(value=False, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+    show_ind_peaks_spec = widgets.Checkbox(value=False, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                       style={&#39;description_width&#39;: &#39;initial&#39;})
+
+    show_std_label = widgets.Label(value=&#39;Show Standard Deviation&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;flex-end&#39;, align_items=&#39;center&#39;))
+    show_std_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+    show_std_comp = widgets.Checkbox(value=True, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+
+    show_legend_label = widgets.Label(value=&#39;Show Legend&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;flex-end&#39;, align_items=&#39;center&#39;))
+    show_legend_hv = widgets.Checkbox(value=True, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+    show_legend_comp = widgets.Checkbox(value=False, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+    show_legend_spec = widgets.Checkbox(value=False, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;),
+                                   style={&#39;description_width&#39;: &#39;initial&#39;})
+
+    x_type_label = widgets.Label(value=&#39;X Type&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;flex-end&#39;, align_items=&#39;center&#39;))
+    x_type = widgets.Dropdown(options=[(&#39;Frequency&#39;, &#39;freq&#39;), (&#39;Period&#39;, &#39;period&#39;)],
+                              layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), style={&#39;description_width&#39;: &#39;initial&#39;})
+
+    plotly_kwargs_label = widgets.Label(value=&#39;Plotly Kwargs&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;flex-end&#39;, align_items=&#39;center&#39;))
+    plotly_kwargs = widgets.Text(style={&#39;description_width&#39;: &#39;initial&#39;},
+                                layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
+
+    mpl_kwargs_label = widgets.Label(value=&#39;Matplotlib Kwargs&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;flex-end&#39;, align_items=&#39;center&#39;))
+    mpl_kwargs = widgets.Text(style={&#39;description_width&#39;: &#39;initial&#39;},
+                                layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;), disabled=False)
+
+    plot_hvsr_call = widgets.Label(value=f&#34;Plot String: &#39;{_get_default(sprit_hvsr.get_report, &#39;plot_type&#39;)}&#39;&#34;)
+    def update_plot_string():
+        plot_hvsr_text = f&#34;&#34;&#34;Plot String: {_get_get_report_kwargs()[&#39;plot_type&#39;]}&#34;&#34;&#34;
+        plot_hvsr_call.value = plot_hvsr_text
+    update_plot_string()
+
+    update_plot_button = widgets.Button(description=&#39;Update Plot&#39;,button_style=&#39;info&#39;,layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;))
+    def manually_update_results_fig(change):
+        plot_string = _get_get_report_kwargs()[&#39;plot_type&#39;]
+        update_results_fig(hvsr_results, plot_string)
+        sprit_tabs.selected_index = 4
+
+    # Set up grid for ppsd_settings subtab
+    plot_settings_tab[0, 5:10]   = hv_plot_label
+    plot_settings_tab[0, 10:15]  = component_plot_label
+    plot_settings_tab[0, 15:] = spec_plot_label
+
+    plot_settings_tab[1, :] = widgets.HTML(&#39;&lt;hr&gt;&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;))
+
+    plot_settings_tab[2, :5] = use_plot_label
+    plot_settings_tab[2, 5:10] = use_plot_hv
+    plot_settings_tab[2, 10:15] = use_plot_comp
+    plot_settings_tab[2, 15:] = use_plot_spec
+
+    plot_settings_tab[3, :] = widgets.HTML(&#39;&lt;hr&gt;&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;))
+
+    plot_settings_tab[4, :5] = comibne_plot_label
+    plot_settings_tab[4, 10:15] = combine_hv_comp
+
+    plot_settings_tab[5, :5] = show_peak_label
+    plot_settings_tab[5, 5:10] = show_best_peak_hv
+    plot_settings_tab[5, 10:15] = show_best_peak_comp
+    plot_settings_tab[5, 15:] = show_best_peak_spec
+
+    plot_settings_tab[6, :5] = annotate_peak_label
+    plot_settings_tab[6, 5:10] = ann_best_peak_hv
+    plot_settings_tab[6, 10:15] = ann_best_peak_comp
+    plot_settings_tab[6, 15:] = ann_best_peak_spec
+
+    plot_settings_tab[7, :5] = show_all_peaks_label
+    plot_settings_tab[7, 5:10] = show_all_peaks_hv
+
+    plot_settings_tab[8, :5] = show_all_curves_label
+    plot_settings_tab[8, 5:10] = show_all_curves_hv
+    plot_settings_tab[8, 10:15] = show_all_curves_comp
+
+    plot_settings_tab[9, :5] = show_ind_peaks_label
+    plot_settings_tab[9, 5:10] = show_ind_peaks_hv
+    plot_settings_tab[9, 15:] = show_ind_peaks_spec
+   
+    plot_settings_tab[10, :5] = show_std_label
+    plot_settings_tab[10, 5:10] = show_std_hv
+    plot_settings_tab[10, 10:15] = show_std_comp
+
+    plot_settings_tab[11, :5] = show_legend_label
+    plot_settings_tab[11, 5:10] = show_legend_hv
+    plot_settings_tab[11, 10:15] = show_legend_comp
+    plot_settings_tab[11, 15:] = show_legend_spec
+
+    plot_settings_tab[12, :] = widgets.HTML(&#39;&lt;hr&gt;&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;))
+
+    plot_settings_tab[13, :5] = x_type_label
+    plot_settings_tab[13, 6:] = x_type
+
+    plot_settings_tab[14, :5] = plotly_kwargs_label
+    plot_settings_tab[14, 6:] = plotly_kwargs
+
+    plot_settings_tab[15, :5] = mpl_kwargs_label
+    plot_settings_tab[15, 6:] = mpl_kwargs
+
+    plot_settings_tab[16, :] = widgets.HTML(&#39;&lt;hr&gt;&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;, align_items=&#39;center&#39;))
+
+    plot_settings_tab[17, :18] = plot_hvsr_call
+    plot_settings_tab[17, 18:] = update_plot_button
+    update_plot_button.on_click(manually_update_results_fig)
+
+    # Place everything in Settings Tab
+    #settings_subtabs = widgets.Tab([ppsd_settings_tab, plot_settings_tab])
+    #settings_tab = widgets.VBox(children=[settings_subtabs, settings_progress_hbox])
+    #settings_subtabs.set_title(0, &#34;PSD Settings&#34;)
+    #settings_subtabs.set_title(1, &#34;Plot Settings&#34;)
+
+    # LOG TAB - not currently using
+    log_tab = widgets.VBox(children=[log_textArea])
+    #log_textArea = widgets.Textarea(value=&#34;SESSION LOG&#34;, disabled=True, layout={&#39;height&#39;: &#39;99%&#39;,&#39;width&#39;: &#39;99%&#39;, &#39;overflow&#39;: &#39;scroll&#39;})
+
+    # RESULTS TAB
+    # PLOT SUBTAB
+    global results_subp
+    results_subp = subplots.make_subplots(rows=3, cols=1, horizontal_spacing=0.01, vertical_spacing=0.01, row_heights=[2,1,1])
+    results_fig = go.FigureWidget(results_subp)
+    global results_graph_widget
+    results_graph_widget = widgets.Output()   
+
+    with results_graph_widget:
+        display(results_fig)
+
+    global printed_results_textArea
+    printed_results_textArea = widgets.Textarea(value=&#34;RESULTS&#34;, disabled=True, layout={&#39;height&#39;: &#39;500px&#39;,&#39;width&#39;: &#39;99%&#39;, &#39;overflow&#39;: &#39;scroll&#39;})
+
+    global results_table
+    initialTableCols=[&#39;SiteName&#39;, &#39;Acq_Date&#39;, &#39;Longitude&#39;, &#39;Latitude&#39;, &#39;Elevation&#39;,
+                      &#39;PeakFrequency&#39;, &#39;WindowLengthFreq.&#39;, &#39;SignificantCycles&#39;, &#39;LowCurveStDevOverTime&#39;, 
+                      &#39;PeakProminenceBelow&#39;, &#39;PeakProminenceAbove&#39;, &#39;PeakAmpClarity&#39;, 
+                      &#39;FreqStability&#39;, &#39;PeakStability_FreqStD&#39;, &#39;PeakStability_AmpStD&#39;, &#39;PeakPasses&#39;]
+    results_table = widgets.HTML(value=pd.DataFrame(columns=initialTableCols).to_html())
+
+    # A text box labeled Data Filepath
+    export_results_table_filepath = widgets.Text(description=&#39;Export Filepath:&#39;,
+                                    placeholder=&#39;&#39;, value=&#39;&#39;,
+                                    style={&#39;description_width&#39;: &#39;initial&#39;},layout=widgets.Layout(width=&#39;90%&#39;))
+
+    export_results_table_read_button = widgets.Button(description=&#39;&#39;, icon=&#39;fa-file-import&#39;,button_style=&#39;success&#39;,
+                                            layout=widgets.Layout(width=&#39;10%&#39;))
+    export_results_table_browse_button = widgets.Button(description=&#39;Export Table&#39;,
+                                            layout=widgets.Layout(width=&#39;10%&#39;))
+    def export_results_table(button):
+        try:
+            if button.value == &#39;Export Table&#39;:
+                root = tk.Tk()
+                root.wm_attributes(&#39;-topmost&#39;, True)
+                root.withdraw()
+                export_results_table_filepath.value = str(filedialog.asksaveasfilename(defaultextension=&#39;.csv&#39;, title=&#39;Save Table Report&#39;))
+                root.destroy()
+        except Exception as e:
+            print(e)
+            export_results_table_browse_button.disabled=True
+            export_results_table_browse_button.description=&#39;Use Text Field&#39;
+
+        out_path = export_results_table_filepath.value
+        if not hasattr(hvsr_results, &#34;Table_Report&#34;):
+            sprit_hvsr.get_report(hvsr_results, report_formats=[&#39;table&#39;], export_path=out_path,
+                              csv_overwrite_opt=&#39;overwrite&#39;)
+        else:
+            hvsr_results[&#39;Table_Report&#39;].to_csv(out_path)
+
+    export_results_table_browse_button.on_click(export_results_table)
+    export_results_table_read_button.on_click(export_results_table)
+
+    exportLabel = widgets.Label(&#34;Exports&#34;, layout=widgets.Layout(width=&#39;5%&#39;))
+    export_directory_text = widgets.Text(description=&#34;Directory&#34;, layout=widgets.Layout(width=&#39;50%&#39;),
+                                         value= pathlib.Path().home().as_posix())
+    export_data_button = widgets.Button(description=&#39;Data (.MSeed)&#39;, layout=widgets.Layout(width=&#39;10%&#39;))
+    export_report_button = widgets.Button(description=&#34;Report (.PDF)&#34;, layout=widgets.Layout(width=&#39;10%&#39;))
+    export_hvsr_button = widgets.Button(description=&#34;HVSR Data (.HVSR)&#34;, layout=widgets.Layout(width=&#39;10%&#39;))
+    export_subdirectories_check = widgets.Checkbox(description=&#39;Use Subfolders&#39;, value=True,
+                                                   layout=widgets.Layout(width=&#39;15%&#39;))
+    
+    
+    def on_export_data(event):
+        hvID = &#39;&#39;
+        if hasattr(hvsr_results, &#39;hvsr_id&#39;):
+            hvID = hvsr_results[&#39;hvsr_id&#39;]
+        nowTimeStr = datetime.datetime.now().strftime(&#34;%Y-%m-%d&#34;)
+        export_dir = pathlib.Path(export_directory_text.value)
+        
+        if export_subdirectories_check.value:
+            export_dir = export_dir.joinpath(&#39;Data&#39;)
+            if not export_dir.exists():
+                export_dir.mkdir(parents=True)
+
+        sprit_hvsr.export_data(hvsr_results, data_export_path=export_dir)
+        print(&#34;Data exported successfully to: &#34;, export_dir)
+    
+    def on_export_report(event):
+        hvID = &#39;&#39;
+        if hasattr(hvsr_results, &#39;hvsr_id&#39;):
+            hvID = hvsr_results[&#39;hvsr_id&#39;]
+        nowTimeStr = datetime.datetime.now().strftime(&#34;%Y-%m-%d&#34;)
+        export_dir = pathlib.Path(export_directory_text.value)
+        
+        if export_subdirectories_check.value:
+            export_dir = export_dir.joinpath(&#39;Reports&#39;)
+            if not export_dir.exists():
+                export_dir.mkdir(parents=True)
+
+        sprit_hvsr.export_report(hvsr_results, report_export_path=export_dir)
+        print(&#34;Report exported successfully to: &#34;, export_dir)
+    
+    
+    def on_export_hvsr(event):
+        hvID = &#39;&#39;
+        if hasattr(hvsr_results, &#39;hvsr_id&#39;):
+            hvID = hvsr_results[&#39;hvsr_id&#39;]
+        nowTimeStr = datetime.datetime.now().strftime(&#34;%Y-%m-%d&#34;)
+        export_dir = pathlib.Path(export_directory_text.value)
+        
+        if export_subdirectories_check.value:
+            export_dir = export_dir.joinpath(&#39;HVSRFiles&#39;)
+            if not export_dir.exists():
+                export_dir.mkdir(parents=True)
+            
+        sprit_hvsr.export_hvsr(hvsr_results, hvsr_export_path=export_dir)
+        print(&#34;HVSR file exported successfully to: &#34;, export_dir)
+            
+    export_data_button.on_click(on_export_data)
+    export_report_button.on_click(on_export_report)
+    export_hvsr_button.on_click(on_export_hvsr)
+    
+    results_table_export_hbox = widgets.HBox([export_results_table_filepath, export_results_table_read_button, export_results_table_browse_button])
+    results_table_vbox = widgets.VBox([results_table, results_table_export_hbox])
+    results_export_hbox = widgets.HBox([exportLabel, export_directory_text,
+                                        export_data_button, export_report_button, export_hvsr_button,
+                                        export_subdirectories_check])
+    global results_tab
+    plots_subtabs = widgets.Tab([results_graph_widget, plot_settings_tab])
+    plots_subtabs.set_title(0, &#34;Plot Viewer&#34;)
+    plots_subtabs.set_title(1, &#34;Plot Settings&#34;)
+    results_subtabs = widgets.Tab([plots_subtabs, printed_results_textArea, results_table_vbox])
+    results_tab = widgets.VBox(children=[results_subtabs, results_export_hbox])
+    results_subtabs.set_title(0, &#34;Plot&#34;)
+    results_subtabs.set_title(1, &#34;Peak Tests&#34;)
+    results_subtabs.set_title(2, &#34;Peak Table&#34;)
+
+    widget_param_dict = {
+        &#39;fetch_data&#39;: 
+            {&#39;source&#39;: data_source_type,
+            &#39;data_export_path&#39;: data_export_path_textbox,
+            &#39;data_export_format&#39;: data_export_format_dropdown,
+            &#39;detrend_type&#39;: detrend_type_dropdown,
+            &#39;detrend_options&#39;: detrend_options,
+            &#39;filter_type&#39;: filter_type_dropdown,
+            &#39;filter_options&#39;: filter_options,
+            &#39;update_metadata&#39;:update_metadata_checkbox.value,
+            &#39;verbose&#39;: verbose_check},
+        &#39;remove_noise&#39;: 
+            {
+            &#39;sat_percent&#39;: max_saturation_pct,
+            &#39;noise_percent&#39;: max_window_pct,
+            &#39;sta&#39;: sta,
+            &#39;lta&#39;: lta,
+            &#39;stalta_thresh&#39;: [stalta_thresh_low, stalta_thresh_hi],
+            &#39;warmup_time&#39;: warmup_time,
+            &#39;cooldown_time&#39;: cooldown_time,
+            &#39;min_win_size&#39;: noisy_window_length,
+            &#39;remove_raw_noise&#39;: raw_data_remove_check,
+            &#39;verbose&#39;: verbose_check},
+        &#39;generate_psds&#39;: 
+            {&#39;verbose&#39;: verbose_check,
+             &#39;skip_on_gaps&#39;:skip_on_gaps, 
+             &#39;db_bins&#39;:[db_bins_min, db_bins_max, db_bins_step],
+             &#39;ppsd_length&#39;:ppsd_length, 
+             &#39;overlap&#39;:overlap_pct_float, 
+             &#39;special_handling&#39;:special_handling_dropdown, 
+             &#39;period_smoothing_width_octaves&#39;:period_smoothing_width, 
+             &#39;period_step_octaves&#39;:period_step_octave, 
+             &#39;period_limits&#39;:hvsr_band_rangeSlide},
+        &#39;process_hvsr&#39;: 
+            {&#39;horizontal_method&#39;: h_combine_meth_dropdown,
+            &#39;smooth&#39;: smooth_hv_curve,
+            &#39;freq_smooth&#39;: freq_smoothing_dropdown,
+            &#39;f_smooth_width&#39;: freq_smooth_width_float,
+            &#39;resample&#39;: resample_hv_curve,
+            &#39;verbose&#39;: verbose_check},
+        &#39;remove_outlier_curves&#39;: 
+            {&#39;outlier_threshold&#39;: outlier_threshold_slider,
+            &#39;use_percentile&#39;: outlier_pctile_check,
+            &#39;use_hv_curves&#39;: use_hv_curve_outliers_check,
+            &#39;verbose&#39;: verbose_check},
+        &#39;check_peaks&#39;: 
+            {&#39;hvsr_band&#39;: hvsr_band_rangeSlide,
+            &#39;peak_freq_range&#39;: peak_freq_rangeSlide,
+            &#39;verbose&#39;: verbose_check},
+        &#39;get_report&#39;: 
+            {
+            &#39;export_path&#39;: export_results_table_filepath,
+            &#39;verbose&#39;: verbose_check}}
+
+    # SPRIT WIDGET
+    # Add all  a tab and add the grid to it
+    global sprit_tabs
+    sprit_tabs = widgets.Tab([input_tab, preview_tab, results_tab, log_tab])
+    sprit_tabs.set_title(0, &#34;Input&#34;)
+    sprit_tabs.set_title(1, &#34;Data View&#34;)
+    sprit_tabs.set_title(2, &#34;Results&#34;)
+    sprit_tabs.set_title(3, &#34;Log&#34;)
+
+    with open(spritLogoPath.as_posix(), &#34;rb&#34;) as file:
+        image = file.read()
+
+    sprit_logo = widgets.Image(value=image, format=&#39;png&#39;, width=30,height=30)
+    sprit_title = widgets.Label(value=&#39;pRIT&#39;, layout=widgets.Layout(width=&#39;150px&#39;))
+    sprit_subtitle = widgets.Label(value=&#39;Tools for ambient siesmic noise analysis using HVSR&#39;,
+                                   layout=widgets.Layout(flex=&#39;1&#39;, justify_content=&#39;flex-start&#39;, align_content=&#39;flex-end&#39;))
+
+    # Function to open a link
+    def open_dist(button):
+        link = &#39;https://pypi.org/project/sprit/&#39;
+        webbrowser.open_new_tab(link)
+
+    def open_repo(button):
+        link = &#39;https://github.com/RJbalikian/SPRIT-HVSR&#39;
+        webbrowser.open_new_tab(link)
+
+    def open_docs(button):
+        link = &#39;https://rjbalikian.github.io/SPRIT-HVSR/main.html&#39;
+        webbrowser.open_new_tab(link)
+
+    sourcebutton = widgets.Button(description=&#34;PyPI&#34;,
+                                layout=widgets.Layout(width=&#39;4%&#39;, justify_content=&#39;flex-end&#39;,align_content=&#39;flex-end&#39;))
+    repobutton = widgets.Button(description=&#34;Repo&#34;,
+                                layout=widgets.Layout(width=&#39;4%&#39;, justify_content=&#39;flex-end&#39;,align_content=&#39;flex-end&#39;))
+    docsbutton = widgets.Button(description=&#34;Docs&#34;,
+                                layout=widgets.Layout(width=&#39;8%&#39;, justify_content=&#39;flex-end&#39;,align_content=&#39;flex-end&#39;))
+
+    # Attach the open_link function to the button&#39;s on_click event
+    sourcebutton.on_click(open_dist)
+    repobutton.on_click(open_repo)
+    docsbutton.on_click(open_docs)
+
+    titlehbox = widgets.HBox([sprit_logo, sprit_title, sprit_subtitle, 
+                              show_plot_check, verbose_check, 
+                              repobutton, sourcebutton, docsbutton],
+                            layout = widgets.Layout(align_content=&#39;space-between&#39;))
+    
+    title_style = {
+        &#39;font_family&#39;: &#39;Arial, sans-serif&#39;,
+        &#39;font_size&#39;: &#39;36px&#39;,
+        &#39;font_weight&#39;: &#39;bold&#39;,
+        &#39;color&#39;: &#39;black&#39;
+    }
+
+    # Apply the style to the label
+    sprit_title.style = title_style
+
+    sprit_widget = widgets.VBox([titlehbox, sprit_tabs], 
+                                layout = widgets.Layout(align_content=&#39;space-between&#39;))
+
+    def observe_children(widget, callback):
+        if hasattr(widget, &#39;children&#39;):
+            for child in widget.children:
+                child.observe(callback)
+                observe_children(child, callback)
+
+    def any_update(change):
+        update_input_param_call()
+        update_fetch_data_call()
+        update_remove_noise_call()
+        update_generate_psds_call()
+        update_process_hvsr_call()
+        update_remove_outlier_curve_call()
+        update_check_peaks_call()
+        update_plot_string()
+
+    observe_children(sprit_tabs, any_update)
+
+    # Display the tab
+    display(sprit_widget)</code></pre>
+</details>
 <div class="desc"><p>Function that generates the user interface for Jupyter Notebooks.</p>
-<p>This interface uses ipywidgets, plotly, and IPython to create a user interface for processing data in a Jupyter notebook. </p>
-<p>As of version 2.6.5, this is broken but there are plans to fix in the near future.</p></div>
+<p>This interface uses ipywidgets, plotly, and IPython to create a user interface for processing data in a Jupyter notebook.</p>
+<p>This is functionally equivalent to sprit.gui('nb').</p>
+<h2 id="see-also">See Also</h2>
+<p><code>gui</code></p></div>
 </dd>
 </dl>
 </section>
@@ -66,7 +2946,7 @@ hljs.highlightAll();
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.1</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
 </footer>
 </body>
 </html>
