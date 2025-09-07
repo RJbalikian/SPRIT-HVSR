@@ -2508,7 +2508,8 @@ def check_peaks(hvsr_data, hvsr_band=DEFAULT_BAND, peak_selection='max', peak_fr
 # Function to export data stream to mseed (by default) or other format supported by obspy.write()
 def export_data(hvsr_data, data_export_path, data_export_format='mseed', starttime=None, endtime=None, tzone=None, export_edited_stream=False, 
                 site=None, project=None, verbose=False, **kwargs):
-    """Export data stream to file
+    """Export data stream to file. This uses the obspy.Stream.write() method on the hvsr_data['stream'] object,
+    but the stream can first be trimmed using starttime, endtime, and tzone.
 
     Parameters
     ----------
@@ -2525,7 +2526,7 @@ def export_data(hvsr_data, data_export_path, data_export_format='mseed', startti
     tzone : str, zoneinfo.Zoneinfo, optional
         String readable by zoneinfo.Zoneinfo() or Zoneinfo object, by default None
     export_edited_stream : bool, optional
-        Whether to export the raw stream or edited stream in HVSRData object, by default False
+        Whether to export the raw stream ('stream' property; if False) or edited stream ('stream_edited' property; if True) in HVSRData object, by default False.
     site : str, optional
         Site name, to be used in filename generation, by default None
     project : str, optional
@@ -2670,7 +2671,9 @@ def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr', export_type='gzip'
                 verbose=False):
     """Export data into pickle format that can be read back in using import_data().
        Intended so data does not need to be processed each time it needs to be used. 
-       Default extension is .hvsr but it is still a pickled file that can be read in using pickle.load().
+       By default, first, export_hvsr serializes the HVSRData object(s) using pickle.dumps(). 
+       Then, to save space, it writes that to a gzip file.
+       Default extension is .hvsr no matter the format, though this can be set with `ext` parameter.
 
     Parameters
     ----------
@@ -2679,7 +2682,13 @@ def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr', export_type='gzip'
     hvsr_export_path : str or filepath object, default = None
         String or filepath object to be read by pathlib.Path() and/or a with open(hvsr_export_path, 'wb') statement. If None, defaults to input input_data directory, by default None
     ext : str, default = 'hvsr'
-        Filepath extension to use for data file, by default 'hvsr'
+        Filepath extension to use for data file, by default 'hvsr'. 
+        This will be the extension no matter the export_type
+    export_type : str, default = 'gzip'
+        Export type to use. If `export_type` is 'pickle', will just save to disk using pickle.dump.
+        Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extension in both cases, by default).
+    verbose : bool, default=False
+        Whether to print information about export. A confirmation message is printed no matter what.
     """
     def _hvsr_export(_hvsr_data=hvsr_data, _export_path=hvsr_export_path, _ext=ext):
         
@@ -3847,8 +3856,8 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
                 
         See Also
         --------
-        scipy.signal.welch
-        obspy.signal.spectral_estimation.PPSD
+        [scipy.signal.welch](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html)
+        [obspy.signal.spectral_estimation.PPSD](https://docs.obspy.org/packages/autogen/obspy.signal.spectral_estimation.PPSD.html)
         
     """
     
@@ -6482,12 +6491,17 @@ def remove_outlier_curves(hvsr_data, outlier_method='prototype',
                           use_hv_curves=False,
                           plot_engine='matplotlib', show_outlier_plot=False, generate_outlier_plot=True,
                           verbose=False, **kwargs):
-    """Function used to remove outliers curves using Root Mean Square Error to calculate the error of each windowed
-    Probabilistic Power Spectral Density (PPSD) curve against the median PPSD value at each frequency step for all times.
+    """Function used to remove outliers curves using a "prototype" or "dbscan" method. 
+    Prototype method calculates a prototype curve (i.e., median) and calculates the distance of the H/V or PSD curve from each window from that prototype curve.
+    Currently, Root Mean Square Error is used to calculate the distance for each windowed H/V or PSD curve at each frequency step for all times.
     It calculates the RMSE for the PPSD curves of each component individually. All curves are removed from analysis.
+
+    DBSCAN uses the DBSCAN method, outlier_threshold being by default the percentile value of distances of all curves from all other curves.
+    Distance is calculated using scipy.spatial.distance.pdist, by default with 'euclidean' distance. 
+    The `min_pts` parameter specifies the minimum number of curves whose distance must be within the threshold distance percentile/value to be retained.
     
     Some abberant curves often occur due to the remove_noise() function, so this should be run some time after remove_noise(). 
-    In general, the recommended workflow is to run this immediately following the generate_psds() function.
+    In general, the recommended workflow is to run this immediately following the `generate_psds()` function. or if use_hv_curves=True, after `process_hvsr()`.
 
     Parameters
     ----------
@@ -6516,6 +6530,10 @@ def remove_outlier_curves(hvsr_data, outlier_method='prototype',
     -------
     hvsr_data : dict
         Input dictionary with values modified based on work of function.
+
+    SEE ALSO
+    --------
+    [scipy.spatial.distance.pdist](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html#scipy.spatial.distance.pdist)
     """
     # Setup function
     #Get intput paramaters

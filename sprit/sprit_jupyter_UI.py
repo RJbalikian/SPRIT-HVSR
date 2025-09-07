@@ -60,10 +60,13 @@ def _get_default(func, param):
 def create_jupyter_ui():
     """Function that generates the user interface for Jupyter Notebooks.
     
-    This interface uses ipywidgets, plotly, and IPython to create a user interface for processing data in a Jupyter notebook. 
-    
-    As of version 2.6.5, this is broken but there are plans to fix in the near future.
+    This interface uses ipywidgets, plotly, and IPython to create a user interface for processing data in a Jupyter notebook.
 
+    This is functionally equivalent to sprit.gui('nb').
+
+    SEE ALSO
+    --------
+    gui
     """
     global hvsr_data
     global results_fig

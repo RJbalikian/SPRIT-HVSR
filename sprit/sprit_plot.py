@@ -49,7 +49,7 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
                        depth_limit=150, minimum_elevation=None, show_bedrock_surface=True,
                        return_data_batch=True, show_cross_section=True, verbose=False,
                        **kwargs):
-    """Functio to plot a cross section given an HVSRBatch or similar object
+    """Function to plot a cross section given an HVSRBatch or similar object
 
     Parameters
     ----------
@@ -524,16 +524,52 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
 
 # Plot depth curve
 def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normalize_curve=True, 
-                     depth_limit=250, max_elev=None, min_elev=None,
+                     depth_limit=250, depth_model=None,
                      annotate=True, depth_plot_export_path=None, 
                      fig=None, ax=None, show_depth_curve=True):
-    
+    """Function to plot depth curves, given hvsr_results with depth_model specified.
+
+    Parameters
+    ----------
+    hvsr_results : sprit.HVSRData or sprit.HVSRBatch
+        HVSRData object with depth information (or `depth_model` specified).
+    use_elevation : bool, optional
+        Whether to use elevation (True) or just depth (False), by default True
+    show_feet : bool, optional
+        Whether to show elevation/depth in feet on Y axis, by default False
+    normalize_curve : bool, optional
+        Whether to normalize amplitude of H/V curve (x-axis) using maximum/minimum amplitudes, by default True
+    depth_limit : int, optional
+        Depth limit at which to cut off plot, by default 250 (meters)
+    depth_model : None or tuple, optional
+        If depth_model not already specified, this can be used to run sprit.calculate_depth() before generating plot.
+    annotate : bool, optional
+        Whether to annotate plot, by default True
+    depth_plot_export_path : filepath-like object, optional
+        If specified, will export depth plot to location specifed, by default None
+    fig : matplotlib.figure.Figure, optional
+        Maplotlib Figure to use for plotting, by default None (new one will be created)
+    ax : matplotlib.axis.Axis, optional
+        Maplotlib Axis to use for plotting, by default None (new one will be created)
+    show_depth_curve : bool, optional
+        Whether to diplay the depth curve chart after generating it, by default True
+
+    Returns
+    -------
+    HVSRData
+        HVSRData object with additional property for Depth_Plot
+    """
+
+
     if fig is None and ax is None:
         fig, ax = plt.subplots(layout='constrained')#, figsize=(5, 15))
         fig.suptitle(hvsr_results['site'])
         ax.set_title('Calibrated Depth to Interface', size='small')
     ax.tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
     
+    if depth_model is not None:
+        hvsr_results = sprit_calibration.calculate_depth(hvsr_results, depth_model=depth_model, show_depth_curve=False)
+
     surfElev = hvsr_results.Table_Report['Elevation'][0]
     bedrockElev = hvsr_results.Table_Report['BedrockElevation'][0]
     bedrockDepth = hvsr_results.Table_Report['BedrockDepth'][0]
