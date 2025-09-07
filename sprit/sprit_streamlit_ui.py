@@ -341,7 +341,7 @@ def main():
     def check_if_default():
         if len(st.session_state.keys()) > 0:
             print('Checking defaults, session state length: ', len(st.session_state.keys()))
-            print_param(param2print)
+            print_param(PARAM2PRINT)
 
 
     if VERBOSE:
@@ -1860,7 +1860,7 @@ def main():
         if VERBOSE:
             print('Done setting up sidebar, session state length: ', len(st.session_state.keys()))
             print('Done setting up everything (end of main), session state length: ', len(st.session_state.keys()))
-            print_param(param2print)
+            print_param(PARAM2PRINT)
 
 if __name__ == "__main__":
     main()
