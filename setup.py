@@ -16,6 +16,7 @@ setup(
     entry_points={
         'console_scripts': [
             'sprit = sprit.sprit_cli:main',
-        ]
-    }
+        ]        
+        }
+    python_requires='>=3.9'
     )

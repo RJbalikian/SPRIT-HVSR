@@ -17,7 +17,7 @@ import operator
 import os
 import pathlib
 import pickle
-import pkg_resources
+import importlib
 import re
 import struct
 import sys
@@ -64,7 +64,7 @@ DEFAULT_BAND = [0.5, 40]
 PLOT_KEYS = ["Input_Plot", "Outlier_Plot", "Plot_Report", "Depth_Plot", "Plot_Report"]
 
 # Resources directory path, and the other paths as well
-RESOURCE_DIR = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources'))
+RESOURCE_DIR = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources')
 SAMPLE_DATA_DIR = RESOURCE_DIR.joinpath('sample_data')
 SETTINGS_DIR = RESOURCE_DIR.joinpath('settings')
 
@@ -1087,7 +1087,6 @@ def gui(kind: str = 'browser'):
 
     if kind.lower() in browserList:
         import subprocess
-        import pkg_resources
         streamlitPath = pathlib.Path(__file__).parent.joinpath("sprit_streamlit_ui.py")
         cmd = ['streamlit', 'run', streamlitPath.as_posix()]
         #subprocess.run(cmd)
@@ -1130,17 +1129,12 @@ def gui(kind: str = 'browser'):
         #with open(streamlitPath.parent.as_posix(), 'r') as file:
         #    appText = file.read()
 
-        #installed_packages = pkg_resources.working_set
-        #for package in installed_packages:
-        #    print(f"{package.key}=={package.version}")     
-
         run_streamlit_app(pathlib.Path(__name__).parent)
 
         #streamlit.web.bootstrap.run(streamlitPath.as_posix(), '', [], [])
         #process = subprocess.Popen(["streamlit", "run", os.path.join(
         #            'application', 'main', 'services', 'streamlit_app.py')])             
     elif kind.lower() in windowList:
-        import pkg_resources
         #guiPath = pathlib.Path(os.path.realpath(__file__))
         try:
             from sprit.sprit_tkinter_ui import SPRIT_App
@@ -1165,10 +1159,10 @@ def gui(kind: str = 'browser'):
         gui_root = tk.Tk()
         try:
             try:
-                icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico')) 
-                gui_root.iconbitmap(icon_path)
+                icon_path = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources').joinpath("icon").joinpath('sprit_icon_alpha.ico') 
+                gui_root.iconbitmap(icon_path.as_posix())
             except:
-                icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon.png'))
+                icon_path = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources').joinpath("icon").joinpath('sprit_icon.png') 
                 gui_root.iconphoto(False, tk.PhotoImage(file=icon_path.as_posix()))
         except Exception as e:
             print("ICON NOT LOADED, still opening GUI")
@@ -1846,7 +1840,6 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
     if batch_type == 'table':
         # If this is sample data, we need to create absolute paths to the filepaths
         if sample_data:
-            #SAMPLE_DATA_DIR = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sample_data/'))
             dataReadInfoDF = pd.read_csv(sampleFileKeyMap['sample_batch'])
             for index, row in dataReadInfoDF.iterrows():
                 dataReadInfoDF.loc[index, 'input_data'] = SAMPLE_DATA_DIR.joinpath(row.loc['input_data'])
@@ -3365,7 +3358,6 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
             params = HVSRBatch(params, df_as_read=params.input_df)
             return params
         elif str(params['input_data']).lower() in SAMPLE_LIST or f"sample{params['input_data'].lower()}" in SAMPLE_LIST:
-            SAMPLE_DATA_DIR = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/sample_data/'))
             if source=='batch':
                 params['input_data'] = SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv')
                 params = batch_data_read(batch_data=params['input_data'], batch_type='sample', verbose=verbose)
@@ -5050,7 +5042,7 @@ def input_params(input_data,
     
     if str(instrument).lower() in raspShakeInstNameList:
         if metadata is None or metadata=='':
-            metadata = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/rs3dv5plus_metadata.inv')).as_posix()
+            metadata = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources').joinpath("rs3dv5plus_metadata.inv").as_posix()
             inputParamDict['metadata'] = metadata
 
     for settingName in instrument_settings_dict.keys():
@@ -10195,8 +10187,7 @@ def _generate_html_report(hvsr_results, azimuth='HV', show_html_report=False, ve
     HVSRData or HVSRBatch
         Returns the input dataset, with the HTML_Report attribute updated with the html text of the report
     """
-    resources_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/'))
-    htmlTemplatePath = resources_dir.joinpath('html_report_template.html')
+    htmlTemplatePath = RESOURCE_DIR.joinpath('html_report_template.html')
 
     with open(htmlTemplatePath, 'r') as htmlF:
         html = htmlF.read()

@@ -2,8 +2,8 @@
 """
 
 import datetime
+import importlib
 import inspect
-import pkg_resources
 import os
 import pathlib
 import tkinter as tk
@@ -39,7 +39,7 @@ OBSPY_FORMATS =  ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN',
                   'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'SU', 
                   'TRC', 'TSPAIR', 'WAV', 'WIN', 'Y']
 
-RESOURCE_DIR = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources'))
+RESOURCE_DIR = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources')
 SAMPLE_DATA_DIR = RESOURCE_DIR.joinpath('sample_data')
 SETTINGS_DIR = RESOURCE_DIR.joinpath('settings')
 

@@ -3,6 +3,7 @@ This module will be used for calibration of the ambient HVSR data acquired near 
 to derive a relation between the resonant frequency and the depth to bedrock beneath the subsurface.
 
 """
+import importlib
 import inspect
 import numbers
 import os
@@ -13,7 +14,6 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import LogLocator
 import numpy as np
 import pandas as pd
-import pkg_resources
 from scipy.optimize import curve_fit
 
 try:  # For distribution
@@ -49,8 +49,8 @@ Things to add:
 - #Add parameter to sprit.run
 """
 
-resource_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/'))
-sample_data_dir = resource_dir.joinpath("sample_data")
+RESOURCE_DIR = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources')
+sample_data_dir = RESOURCE_DIR.joinpath("sample_data")
 sampleFileName = {'sample_1': sample_data_dir.joinpath("SampleHVSRSite1_2024-06-13_1633-1705.csv")}
 
 def __get_ip_df_params():

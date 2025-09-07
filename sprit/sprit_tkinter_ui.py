@@ -2,11 +2,10 @@
 """
 import datetime
 import functools
-import linecache
+import importlib
 import json
 import os
 import pathlib
-import pkg_resources
 import sys
 import threading
 import time
@@ -40,7 +39,7 @@ global spritApp
 global current_theme_name
 global SPRIT_App
 
-resource_dir = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/'))
+resource_dir = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources')
 settings_dir = resource_dir.joinpath('settings')
 gui_theme_file = settings_dir.joinpath('gui_theme.json')
 with open(gui_theme_file, 'r') as f:
@@ -55,11 +54,9 @@ class SPRIT_App:
         self.params = sprit_hvsr.HVSRData({'site':''})
 
         # Set the theme
-        self.darkthemepath = pathlib.Path(pkg_resources.resource_filename(__name__, "resources/themes/forest-dark.tcl"))
-        self.lightthemepath = pathlib.Path(pkg_resources.resource_filename(__name__, "resources/themes/forest-light.tcl"))
-        
+        self.darkthemepath = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources').joinpath('themes').joinpath('forest-dark.tcl')
+        self.lightthemepath = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources').joinpath('themes').joinpath('forest-light.tcl') 
 
-        
         # Create the style object
         self.style = ttk.Style(master)
         #
@@ -3109,10 +3106,10 @@ if __name__ == "__main__":
         root = tk.Tk()
         try:
             try:
-                icon_path =pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon_alpha.ico')) 
+                icon_path = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources').joinpath('icon').joinpath('sprit_icon_alpha.ico')
                 root.iconbitmap(icon_path)
             except:
-                icon_path = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources/icon/sprit_icon.png'))
+                icon_path = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources').joinpath('icon').joinpath('sprit_icon.png')
                 root.iconphoto(False, tk.PhotoImage(file=icon_path.as_posix()))
         except Exception as e:
             print("ICON NOT LOADED, still opening GUI")

@@ -3,12 +3,12 @@
 import base64
 import copy
 import datetime
+import importlib
 import inspect
 import io
 import os
 import pathlib
 import pickle
-import pkg_resources
 import sys
 import tempfile
 import zoneinfo
@@ -41,7 +41,7 @@ except Exception:
     
 VERBOSE = False
 
-RESOURCE_DIR = pathlib.Path(pkg_resources.resource_filename(__name__, 'resources'))
+RESOURCE_DIR = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources')
 SAMPLE_DATA_DIR = RESOURCE_DIR.joinpath('sample_data')
 SETTINGS_DIR = RESOURCE_DIR.joinpath('settings')
 
