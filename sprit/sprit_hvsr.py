@@ -1326,6 +1326,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         # Fetch Data
         try:
             fetch_data_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(fetch_data).parameters.keys())}
+            fetch_data_kwargs.update({k: v for k, v in kwargs.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())})
             if 'obspy_ppsds' in kwargs:
                 fetch_data_kwargs['obspy_ppsds'] = kwargs['obspy_ppsds']
             else:
@@ -3290,6 +3291,11 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                     trominoKwargs.update(paramDict)
                     rawDataIN = read_tromino_files(dPath, verbose=verbose, **trominoKwargs)
 
+                    if 'site' in rawDataIN[0].stats:
+                        if hasattr(params, 'site'):
+                            params['site'] = rawDataIN[0].stats.site
+                        if hasattr(params, input_params):
+                            params['input_params']['site'] = rawDataIN[0].stats.site
                 else:
                     if inst.lower() not in raspShakeInstNameList:
                         print(f"Unrecognized value instrument={inst}. Defaulting to raw raspberry shake data.")
@@ -3318,7 +3324,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
         elif source == 'file' and str(params['input_data']).lower() not in SAMPLE_LIST:
             # Read the file specified by input_data
             # Automatically read tromino data
-            if inst.lower() in trominoNameList or 'trc' in dPath.suffix:
+            if str(inst).lower() in trominoNameList or 'trc' in dPath.suffix:
                 params['instrument'] = 'Tromino'
                 params['params']['instrument'] = 'Tromino'
 
@@ -3326,16 +3332,24 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                     params['instrument'] = 'Tromino Blue'
                     params['params']['instrument'] = 'Tromino Blue'
 
-                if 'trc' in dPath.suffix:
+                try:
                     trominoKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())}
                     paramDict = {k:v for k, v in params.items()}
-                    trominoKwargs.update(paramDict)
+                    #trominoKwargs.update(paramDict)
                     if 'input_data' in trominoKwargs:
                         del trominoKwargs['input_data']
                     if 'tromino_model' not in trominoKwargs:
                         trominoKwargs['tromino_model'] = params['instrument']
+                    
                     rawDataIN = read_tromino_files(input_data=dPath, verbose=verbose, **trominoKwargs)
-                else:
+
+                    if 'site' in rawDataIN[0].stats:
+                        if hasattr(params, 'site'):
+                            params['site'] = rawDataIN[0].stats.site
+                        if hasattr(params, 'params'):
+                            params['params']['site'] = rawDataIN[0].stats.site
+
+                except:
                     try:
                         rawDataIN = obspy.read(dPath)
                     except Exception:
@@ -6025,7 +6039,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
 
 
 # Read data from Tromino
-def read_tromino_files(input_data, struct_format='H', tromino_model=None,
+def read_tromino_files(input_data, struct_format='H', tromino_model=None, diagnose=False,
     sampling_rate=None, set_record_duration=None, start_byte=24576, verbose=False, **kwargs):
     
     """Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ and Blue machines
@@ -6057,107 +6071,27 @@ def read_tromino_files(input_data, struct_format='H', tromino_model=None,
     obspy.stream.Stream
         Obspy Stream object with Tromino data
     """
-        
-    dPath = input_data
 
     blueModelList = ['blue', 'blu', 'tromino blu', 'tromino blue']
+
+    if pathlib.Path(input_data).is_dir():
+        trDirGlob = pathlib.Path(input_data).glob('*trc')
+        for trcFile in trDirGlob:
+            input_data = trcFile
+        if verbose:
+            print(f'\t Input file updated to {pathlib.Path(input_data).name} in specified directory.')
+
 
     if str(tromino_model).lower() in blueModelList or 'blue' in str(tromino_model).lower():
         tBlueKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(__read_tromino_data_blue).parameters.keys())}
         if 'sampling_rate' not in tBlueKwargs:
             tBlueKwargs['sampling_rate'] = sampling_rate
             return __read_tromino_data_blue(input_data, verbose=False, **tBlueKwargs)
-            
-    if sampling_rate is None:
-        sampling_rate = 128 # default value
-
-    strucSizes = {'c':1, 'b':1,'B':1, '?':1,
-                'h':2,'H':2,'e':2,
-                'i':4,'I':4,'l':4,'L':4,'f':4,
-                'q':8,'Q':8,'d':8,
-                'n':8,'N':8,'s':16,'p':16,'P':16,'x':16}
-
-    #H (pretty sure it's Q) I L or Q all seem to work (probably not Q?)
-    structFormat = struct_format
-    structSize = strucSizes[structFormat]
-
-    dataList = []
-    with open(dPath, 'rb') as f:
-        while True:
-            data = f.read(structSize)  # Read 4 bytes
-            if not data:  # End of file
-                break
-            value = struct.unpack(structFormat, data)[0]  # Interpret as a float
-            dataList.append(value)
-     
-    import numpy as np
-    dataArr = np.array(dataList)
-    import matplotlib.pyplot as plt
-
-    medVal = np.nanmedian(dataArr[50000:100000])
-
-    if 'start_byte' in kwargs.keys():
-        start_byte = kwargs['start_byte']
-
-    station = 'Tromino'
-    if 'station' in kwargs:
-        station = kwargs['station']
-
-    acq_date = datetime.date.today()
-    if 'acq_date' in kwargs:
-        acq_date = kwargs['acq_date']
-
-    starttime = datetime.time(0, 0)
-    if 'starttime' in kwargs:
-        starttime = kwargs['starttime']
-
-    startByte = start_byte
-    comp1 = dataArr[startByte::3] - medVal
-    comp2 = dataArr[startByte+1::3] - medVal
-    comp3 = dataArr[startByte+2::3] - medVal
-    headerBytes = dataArr[:startByte]
-
-    if 'diagnose' in kwargs and kwargs['diagnose']:
-        print("Total file bytes: ", len(dataArr))
-
-    #fig, ax = plt.subplots(3, sharex=True, sharey=True)
-    #ax[0].plot(comp1, linewidth=0.1, c='k')
-    #ax[1].plot(comp2, linewidth=0.1, c='k')
-    #ax[2].plot(comp3, linewidth=0.1, c='k')
-
-    if 'sampling_rate' in kwargs.keys():
-        sampling_rate = kwargs['sampling_rate']
-
-    sTime = obspy.UTCDateTime(acq_date.year, acq_date.month, acq_date.day,
-                              starttime.hour, starttime.minute,
-                              starttime.second, starttime.microsecond)
-    eTime = sTime + (((len(comp1))/sampling_rate)/60)*60
-
-    loc = ''
-    if type(station) is int or station.isdigit():
-        loc = str(station)
-
-    traceHeader1 = {'sampling_rate':sampling_rate,
-            'calib' : 1,
-            'npts':len(comp1),
-            'network':'AM',
-            'location': loc,
-            'station' : 'TRMNO',
-            'channel':'EHE',
-            'starttime':sTime}
-    
-    traceHeader2=traceHeader1.copy()
-    traceHeader3=traceHeader1.copy()
-    traceHeader2['channel'] = 'EHN'
-    traceHeader3['channel'] = 'EHZ'
-
-    trace1 = obspy.Trace(data=comp1, header=traceHeader1)
-    trace2 = obspy.Trace(data=comp2, header=traceHeader2)
-    trace3 = obspy.Trace(data=comp3, header=traceHeader3)
-
-    st = obspy.Stream([trace1, trace2, trace3])
-    return st
-
+    else:
+        return __read_tromino_data_yellow(input_data=input_data, sampling_rate=sampling_rate, 
+                                   struct_format=struct_format, tromino_model="3G+",diagnose=diagnose,
+                                   set_record_duration=set_record_duration, start_byte=start_byte,
+                                   return_dict=False, verbose=verbose, **kwargs)
 
 # Function to remove noise windows from data
 def remove_noise(hvsr_data, remove_method=None, 
@@ -7480,13 +7414,147 @@ def __detrend_data(input, detrend, detrend_options, verbose, source):
     return output
 
 
+def __read_tromino_data_yellow(input_data, sampling_rate=None,
+                               struct_format='H', tromino_model='3G+',
+                               start_byte=24576, diagnose=False,
+                               return_dict=True,
+                               verbose=False, **kwargs):
+    
+    # Reconfigure data for some of the analysis
+    swapped = __read_and_swap_bytes(input_data) 
+   
+    # Extract header information (text sections)
+    header_text = __extract_text_sections(swapped)
+
+    result = {
+        'site_name': None,
+        'header': {},
+        'gps_data': None,
+        'seismometer_data': None, # Will be replaced with a (3, n) numpy array
+        'stream': None 
+        }
+    
+    if verbose:
+        print("\n\t Tromino Header Information")
+    for text in header_text:
+        if verbose and len(re.findall(r'\w+', text.decode('ascii', errors='ignore')))>0:
+            print('\t\t ', text.decode('ascii', errors='ignore'))
+        if b'NAKAGRILLA FLASHCARD HEADER' in text:
+            result['header']['file_type'] = text.decode('ascii', errors='ignore').strip('\x00')
+        # Add more header parsing as needed
+        if ' DATA' in text.decode('ascii', errors='ignore')[:6]:
+            result['site_name'] = re.findall(r'\w+', text.decode('ascii', errors='ignore'))[1].strip()
+            if verbose:
+                print(f"\t Site name identified from data as {result['site_name']}\n")
+    station = result['site_name']
+
+    # OLD FUNCTION           
+    if 'sampling_rate' in kwargs.keys():
+        sampling_rate = kwargs['sampling_rate']
+
+    if sampling_rate is None:
+        if verbose:
+            print("\t `sampling_rate` not specified. Setting as 128 samples/second")
+        sampling_rate = 128 # default value
+
+    strucSizes = {'c':1, 'b':1,'B':1, '?':1,
+                'h':2,'H':2,'e':2,
+                'i':4,'I':4,'l':4,'L':4,'f':4,
+                'q':8,'Q':8,'d':8,
+                'n':8,'N':8,'s':16,'p':16,'P':16,'x':16}
+
+    #H (pretty sure it's Q) I L or Q all seem to work (probably not Q?)
+    structFormat = struct_format
+    structSize = strucSizes[structFormat]
+
+    dataList = []
+    with open(input_data, 'rb') as f:
+        while True:
+            data = f.read(structSize)  # Read 4 bytes
+            if not data:  # End of file
+                break
+            value = struct.unpack(structFormat, data)[0]  # Interpret as a float
+            dataList.append(value)
+
+    dataArr = np.array(dataList)
+
+    medVal = np.nanmedian(dataArr[50000:100000])
+
+    if 'start_byte' in kwargs.keys():
+        start_byte = kwargs['start_byte']
+
+    acq_date = datetime.date.today()
+    if 'acq_date' in kwargs:
+        acq_date = kwargs['acq_date']
+
+    starttime = datetime.time(0, 0)
+    if 'starttime' in kwargs:
+        starttime = kwargs['starttime']
+
+    startByte = start_byte
+    comp1 = dataArr[startByte::3] - medVal
+    comp2 = dataArr[startByte+1::3] - medVal
+    comp3 = dataArr[startByte+2::3] - medVal
+
+    headerBytes = dataArr[:startByte]
+
+    if diagnose:
+        print("Total file bytes: ", len(dataArr))
+
+        fig, ax = plt.subplots(3, sharex=True, sharey=True)
+        ax[0].plot(comp1, linewidth=0.1, c='k')
+        ax[1].plot(comp2, linewidth=0.1, c='k')
+        ax[2].plot(comp3, linewidth=0.1, c='k')
+        plt.show()
+
+    sTime = obspy.UTCDateTime(acq_date.year, acq_date.month, acq_date.day,
+                              starttime.hour, starttime.minute,
+                              starttime.second, starttime.microsecond)
+    eTime = sTime + (((len(comp1))/sampling_rate)/60)*60
+
+    loc = ''
+    if type(station) is int or station.isdigit():
+        loc = str(station)
+
+    traceHeader1 = {'sampling_rate':sampling_rate,
+                    'calib' : 1,
+                    'npts':len(comp1),
+                    'network':'TR',
+                    'location': loc,
+                    'station' : station,
+                    'channel':'EHE',
+                    'starttime':sTime,
+                    'site':station}
+
+    traceHeader2=traceHeader1.copy()
+    traceHeader3=traceHeader1.copy()
+
+    traceHeader2['channel'] = 'EHN'
+    traceHeader3['channel'] = 'EHZ'
+
+    trace1 = obspy.Trace(data=comp1, header=traceHeader1)
+    trace2 = obspy.Trace(data=comp2, header=traceHeader2)
+    trace3 = obspy.Trace(data=comp3, header=traceHeader3)
+
+    st = obspy.Stream([trace1, trace2, trace3])
+    
+    #result['seismometer_data'] = np.stack([comp1, comp2, comp3])
+    result['stream'] =  st 
+
+    if return_dict:
+        return result
+
+    return st
+
+
+
 # Helper function to read data from Tromino Blue instruments
 def __read_tromino_data_blue(input_data, sampling_rate=None, 
                             channel_map={'Z':6, 'E':4, 'N':2}, data_start_buffer=113,
                             return_dict=False, verbose=False):
     
     # Reconfigure data for some of the analysis
-    swapped = __swap_bytes(input_data) 
+    swapped = __read_and_swap_bytes(input_data) 
 
     # Initialize a result dictionary
     result = {
@@ -7570,7 +7638,6 @@ def __read_tromino_data_blue(input_data, sampling_rate=None,
 
     # Read the file as simple bytes
     with open(input_data, 'rb') as f:
-        #data_start_byte SHOULD NOT BE HARDCODED! (will eventually determine)
         f.seek(seis_data_start + data_buffer)
         # Read the rest of the file
         raw_bytes = f.read()
@@ -7673,7 +7740,7 @@ def __read_tromino_data_blue(input_data, sampling_rate=None,
 
 def __extract_text_sections(data):
     """Extract text sections from binary data"""
-    # Find blocks of ASCII text (simple approach)
+    # Find blocks of ASCII text
     text_sections = []
     
     # Look for consecutive printable ASCII characters
@@ -7721,7 +7788,7 @@ def __locate_data_start_blue(data):
     return end_GPS_marker
 
 
-def __swap_bytes(input_file):
+def __read_and_swap_bytes(input_file):
     """
     Private function (not meant to be called except by internal functions) 
     to read a binary file and return a bytearray with all bytes swapped in pairs.
