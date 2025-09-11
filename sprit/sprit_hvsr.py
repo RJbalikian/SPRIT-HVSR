@@ -3280,7 +3280,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     elif isinstance(params['input_data'], HVSRData):
         rawDataIN = params['input_data']['stream']
     else:
-        if source=='raw':
+        if   source == 'raw':
             try:
                 if inst.lower() in trominoNameList:
                     params['instrument'] = 'Tromino'
@@ -3324,7 +3324,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
         elif source == 'file' and str(params['input_data']).lower() not in SAMPLE_LIST:
             # Read the file specified by input_data
             # Automatically read tromino data
-            if str(inst).lower() in trominoNameList or 'trc' in dPath.suffix:
+            if str(inst).lower() in trominoNameList or 'tromino' in str(inst).lower() or 'trc' in dPath.suffix:
                 params['instrument'] = 'Tromino'
                 params['params']['instrument'] = 'Tromino'
 
@@ -3334,8 +3334,8 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
 
                 try:
                     trominoKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())}
-                    paramDict = {k:v for k, v in params.items()}
-                    #trominoKwargs.update(paramDict)
+                    paramDict = {k: v for k, v in params.items()}
+
                     if 'input_data' in trominoKwargs:
                         del trominoKwargs['input_data']
                     if 'tromino_model' not in trominoKwargs:
@@ -6074,13 +6074,13 @@ def read_tromino_files(input_data, struct_format='H', tromino_model=None, diagno
 
     blueModelList = ['blue', 'blu', 'tromino blu', 'tromino blue']
 
+    # Allow reading of tromino partition folders (and get the .trc file inside), not just .trc file
     if pathlib.Path(input_data).is_dir():
         trDirGlob = pathlib.Path(input_data).glob('*trc')
         for trcFile in trDirGlob:
             input_data = trcFile
         if verbose:
             print(f'\t Input file updated to {pathlib.Path(input_data).name} in specified directory.')
-
 
     if str(tromino_model).lower() in blueModelList or 'blue' in str(tromino_model).lower():
         tBlueKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(__read_tromino_data_blue).parameters.keys())}
@@ -6339,14 +6339,14 @@ def remove_noise(hvsr_data, remove_method=None,
                 else:
                     RuntimeError("Only obspy.core.stream.Stream data type is currently supported for manual noise removal method.")     
             elif rem_kind.lower() in autoList:
-                outStream = __remove_moving_std(stream=outStream, std_ratio_thresh=std_ratio_thresh, std_window_s=std_window_size, min_win_size=min_std_win)
+                outStream = __remove_moving_std(stream=outStream, std_ratio_thresh=std_ratio_thresh, std_window_s=std_window_size, min_win_size=min_std_win, verbose=verbose)
                 outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size, verbose=verbose)
                 # Break for-loop, since all the rest are already done as part of auto
                 break
             elif rem_kind.lower() in antitrigger:
                 outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh, show_stalta_plot=show_stalta_plot, verbose=verbose)
             elif rem_kind.lower() in movingstdList:
-                outStream = __remove_moving_std(stream=outStream, std_ratio_thresh=std_ratio_thresh, std_window_s=std_window_size, min_win_size=min_std_win)
+                outStream = __remove_moving_std(stream=outStream, std_ratio_thresh=std_ratio_thresh, std_window_s=std_window_size, min_win_size=min_std_win, verbose=verbose)
             elif rem_kind.lower() in saturationThresh:
                 outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size, verbose=verbose)
             elif rem_kind.lower() in noiseThresh:
@@ -7415,16 +7415,16 @@ def __detrend_data(input, detrend, detrend_options, verbose, source):
 
 
 def __read_tromino_data_yellow(input_data, sampling_rate=None,
-                               struct_format='H', tromino_model='3G+',
+                               struct_format='H', tromino_model='3G',
                                start_byte=24576, diagnose=False,
                                return_dict=True,
                                verbose=False, **kwargs):
     
     # Reconfigure data for some of the analysis
     swapped = __read_and_swap_bytes(input_data) 
-   
+    
     # Extract header information (text sections)
-    header_text = __extract_text_sections(swapped)
+    header_text = __extract_text_sections(swapped.copy())
 
     result = {
         'site_name': None,
@@ -7452,11 +7452,6 @@ def __read_tromino_data_yellow(input_data, sampling_rate=None,
     if 'sampling_rate' in kwargs.keys():
         sampling_rate = kwargs['sampling_rate']
 
-    if sampling_rate is None:
-        if verbose:
-            print("\t `sampling_rate` not specified. Setting as 128 samples/second")
-        sampling_rate = 128 # default value
-
     strucSizes = {'c':1, 'b':1,'B':1, '?':1,
                 'h':2,'H':2,'e':2,
                 'i':4,'I':4,'l':4,'L':4,'f':4,
@@ -7478,25 +7473,10 @@ def __read_tromino_data_yellow(input_data, sampling_rate=None,
 
     dataArr = np.array(dataList)
 
-    medVal = np.nanmedian(dataArr[50000:100000])
+    #medVal = np.nanmedian(dataArr[50000:100000])
 
     if 'start_byte' in kwargs.keys():
         start_byte = kwargs['start_byte']
-
-    acq_date = datetime.date.today()
-    if 'acq_date' in kwargs:
-        acq_date = kwargs['acq_date']
-
-    starttime = datetime.time(0, 0)
-    if 'starttime' in kwargs:
-        starttime = kwargs['starttime']
-
-    startByte = start_byte
-    comp1 = dataArr[startByte::3] - medVal
-    comp2 = dataArr[startByte+1::3] - medVal
-    comp3 = dataArr[startByte+2::3] - medVal
-
-    headerBytes = dataArr[:startByte]
 
     if diagnose:
         print("Total file bytes: ", len(dataArr))
@@ -7507,45 +7487,84 @@ def __read_tromino_data_yellow(input_data, sampling_rate=None,
         ax[2].plot(comp3, linewidth=0.1, c='k')
         plt.show()
 
-    sTime = obspy.UTCDateTime(acq_date.year, acq_date.month, acq_date.day,
+    try:
+        if verbose:
+            print("\t\tExtracting metadata from tromino yellow instrument:")
+        metaDict = __get_tromino_yellow_metadata(input_data)
+        if verbose:
+            print(f"\t\t  Starttime: {metaDict['starttime']}\n\t\t  Number of Data Channels: {metaDict['no_data_channels']} \n\t\t  Sampling Rate: {metaDict['sampling_rate']}\n")
+
+        sTime = metaDict['starttime']
+        no_channels = metaDict['no_data_channels']
+        sampling_rate = metaDict['sampling_rate']
+    except Exception as e:
+        if verbose:
+            print(e)
+        # Get default values 
+        acq_date = datetime.date.today()
+        if 'acq_date' in kwargs:
+            acq_date = kwargs['acq_date']
+
+        starttime = datetime.time(0, 0)
+        if 'starttime' in kwargs:
+            starttime = kwargs['starttime']
+        
+        sTime = obspy.UTCDateTime(acq_date.year, acq_date.month, acq_date.day,
                               starttime.hour, starttime.minute,
                               starttime.second, starttime.microsecond)
-    eTime = sTime + (((len(comp1))/sampling_rate)/60)*60
+        no_channels = 3 # default to 3 channels (maybe programmatically check this at some point)
+        
+        if sampling_rate is None:
+            if verbose:
+                print("\t `sampling_rate` not specified. Setting as 128 samples/second")
+            sampling_rate = 128 # default value
+
+# Get the actual data from the tromino yellow
+    dataArr = __extract_tromino_yellow_data(input_data=input_data, start_byte=start_byte,
+                                            swapped_bytes=__read_and_swap_bytes(input_data, return_unswapped=True), 
+                                            no_channels=no_channels, 
+                                            data_start=0xC000)
+    
+    # Get geophone data from each channel
+    compN = dataArr[0]
+    compE = dataArr[1]
+    compZ = dataArr[2]
+
+    # Calculate end time based on length of data
+    eTime = sTime + (((len(compN))/sampling_rate)/60)*60
 
     loc = ''
     if type(station) is int or station.isdigit():
         loc = str(station)
 
-    traceHeader1 = {'sampling_rate':sampling_rate,
+    traceHeaderN = {'sampling_rate':sampling_rate,
                     'calib' : 1,
-                    'npts':len(comp1),
+                    'npts':len(compN),
                     'network':'TR',
                     'location': loc,
                     'station' : station,
-                    'channel':'EHE',
+                    'channel':'?HN',
                     'starttime':sTime,
                     'site':station}
 
-    traceHeader2=traceHeader1.copy()
-    traceHeader3=traceHeader1.copy()
+    traceHeaderE = traceHeaderN.copy()
+    traceHeaderZ = traceHeaderN.copy()
 
-    traceHeader2['channel'] = 'EHN'
-    traceHeader3['channel'] = 'EHZ'
+    traceHeaderE['channel'] = '?HE'
+    traceHeaderZ['channel'] = '?HZ'
 
-    trace1 = obspy.Trace(data=comp1, header=traceHeader1)
-    trace2 = obspy.Trace(data=comp2, header=traceHeader2)
-    trace3 = obspy.Trace(data=comp3, header=traceHeader3)
+    traceZ = obspy.Trace(data=compZ, header=traceHeaderZ)
+    traceE = obspy.Trace(data=compE, header=traceHeaderE)
+    traceN = obspy.Trace(data=compN, header=traceHeaderN)
 
-    st = obspy.Stream([trace1, trace2, trace3])
+    st = obspy.Stream([traceZ, traceE, traceN])
     
-    #result['seismometer_data'] = np.stack([comp1, comp2, comp3])
     result['stream'] =  st 
 
     if return_dict:
         return result
 
     return st
-
 
 
 # Helper function to read data from Tromino Blue instruments
@@ -7738,6 +7757,136 @@ def __read_tromino_data_blue(input_data, sampling_rate=None,
     return st
 
 
+# Get the actual data from the tromino yellow
+def __extract_tromino_yellow_data(input_data, swapped_bytes, no_channels, struct_format='H', start_byte=24576, data_start=0xC000):
+    # Assuming data starts at offset 0x4B00
+    data_bytes = swapped_bytes[data_start:]
+
+    # Interpret as 16-bit signed integers
+    data_array = np.frombuffer(data_bytes, dtype='h')  # Big-endian 16-bit integers
+
+    strucSizes = {'c':1, 'b':1,'B':1, '?':1,
+                'h':2,'H':2,'e':2,
+                'i':4,'I':4,'l':4,'L':4,'f':4,
+                'q':8,'Q':8,'d':8,
+                'n':8,'N':8,'s':16,'p':16,'P':16,'x':16}
+
+    structFormat = struct_format
+    structSize = strucSizes[structFormat]
+
+    dataList = []
+    with open(input_data, 'rb') as f:
+        while True:
+            data = f.read(structSize)  # Read 4 bytes
+            if not data:  # End of file
+                break
+            value = struct.unpack(structFormat, data)[0]  # Interpret as a float
+            dataList.append(value)
+
+    #data_array = np.array(dataList)
+
+    channel_jump = no_channels
+    nChannelStart = 0 
+    eChannelStart = int(channel_jump/3)
+    zChannelStart = int(channel_jump*(2/3))
+
+    comp1 = data_array[nChannelStart::channel_jump]
+    comp2 = data_array[eChannelStart::channel_jump]
+    comp3 = data_array[zChannelStart::channel_jump]
+
+    comp1 = list(comp1 - np.median(comp1))
+    comp2 = list(comp2 - np.median(comp2))
+    comp3 = list(comp3 - np.median(comp3))
+
+    data_array = np.array([comp1, comp2, comp3])
+
+    return data_array
+
+
+
+# Read starttime, number of channels, and sampling rate
+def __get_tromino_yellow_metadata(input_data, start_hex='00004020', end_hex='00004030'):
+    """
+    Extracts bytes from [start_hex, end_hex) and tries different decodings.
+    
+    Parameters
+    ----------
+    input_data : str
+        Path to the binary .trc file.
+    start_hex : int or str
+        Start hex offset (int or hex string, e.g., default='00004000').
+    end_hex  : int or str
+        End hex offset (exclusive). Default = '0000402C
+    """
+    # normalize inputs
+    start = int(start_hex, 16) if isinstance(start_hex, str) else start_hex
+    end = int(end_hex, 16) if isinstance(end_hex, str) else end_hex
+
+    with open(input_data, 'rb') as f:
+        alldata = f.read()
+        
+    swapped = bytearray(len(alldata))
+    for i in range(0, len(alldata) - 1, 2):
+        swapped[i] = alldata[i + 1]
+        swapped[i + 1] = alldata[i]
+
+    if len(alldata) % 2 == 1:
+        swapped[-1] = alldata[-1]
+
+    data = swapped[start:end]
+    
+    byteList = [f"{b:b}" for b in data]
+    hexList = [f"{b:02X}" for b in data]
+
+    if len(data) >= 2:
+        ints16 = struct.iter_unpack(">H", data[:len(data)//2*2])
+        ints16List = [x[0] for x in ints16]
+       
+    df = pd.DataFrame({'BYTES':byteList, 'HEX':hexList})
+
+    import obspy
+    starttime = obspy.UTCDateTime(year=2000+int(df.loc[11, "HEX"]),
+                           month=int(df.loc[9, "HEX"]),
+                           day = int(df.loc[7, "HEX"]),
+                           hour = int(df.loc[5, "HEX"]),
+                           minute = int(df.loc[3, 'HEX']),
+                           second = int(df.loc[1, 'HEX'])
+                           )
+    
+    noChannels = ints16List[-2]
+    sampling_rate = ints16List[-1]
+
+    return {'starttime':starttime, 'no_data_channels':noChannels, 'sampling_rate':sampling_rate}
+
+
+def __read_and_swap_bytes(input_file, return_unswapped=False):
+    """
+    Private function (not meant to be called except by internal functions) 
+    to read a binary file and return a bytearray with all bytes swapped in pairs.
+    This handles odd-length files correctly.
+    """
+
+    # Open binary file
+    with open(input_file, 'rb') as f:
+        data = f.read()
+    
+    # Create new byte array for the swapped data
+    swapped = bytearray(len(data))
+    
+    # Swap bytes in pairs
+    for i in range(0, len(data) - 1, 2):
+        swapped[i] = data[i + 1]
+        swapped[i + 1] = data[i]
+    
+    # Handle odd length
+    if len(data) % 2 == 1:
+        swapped[-1] = data[-1]
+    
+    if return_unswapped:
+        return data
+    return swapped
+
+
 def __extract_text_sections(data):
     """Extract text sections from binary data"""
     # Find blocks of ASCII text
@@ -7786,32 +7935,6 @@ def __locate_data_start_blue(data):
             return end_GPS_marker + 8
     
     return end_GPS_marker
-
-
-def __read_and_swap_bytes(input_file):
-    """
-    Private function (not meant to be called except by internal functions) 
-    to read a binary file and return a bytearray with all bytes swapped in pairs.
-    This handles odd-length files correctly.
-    """
-
-    # Open binary file
-    with open(input_file, 'rb') as f:
-        data = f.read()
-    
-    # Create new byte array for the swapped data
-    swapped = bytearray(len(data))
-    
-    # Swap bytes in pairs
-    for i in range(0, len(data) - 1, 2):
-        swapped[i] = data[i + 1]
-        swapped[i + 1] = data[i]
-    
-    # Handle odd length
-    if len(data) % 2 == 1:
-        swapped[-1] = data[-1]
-    
-    return swapped
 
 
 # Read data from raspberry shake
@@ -8070,7 +8193,7 @@ def __remove_anti_stalta(stream, sta, lta, thresh, show_stalta_plot=False, verbo
 
 
 # Helper function for getting windows to remove noise using moving stdev
-def __remove_moving_std(stream, std_ratio_thresh=2, std_window_s=20, min_win_size=2):
+def __remove_moving_std(stream, std_ratio_thresh=2, std_window_s=20, min_win_size=5, verbose=False):
     """Helper function for removing noisy data due to high local standard deviation.
     This is similar to the default noise removal method used in Grilla software.
 
@@ -8103,7 +8226,7 @@ def __remove_moving_std(stream, std_ratio_thresh=2, std_window_s=20, min_win_siz
             dtList.append(t.datetime.replace(tzinfo=zoneinfo.ZoneInfo('UTC')))
         # Create pandas series out of trace data
         traceData = pd.Series(data=tr.data,
-                            index=dtList)
+                              index=dtList)
 
         # Get StDev values
         totalSTD = traceData.std()
@@ -8112,54 +8235,73 @@ def __remove_moving_std(stream, std_ratio_thresh=2, std_window_s=20, min_win_siz
         # Calculate whether ratio is larger than threshold value
         boolseries = np.abs(movingSTD/totalSTD) > std_ratio_thresh
 
-        # Create index of just removed windows
+        # Update single list with indices of just removed windows, from all traces
         removeDTs = removeDTs.join(boolseries.iloc[np.nonzero(boolseries)[0]].index, how='outer')
-
+        
     # Get unique indices as datetime.datetime objects
     removeDTs = removeDTs.unique()  # Get unique dtindex
     removeDTs.sort_values()  # Sort dt index
     removeDTs = removeDTs.to_pydatetime()  # Convert to np.array of datetime.datetime objs
 
-    delta = stream[0].stats.delta  # Get sample rate
+    delta = stream[0].stats.delta  # Get sample step
 
     # Convert instances of mstd/totstd > thresh to windows (keep if longer than min_win_size)
-    windows = []
+    windows = [[None, None]]
     windex = 0
-    for i, rdt in enumerate(removeDTs):
-        if i == 0:
+    windStarted = False
+    for i, pt4removal in enumerate(boolseries):
+        currPtPyDT = boolseries.index[i].to_pydatetime()
+        if i==0:
             # Intialize windows list
-            windows.append([rdt, None])
-        else:
-            # If the "window" is just two samples next to each other, keep moving
-            if (rdt - removeDTs[i-1]).total_seconds() == delta:
-                pass
-            elif (rdt - removeDTs[i-1]).total_seconds() < delta:
-                # if for some reason the window is less than sample rate, move on
-                pass
+            windStartPDTime = boolseries.index[i]
+            
+        #print(i, pt4removal, currPtPyDT, boolseries.index[i])
+        
+        # Algorithim to run once a window has started
+        if windStarted:
+            if not pt4removal: #If we have a window started and this is not a point slated for removal
+                # First check if it is too small of a window
+                if (currPtPyDT - windows[windex][0]).total_seconds() < min_win_size:
+                    # Erase the started window and continue
+                    windStarted = False
+                    windows[windex] = [None, None]
+                    continue
+                else:
+                    windows[windex][1] = prevPt2RemovePD.to_pydatetime()
+                    windows.append([None, None])
+                    windex += 1
+                    windStarted = False                    
+
             else:
-                # if window exists, but is smaller than min_win_size
-                if (removeDTs[i-1] - windows[windex][0]).total_seconds() < min_win_size:
-                    windows.pop()  # remove this window
-                    windows.append([removeDTs[i+1], None]) # Rest the window w/next data point
-                    continue  # Go to next dt
+                prevPt2RemovePD = boolseries.index[i]
+            
+        # Algorith to run if no window has been started
+        else:
+            if pt4removal:
+                windows[windex][0] = currPtPyDT
+                windStarted = True
+                windStartPDTime = boolseries.index[i]
+                prevPt2RemovePD = boolseries.index[i]
 
-                windows[windex][1] = removeDTs[i-1] # Close last window
-                windows.append([rdt, None]) # Start a new window
-                windex += 1 # Update window index
     windows = windows[:-1]
-    # Need to convert these to windows now!
-    removeUTC = []
-    for swin, ewin in windows:
-        removeUTC.append([obspy.UTCDateTime(swin), obspy.UTCDateTime(ewin)])
     
-    stime = outstream.split()[0].stats.starttime
-    etime = outstream.split()[-1].stats.endtime
-    removeUTC.insert(0, [stime, stime])
-    removeUTC.append([etime, etime])
+    if len(windows) == 1 and (windows[0][0]==None or windows==[]):
+        if verbose:
+            print('\t\t    No windows removed with moving std method.')
+    else:
+        # Need to convert these to UTC windows now!
+        removeUTC = []
+        for swin, ewin in windows:
+            removeUTC.append([obspy.UTCDateTime(swin), obspy.UTCDateTime(ewin)])
+        
+        stime = outstream.split()[0].stats.starttime
+        etime = outstream.split()[-1].stats.endtime
+        removeUTC.insert(0, [stime, stime])
+        removeUTC.append([etime, etime])
 
-    #for win0, win1 in removeUTC:
-    #    print(win0, win1, win1>win0)
-    outstream  = __remove_gaps(outstream, removeUTC)
+        #for win0, win1 in removeUTC:
+        #    print(win0, win1, win1>win0)
+        outstream  = __remove_gaps(outstream, removeUTC)
 
     return outstream
 
