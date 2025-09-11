@@ -7519,6 +7519,9 @@ def __read_tromino_data_yellow(input_data, sampling_rate=None,
                 print("\t `sampling_rate` not specified. Setting as 128 samples/second")
             sampling_rate = 128 # default value
 
+    if station is None:
+        station='HVSRSite'
+
 # Get the actual data from the tromino yellow
     dataArr = __extract_tromino_yellow_data(input_data=input_data, start_byte=start_byte,
                                             swapped_bytes=__read_and_swap_bytes(input_data, return_unswapped=True), 
@@ -7534,7 +7537,7 @@ def __read_tromino_data_yellow(input_data, sampling_rate=None,
     eTime = sTime + (((len(compN))/sampling_rate)/60)*60
 
     loc = ''
-    if type(station) is int or station.isdigit():
+    if  station is not None and (type(station) is int or station.isdigit()):
         loc = str(station)
 
     traceHeaderN = {'sampling_rate':sampling_rate,
@@ -7759,15 +7762,28 @@ def __read_tromino_data_blue(input_data, sampling_rate=None,
 
 # Get the actual data from the tromino yellow
 def __extract_tromino_yellow_data(input_data, swapped_bytes, no_channels, struct_format='H', start_byte=24576, data_start=0xC000):
-    # Assuming data starts at offset 0x4B00
+    # Assuming data starts at offset 0xC000
     data_bytes = swapped_bytes[data_start:]
 
-    # Interpret as 16-bit signed integers
-    data_array = np.frombuffer(data_bytes, dtype='h')  # Big-endian 16-bit integers
+    # Try first with unsigned integers
+    data_array = np.frombuffer(data_bytes, dtype=np.uint16)
+    if np.std(data_array) > 20000:
+        data_array = np.frombuffer(data_bytes, dtype=np.int16)
+    
+    #max_val = data_array.max()
+    #dataNorm = data_array/max_val
+    #num_small = (dataNorm < 0.5).sum()
+
+    #small_ratio = num_small / len(data_array)
+    #print("SMALL RATIO", small_ratio)
+    #if small_ratio > 0.5:
+    #    print("SWITCHING ENDIANNES")
+    #    data_array = np.frombuffer(data_bytes, dtype='h') 
 
     strucSizes = {'c':1, 'b':1,'B':1, '?':1,
                 'h':2,'H':2,'e':2,
                 'i':4,'I':4,'l':4,'L':4,'f':4,
+                
                 'q':8,'Q':8,'d':8,
                 'n':8,'N':8,'s':16,'p':16,'P':16,'x':16}
 
@@ -7786,9 +7802,10 @@ def __extract_tromino_yellow_data(input_data, swapped_bytes, no_channels, struct
     #data_array = np.array(dataList)
 
     channel_jump = no_channels
-    nChannelStart = 0 
-    eChannelStart = int(channel_jump/3)
-    zChannelStart = int(channel_jump*(2/3))
+    startPt = 0
+    nChannelStart = startPt
+    eChannelStart = startPt+int(channel_jump/3)
+    zChannelStart = startPt+int(channel_jump*(2/3))
 
     comp1 = data_array[nChannelStart::channel_jump]
     comp2 = data_array[eChannelStart::channel_jump]
@@ -7844,7 +7861,6 @@ def __get_tromino_yellow_metadata(input_data, start_hex='00004020', end_hex='000
        
     df = pd.DataFrame({'BYTES':byteList, 'HEX':hexList})
 
-    import obspy
     starttime = obspy.UTCDateTime(year=2000+int(df.loc[11, "HEX"]),
                            month=int(df.loc[9, "HEX"]),
                            day = int(df.loc[7, "HEX"]),
