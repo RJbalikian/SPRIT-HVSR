@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 3.0.1 documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 3.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=08bfcbec"></script>
+      <script src="../../_static/documentation_options.js?v=dd1205ac"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -1471,6 +1471,7 @@
         <span class="c1"># Fetch Data</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">fetch_data_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">fetch_data</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
+            <span class="n">fetch_data_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">read_tromino_files</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())})</span>
             <span class="k">if</span> <span class="s1">&#39;obspy_ppsds&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
                 <span class="n">fetch_data_kwargs</span><span class="p">[</span><span class="s1">&#39;obspy_ppsds&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;obspy_ppsds&#39;</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
@@ -3448,7 +3449,7 @@
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> <span class="n">HVSRData</span><span class="p">):</span>
         <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">][</span><span class="s1">&#39;stream&#39;</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">source</span><span class="o">==</span><span class="s1">&#39;raw&#39;</span><span class="p">:</span>
+        <span class="k">if</span>   <span class="n">source</span> <span class="o">==</span> <span class="s1">&#39;raw&#39;</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">inst</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">trominoNameList</span><span class="p">:</span>
                     <span class="n">params</span><span class="p">[</span><span class="s1">&#39;instrument&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Tromino&#39;</span>
@@ -3459,6 +3460,11 @@
                     <span class="n">trominoKwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">paramDict</span><span class="p">)</span>
                     <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">read_tromino_files</span><span class="p">(</span><span class="n">dPath</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">trominoKwargs</span><span class="p">)</span>
 
+                    <span class="k">if</span> <span class="s1">&#39;site&#39;</span> <span class="ow">in</span> <span class="n">rawDataIN</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="s1">&#39;site&#39;</span><span class="p">):</span>
+                            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rawDataIN</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">site</span>
+                        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">input_params</span><span class="p">):</span>
+                            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_params&#39;</span><span class="p">][</span><span class="s1">&#39;site&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rawDataIN</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">site</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">inst</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">raspShakeInstNameList</span><span class="p">:</span>
                         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unrecognized value instrument=</span><span class="si">{</span><span class="n">inst</span><span class="si">}</span><span class="s2">. Defaulting to raw raspberry shake data.&quot;</span><span class="p">)</span>
@@ -3487,7 +3493,7 @@
         <span class="k">elif</span> <span class="n">source</span> <span class="o">==</span> <span class="s1">&#39;file&#39;</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SAMPLE_LIST</span><span class="p">:</span>
             <span class="c1"># Read the file specified by input_data</span>
             <span class="c1"># Automatically read tromino data</span>
-            <span class="k">if</span> <span class="n">inst</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">trominoNameList</span> <span class="ow">or</span> <span class="s1">&#39;trc&#39;</span> <span class="ow">in</span> <span class="n">dPath</span><span class="o">.</span><span class="n">suffix</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">inst</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">trominoNameList</span> <span class="ow">or</span> <span class="s1">&#39;tromino&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">inst</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span> <span class="s1">&#39;trc&#39;</span> <span class="ow">in</span> <span class="n">dPath</span><span class="o">.</span><span class="n">suffix</span><span class="p">:</span>
                 <span class="n">params</span><span class="p">[</span><span class="s1">&#39;instrument&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Tromino&#39;</span>
                 <span class="n">params</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;instrument&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Tromino&#39;</span>
 
@@ -3495,16 +3501,24 @@
                     <span class="n">params</span><span class="p">[</span><span class="s1">&#39;instrument&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Tromino Blue&#39;</span>
                     <span class="n">params</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;instrument&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Tromino Blue&#39;</span>
 
-                <span class="k">if</span> <span class="s1">&#39;trc&#39;</span> <span class="ow">in</span> <span class="n">dPath</span><span class="o">.</span><span class="n">suffix</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
                     <span class="n">trominoKwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">read_tromino_files</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
-                    <span class="n">paramDict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-                    <span class="n">trominoKwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">paramDict</span><span class="p">)</span>
+                    <span class="n">paramDict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
                     <span class="k">if</span> <span class="s1">&#39;input_data&#39;</span> <span class="ow">in</span> <span class="n">trominoKwargs</span><span class="p">:</span>
                         <span class="k">del</span> <span class="n">trominoKwargs</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span>
                     <span class="k">if</span> <span class="s1">&#39;tromino_model&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">trominoKwargs</span><span class="p">:</span>
                         <span class="n">trominoKwargs</span><span class="p">[</span><span class="s1">&#39;tromino_model&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;instrument&#39;</span><span class="p">]</span>
+                    
                     <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">read_tromino_files</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">dPath</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">trominoKwargs</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
+
+                    <span class="k">if</span> <span class="s1">&#39;site&#39;</span> <span class="ow">in</span> <span class="n">rawDataIN</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="s1">&#39;site&#39;</span><span class="p">):</span>
+                            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rawDataIN</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">site</span>
+                        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="s1">&#39;params&#39;</span><span class="p">):</span>
+                            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="s1">&#39;site&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rawDataIN</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">site</span>
+
+                <span class="k">except</span><span class="p">:</span>
                     <span class="k">try</span><span class="p">:</span>
                         <span class="n">rawDataIN</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">dPath</span><span class="p">)</span>
                     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -6224,7 +6238,7 @@
 <span class="c1"># Read data from Tromino</span>
 <div class="viewcode-block" id="read_tromino_files">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.read_tromino_files">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">read_tromino_files</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">struct_format</span><span class="o">=</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="n">tromino_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_tromino_files</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">struct_format</span><span class="o">=</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="n">tromino_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">diagnose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">sampling_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">set_record_duration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">start_byte</span><span class="o">=</span><span class="mi">24576</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ and Blue machines</span>
@@ -6256,107 +6270,27 @@
 <span class="sd">    obspy.stream.Stream</span>
 <span class="sd">        Obspy Stream object with Tromino data</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-        
-    <span class="n">dPath</span> <span class="o">=</span> <span class="n">input_data</span>
 
     <span class="n">blueModelList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="s1">&#39;blu&#39;</span><span class="p">,</span> <span class="s1">&#39;tromino blu&#39;</span><span class="p">,</span> <span class="s1">&#39;tromino blue&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Allow reading of tromino partition folders (and get the .trc file inside), not just .trc file</span>
+    <span class="k">if</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+        <span class="n">trDirGlob</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*trc&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">trcFile</span> <span class="ow">in</span> <span class="n">trDirGlob</span><span class="p">:</span>
+            <span class="n">input_data</span> <span class="o">=</span> <span class="n">trcFile</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1"> Input file updated to </span><span class="si">{</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> in specified directory.&#39;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">tromino_model</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">blueModelList</span> <span class="ow">or</span> <span class="s1">&#39;blue&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">tromino_model</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
         <span class="n">tBlueKwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">__read_tromino_data_blue</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
         <span class="k">if</span> <span class="s1">&#39;sampling_rate&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tBlueKwargs</span><span class="p">:</span>
             <span class="n">tBlueKwargs</span><span class="p">[</span><span class="s1">&#39;sampling_rate&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sampling_rate</span>
             <span class="k">return</span> <span class="n">__read_tromino_data_blue</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">tBlueKwargs</span><span class="p">)</span>
-            
-    <span class="k">if</span> <span class="n">sampling_rate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">sampling_rate</span> <span class="o">=</span> <span class="mi">128</span> <span class="c1"># default value</span>
-
-    <span class="n">strucSizes</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;c&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;B&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;?&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
-                <span class="s1">&#39;h&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;H&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;e&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span>
-                <span class="s1">&#39;i&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="s1">&#39;I&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="s1">&#39;l&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="s1">&#39;L&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="s1">&#39;f&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span>
-                <span class="s1">&#39;q&#39;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span><span class="s1">&#39;Q&#39;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span><span class="s1">&#39;d&#39;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span>
-                <span class="s1">&#39;n&#39;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span><span class="s1">&#39;N&#39;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span><span class="s1">&#39;s&#39;</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span><span class="s1">&#39;p&#39;</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span><span class="s1">&#39;P&#39;</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span><span class="s1">&#39;x&#39;</span><span class="p">:</span><span class="mi">16</span><span class="p">}</span>
-
-    <span class="c1">#H (pretty sure it&#39;s Q) I L or Q all seem to work (probably not Q?)</span>
-    <span class="n">structFormat</span> <span class="o">=</span> <span class="n">struct_format</span>
-    <span class="n">structSize</span> <span class="o">=</span> <span class="n">strucSizes</span><span class="p">[</span><span class="n">structFormat</span><span class="p">]</span>
-
-    <span class="n">dataList</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dPath</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">structSize</span><span class="p">)</span>  <span class="c1"># Read 4 bytes</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="p">:</span>  <span class="c1"># End of file</span>
-                <span class="k">break</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">structFormat</span><span class="p">,</span> <span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Interpret as a float</span>
-            <span class="n">dataList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-     
-    <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-    <span class="n">dataArr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dataList</span><span class="p">)</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
-
-    <span class="n">medVal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">dataArr</span><span class="p">[</span><span class="mi">50000</span><span class="p">:</span><span class="mi">100000</span><span class="p">])</span>
-
-    <span class="k">if</span> <span class="s1">&#39;start_byte&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-        <span class="n">start_byte</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;start_byte&#39;</span><span class="p">]</span>
-
-    <span class="n">station</span> <span class="o">=</span> <span class="s1">&#39;Tromino&#39;</span>
-    <span class="k">if</span> <span class="s1">&#39;station&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-        <span class="n">station</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;station&#39;</span><span class="p">]</span>
-
-    <span class="n">acq_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
-    <span class="k">if</span> <span class="s1">&#39;acq_date&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-        <span class="n">acq_date</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;acq_date&#39;</span><span class="p">]</span>
-
-    <span class="n">starttime</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-    <span class="k">if</span> <span class="s1">&#39;starttime&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-        <span class="n">starttime</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;starttime&#39;</span><span class="p">]</span>
-
-    <span class="n">startByte</span> <span class="o">=</span> <span class="n">start_byte</span>
-    <span class="n">comp1</span> <span class="o">=</span> <span class="n">dataArr</span><span class="p">[</span><span class="n">startByte</span><span class="p">::</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">medVal</span>
-    <span class="n">comp2</span> <span class="o">=</span> <span class="n">dataArr</span><span class="p">[</span><span class="n">startByte</span><span class="o">+</span><span class="mi">1</span><span class="p">::</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">medVal</span>
-    <span class="n">comp3</span> <span class="o">=</span> <span class="n">dataArr</span><span class="p">[</span><span class="n">startByte</span><span class="o">+</span><span class="mi">2</span><span class="p">::</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">medVal</span>
-    <span class="n">headerBytes</span> <span class="o">=</span> <span class="n">dataArr</span><span class="p">[:</span><span class="n">startByte</span><span class="p">]</span>
-
-    <span class="k">if</span> <span class="s1">&#39;diagnose&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;diagnose&#39;</span><span class="p">]:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Total file bytes: &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataArr</span><span class="p">))</span>
-
-    <span class="c1">#fig, ax = plt.subplots(3, sharex=True, sharey=True)</span>
-    <span class="c1">#ax[0].plot(comp1, linewidth=0.1, c=&#39;k&#39;)</span>
-    <span class="c1">#ax[1].plot(comp2, linewidth=0.1, c=&#39;k&#39;)</span>
-    <span class="c1">#ax[2].plot(comp3, linewidth=0.1, c=&#39;k&#39;)</span>
-
-    <span class="k">if</span> <span class="s1">&#39;sampling_rate&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-        <span class="n">sampling_rate</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;sampling_rate&#39;</span><span class="p">]</span>
-
-    <span class="n">sTime</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">acq_date</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">acq_date</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">acq_date</span><span class="o">.</span><span class="n">day</span><span class="p">,</span>
-                              <span class="n">starttime</span><span class="o">.</span><span class="n">hour</span><span class="p">,</span> <span class="n">starttime</span><span class="o">.</span><span class="n">minute</span><span class="p">,</span>
-                              <span class="n">starttime</span><span class="o">.</span><span class="n">second</span><span class="p">,</span> <span class="n">starttime</span><span class="o">.</span><span class="n">microsecond</span><span class="p">)</span>
-    <span class="n">eTime</span> <span class="o">=</span> <span class="n">sTime</span> <span class="o">+</span> <span class="p">(((</span><span class="nb">len</span><span class="p">(</span><span class="n">comp1</span><span class="p">))</span><span class="o">/</span><span class="n">sampling_rate</span><span class="p">)</span><span class="o">/</span><span class="mi">60</span><span class="p">)</span><span class="o">*</span><span class="mi">60</span>
-
-    <span class="n">loc</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">station</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span> <span class="ow">or</span> <span class="n">station</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
-        <span class="n">loc</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">station</span><span class="p">)</span>
-
-    <span class="n">traceHeader1</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;sampling_rate&#39;</span><span class="p">:</span><span class="n">sampling_rate</span><span class="p">,</span>
-            <span class="s1">&#39;calib&#39;</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="s1">&#39;npts&#39;</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">comp1</span><span class="p">),</span>
-            <span class="s1">&#39;network&#39;</span><span class="p">:</span><span class="s1">&#39;AM&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;location&#39;</span><span class="p">:</span> <span class="n">loc</span><span class="p">,</span>
-            <span class="s1">&#39;station&#39;</span> <span class="p">:</span> <span class="s1">&#39;TRMNO&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;channel&#39;</span><span class="p">:</span><span class="s1">&#39;EHE&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;starttime&#39;</span><span class="p">:</span><span class="n">sTime</span><span class="p">}</span>
-    
-    <span class="n">traceHeader2</span><span class="o">=</span><span class="n">traceHeader1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-    <span class="n">traceHeader3</span><span class="o">=</span><span class="n">traceHeader1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-    <span class="n">traceHeader2</span><span class="p">[</span><span class="s1">&#39;channel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;EHN&#39;</span>
-    <span class="n">traceHeader3</span><span class="p">[</span><span class="s1">&#39;channel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;EHZ&#39;</span>
-
-    <span class="n">trace1</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">comp1</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">traceHeader1</span><span class="p">)</span>
-    <span class="n">trace2</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">comp2</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">traceHeader2</span><span class="p">)</span>
-    <span class="n">trace3</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">comp3</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">traceHeader3</span><span class="p">)</span>
-
-    <span class="n">st</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">([</span><span class="n">trace1</span><span class="p">,</span> <span class="n">trace2</span><span class="p">,</span> <span class="n">trace3</span><span class="p">])</span>
-    <span class="k">return</span> <span class="n">st</span></div>
-
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">__read_tromino_data_yellow</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">input_data</span><span class="p">,</span> <span class="n">sampling_rate</span><span class="o">=</span><span class="n">sampling_rate</span><span class="p">,</span> 
+                                   <span class="n">struct_format</span><span class="o">=</span><span class="n">struct_format</span><span class="p">,</span> <span class="n">tromino_model</span><span class="o">=</span><span class="s2">&quot;3G+&quot;</span><span class="p">,</span><span class="n">diagnose</span><span class="o">=</span><span class="n">diagnose</span><span class="p">,</span>
+                                   <span class="n">set_record_duration</span><span class="o">=</span><span class="n">set_record_duration</span><span class="p">,</span> <span class="n">start_byte</span><span class="o">=</span><span class="n">start_byte</span><span class="p">,</span>
+                                   <span class="n">return_dict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <span class="c1"># Function to remove noise windows from data</span>
@@ -6607,14 +6541,14 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Only obspy.core.stream.Stream data type is currently supported for manual noise removal method.&quot;</span><span class="p">)</span>     
             <span class="k">elif</span> <span class="n">rem_kind</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">autoList</span><span class="p">:</span>
-                <span class="n">outStream</span> <span class="o">=</span> <span class="n">__remove_moving_std</span><span class="p">(</span><span class="n">stream</span><span class="o">=</span><span class="n">outStream</span><span class="p">,</span> <span class="n">std_ratio_thresh</span><span class="o">=</span><span class="n">std_ratio_thresh</span><span class="p">,</span> <span class="n">std_window_s</span><span class="o">=</span><span class="n">std_window_size</span><span class="p">,</span> <span class="n">min_win_size</span><span class="o">=</span><span class="n">min_std_win</span><span class="p">)</span>
+                <span class="n">outStream</span> <span class="o">=</span> <span class="n">__remove_moving_std</span><span class="p">(</span><span class="n">stream</span><span class="o">=</span><span class="n">outStream</span><span class="p">,</span> <span class="n">std_ratio_thresh</span><span class="o">=</span><span class="n">std_ratio_thresh</span><span class="p">,</span> <span class="n">std_window_s</span><span class="o">=</span><span class="n">std_window_size</span><span class="p">,</span> <span class="n">min_win_size</span><span class="o">=</span><span class="n">min_std_win</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
                 <span class="n">outStream</span> <span class="o">=</span> <span class="n">__remove_noise_saturate</span><span class="p">(</span><span class="n">outStream</span><span class="p">,</span> <span class="n">sat_percent</span><span class="o">=</span><span class="n">sat_percent</span><span class="p">,</span> <span class="n">min_win_size</span><span class="o">=</span><span class="n">min_win_size</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
                 <span class="c1"># Break for-loop, since all the rest are already done as part of auto</span>
                 <span class="k">break</span>
             <span class="k">elif</span> <span class="n">rem_kind</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">antitrigger</span><span class="p">:</span>
                 <span class="n">outStream</span> <span class="o">=</span> <span class="n">__remove_anti_stalta</span><span class="p">(</span><span class="n">outStream</span><span class="p">,</span> <span class="n">sta</span><span class="o">=</span><span class="n">sta</span><span class="p">,</span> <span class="n">lta</span><span class="o">=</span><span class="n">lta</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="n">stalta_thresh</span><span class="p">,</span> <span class="n">show_stalta_plot</span><span class="o">=</span><span class="n">show_stalta_plot</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">rem_kind</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">movingstdList</span><span class="p">:</span>
-                <span class="n">outStream</span> <span class="o">=</span> <span class="n">__remove_moving_std</span><span class="p">(</span><span class="n">stream</span><span class="o">=</span><span class="n">outStream</span><span class="p">,</span> <span class="n">std_ratio_thresh</span><span class="o">=</span><span class="n">std_ratio_thresh</span><span class="p">,</span> <span class="n">std_window_s</span><span class="o">=</span><span class="n">std_window_size</span><span class="p">,</span> <span class="n">min_win_size</span><span class="o">=</span><span class="n">min_std_win</span><span class="p">)</span>
+                <span class="n">outStream</span> <span class="o">=</span> <span class="n">__remove_moving_std</span><span class="p">(</span><span class="n">stream</span><span class="o">=</span><span class="n">outStream</span><span class="p">,</span> <span class="n">std_ratio_thresh</span><span class="o">=</span><span class="n">std_ratio_thresh</span><span class="p">,</span> <span class="n">std_window_s</span><span class="o">=</span><span class="n">std_window_size</span><span class="p">,</span> <span class="n">min_win_size</span><span class="o">=</span><span class="n">min_std_win</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">rem_kind</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">saturationThresh</span><span class="p">:</span>
                 <span class="n">outStream</span> <span class="o">=</span> <span class="n">__remove_noise_saturate</span><span class="p">(</span><span class="n">outStream</span><span class="p">,</span> <span class="n">sat_percent</span><span class="o">=</span><span class="n">sat_percent</span><span class="p">,</span> <span class="n">min_win_size</span><span class="o">=</span><span class="n">min_win_size</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">rem_kind</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">noiseThresh</span><span class="p">:</span>
@@ -7692,13 +7626,169 @@
     <span class="k">return</span> <span class="n">output</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">__read_tromino_data_yellow</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">sampling_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">struct_format</span><span class="o">=</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="n">tromino_model</span><span class="o">=</span><span class="s1">&#39;3G&#39;</span><span class="p">,</span>
+                               <span class="n">start_byte</span><span class="o">=</span><span class="mi">24576</span><span class="p">,</span> <span class="n">diagnose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                               <span class="n">return_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                               <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    
+    <span class="c1"># Reconfigure data for some of the analysis</span>
+    <span class="n">swapped</span> <span class="o">=</span> <span class="n">__read_and_swap_bytes</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span> 
+    
+    <span class="c1"># Extract header information (text sections)</span>
+    <span class="n">header_text</span> <span class="o">=</span> <span class="n">__extract_text_sections</span><span class="p">(</span><span class="n">swapped</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;site_name&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;header&#39;</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="s1">&#39;gps_data&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s1">&#39;seismometer_data&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="c1"># Will be replaced with a (3, n) numpy array</span>
+        <span class="s1">&#39;stream&#39;</span><span class="p">:</span> <span class="kc">None</span> 
+        <span class="p">}</span>
+    
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\t</span><span class="s2"> Tromino Header Information&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">header_text</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\w+&#39;</span><span class="p">,</span> <span class="n">text</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)))</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1"> &#39;</span><span class="p">,</span> <span class="n">text</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="sa">b</span><span class="s1">&#39;NAKAGRILLA FLASHCARD HEADER&#39;</span> <span class="ow">in</span> <span class="n">text</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">[</span><span class="s1">&#39;header&#39;</span><span class="p">][</span><span class="s1">&#39;file_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\x00</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># Add more header parsing as needed</span>
+        <span class="k">if</span> <span class="s1">&#39; DATA&#39;</span> <span class="ow">in</span> <span class="n">text</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)[:</span><span class="mi">6</span><span class="p">]:</span>
+            <span class="n">result</span><span class="p">[</span><span class="s1">&#39;site_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\w+&#39;</span><span class="p">,</span> <span class="n">text</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">))[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> Site name identified from data as </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;site_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">station</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;site_name&#39;</span><span class="p">]</span>
+
+    <span class="c1"># OLD FUNCTION           </span>
+    <span class="k">if</span> <span class="s1">&#39;sampling_rate&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">sampling_rate</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;sampling_rate&#39;</span><span class="p">]</span>
+
+    <span class="n">strucSizes</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;c&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;B&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;?&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+                <span class="s1">&#39;h&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;H&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;e&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span>
+                <span class="s1">&#39;i&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="s1">&#39;I&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="s1">&#39;l&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="s1">&#39;L&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="s1">&#39;f&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span>
+                <span class="s1">&#39;q&#39;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span><span class="s1">&#39;Q&#39;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span><span class="s1">&#39;d&#39;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span>
+                <span class="s1">&#39;n&#39;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span><span class="s1">&#39;N&#39;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span><span class="s1">&#39;s&#39;</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span><span class="s1">&#39;p&#39;</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span><span class="s1">&#39;P&#39;</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span><span class="s1">&#39;x&#39;</span><span class="p">:</span><span class="mi">16</span><span class="p">}</span>
+
+    <span class="c1">#H (pretty sure it&#39;s Q) I L or Q all seem to work (probably not Q?)</span>
+    <span class="n">structFormat</span> <span class="o">=</span> <span class="n">struct_format</span>
+    <span class="n">structSize</span> <span class="o">=</span> <span class="n">strucSizes</span><span class="p">[</span><span class="n">structFormat</span><span class="p">]</span>
+
+    <span class="n">dataList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">structSize</span><span class="p">)</span>  <span class="c1"># Read 4 bytes</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="p">:</span>  <span class="c1"># End of file</span>
+                <span class="k">break</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">structFormat</span><span class="p">,</span> <span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Interpret as a float</span>
+            <span class="n">dataList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="n">dataArr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dataList</span><span class="p">)</span>
+
+    <span class="c1">#medVal = np.nanmedian(dataArr[50000:100000])</span>
+
+    <span class="k">if</span> <span class="s1">&#39;start_byte&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">start_byte</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;start_byte&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">diagnose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Total file bytes: &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataArr</span><span class="p">))</span>
+
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">comp1</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">comp2</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">comp3</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">Extracting metadata from tromino yellow instrument:&quot;</span><span class="p">)</span>
+        <span class="n">metaDict</span> <span class="o">=</span> <span class="n">__get_tromino_yellow_metadata</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">  Starttime: </span><span class="si">{</span><span class="n">metaDict</span><span class="p">[</span><span class="s1">&#39;starttime&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n\t\t</span><span class="s2">  Number of Data Channels: </span><span class="si">{</span><span class="n">metaDict</span><span class="p">[</span><span class="s1">&#39;no_data_channels&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="se">\n\t\t</span><span class="s2">  Sampling Rate: </span><span class="si">{</span><span class="n">metaDict</span><span class="p">[</span><span class="s1">&#39;sampling_rate&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">sTime</span> <span class="o">=</span> <span class="n">metaDict</span><span class="p">[</span><span class="s1">&#39;starttime&#39;</span><span class="p">]</span>
+        <span class="n">no_channels</span> <span class="o">=</span> <span class="n">metaDict</span><span class="p">[</span><span class="s1">&#39;no_data_channels&#39;</span><span class="p">]</span>
+        <span class="n">sampling_rate</span> <span class="o">=</span> <span class="n">metaDict</span><span class="p">[</span><span class="s1">&#39;sampling_rate&#39;</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="c1"># Get default values </span>
+        <span class="n">acq_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+        <span class="k">if</span> <span class="s1">&#39;acq_date&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">acq_date</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;acq_date&#39;</span><span class="p">]</span>
+
+        <span class="n">starttime</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;starttime&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">starttime</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;starttime&#39;</span><span class="p">]</span>
+        
+        <span class="n">sTime</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">acq_date</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">acq_date</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">acq_date</span><span class="o">.</span><span class="n">day</span><span class="p">,</span>
+                              <span class="n">starttime</span><span class="o">.</span><span class="n">hour</span><span class="p">,</span> <span class="n">starttime</span><span class="o">.</span><span class="n">minute</span><span class="p">,</span>
+                              <span class="n">starttime</span><span class="o">.</span><span class="n">second</span><span class="p">,</span> <span class="n">starttime</span><span class="o">.</span><span class="n">microsecond</span><span class="p">)</span>
+        <span class="n">no_channels</span> <span class="o">=</span> <span class="mi">3</span> <span class="c1"># default to 3 channels (maybe programmatically check this at some point)</span>
+        
+        <span class="k">if</span> <span class="n">sampling_rate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> `sampling_rate` not specified. Setting as 128 samples/second&quot;</span><span class="p">)</span>
+            <span class="n">sampling_rate</span> <span class="o">=</span> <span class="mi">128</span> <span class="c1"># default value</span>
+
+    <span class="k">if</span> <span class="n">station</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">station</span><span class="o">=</span><span class="s1">&#39;HVSRSite&#39;</span>
+
+<span class="c1"># Get the actual data from the tromino yellow</span>
+    <span class="n">dataArr</span> <span class="o">=</span> <span class="n">__extract_tromino_yellow_data</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="n">input_data</span><span class="p">,</span> <span class="n">start_byte</span><span class="o">=</span><span class="n">start_byte</span><span class="p">,</span>
+                                            <span class="n">swapped_bytes</span><span class="o">=</span><span class="n">__read_and_swap_bytes</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">return_unswapped</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> 
+                                            <span class="n">no_channels</span><span class="o">=</span><span class="n">no_channels</span><span class="p">,</span> 
+                                            <span class="n">data_start</span><span class="o">=</span><span class="mh">0xC000</span><span class="p">)</span>
+    
+    <span class="c1"># Get geophone data from each channel</span>
+    <span class="n">compN</span> <span class="o">=</span> <span class="n">dataArr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">compE</span> <span class="o">=</span> <span class="n">dataArr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">compZ</span> <span class="o">=</span> <span class="n">dataArr</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="c1"># Calculate end time based on length of data</span>
+    <span class="n">eTime</span> <span class="o">=</span> <span class="n">sTime</span> <span class="o">+</span> <span class="p">(((</span><span class="nb">len</span><span class="p">(</span><span class="n">compN</span><span class="p">))</span><span class="o">/</span><span class="n">sampling_rate</span><span class="p">)</span><span class="o">/</span><span class="mi">60</span><span class="p">)</span><span class="o">*</span><span class="mi">60</span>
+
+    <span class="n">loc</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">if</span>  <span class="n">station</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">station</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span> <span class="ow">or</span> <span class="n">station</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()):</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">station</span><span class="p">)</span>
+
+    <span class="n">traceHeaderN</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;sampling_rate&#39;</span><span class="p">:</span><span class="n">sampling_rate</span><span class="p">,</span>
+                    <span class="s1">&#39;calib&#39;</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s1">&#39;npts&#39;</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">compN</span><span class="p">),</span>
+                    <span class="s1">&#39;network&#39;</span><span class="p">:</span><span class="s1">&#39;TR&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;location&#39;</span><span class="p">:</span> <span class="n">loc</span><span class="p">,</span>
+                    <span class="s1">&#39;station&#39;</span> <span class="p">:</span> <span class="n">station</span><span class="p">,</span>
+                    <span class="s1">&#39;channel&#39;</span><span class="p">:</span><span class="s1">&#39;?HN&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;starttime&#39;</span><span class="p">:</span><span class="n">sTime</span><span class="p">,</span>
+                    <span class="s1">&#39;site&#39;</span><span class="p">:</span><span class="n">station</span><span class="p">}</span>
+
+    <span class="n">traceHeaderE</span> <span class="o">=</span> <span class="n">traceHeaderN</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">traceHeaderZ</span> <span class="o">=</span> <span class="n">traceHeaderN</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">traceHeaderE</span><span class="p">[</span><span class="s1">&#39;channel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;?HE&#39;</span>
+    <span class="n">traceHeaderZ</span><span class="p">[</span><span class="s1">&#39;channel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;?HZ&#39;</span>
+
+    <span class="n">traceZ</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">compZ</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">traceHeaderZ</span><span class="p">)</span>
+    <span class="n">traceE</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">compE</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">traceHeaderE</span><span class="p">)</span>
+    <span class="n">traceN</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">compN</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">traceHeaderN</span><span class="p">)</span>
+
+    <span class="n">st</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">([</span><span class="n">traceZ</span><span class="p">,</span> <span class="n">traceE</span><span class="p">,</span> <span class="n">traceN</span><span class="p">])</span>
+    
+    <span class="n">result</span><span class="p">[</span><span class="s1">&#39;stream&#39;</span><span class="p">]</span> <span class="o">=</span>  <span class="n">st</span> 
+
+    <span class="k">if</span> <span class="n">return_dict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">return</span> <span class="n">st</span>
+
+
 <span class="c1"># Helper function to read data from Tromino Blue instruments</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">__read_tromino_data_blue</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">sampling_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
                             <span class="n">channel_map</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span><span class="mi">6</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">},</span> <span class="n">data_start_buffer</span><span class="o">=</span><span class="mi">113</span><span class="p">,</span>
                             <span class="n">return_dict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     
     <span class="c1"># Reconfigure data for some of the analysis</span>
-    <span class="n">swapped</span> <span class="o">=</span> <span class="n">__swap_bytes</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span> 
+    <span class="n">swapped</span> <span class="o">=</span> <span class="n">__read_and_swap_bytes</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span> 
 
     <span class="c1"># Initialize a result dictionary</span>
     <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
@@ -7782,7 +7872,6 @@
 
     <span class="c1"># Read the file as simple bytes</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-        <span class="c1">#data_start_byte SHOULD NOT BE HARDCODED! (will eventually determine)</span>
         <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">seis_data_start</span> <span class="o">+</span> <span class="n">data_buffer</span><span class="p">)</span>
         <span class="c1"># Read the rest of the file</span>
         <span class="n">raw_bytes</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
@@ -7883,9 +7972,152 @@
     <span class="k">return</span> <span class="n">st</span>
 
 
+<span class="c1"># Get the actual data from the tromino yellow</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">__extract_tromino_yellow_data</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">swapped_bytes</span><span class="p">,</span> <span class="n">no_channels</span><span class="p">,</span> <span class="n">struct_format</span><span class="o">=</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="n">start_byte</span><span class="o">=</span><span class="mi">24576</span><span class="p">,</span> <span class="n">data_start</span><span class="o">=</span><span class="mh">0xC000</span><span class="p">):</span>
+    <span class="c1"># Assuming data starts at offset 0xC000</span>
+    <span class="n">data_bytes</span> <span class="o">=</span> <span class="n">swapped_bytes</span><span class="p">[</span><span class="n">data_start</span><span class="p">:]</span>
+
+    <span class="c1"># Try first with unsigned integers</span>
+    <span class="n">data_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">data_bytes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">data_array</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">20000</span><span class="p">:</span>
+        <span class="n">data_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">data_bytes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+    
+    <span class="c1">#max_val = data_array.max()</span>
+    <span class="c1">#dataNorm = data_array/max_val</span>
+    <span class="c1">#num_small = (dataNorm &lt; 0.5).sum()</span>
+
+    <span class="c1">#small_ratio = num_small / len(data_array)</span>
+    <span class="c1">#print(&quot;SMALL RATIO&quot;, small_ratio)</span>
+    <span class="c1">#if small_ratio &gt; 0.5:</span>
+    <span class="c1">#    print(&quot;SWITCHING ENDIANNES&quot;)</span>
+    <span class="c1">#    data_array = np.frombuffer(data_bytes, dtype=&#39;h&#39;) </span>
+
+    <span class="n">strucSizes</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;c&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;B&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;?&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+                <span class="s1">&#39;h&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;H&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;e&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span>
+                <span class="s1">&#39;i&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="s1">&#39;I&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="s1">&#39;l&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="s1">&#39;L&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span><span class="s1">&#39;f&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span>
+                
+                <span class="s1">&#39;q&#39;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span><span class="s1">&#39;Q&#39;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span><span class="s1">&#39;d&#39;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span>
+                <span class="s1">&#39;n&#39;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span><span class="s1">&#39;N&#39;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span><span class="s1">&#39;s&#39;</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span><span class="s1">&#39;p&#39;</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span><span class="s1">&#39;P&#39;</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span><span class="s1">&#39;x&#39;</span><span class="p">:</span><span class="mi">16</span><span class="p">}</span>
+
+    <span class="n">structFormat</span> <span class="o">=</span> <span class="n">struct_format</span>
+    <span class="n">structSize</span> <span class="o">=</span> <span class="n">strucSizes</span><span class="p">[</span><span class="n">structFormat</span><span class="p">]</span>
+
+    <span class="n">dataList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">structSize</span><span class="p">)</span>  <span class="c1"># Read 4 bytes</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="p">:</span>  <span class="c1"># End of file</span>
+                <span class="k">break</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">structFormat</span><span class="p">,</span> <span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Interpret as a float</span>
+            <span class="n">dataList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="c1">#data_array = np.array(dataList)</span>
+
+    <span class="n">channel_jump</span> <span class="o">=</span> <span class="n">no_channels</span>
+    <span class="n">startPt</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">nChannelStart</span> <span class="o">=</span> <span class="n">startPt</span>
+    <span class="n">eChannelStart</span> <span class="o">=</span> <span class="n">startPt</span><span class="o">+</span><span class="nb">int</span><span class="p">(</span><span class="n">channel_jump</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">zChannelStart</span> <span class="o">=</span> <span class="n">startPt</span><span class="o">+</span><span class="nb">int</span><span class="p">(</span><span class="n">channel_jump</span><span class="o">*</span><span class="p">(</span><span class="mi">2</span><span class="o">/</span><span class="mi">3</span><span class="p">))</span>
+
+    <span class="n">comp1</span> <span class="o">=</span> <span class="n">data_array</span><span class="p">[</span><span class="n">nChannelStart</span><span class="p">::</span><span class="n">channel_jump</span><span class="p">]</span>
+    <span class="n">comp2</span> <span class="o">=</span> <span class="n">data_array</span><span class="p">[</span><span class="n">eChannelStart</span><span class="p">::</span><span class="n">channel_jump</span><span class="p">]</span>
+    <span class="n">comp3</span> <span class="o">=</span> <span class="n">data_array</span><span class="p">[</span><span class="n">zChannelStart</span><span class="p">::</span><span class="n">channel_jump</span><span class="p">]</span>
+
+    <span class="n">comp1</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">comp1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">comp1</span><span class="p">))</span>
+    <span class="n">comp2</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">comp2</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">comp2</span><span class="p">))</span>
+    <span class="n">comp3</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">comp3</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">comp3</span><span class="p">))</span>
+
+    <span class="n">data_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">comp1</span><span class="p">,</span> <span class="n">comp2</span><span class="p">,</span> <span class="n">comp3</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">data_array</span>
+
+
+
+<span class="c1"># Read starttime, number of channels, and sampling rate</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">__get_tromino_yellow_metadata</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">start_hex</span><span class="o">=</span><span class="s1">&#39;00004020&#39;</span><span class="p">,</span> <span class="n">end_hex</span><span class="o">=</span><span class="s1">&#39;00004030&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extracts bytes from [start_hex, end_hex) and tries different decodings.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_data : str</span>
+<span class="sd">        Path to the binary .trc file.</span>
+<span class="sd">    start_hex : int or str</span>
+<span class="sd">        Start hex offset (int or hex string, e.g., default=&#39;00004000&#39;).</span>
+<span class="sd">    end_hex  : int or str</span>
+<span class="sd">        End hex offset (exclusive). Default = &#39;0000402C</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># normalize inputs</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start_hex</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start_hex</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">start_hex</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">end_hex</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">end_hex</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">end_hex</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">alldata</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        
+    <span class="n">swapped</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">alldata</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">alldata</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="n">swapped</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">alldata</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">swapped</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">alldata</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">alldata</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">swapped</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">alldata</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">swapped</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
+    
+    <span class="n">byteList</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">b</span><span class="si">:</span><span class="s2">b</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
+    <span class="n">hexList</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">b</span><span class="si">:</span><span class="s2">02X</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">ints16</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">iter_unpack</span><span class="p">(</span><span class="s2">&quot;&gt;H&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="o">*</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">ints16List</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ints16</span><span class="p">]</span>
+       
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;BYTES&#39;</span><span class="p">:</span><span class="n">byteList</span><span class="p">,</span> <span class="s1">&#39;HEX&#39;</span><span class="p">:</span><span class="n">hexList</span><span class="p">})</span>
+
+    <span class="n">starttime</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="mi">2000</span><span class="o">+</span><span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">11</span><span class="p">,</span> <span class="s2">&quot;HEX&quot;</span><span class="p">]),</span>
+                           <span class="n">month</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">9</span><span class="p">,</span> <span class="s2">&quot;HEX&quot;</span><span class="p">]),</span>
+                           <span class="n">day</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="s2">&quot;HEX&quot;</span><span class="p">]),</span>
+                           <span class="n">hour</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;HEX&quot;</span><span class="p">]),</span>
+                           <span class="n">minute</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;HEX&#39;</span><span class="p">]),</span>
+                           <span class="n">second</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;HEX&#39;</span><span class="p">])</span>
+                           <span class="p">)</span>
+    
+    <span class="n">noChannels</span> <span class="o">=</span> <span class="n">ints16List</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">sampling_rate</span> <span class="o">=</span> <span class="n">ints16List</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;starttime&#39;</span><span class="p">:</span><span class="n">starttime</span><span class="p">,</span> <span class="s1">&#39;no_data_channels&#39;</span><span class="p">:</span><span class="n">noChannels</span><span class="p">,</span> <span class="s1">&#39;sampling_rate&#39;</span><span class="p">:</span><span class="n">sampling_rate</span><span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">__read_and_swap_bytes</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">return_unswapped</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Private function (not meant to be called except by internal functions) </span>
+<span class="sd">    to read a binary file and return a bytearray with all bytes swapped in pairs.</span>
+<span class="sd">    This handles odd-length files correctly.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Open binary file</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    
+    <span class="c1"># Create new byte array for the swapped data</span>
+    <span class="n">swapped</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+    
+    <span class="c1"># Swap bytes in pairs</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="n">swapped</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">swapped</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    
+    <span class="c1"># Handle odd length</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">swapped</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    
+    <span class="k">if</span> <span class="n">return_unswapped</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">data</span>
+    <span class="k">return</span> <span class="n">swapped</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">__extract_text_sections</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract text sections from binary data&quot;&quot;&quot;</span>
-    <span class="c1"># Find blocks of ASCII text (simple approach)</span>
+    <span class="c1"># Find blocks of ASCII text</span>
     <span class="n">text_sections</span> <span class="o">=</span> <span class="p">[]</span>
     
     <span class="c1"># Look for consecutive printable ASCII characters</span>
@@ -7931,32 +8163,6 @@
             <span class="k">return</span> <span class="n">end_GPS_marker</span> <span class="o">+</span> <span class="mi">8</span>
     
     <span class="k">return</span> <span class="n">end_GPS_marker</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">__swap_bytes</span><span class="p">(</span><span class="n">input_file</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Private function (not meant to be called except by internal functions) </span>
-<span class="sd">    to read a binary file and return a bytearray with all bytes swapped in pairs.</span>
-<span class="sd">    This handles odd-length files correctly.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="c1"># Open binary file</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-    
-    <span class="c1"># Create new byte array for the swapped data</span>
-    <span class="n">swapped</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
-    
-    <span class="c1"># Swap bytes in pairs</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
-        <span class="n">swapped</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
-        <span class="n">swapped</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-    
-    <span class="c1"># Handle odd length</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">swapped</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    
-    <span class="k">return</span> <span class="n">swapped</span>
 
 
 <span class="c1"># Read data from raspberry shake</span>
@@ -8215,7 +8421,7 @@
 
 
 <span class="c1"># Helper function for getting windows to remove noise using moving stdev</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">__remove_moving_std</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">std_ratio_thresh</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">std_window_s</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_win_size</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">__remove_moving_std</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">std_ratio_thresh</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">std_window_s</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_win_size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function for removing noisy data due to high local standard deviation.</span>
 <span class="sd">    This is similar to the default noise removal method used in Grilla software.</span>
 
@@ -8248,7 +8454,7 @@
             <span class="n">dtList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="n">zoneinfo</span><span class="o">.</span><span class="n">ZoneInfo</span><span class="p">(</span><span class="s1">&#39;UTC&#39;</span><span class="p">)))</span>
         <span class="c1"># Create pandas series out of trace data</span>
         <span class="n">traceData</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">tr</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
-                            <span class="n">index</span><span class="o">=</span><span class="n">dtList</span><span class="p">)</span>
+                              <span class="n">index</span><span class="o">=</span><span class="n">dtList</span><span class="p">)</span>
 
         <span class="c1"># Get StDev values</span>
         <span class="n">totalSTD</span> <span class="o">=</span> <span class="n">traceData</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
@@ -8257,54 +8463,73 @@
         <span class="c1"># Calculate whether ratio is larger than threshold value</span>
         <span class="n">boolseries</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">movingSTD</span><span class="o">/</span><span class="n">totalSTD</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">std_ratio_thresh</span>
 
-        <span class="c1"># Create index of just removed windows</span>
+        <span class="c1"># Update single list with indices of just removed windows, from all traces</span>
         <span class="n">removeDTs</span> <span class="o">=</span> <span class="n">removeDTs</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">boolseries</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">boolseries</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;outer&#39;</span><span class="p">)</span>
-
+        
     <span class="c1"># Get unique indices as datetime.datetime objects</span>
     <span class="n">removeDTs</span> <span class="o">=</span> <span class="n">removeDTs</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>  <span class="c1"># Get unique dtindex</span>
     <span class="n">removeDTs</span><span class="o">.</span><span class="n">sort_values</span><span class="p">()</span>  <span class="c1"># Sort dt index</span>
     <span class="n">removeDTs</span> <span class="o">=</span> <span class="n">removeDTs</span><span class="o">.</span><span class="n">to_pydatetime</span><span class="p">()</span>  <span class="c1"># Convert to np.array of datetime.datetime objs</span>
 
-    <span class="n">delta</span> <span class="o">=</span> <span class="n">stream</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">delta</span>  <span class="c1"># Get sample rate</span>
+    <span class="n">delta</span> <span class="o">=</span> <span class="n">stream</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">delta</span>  <span class="c1"># Get sample step</span>
 
     <span class="c1"># Convert instances of mstd/totstd &gt; thresh to windows (keep if longer than min_win_size)</span>
-    <span class="n">windows</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">windows</span> <span class="o">=</span> <span class="p">[[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]]</span>
     <span class="n">windex</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">rdt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">removeDTs</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">windStarted</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pt4removal</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">boolseries</span><span class="p">):</span>
+        <span class="n">currPtPyDT</span> <span class="o">=</span> <span class="n">boolseries</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">to_pydatetime</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
             <span class="c1"># Intialize windows list</span>
-            <span class="n">windows</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">rdt</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># If the &quot;window&quot; is just two samples next to each other, keep moving</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">rdt</span> <span class="o">-</span> <span class="n">removeDTs</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">==</span> <span class="n">delta</span><span class="p">:</span>
-                <span class="k">pass</span>
-            <span class="k">elif</span> <span class="p">(</span><span class="n">rdt</span> <span class="o">-</span> <span class="n">removeDTs</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">delta</span><span class="p">:</span>
-                <span class="c1"># if for some reason the window is less than sample rate, move on</span>
-                <span class="k">pass</span>
+            <span class="n">windStartPDTime</span> <span class="o">=</span> <span class="n">boolseries</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            
+        <span class="c1">#print(i, pt4removal, currPtPyDT, boolseries.index[i])</span>
+        
+        <span class="c1"># Algorithim to run once a window has started</span>
+        <span class="k">if</span> <span class="n">windStarted</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">pt4removal</span><span class="p">:</span> <span class="c1">#If we have a window started and this is not a point slated for removal</span>
+                <span class="c1"># First check if it is too small of a window</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">currPtPyDT</span> <span class="o">-</span> <span class="n">windows</span><span class="p">[</span><span class="n">windex</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">min_win_size</span><span class="p">:</span>
+                    <span class="c1"># Erase the started window and continue</span>
+                    <span class="n">windStarted</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="n">windows</span><span class="p">[</span><span class="n">windex</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+                    <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">windows</span><span class="p">[</span><span class="n">windex</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">prevPt2RemovePD</span><span class="o">.</span><span class="n">to_pydatetime</span><span class="p">()</span>
+                    <span class="n">windows</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span>
+                    <span class="n">windex</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">windStarted</span> <span class="o">=</span> <span class="kc">False</span>                    
+
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># if window exists, but is smaller than min_win_size</span>
-                <span class="k">if</span> <span class="p">(</span><span class="n">removeDTs</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">windows</span><span class="p">[</span><span class="n">windex</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">min_win_size</span><span class="p">:</span>
-                    <span class="n">windows</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>  <span class="c1"># remove this window</span>
-                    <span class="n">windows</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">removeDTs</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="kc">None</span><span class="p">])</span> <span class="c1"># Rest the window w/next data point</span>
-                    <span class="k">continue</span>  <span class="c1"># Go to next dt</span>
+                <span class="n">prevPt2RemovePD</span> <span class="o">=</span> <span class="n">boolseries</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            
+        <span class="c1"># Algorith to run if no window has been started</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pt4removal</span><span class="p">:</span>
+                <span class="n">windows</span><span class="p">[</span><span class="n">windex</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">currPtPyDT</span>
+                <span class="n">windStarted</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">windStartPDTime</span> <span class="o">=</span> <span class="n">boolseries</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">prevPt2RemovePD</span> <span class="o">=</span> <span class="n">boolseries</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
-                <span class="n">windows</span><span class="p">[</span><span class="n">windex</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">removeDTs</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># Close last window</span>
-                <span class="n">windows</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">rdt</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="c1"># Start a new window</span>
-                <span class="n">windex</span> <span class="o">+=</span> <span class="mi">1</span> <span class="c1"># Update window index</span>
     <span class="n">windows</span> <span class="o">=</span> <span class="n">windows</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    <span class="c1"># Need to convert these to windows now!</span>
-    <span class="n">removeUTC</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">swin</span><span class="p">,</span> <span class="n">ewin</span> <span class="ow">in</span> <span class="n">windows</span><span class="p">:</span>
-        <span class="n">removeUTC</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">swin</span><span class="p">),</span> <span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">ewin</span><span class="p">)])</span>
     
-    <span class="n">stime</span> <span class="o">=</span> <span class="n">outstream</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">starttime</span>
-    <span class="n">etime</span> <span class="o">=</span> <span class="n">outstream</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">endtime</span>
-    <span class="n">removeUTC</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">[</span><span class="n">stime</span><span class="p">,</span> <span class="n">stime</span><span class="p">])</span>
-    <span class="n">removeUTC</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">etime</span><span class="p">,</span> <span class="n">etime</span><span class="p">])</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">windows</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="p">(</span><span class="n">windows</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="kc">None</span> <span class="ow">or</span> <span class="n">windows</span><span class="o">==</span><span class="p">[]):</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1">    No windows removed with moving std method.&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Need to convert these to UTC windows now!</span>
+        <span class="n">removeUTC</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">swin</span><span class="p">,</span> <span class="n">ewin</span> <span class="ow">in</span> <span class="n">windows</span><span class="p">:</span>
+            <span class="n">removeUTC</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">swin</span><span class="p">),</span> <span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">ewin</span><span class="p">)])</span>
+        
+        <span class="n">stime</span> <span class="o">=</span> <span class="n">outstream</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">starttime</span>
+        <span class="n">etime</span> <span class="o">=</span> <span class="n">outstream</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">endtime</span>
+        <span class="n">removeUTC</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">[</span><span class="n">stime</span><span class="p">,</span> <span class="n">stime</span><span class="p">])</span>
+        <span class="n">removeUTC</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">etime</span><span class="p">,</span> <span class="n">etime</span><span class="p">])</span>
 
-    <span class="c1">#for win0, win1 in removeUTC:</span>
-    <span class="c1">#    print(win0, win1, win1&gt;win0)</span>
-    <span class="n">outstream</span>  <span class="o">=</span> <span class="n">__remove_gaps</span><span class="p">(</span><span class="n">outstream</span><span class="p">,</span> <span class="n">removeUTC</span><span class="p">)</span>
+        <span class="c1">#for win0, win1 in removeUTC:</span>
+        <span class="c1">#    print(win0, win1, win1&gt;win0)</span>
+        <span class="n">outstream</span>  <span class="o">=</span> <span class="n">__remove_gaps</span><span class="p">(</span><span class="n">outstream</span><span class="p">,</span> <span class="n">removeUTC</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">outstream</span>
 

@@ -1836,7 +1836,7 @@ If 'processing', saves the processing settings to their respective file. By defa
     elif isinstance(params[&#39;input_data&#39;], HVSRData):
         rawDataIN = params[&#39;input_data&#39;][&#39;stream&#39;]
     else:
-        if source==&#39;raw&#39;:
+        if   source == &#39;raw&#39;:
             try:
                 if inst.lower() in trominoNameList:
                     params[&#39;instrument&#39;] = &#39;Tromino&#39;
@@ -1847,6 +1847,11 @@ If 'processing', saves the processing settings to their respective file. By defa
                     trominoKwargs.update(paramDict)
                     rawDataIN = read_tromino_files(dPath, verbose=verbose, **trominoKwargs)
 
+                    if &#39;site&#39; in rawDataIN[0].stats:
+                        if hasattr(params, &#39;site&#39;):
+                            params[&#39;site&#39;] = rawDataIN[0].stats.site
+                        if hasattr(params, input_params):
+                            params[&#39;input_params&#39;][&#39;site&#39;] = rawDataIN[0].stats.site
                 else:
                     if inst.lower() not in raspShakeInstNameList:
                         print(f&#34;Unrecognized value instrument={inst}. Defaulting to raw raspberry shake data.&#34;)
@@ -1875,7 +1880,7 @@ If 'processing', saves the processing settings to their respective file. By defa
         elif source == &#39;file&#39; and str(params[&#39;input_data&#39;]).lower() not in SAMPLE_LIST:
             # Read the file specified by input_data
             # Automatically read tromino data
-            if inst.lower() in trominoNameList or &#39;trc&#39; in dPath.suffix:
+            if str(inst).lower() in trominoNameList or &#39;tromino&#39; in str(inst).lower() or &#39;trc&#39; in dPath.suffix:
                 params[&#39;instrument&#39;] = &#39;Tromino&#39;
                 params[&#39;params&#39;][&#39;instrument&#39;] = &#39;Tromino&#39;
 
@@ -1883,16 +1888,24 @@ If 'processing', saves the processing settings to their respective file. By defa
                     params[&#39;instrument&#39;] = &#39;Tromino Blue&#39;
                     params[&#39;params&#39;][&#39;instrument&#39;] = &#39;Tromino Blue&#39;
 
-                if &#39;trc&#39; in dPath.suffix:
+                try:
                     trominoKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())}
-                    paramDict = {k:v for k, v in params.items()}
-                    trominoKwargs.update(paramDict)
+                    paramDict = {k: v for k, v in params.items()}
+
                     if &#39;input_data&#39; in trominoKwargs:
                         del trominoKwargs[&#39;input_data&#39;]
                     if &#39;tromino_model&#39; not in trominoKwargs:
                         trominoKwargs[&#39;tromino_model&#39;] = params[&#39;instrument&#39;]
+                    
                     rawDataIN = read_tromino_files(input_data=dPath, verbose=verbose, **trominoKwargs)
-                else:
+
+                    if &#39;site&#39; in rawDataIN[0].stats:
+                        if hasattr(params, &#39;site&#39;):
+                            params[&#39;site&#39;] = rawDataIN[0].stats.site
+                        if hasattr(params, &#39;params&#39;):
+                            params[&#39;params&#39;][&#39;site&#39;] = rawDataIN[0].stats.site
+
+                except:
                     try:
                         rawDataIN = obspy.read(dPath)
                     except Exception:
@@ -5205,14 +5218,14 @@ Otherwise, float of percentile used as outlier_threshold of remove_outlier_curve
 </code></pre></div>
 </dd>
 <dt id="sprit.sprit_hvsr.read_tromino_files"><code class="name flex">
-<span>def <span class="ident">read_tromino_files</span></span>(<span>input_data,<br>struct_format='H',<br>tromino_model=None,<br>sampling_rate=None,<br>set_record_duration=None,<br>start_byte=24576,<br>verbose=False,<br>**kwargs)</span>
+<span>def <span class="ident">read_tromino_files</span></span>(<span>input_data,<br>struct_format='H',<br>tromino_model=None,<br>diagnose=False,<br>sampling_rate=None,<br>set_record_duration=None,<br>start_byte=24576,<br>verbose=False,<br>**kwargs)</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def read_tromino_files(input_data, struct_format=&#39;H&#39;, tromino_model=None,
+<pre><code class="python">def read_tromino_files(input_data, struct_format=&#39;H&#39;, tromino_model=None, diagnose=False,
     sampling_rate=None, set_record_duration=None, start_byte=24576, verbose=False, **kwargs):
     
     &#34;&#34;&#34;Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ and Blue machines
@@ -5244,106 +5257,27 @@ Otherwise, float of percentile used as outlier_threshold of remove_outlier_curve
     obspy.stream.Stream
         Obspy Stream object with Tromino data
     &#34;&#34;&#34;
-        
-    dPath = input_data
 
     blueModelList = [&#39;blue&#39;, &#39;blu&#39;, &#39;tromino blu&#39;, &#39;tromino blue&#39;]
+
+    # Allow reading of tromino partition folders (and get the .trc file inside), not just .trc file
+    if pathlib.Path(input_data).is_dir():
+        trDirGlob = pathlib.Path(input_data).glob(&#39;*trc&#39;)
+        for trcFile in trDirGlob:
+            input_data = trcFile
+        if verbose:
+            print(f&#39;\t Input file updated to {pathlib.Path(input_data).name} in specified directory.&#39;)
 
     if str(tromino_model).lower() in blueModelList or &#39;blue&#39; in str(tromino_model).lower():
         tBlueKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(__read_tromino_data_blue).parameters.keys())}
         if &#39;sampling_rate&#39; not in tBlueKwargs:
             tBlueKwargs[&#39;sampling_rate&#39;] = sampling_rate
             return __read_tromino_data_blue(input_data, verbose=False, **tBlueKwargs)
-            
-    if sampling_rate is None:
-        sampling_rate = 128 # default value
-
-    strucSizes = {&#39;c&#39;:1, &#39;b&#39;:1,&#39;B&#39;:1, &#39;?&#39;:1,
-                &#39;h&#39;:2,&#39;H&#39;:2,&#39;e&#39;:2,
-                &#39;i&#39;:4,&#39;I&#39;:4,&#39;l&#39;:4,&#39;L&#39;:4,&#39;f&#39;:4,
-                &#39;q&#39;:8,&#39;Q&#39;:8,&#39;d&#39;:8,
-                &#39;n&#39;:8,&#39;N&#39;:8,&#39;s&#39;:16,&#39;p&#39;:16,&#39;P&#39;:16,&#39;x&#39;:16}
-
-    #H (pretty sure it&#39;s Q) I L or Q all seem to work (probably not Q?)
-    structFormat = struct_format
-    structSize = strucSizes[structFormat]
-
-    dataList = []
-    with open(dPath, &#39;rb&#39;) as f:
-        while True:
-            data = f.read(structSize)  # Read 4 bytes
-            if not data:  # End of file
-                break
-            value = struct.unpack(structFormat, data)[0]  # Interpret as a float
-            dataList.append(value)
-     
-    import numpy as np
-    dataArr = np.array(dataList)
-    import matplotlib.pyplot as plt
-
-    medVal = np.nanmedian(dataArr[50000:100000])
-
-    if &#39;start_byte&#39; in kwargs.keys():
-        start_byte = kwargs[&#39;start_byte&#39;]
-
-    station = &#39;Tromino&#39;
-    if &#39;station&#39; in kwargs:
-        station = kwargs[&#39;station&#39;]
-
-    acq_date = datetime.date.today()
-    if &#39;acq_date&#39; in kwargs:
-        acq_date = kwargs[&#39;acq_date&#39;]
-
-    starttime = datetime.time(0, 0)
-    if &#39;starttime&#39; in kwargs:
-        starttime = kwargs[&#39;starttime&#39;]
-
-    startByte = start_byte
-    comp1 = dataArr[startByte::3] - medVal
-    comp2 = dataArr[startByte+1::3] - medVal
-    comp3 = dataArr[startByte+2::3] - medVal
-    headerBytes = dataArr[:startByte]
-
-    if &#39;diagnose&#39; in kwargs and kwargs[&#39;diagnose&#39;]:
-        print(&#34;Total file bytes: &#34;, len(dataArr))
-
-    #fig, ax = plt.subplots(3, sharex=True, sharey=True)
-    #ax[0].plot(comp1, linewidth=0.1, c=&#39;k&#39;)
-    #ax[1].plot(comp2, linewidth=0.1, c=&#39;k&#39;)
-    #ax[2].plot(comp3, linewidth=0.1, c=&#39;k&#39;)
-
-    if &#39;sampling_rate&#39; in kwargs.keys():
-        sampling_rate = kwargs[&#39;sampling_rate&#39;]
-
-    sTime = obspy.UTCDateTime(acq_date.year, acq_date.month, acq_date.day,
-                              starttime.hour, starttime.minute,
-                              starttime.second, starttime.microsecond)
-    eTime = sTime + (((len(comp1))/sampling_rate)/60)*60
-
-    loc = &#39;&#39;
-    if type(station) is int or station.isdigit():
-        loc = str(station)
-
-    traceHeader1 = {&#39;sampling_rate&#39;:sampling_rate,
-            &#39;calib&#39; : 1,
-            &#39;npts&#39;:len(comp1),
-            &#39;network&#39;:&#39;AM&#39;,
-            &#39;location&#39;: loc,
-            &#39;station&#39; : &#39;TRMNO&#39;,
-            &#39;channel&#39;:&#39;EHE&#39;,
-            &#39;starttime&#39;:sTime}
-    
-    traceHeader2=traceHeader1.copy()
-    traceHeader3=traceHeader1.copy()
-    traceHeader2[&#39;channel&#39;] = &#39;EHN&#39;
-    traceHeader3[&#39;channel&#39;] = &#39;EHZ&#39;
-
-    trace1 = obspy.Trace(data=comp1, header=traceHeader1)
-    trace2 = obspy.Trace(data=comp2, header=traceHeader2)
-    trace3 = obspy.Trace(data=comp3, header=traceHeader3)
-
-    st = obspy.Stream([trace1, trace2, trace3])
-    return st</code></pre>
+    else:
+        return __read_tromino_data_yellow(input_data=input_data, sampling_rate=sampling_rate, 
+                                   struct_format=struct_format, tromino_model=&#34;3G+&#34;,diagnose=diagnose,
+                                   set_record_duration=set_record_duration, start_byte=start_byte,
+                                   return_dict=False, verbose=verbose, **kwargs)</code></pre>
 </details>
 <div class="desc"><p>Function to read data from tromino. Specifically, this has been lightly tested on Tromino 3G+ and Blue machines</p>
 <h2 id="parameters">Parameters</h2>
@@ -5627,14 +5561,14 @@ If None, 128 used, by default None</dd>
                 else:
                     RuntimeError(&#34;Only obspy.core.stream.Stream data type is currently supported for manual noise removal method.&#34;)     
             elif rem_kind.lower() in autoList:
-                outStream = __remove_moving_std(stream=outStream, std_ratio_thresh=std_ratio_thresh, std_window_s=std_window_size, min_win_size=min_std_win)
+                outStream = __remove_moving_std(stream=outStream, std_ratio_thresh=std_ratio_thresh, std_window_s=std_window_size, min_win_size=min_std_win, verbose=verbose)
                 outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size, verbose=verbose)
                 # Break for-loop, since all the rest are already done as part of auto
                 break
             elif rem_kind.lower() in antitrigger:
                 outStream = __remove_anti_stalta(outStream, sta=sta, lta=lta, thresh=stalta_thresh, show_stalta_plot=show_stalta_plot, verbose=verbose)
             elif rem_kind.lower() in movingstdList:
-                outStream = __remove_moving_std(stream=outStream, std_ratio_thresh=std_ratio_thresh, std_window_s=std_window_size, min_win_size=min_std_win)
+                outStream = __remove_moving_std(stream=outStream, std_ratio_thresh=std_ratio_thresh, std_window_s=std_window_size, min_win_size=min_std_win, verbose=verbose)
             elif rem_kind.lower() in saturationThresh:
                 outStream = __remove_noise_saturate(outStream, sat_percent=sat_percent, min_win_size=min_win_size, verbose=verbose)
             elif rem_kind.lower() in noiseThresh:
@@ -6153,6 +6087,7 @@ This is minimum number of points a point needs in its neighborhood to not be con
         # Fetch Data
         try:
             fetch_data_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(fetch_data).parameters.keys())}
+            fetch_data_kwargs.update({k: v for k, v in kwargs.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())})
             if &#39;obspy_ppsds&#39; in kwargs:
                 fetch_data_kwargs[&#39;obspy_ppsds&#39;] = kwargs[&#39;obspy_ppsds&#39;]
             else:
