@@ -8,7 +8,7 @@ The script will also perform a graceful shutdown of the shake at the end of the 
 
 The current version of the script is located in the same directory as this readme. Instructions for setup and usage are below.
 
-# Setup
+# Copy HVSR Script File to Shake
 To set up the script for easy usage in the field, the following steps are recommended.
 
 > 1) Copy file to the shake and move into /opt/hvsr directory
@@ -19,7 +19,11 @@ To set up the script for easy usage in the field, the following steps are recomm
 ## 1) Copy file to the shake and move into /opt/hvsr directory
 Using Copy/Paste, the scp command, filezilla, or any other method transfer the hvsr_vx-x.sh to your Raspberry Shake 3D. Examples for this are included below:
 
-### Copy/Paste (Recommended!)
+> TROUBLESHOOTING
+> If you are doing this from a Windows computer, it may convert your file to DOS format, which uses a different "carraige return"/endline character than unix (which is what the shake uses).
+> If you can install the dos2unix tool on your shake (`sudo apt-get install dos2unix`) then run that command (`sudo dos2unix /path/to/hvsr_vx-x.sh`), you may be able to get around this issue.
+
+### Alternative 1 for copying HVSR script: Copy/Paste
 In your terminal, use ssh to enter the shake (you will be prompted for the shake's password, `shakeme` by default):
 ```bash
 ssh myshake@rs.local
@@ -31,44 +35,39 @@ Edit/create a new file (replace the `x`'s below with the version number of the f
 sudo nano /opt/hvsr/hvsr_vx-x.sh
 ```
 
-Copy the text from the `hvsr_vx-x.sh` file in this directory. Right click on the terminal (now with the nano editor opened) to paste the contents of the file. 
+Copy all the text of the `hvsr_vx-x.sh` file on your local computer. Then, go back to the terminal (with the nano editor opened) and right click to paste the contents of the file. 
 Type `Ctrl + s` to save and `Ctrl + x` to exit the nano editor.
 
-### SCP
-> TROUBLESHOOTING
-> If you are doing this from a Windows computer, it may convert your file to DOS format, which uses a different "carraige return"/endline character than unix (which is what the shake uses).
-> If you can install the dos2unix tool on your shake (`sudo apt-get install dos2unix`) then run that command (`sudo dos2unix /path/to/hvsr_vx-x.sh`), you may be able to get around this issue.
+### Alternative 2 for copying HVSR script: Secure Copy Protocol (SCP)
+Using scp command, copy the HVSR script file to the `/opt` directory. Then move the file to the specified hvsr folder. 
 
-Using scp command, sometimes you can only be able to copy the file to the home directory. Then you will need to move the file to the specified hvsr folder. 
-If it allows you to transfer the file directly to the correct folder, than Alternative 1 below may work. Otherwise, try Alternative 2
-
-#### Alternative 1
 ```bash
-scp "/path/to/local/copy/of/hvsr_v1-3.sh" "myshake@rs.local:/opt/hvsr/"
-```
-
-### Alternative 2
-```bash
-scp "/path/to/local/copy/of/hvsr_v1-3.sh" "myshake@rs.local:"
+scp "/path/to/local/copy/of/hvsr_v1-3.sh" "myshake@rs.local:/opt"
 ssh myshake@rs.local
 sudo mkdir /opt/hvsr
-sudo mv ~/hvsr_v1-3.sh /opt/hvsr/hvsr_v1-3.sh
+sudo mv /opt/hvsr_vx-x.sh /opt/hvsr/hvsr_vx-.sh
 ```
 
-### Filezilla
+### Alternative 3 for copying HVSR script: Filezilla
+Filezilla is a graphical user interface for secure file transfer between devices on a network. 
 Instructions are similar to what is described [here](https://github.com/RJbalikian/SPRIT-HVSR/wiki/Data-Processing:-Raspberry-Shake-3D#filezilla)
 
-You can use filezilla to create the directory at /opt/hvsr if it is not already there, then copy the hvsr shell script file into that directory.
+You can use filezilla to create a directory at `/opt/hvsr` if it is not already there, then copy the hvsr shell script file into that directory.
 
-## Set up an `hvsr` function to be defined at instrument startup
+# Create HVSR Function
+Now, you will creat a function that is defined every time the instrument starts. 
+This allows you to just type "hvsr" in the terminal to activate the HVSR script file.
+
 Open and edit the .bashrc file using the nano text editor:
 
 ```bash
 sudo nano ~/.bashrc
 ```
 
-Now, the nano text editor should open in your terminal. Navigate down to the section where aliases are defined near the end of the file. 
-Enter the following lines (the first two lines below are not strictly necessary, they are just used to provide user feedback that the program is running as intended in a "screen" session (see note at the bottom of this page)):
+Now, the nano text editor should open in your terminal. Navigate down to the section where aliases are defined near the end of the file
+(you can technically put this wherever in the file, but that is a logical location for a function definition of this kind).
+
+Copy/paste or otherwise enter the following lines into the nano editor to define the HVSR function.
 
 ```bash
 hvsr(){
@@ -91,10 +90,14 @@ hvsr(){
 
 Type `Ctrl + s` to save and `ctrl + x` to exit nano and return to your terminal.
 
+# Install "Screen" tool
 You will need to install the `screen` tool for this to work, at least if you want the HVSR script to continue running after you disconnect your SSH device. 
 Your Shake will need to be connected to the internet to install the `screen` tool.
 
-`sudo apt install screen`
+```bash
+sudo apt update
+sudo apt install screen
+```
 
 > TROUBLESHOOTING
 > For the shake to continue running the HVSR script after being disconnected from the SSH device, you must install screen.
@@ -115,14 +118,16 @@ Enter the following command to reboot your Shake:
 ```bash 
 sudo reboot
 ```
+
 ## Test hvsr script
 Now that you have set up the hvsr function in .bashrc, it should be defined immediately upon boot.
 
-Log back into your shake via ssh:
+You will have been logged out of the Shake during reboot, so log back into your shake via ssh:
 
 ```powershell
 ssh myshake@rs.local
 ```
+
 It will prompt you for your password.
 
 Use the following script as a test run:
@@ -134,11 +139,11 @@ You will see a message like "Starting HVSR Script in screen session" (this is th
 Then, the terminal will open a new "screen", which will display information about the site.
 
 The following is true of the test run as defined above:
-* The site name will be TEST_v3
-* It will run as a test program (i.e., it will not shut down your shake at the end of the site).
-* There will be a 5-second starting timer before acquisition begins
-* The data acquisition will last 0.1 minutes (6 seconds)
-* The status of the site will be checked and printed to the terminal at 1 second intervals.
+* The site name will be TEST_v3 (`-n "TEST_v3"`)
+* It will run as a test program (i.e., it will not shut down your shake at the end of the site). (`-t TRUE`)
+* There will be a 5-second starting timer before acquisition begins (`-s 5`)
+* The duration of acquisition will last 0.1 minutes (6 seconds) (`-d 0.1`)
+* The status of the site will be checked and printed to the terminal at 1 second intervals. (`-c 1`)
 
 After your script has run, the acquisition screen will close and you will be returned to the main terminal, where the following will be printed:
 `[screen is terminating]`
@@ -155,7 +160,7 @@ See the [Usage](#Usage) section below for more details on the arguments and opti
 
 # Usage
 > NOTE: the -n flag signifies a file name. You can use a space in the file name as long as the name is in quotes (e.g., `hvsr -n "Site Name"`), but it is recommended not to use spaces in the site names.
-The intended purpose of this file is that you can set up everything before acquiring data at a site and to eliminate the need to reconnect a computer at the end of the acquisition.
+The intended purpose of this file is that you can set up everything before acquiring data at a site and to eliminate the need to reconnect a computer at the end of the acquisition to turn off the Shake.
 
 The data will also be collated into a single file with all three components, thereby saving work and potential for error later. 
 For example, if the instrument time is not updated, you will still be able to find your data because it will be associated with a specific file and not just associated with a time.
@@ -165,7 +170,7 @@ After setting up as specified above, you may get help by using the `-h` flag in 
 ```bash
 hvsr -h
 ```
-This will print up a help file to your terminal, which will show all the flags and their meanings and usage.
+This will print up help text to your terminal, which will show all the flags and their meanings and usage.
 
 For example, see below:
 ```text
