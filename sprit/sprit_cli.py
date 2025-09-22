@@ -11,7 +11,7 @@ import argparse
 import inspect
 try:
     import sprit  # When distributed
-except:
+except Exception:
     import sprit_hvsr as sprit #When testing
 
 def get_param_docstring(func, param_name):
