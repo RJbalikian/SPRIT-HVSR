@@ -1116,7 +1116,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
                     if hasattr(hvsr_data, &#39;x_freqs&#39;):
                         x_data = hvsr_data[&#39;x_freqs&#39;][comp]
                     else:
-                        x_data = [1/p for p in hvsr_data[&#39;ppsds&#39;][comp][&#39;period_xedges&#39;][1:]]                    
+                        x_data = [1/p for p in hvsr_data[&#39;psds&#39;][comp][&#39;period_xedges&#39;][1:]]                    
                     column = &#39;psd_values_&#39;+comp
                     # Retrieve data from dataframe (use all windows, just in case)
                     curr_data = np.stack(hvsr_data[&#39;hvsr_windows_df&#39;][column])
@@ -1282,12 +1282,12 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
                     if &#39;x_freqs&#39; in hvsr_data.keys():
                         ax[compNames[i]].plot(hvsr_data.x_freqs[compNames[i]], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
                     else:
-                        ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]][&#39;period_bin_centers&#39;], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
+                        ax[compNames[i]].plot(1/hvsr_data.psds[compNames[i]][&#39;period_bin_centers&#39;], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
                 else:
                     if &#39;x_freqs&#39; in hvsr_data.keys():
                         ax[&#34;HV Curve&#34;].plot(hvsr_data.x_freqs[&#39;Z&#39;][:-1], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
                     else:
-                        ax[&#34;HV Curve&#34;].plot(1/(hvsr_data.ppsds[&#39;Z&#39;][&#39;period_bin_centers&#39;][:-1]), curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)                    
+                        ax[&#34;HV Curve&#34;].plot(1/(hvsr_data.psds[&#39;Z&#39;][&#39;period_bin_centers&#39;][:-1]), curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)                    
             
             # Plot the median curve
             if &#39;HV_Curves&#39; in compNames[i]:
@@ -1300,12 +1300,12 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
                 if &#39;x_freqs&#39; in hvsr_data.keys():
                     ax[compNames[i]].plot(hvsr_data.x_freqs[compNames[i]], medCurve, linewidth=1, color=&#39;k&#39;, label=&#39;Median Curve&#39;)
                 else:
-                    ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]][&#39;period_bin_centers&#39;],medCurve, linewidth=1, color=&#39;k&#39;, label=&#39;Median Curve&#39;)
+                    ax[compNames[i]].plot(1/hvsr_data.psds[compNames[i]][&#39;period_bin_centers&#39;],medCurve, linewidth=1, color=&#39;k&#39;, label=&#39;Median Curve&#39;)
             else:
                 if &#39;x_freqs&#39; in hvsr_data.keys():
                     ax[&#39;HV Curve&#39;].plot(hvsr_data.x_freqs[&#39;Z&#39;][:-1], medCurve, linewidth=1, color=&#39;k&#39;, label=&#39;Median Curve&#39;)
                 else:
-                    ax[&#39;HV Curve&#39;].plot(1/hvsr_data.ppsds[&#39;Z&#39;][&#39;period_bin_centers&#39;][:-1],medCurve, linewidth=1, color=&#39;k&#39;, label=&#39;Median Curve&#39;)
+                    ax[&#39;HV Curve&#39;].plot(1/hvsr_data.psds[&#39;Z&#39;][&#39;period_bin_centers&#39;][:-1],medCurve, linewidth=1, color=&#39;k&#39;, label=&#39;Median Curve&#39;)
 
 
             # Format axis

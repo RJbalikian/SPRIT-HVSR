@@ -106,6 +106,7 @@ el.replaceWith(d);
     browse_metadata_button = widgets.Button(description=&#39;Browse&#39;, layout=widgets.Layout(width=&#39;auto&#39;))
     def select_metapath(event):
         try:
+            from tkinter import tk, filedialog
             root = tk.Tk()
             root.wm_attributes(&#39;-topmost&#39;, True)
             root.withdraw()
@@ -113,8 +114,8 @@ el.replaceWith(d);
             root.destroy()
         except Exception as e:
             print(e)
-            browse_metadata_button.disabled=True
-            browse_metadata_button.description=&#39;Use Text Field&#39;
+            browse_metadata_button.disabled = True
+            browse_metadata_button.description = &#39;Use Text Field&#39;
     browse_metadata_button.on_click(select_metapath)
 
     # Dropdown with instrument types
@@ -162,6 +163,7 @@ el.replaceWith(d);
     def select_inst(event):
         try:
             if event.description == &#39;Select .inst file&#39;:
+                from tkinter import tk, filedialog
                 root = tk.Tk()
                 root.wm_attributes(&#39;-topmost&#39;, True)
                 root.withdraw()
@@ -424,6 +426,7 @@ el.replaceWith(d);
     def select_proc(event):
         try:
             if event.description == &#39;Select .proc file&#39;:
+                from tkinter import tk, filedialog
                 root = tk.Tk()
                 root.wm_attributes(&#39;-topmost&#39;, True)
                 root.withdraw()
@@ -462,7 +465,7 @@ el.replaceWith(d);
                                 else:
                                     widget_param_dict[func][prm].value = val
         except Exception as e:
-            print(e)
+            #print(e)
             proc_settings_browse_button.disabled = True
             proc_settings_browse_button.description = &#39;Use Text Field&#39;
     
@@ -1060,6 +1063,7 @@ el.replaceWith(d);
     browse_data_button = widgets.Button(description=&#39;Browse&#39;, layout=widgets.Layout(width=&#39;100%&#39;))
     def select_datapath(event):
         try:
+            from tkinter import tk, filedialog
             root = tk.Tk()
             root.wm_attributes(&#39;-topmost&#39;, True)
             root.withdraw()
@@ -2407,7 +2411,7 @@ el.replaceWith(d);
                     if hasattr(hvsr_data, &#39;x_freqs&#39;):
                         x_data = hvsr_data[&#39;x_freqs&#39;][comp]
                     else:
-                        x_data = [1/p for p in hvsr_data[&#39;ppsds&#39;][comp][&#39;period_xedges&#39;][1:]]                    
+                        x_data = [1/p for p in hvsr_data[&#39;psds&#39;][comp][&#39;period_xedges&#39;][1:]]                    
                     column = &#39;psd_values_&#39;+comp
                     # Retrieve data from dataframe (use all windows, just in case)
                     curr_data = np.stack(hvsr_data[&#39;hvsr_windows_df&#39;][column])
@@ -2686,6 +2690,7 @@ el.replaceWith(d);
     def export_results_table(button):
         try:
             if button.value == &#39;Export Table&#39;:
+                from tkinter import tk, filedialog
                 root = tk.Tk()
                 root.wm_attributes(&#39;-topmost&#39;, True)
                 root.withdraw()

@@ -3,18 +3,16 @@
 This module enables analysis of ambient seismic data using the Horizontal to Vertical Spectral Ratio (HVSR) technique.
 """
 
-__version__ = "3.1.0"
+__version__ = "3.1.1"
 
 try:
     import sprit.sprit_utils as sprit_utils
-    import sprit.sprit_tkinter_ui as sprit_tkinter_ui
     import sprit.sprit_hvsr as sprit_hvsr
     import sprit.sprit_jupyter_UI as sprit_jupyter_UI
     import sprit.sprit_plot as sprit_plot    
     import sprit.sprit_calibration as sprit_calibration
 except Exception:
     import sprit_utils
-    import sprit.sprit_tkinter_ui as sprit_tkinter_ui
     import sprit_hvsr
     import sprit_jupyter_UI
     import sprit_plot
@@ -96,7 +94,6 @@ __all__ = ('sprit_hvsr',
             'HVSRData',
             'HVSRBatch',
         'sprit_utils',
-        'sprit_tkinter_ui',
         'sprit_jupyter_UI',
             'create_jupyter_ui',
         'sprit_plot',

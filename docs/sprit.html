@@ -6,12 +6,12 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit package &mdash; sprit 3.1.0 documentation</title>
+  <title>sprit package &mdash; sprit 3.1.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="_static/documentation_options.js?v=dd1205ac"></script>
+      <script src="_static/documentation_options.js?v=796a81b5"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -111,7 +111,6 @@
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_jupyter_UI.html">sprit.sprit_jupyter_UI module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_plot.html">sprit.sprit_plot module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_streamlit_ui.html">sprit.sprit_streamlit_ui module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sprit.sprit_tkinter_ui.html">sprit.sprit_tkinter_ui module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_utils.html">sprit.sprit_utils module</a></li>
 </ul>
 </li>
@@ -2174,7 +2173,7 @@ See API documentation: [export_hvsr()](<a class="reference external" href="https
 - fetch_data(): the source parameter of fetch_data() is the only explicit variable in the sprit.run() function aside from input_data and verbose. Everything else gets delivered to the correct function via the kwargs dictionary
 - remove_noise(): by default, the kind of noise removal is remove_method=’auto’. See the remove_noise() documentation for more information. If remove_method is set to anything other than one of the explicit options in remove_noise, noise removal will not be carried out.
 - calculate_azimuth(): calculate one or several azimuths. Single azimuth can be a way to combine H components too.
-- generate_psds(): generates ppsds for each component, which will be combined/used later. Any parameter of obspy.signal.spectral_estimation.PPSD() may also be read into this function.
+- generate_psds(): generates psds for each component, which will be combined/used later. Any parameter of obspy.signal.spectral_estimation.PPSD() may also be read into this function.
 - remove_outlier_curves(): removes any outlier ppsd curves so that the data quality for when curves are combined will be enhanced. See the remove_outlier_curves() documentation for more information.
 - process_hvsr(): this is the main function processing the hvsr curve and statistics. See process_hvsr() documentation for more details. The hvsr_band parameter sets the frequency spectrum over which these calculations occur.
 - check_peaks(): this is the main function that will find and ‘score’ peaks to get a best peak. The parameter peak_freq_range can be set to limit the frequencies within which peaks are checked and scored.
@@ -2349,18 +2348,6 @@ If None, uses same directory as resp_file, by default None</p>
 <li class="toctree-l1"><a class="reference internal" href="sprit.sprit_streamlit_ui.html">sprit.sprit_streamlit_ui module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_streamlit_ui.html#sprit.sprit_streamlit_ui.print_param"><code class="docutils literal notranslate"><span class="pre">print_param()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="sprit.sprit_tkinter_ui.html">sprit.sprit_tkinter_ui module</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_tkinter_ui.html#sprit.sprit_tkinter_ui.SPRIT_App"><code class="docutils literal notranslate"><span class="pre">SPRIT_App</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="sprit.sprit_tkinter_ui.html#sprit.sprit_tkinter_ui.SPRIT_App.create_menubar"><code class="docutils literal notranslate"><span class="pre">SPRIT_App.create_menubar()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="sprit.sprit_tkinter_ui.html#sprit.sprit_tkinter_ui.SPRIT_App.create_tabs"><code class="docutils literal notranslate"><span class="pre">SPRIT_App.create_tabs()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="sprit.sprit_tkinter_ui.html#sprit.sprit_tkinter_ui.SPRIT_App.log_errorMsg"><code class="docutils literal notranslate"><span class="pre">SPRIT_App.log_errorMsg()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="sprit.sprit_tkinter_ui.html#sprit.sprit_tkinter_ui.SPRIT_App.manual_label_update"><code class="docutils literal notranslate"><span class="pre">SPRIT_App.manual_label_update()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_tkinter_ui.html#sprit.sprit_tkinter_ui.on_closing"><code class="docutils literal notranslate"><span class="pre">on_closing()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_tkinter_ui.html#sprit.sprit_tkinter_ui.reboot_app"><code class="docutils literal notranslate"><span class="pre">reboot_app()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="sprit.sprit_utils.html">sprit.sprit_utils module</a></li>

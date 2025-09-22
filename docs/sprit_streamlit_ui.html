@@ -911,7 +911,7 @@ el.replaceWith(d);
         hvsr_data = st.session_state.hvsr_data
 
         # Windows PSD and Used
-        #psdArr = np.flip(hvsr_data.ppsds[&#34;Z&#34;][&#39;psd_values&#39;].T)
+        #psdArr = np.flip(hvsr_data.psds[&#34;Z&#34;][&#39;psd_values&#39;].T)
         zStream = st.session_state.stream.select(component=&#39;Z&#39;).merge() 
         zTraces = zStream.split()
         zTrace = zStream[0]
