@@ -2720,11 +2720,11 @@ def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr', export_type='gzip'
         print(f"Processed data exported as pickled data to: {_export_path} [~{round(float(pathlib.Path(_export_path).stat().st_size)/2**20,1)} Mb]")    
 
     hvData = hvsr_data
-    #hvData = copy.deepcopy(hvsr_data)
-    #if export_plots is False:
-    #    for pk in PLOT_KEYS:
-    #        if hasattr(hvData, pk):
-    #            del hvData[pk]
+    hvData = hvsr_data.copy()
+    if export_plots is False:
+        for pk in PLOT_KEYS:
+            if hasattr(hvData, pk):
+                del hvData[pk]
 
     if isinstance(hvData, HVSRBatch):
         for sitename in hvData.keys():
@@ -3494,64 +3494,112 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
 
             # Acquisition date
             # acqdate_default = inspect.signature(input_params).parameters['acq_date'].default
-            acqdate_default = str(datetime.datetime.now().date())
+            acqdate_default = str(NOWTIME.date())
 
+            # If input date is default date and does not match date in the data, update to match data
             if str(params['acq_date']) == acqdate_default and params['acq_date'] != dataIN[0].stats.starttime.date:
-                params['acq_date'] = dataIN[0].stats.starttime.date
+                params['acq_date'] = params['params']['acq_date'] = dataIN[0].stats.starttime.date
+                
                 if verbose:
                     updateMsg.append(f"\tAcquisition Date updated to {params['acq_date']}")
-
+            elif params['acq_date'] != dataIN[0].stats.starttime.date:
+                # If date has been input manually and does not match data date, update the data
+                newStartDate = sprit_utils._format_time(params['acq_date'])
+                params['acq_date'] = params['params']['acq_date'] = newStartDate.date()
+                for tr in dataIN.merge():
+                    tr.stats.starttime = obspy.UTCDateTime(newStartDate.year,
+                                                 newStartDate.month,
+                                                 newStartDate.day,
+                                                 tr.stats.starttime.hour,
+                                                 tr.stats.starttime.minute,
+                                                 tr.stats.starttime.second,
+                                                 tr.stats.starttime.microsecond)
+                    
+                
             # starttime
             today_Starttime = obspy.UTCDateTime(datetime.datetime(year=datetime.date.today().year, month=datetime.date.today().month,
-                                                                 day = datetime.date.today().day,
+                                                                 day=datetime.date.today().day,
                                                                 hour=0, minute=0, second=0, microsecond=0))
+            
             maxStarttime = datetime.datetime(year=params['acq_date'].year, month=params['acq_date'].month, day=params['acq_date'].day, 
                                              hour=0, minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc)
 
-            stime_default = obspy.UTCDateTime(NOWTIME)#.year, NOWTIME.month, NOWTIME.day, 0, 0, 0, 0)
-            if str(params['starttime']) == str(stime_default):
-                for tr in dataIN.merge():
-                    currTime = datetime.datetime(year=tr.stats.starttime.year, month=tr.stats.starttime.month, day=tr.stats.starttime.day,
-                                        hour=tr.stats.starttime.hour, minute=tr.stats.starttime.minute, 
-                                       second=tr.stats.starttime.second, microsecond=tr.stats.starttime.microsecond, tzinfo=datetime.timezone.utc)
-                    if currTime > maxStarttime:
-                        maxStarttime = currTime
+            stime_default = obspy.UTCDateTime(NOWTIME)
+            sTimeIsDefault = params['starttime'] == stime_default
+                
+            # Check if stime is not the same as the data starttime (if it is, leave it alone!)
+            if params['starttime'] != dataIN.merge()[0].stats.starttime:
+                # Check if stime in params is the default value
+                if sTimeIsDefault:
+                    # We will update the params starttime to match the data if it is the default input
 
-                newStarttime = obspy.UTCDateTime(datetime.datetime(year=params['acq_date'].year, month=params['acq_date'].month,
-                                                                 day = params['acq_date'].day,
-                                                                hour=maxStarttime.hour, minute=maxStarttime.minute, 
-                                                                second=maxStarttime.second, microsecond=maxStarttime.microsecond))
-                if params['starttime'] != newStarttime:
+                    # Ensure we are getting the largest starttime from the data traces (assumes they all start at the same time, but may be slightly off)
+                    for tr in dataIN.merge():
+                        currTime = datetime.datetime(year=tr.stats.starttime.year, month=tr.stats.starttime.month, day=tr.stats.starttime.day,
+                                            hour=tr.stats.starttime.hour, minute=tr.stats.starttime.minute, 
+                                            second=tr.stats.starttime.second, microsecond=tr.stats.starttime.microsecond, tzinfo=datetime.timezone.utc)
+                        if currTime > maxStarttime:
+                            maxStarttime = currTime
+
+                    # Calculate new start time based data
+                    dataDate = dataIN.merge()[0].stats.starttime.date
+                    newStarttime = obspy.UTCDateTime(year=dataDate.year, month=dataDate.month,day=dataDate.day,
+                                                     hour=maxStarttime.hour, minute=maxStarttime.minute, 
+                                                     second=maxStarttime.second, microsecond=maxStarttime.microsecond)
+                    
+                    # Update parameters to match new starttime (this will be trimmed later if maxStarttime is different than trace starttimes)
                     params['starttime'] = newStarttime
                     params['params']['starttime'] = newStarttime
                     if verbose:
                         updateMsg.append(f"\tStarttime updated to {params['starttime']}")
+                
+                else:
+                    # If we manually set a starttime in order to trim or otherwise update the data
+                    
+                    # For trimming data (starttime within data time bounds)
+                    sTimeInDataTime = params['starttime'] > dataIN.merge()[0].stats.starttime and params['starttime'] < dataIN.merge()[-1].stats.endtime
+                    if sTimeInDataTime:
+                        # Don't update anything, will use for trimming later
+                        pass
+                        if verbose:
+                            updateMsg.append(f"\tStart of data will be trimmed to {params['starttime']}")
+                    else:
+                        # If params['starttime'] is not in data time bounds, assume that the dataset timing should be updated
+                        
+                        minStartTime = dataIN.merge()[-1].stats.starttime
+                        for tr in dataIN.merge():
+                            # Calculate offset from current trace to starttime (in case traces aren't fully aligned)
+                            if tr.stats.starttime < minStartTime:
+                                minStartTime = tr.stats.starttime
+                        
+                        # Calculate the offset between the earliest trace starttime and specified starttime
+                        timeOffset = minStartTime - params['starttime']
+                        
+                        # Update the startime for each trace based on offset
+                        for tr in dataIN.merge():
+                            tr.stats.starttime = tr.stats.starttime - timeOffset
+                            
+                        if verbose:
+                            updateMsg.append(f"\tStarttime updated to {params['starttime']}")                    
 
             # endttime
-            today_Endtime = obspy.UTCDateTime(datetime.datetime(year=datetime.date.today().year, month=datetime.date.today().month,
-                                                                 day = datetime.date.today().day,
-                                                                hour=23, minute=59, second=59, microsecond=999999))
-            tomorrow_Endtime = today_Endtime + (60*60*24)
-            minEndtime = datetime.datetime.now(tz=datetime.timezone.utc)#.replace(tzinfo=datetime.timezone.utc)#(hour=23, minute=59, second=59, microsecond=999999)
-
-            etime_default = obspy.UTCDateTime(NOWTIME.year, NOWTIME.month, NOWTIME.day, 23, 59, 59, 999999)
-            if str(params['endtime']) == etime_default or str(params['endtime']) == tomorrow_Endtime:
-                for tr in dataIN.merge():
-                    currTime = datetime.datetime(year=tr.stats.endtime.year, month=tr.stats.endtime.month, day=tr.stats.endtime.day,
-                                        hour=tr.stats.endtime.hour, minute=tr.stats.endtime.minute, 
-                                       second=tr.stats.endtime.second, microsecond=tr.stats.endtime.microsecond, tzinfo=datetime.timezone.utc)
-                    if currTime < minEndtime:
-                        minEndtime = currTime
-                newEndtime = obspy.UTCDateTime(datetime.datetime(year=minEndtime.year, month=minEndtime.month,
-                                                                 day = minEndtime.day,
-                                                                hour=minEndtime.hour, minute=minEndtime.minute, 
-                                                                second=minEndtime.second, microsecond=minEndtime.microsecond, tzinfo=datetime.timezone.utc))
-                
-                if params['endtime'] != newEndtime:
-                    params['endtime'] = newEndtime
-                    params['params']['endtime'] = newEndtime
-                    if verbose:
-                        updateMsg.append(f"\tEndtime updated to {params['endtime']}")
+            # Endtime only matters if it is used to trim the data
+            eTimeDefault = obspy.UTCDateTime(NOWTIME.year, NOWTIME.month, NOWTIME.day, 23, 59, 59, 999999)
+            eTimeIsDefault = params['endtime'] == eTimeDefault
+            
+            minEndTime = dataIN.merge()[-1].stats.endtime
+            for i, tr in enumerate(dataIN.merge()):
+                if tr.stats.endtime < minEndTime:
+                    minEndTime = tr.stats.endtime
+            
+            # Check if etime is anything other than default
+            if not eTimeIsDefault:
+                # If endtime is not default, change params['endtime'] to match data endtime unless it falls within the data time (in which case, will be used to trim later)
+                eTimeInDataTimeBounds = (params['endtime'] > dataIN.merge()[0].stats.starttime) and (params['endtime'] < minEndTime)
+                if not eTimeInDataTimeBounds:
+                    params['endtime'] = params['params']['endtime'] = minEndTime    
+            else:
+                params['endtime'] = params['params']['endtime'] = minEndTime
 
             # HVSR_ID (derived)
             project = params['project']
@@ -3559,7 +3607,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                 proj_id = ''
             else:
                 proj_id = str(project)+'-'
-            
+                        
             # Update HVSR_ID with new information
             params['hvsr_id'] = f"{proj_id}{params['acq_date'].strftime('%Y%m%d')}-{params['starttime'].strftime('%H%M')}-{params['station']}"
             params['params']['hvsr_id'] = f"{proj_id}{params['acq_date'].strftime('%Y%m%d')}-{params['starttime'].strftime('%H%M')}-{params['station']}"
