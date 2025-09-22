@@ -923,7 +923,7 @@ def main():
         hvsr_data = st.session_state.hvsr_data
 
         # Windows PSD and Used
-        #psdArr = np.flip(hvsr_data.ppsds["Z"]['psd_values'].T)
+        #psdArr = np.flip(hvsr_data.psds["Z"]['psd_values'].T)
         zStream = st.session_state.stream.select(component='Z').merge() 
         zTraces = zStream.split()
         zTrace = zStream[0]

@@ -6,8 +6,6 @@ import importlib
 import inspect
 import os
 import pathlib
-import tkinter as tk
-from tkinter import filedialog
 import webbrowser
 
 from zoneinfo import available_timezones
@@ -25,7 +23,7 @@ try: #For distribution
     from sprit import sprit_utils
     from sprit import sprit_hvsr
     from sprit import sprit_plot
-except: #For local testing
+except Exception: #For local testing
     import sprit_hvsr 
     import sprit_utils
     import sprit_plot
@@ -110,6 +108,7 @@ def create_jupyter_ui():
     browse_metadata_button = widgets.Button(description='Browse', layout=widgets.Layout(width='auto'))
     def select_metapath(event):
         try:
+            from tkinter import tk, filedialog
             root = tk.Tk()
             root.wm_attributes('-topmost', True)
             root.withdraw()
@@ -117,8 +116,8 @@ def create_jupyter_ui():
             root.destroy()
         except Exception as e:
             print(e)
-            browse_metadata_button.disabled=True
-            browse_metadata_button.description='Use Text Field'
+            browse_metadata_button.disabled = True
+            browse_metadata_button.description = 'Use Text Field'
     browse_metadata_button.on_click(select_metapath)
 
     # Dropdown with instrument types
@@ -166,6 +165,7 @@ def create_jupyter_ui():
     def select_inst(event):
         try:
             if event.description == 'Select .inst file':
+                from tkinter import tk, filedialog
                 root = tk.Tk()
                 root.wm_attributes('-topmost', True)
                 root.withdraw()
@@ -428,6 +428,7 @@ def create_jupyter_ui():
     def select_proc(event):
         try:
             if event.description == 'Select .proc file':
+                from tkinter import tk, filedialog
                 root = tk.Tk()
                 root.wm_attributes('-topmost', True)
                 root.withdraw()
@@ -466,7 +467,7 @@ def create_jupyter_ui():
                                 else:
                                     widget_param_dict[func][prm].value = val
         except Exception as e:
-            print(e)
+            #print(e)
             proc_settings_browse_button.disabled = True
             proc_settings_browse_button.description = 'Use Text Field'
     
@@ -1064,6 +1065,7 @@ def create_jupyter_ui():
     browse_data_button = widgets.Button(description='Browse', layout=widgets.Layout(width='100%'))
     def select_datapath(event):
         try:
+            from tkinter import tk, filedialog
             root = tk.Tk()
             root.wm_attributes('-topmost', True)
             root.withdraw()
@@ -2411,7 +2413,7 @@ def create_jupyter_ui():
                     if hasattr(hvsr_data, 'x_freqs'):
                         x_data = hvsr_data['x_freqs'][comp]
                     else:
-                        x_data = [1/p for p in hvsr_data['ppsds'][comp]['period_xedges'][1:]]                    
+                        x_data = [1/p for p in hvsr_data['psds'][comp]['period_xedges'][1:]]                    
                     column = 'psd_values_'+comp
                     # Retrieve data from dataframe (use all windows, just in case)
                     curr_data = np.stack(hvsr_data['hvsr_windows_df'][column])
@@ -2690,6 +2692,7 @@ def create_jupyter_ui():
     def export_results_table(button):
         try:
             if button.value == 'Export Table':
+                from tkinter import tk, filedialog
                 root = tk.Tk()
                 root.wm_attributes('-topmost', True)
                 root.withdraw()

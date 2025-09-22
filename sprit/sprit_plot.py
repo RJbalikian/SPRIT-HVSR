@@ -877,7 +877,7 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
                     if hasattr(hvsr_data, 'x_freqs'):
                         x_data = hvsr_data['x_freqs'][comp]
                     else:
-                        x_data = [1/p for p in hvsr_data['ppsds'][comp]['period_xedges'][1:]]                    
+                        x_data = [1/p for p in hvsr_data['psds'][comp]['period_xedges'][1:]]                    
                     column = 'psd_values_'+comp
                     # Retrieve data from dataframe (use all windows, just in case)
                     curr_data = np.stack(hvsr_data['hvsr_windows_df'][column])
@@ -1043,12 +1043,12 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
                     if 'x_freqs' in hvsr_data.keys():
                         ax[compNames[i]].plot(hvsr_data.x_freqs[compNames[i]], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
                     else:
-                        ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
+                        ax[compNames[i]].plot(1/hvsr_data.psds[compNames[i]]['period_bin_centers'], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
                 else:
                     if 'x_freqs' in hvsr_data.keys():
                         ax["HV Curve"].plot(hvsr_data.x_freqs['Z'][:-1], curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)
                     else:
-                        ax["HV Curve"].plot(1/(hvsr_data.ppsds['Z']['period_bin_centers'][:-1]), curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)                    
+                        ax["HV Curve"].plot(1/(hvsr_data.psds['Z']['period_bin_centers'][:-1]), curve, linewidth=linewidth, c=linecolor, linestyle=linestyle, alpha=alpha, label=label)                    
             
             # Plot the median curve
             if 'HV_Curves' in compNames[i]:
@@ -1061,12 +1061,12 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
                 if 'x_freqs' in hvsr_data.keys():
                     ax[compNames[i]].plot(hvsr_data.x_freqs[compNames[i]], medCurve, linewidth=1, color='k', label='Median Curve')
                 else:
-                    ax[compNames[i]].plot(1/hvsr_data.ppsds[compNames[i]]['period_bin_centers'],medCurve, linewidth=1, color='k', label='Median Curve')
+                    ax[compNames[i]].plot(1/hvsr_data.psds[compNames[i]]['period_bin_centers'],medCurve, linewidth=1, color='k', label='Median Curve')
             else:
                 if 'x_freqs' in hvsr_data.keys():
                     ax['HV Curve'].plot(hvsr_data.x_freqs['Z'][:-1], medCurve, linewidth=1, color='k', label='Median Curve')
                 else:
-                    ax['HV Curve'].plot(1/hvsr_data.ppsds['Z']['period_bin_centers'][:-1],medCurve, linewidth=1, color='k', label='Median Curve')
+                    ax['HV Curve'].plot(1/hvsr_data.psds['Z']['period_bin_centers'][:-1],medCurve, linewidth=1, color='k', label='Median Curve')
 
 
             # Format axis

@@ -43,12 +43,10 @@ from scipy.spatial.distance import squareform, pdist
 
 try:  # For distribution
     from sprit import sprit_utils
-    from sprit import sprit_tkinter_ui
     from sprit import sprit_jupyter_UI
     from sprit import sprit_plot
 except Exception:  # For testing
     import sprit_utils
-    import sprit_tkinter_ui
     import sprit_jupyter_UI
     import sprit_plot
 
@@ -1137,16 +1135,14 @@ def gui(kind: str = 'browser'):
     elif kind.lower() in windowList:
         #guiPath = pathlib.Path(os.path.realpath(__file__))
         try:
-            from sprit.sprit_tkinter_ui import SPRIT_App
-        except:
-            from sprit.sprit_tkinter_ui import SPRIT_App
-        
-        try:
             import tkinter as tk
+            from sprit.sprit_tkinter_ui import SPRIT_App
         except:
             if sys.platform == 'linux':
                 raise ImportError('The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use "apt-get install python-tk" or "apt-get install python3-tk" to install tkinter. You may need to use the sudo command at the start of those commands.')
-
+            else:
+                print("Tkinter may not be installed on your system, or is not functioning correctly. Please download and install tkinter, or use another interface.")
+        
         def on_gui_closing():
             plt.close('all')
             gui_root.quit()
@@ -1200,7 +1196,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     - fetch_data(): the source parameter of fetch_data() is the only explicit variable in the sprit.run() function aside from input_data and verbose. Everything else gets delivered to the correct function via the kwargs dictionary
     - remove_noise(): by default, the kind of noise removal is remove_method='auto'. See the remove_noise() documentation for more information. If remove_method is set to anything other than one of the explicit options in remove_noise, noise removal will not be carried out.
     - calculate_azimuth(): calculate one or several azimuths. Single azimuth can be a way to combine H components too.
-    - generate_psds(): generates ppsds for each component, which will be combined/used later. Any parameter of obspy.signal.spectral_estimation.PPSD() may also be read into this function.
+    - generate_psds(): generates psds for each component, which will be combined/used later. Any parameter of obspy.signal.spectral_estimation.PPSD() may also be read into this function.
     - remove_outlier_curves(): removes any outlier ppsd curves so that the data quality for when curves are combined will be enhanced. See the remove_outlier_curves() documentation for more information.
     - process_hvsr(): this is the main function processing the hvsr curve and statistics. See process_hvsr() documentation for more details. The hvsr_band parameter sets the frequency spectrum over which these calculations occur.
     - check_peaks(): this is the main function that will find and 'score' peaks to get a best peak. The parameter peak_freq_range can be set to limit the frequencies within which peaks are checked and scored.
@@ -1308,6 +1304,12 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         # Get the input parameters
         try:
             input_params_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(input_params).parameters.keys())}
+            if 'acq_date' not in input_params_kwargs:
+                input_params_kwargs['acq_date'] = NOWTIME.date()
+            
+            if 'starttime' not in input_params_kwargs:
+                input_params_kwargs['starttime'] = NOWTIME.time()
+            
             params = input_params(input_data=input_data, verbose=verbose, **input_params_kwargs)
         except Exception as e:
             if hasattr(e, 'message'):
@@ -1515,6 +1517,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         generate_psds_kwargs['azimuthal_psds'] = azimuth_calculation
         psd_data = generate_psds(hvsr_data=psd_data, verbose=verbose, **generate_psds_kwargs)
     except Exception as e:
+        
         if hasattr(e, 'message'):
             errMsg = e.message
         else:
@@ -1522,8 +1525,9 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         
         if verbose:
             print(f"Error during generate_psds() for {site_name}: \n{errMsg}")
-        if (source == 'file' or source == 'raw') and verbose:
-            raise RuntimeError(f"generate_psds() error: {errMsg}")
+        
+        if (source == 'file' or source == 'raw'):
+            raise RuntimeError(f"generate_psds() error: \n{errMsg}")
 
         # Reformat data so HVSRData and HVSRBatch data both work here
         if isinstance(psd_data, HVSRData):
@@ -3287,9 +3291,9 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                     params['params']['instrument'] = 'Tromino'
 
                     trominoKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())}
-                    paramDict = {k:v for k, v in params.items()}
+                    paramDict = {k: v for k, v in params.items()}
                     trominoKwargs.update(paramDict)
-                    rawDataIN = read_tromino_files(dPath, verbose=verbose, **trominoKwargs)
+                    rawDataIN = read_tromino_files(params, verbose=verbose, **trominoKwargs)
 
                     if 'site' in rawDataIN[0].stats:
                         if hasattr(params, 'site'):
@@ -3341,15 +3345,19 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                     if 'tromino_model' not in trominoKwargs:
                         trominoKwargs['tromino_model'] = params['instrument']
                     
-                    rawDataIN = read_tromino_files(input_data=dPath, verbose=verbose, **trominoKwargs)
+                    rawDataIN = read_tromino_files(input_data=params, verbose=verbose, **trominoKwargs)
 
-                    if 'site' in rawDataIN[0].stats:
+                    if 'site' in rawDataIN[0].stats and params['site'] == 'HVSRSite':
                         if hasattr(params, 'site'):
                             params['site'] = rawDataIN[0].stats.site
                         if hasattr(params, 'params'):
                             params['params']['site'] = rawDataIN[0].stats.site
 
-                except:
+                    params['acq_date'] = rawDataIN[0].stats.starttime.date
+                    params['starttime'] = rawDataIN[0].stats.starttime
+                    params['endtime'] = rawDataIN[0].stats.endtime
+
+                except Exception:
                     try:
                         rawDataIN = obspy.read(dPath)
                     except Exception:
@@ -3369,10 +3377,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                     pass
                 else:
                     rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
-                #import warnings # For some reason not being imported at the start
-                #with warnings.catch_warnings():
-                    #warnings.simplefilter(action='ignore', category=UserWarning)
-                    #rawDataIN.attach_response(inv)
+
         elif source == 'batch' and str(params['input_data']).lower() not in SAMPLE_LIST:
             if verbose:
                 print('\nFetching data (fetch_data())')
@@ -3503,7 +3508,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
             maxStarttime = datetime.datetime(year=params['acq_date'].year, month=params['acq_date'].month, day=params['acq_date'].day, 
                                              hour=0, minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc)
 
-            stime_default = obspy.UTCDateTime(NOWTIME.year, NOWTIME.month, NOWTIME.day, 0, 0, 0, 0)
+            stime_default = obspy.UTCDateTime(NOWTIME)#.year, NOWTIME.month, NOWTIME.day, 0, 0, 0, 0)
             if str(params['starttime']) == str(stime_default):
                 for tr in dataIN.merge():
                     currTime = datetime.datetime(year=tr.stats.starttime.year, month=tr.stats.starttime.month, day=tr.stats.starttime.day,
@@ -3865,8 +3870,8 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
 
         Returns
         -------
-            ppsds : HVSRData object
-                Dictionary containing entries with ppsds for each channel
+            psds : HVSRData object
+                Dictionary containing entries with psds for each channel
                 
         See Also
         --------
@@ -4008,15 +4013,15 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
         
         # Add to the input dictionary, so that some items can be manipulated later on, and original can be saved
         hvsr_data['ppsds_obspy'] = ppsds
-        hvsr_data['ppsds'] = {}
+        hvsr_data['psds'] = {}
         anyKey = list(hvsr_data['ppsds_obspy'].keys())[0]
         
         # Get ppsd class members
         members = [mems for mems in dir(hvsr_data['ppsds_obspy'][anyKey]) if not callable(mems) and not mems.startswith("_")]
         for k in ppsds.keys():
-            hvsr_data['ppsds'][k] = {}
+            hvsr_data['psds'][k] = {}
         
-        #Get lists/arrays so we can manipulate data later and copy everything over to main 'ppsds' subdictionary (convert lists to np.arrays for consistency)
+        #Get lists/arrays so we can manipulate data later and copy everything over to main 'psds' subdictionary (convert lists to np.arrays for consistency)
         listList = ['times_data', 'times_gaps', 'times_processed','current_times_used', 'psd_values'] #Things that need to be converted to np.array first, for consistency
         timeKeys= ['times_processed','current_times_used','psd_values']
         timeDiffWarn = True
@@ -4024,28 +4029,28 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
         time_data = {}
         time_dict = {}
         for m in members:
-            for k in hvsr_data['ppsds'].keys():
-                hvsr_data['ppsds'][k][m] = getattr(hvsr_data['ppsds_obspy'][k], m)
+            for k in hvsr_data['psds'].keys():
+                hvsr_data['psds'][k][m] = getattr(hvsr_data['ppsds_obspy'][k], m)
                 if m in listList:
-                    hvsr_data['ppsds'][k][m] = np.array(hvsr_data['ppsds'][k][m])
+                    hvsr_data['psds'][k][m] = np.array(hvsr_data['psds'][k][m])
             
             if str(m)=='times_processed':
-                unique_times = np.unique(np.array([hvsr_data['ppsds']['Z'][m],
-                                                    hvsr_data['ppsds']['E'][m],
-                                                    hvsr_data['ppsds']['N'][m]]))
+                unique_times = np.unique(np.array([hvsr_data['psds']['Z'][m],
+                                                    hvsr_data['psds']['E'][m],
+                                                    hvsr_data['psds']['N'][m]]))
 
                 common_times = []
                 for currTime in unique_times:
-                    if currTime in hvsr_data['ppsds']['Z'][m]:
-                        if currTime in hvsr_data['ppsds']['E'][m]:
-                            if currTime in hvsr_data['ppsds']['N'][m]:
+                    if currTime in hvsr_data['psds']['Z'][m]:
+                        if currTime in hvsr_data['psds']['E'][m]:
+                            if currTime in hvsr_data['psds']['N'][m]:
                                 common_times.append(currTime)
 
                 cTimeIndList = []
                 for cTime in common_times:
-                    ZArr = hvsr_data['ppsds']['Z'][m]
-                    EArr = hvsr_data['ppsds']['E'][m]
-                    NArr = hvsr_data['ppsds']['N'][m]
+                    ZArr = hvsr_data['psds']['Z'][m]
+                    EArr = hvsr_data['psds']['E'][m]
+                    NArr = hvsr_data['psds']['N'][m]
 
                     cTimeIndList.append([int(np.where(ZArr == cTime)[0][0]),
                                         int(np.where(EArr == cTime)[0][0]),
@@ -4054,24 +4059,24 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
             # Make sure number of time windows is the same between PPSDs (this can happen with just a few slightly different number of samples)
             if m in timeKeys:
                 if str(m) != 'times_processed':
-                    time_data[str(m)] = (hvsr_data['ppsds']['Z'][m], hvsr_data['ppsds']['E'][m], hvsr_data['ppsds']['N'][m])
+                    time_data[str(m)] = (hvsr_data['psds']['Z'][m], hvsr_data['psds']['E'][m], hvsr_data['psds']['N'][m])
 
-                tSteps_same = hvsr_data['ppsds']['Z'][m].shape[0] == hvsr_data['ppsds']['E'][m].shape[0] == hvsr_data['ppsds']['N'][m].shape[0]
+                tSteps_same = hvsr_data['psds']['Z'][m].shape[0] == hvsr_data['psds']['E'][m].shape[0] == hvsr_data['psds']['N'][m].shape[0]
 
                 if not tSteps_same:
-                    shortestTimeLength = min(hvsr_data['ppsds']['Z'][m].shape[0], hvsr_data['ppsds']['E'][m].shape[0], hvsr_data['ppsds']['N'][m].shape[0])
+                    shortestTimeLength = min(hvsr_data['psds']['Z'][m].shape[0], hvsr_data['psds']['E'][m].shape[0], hvsr_data['psds']['N'][m].shape[0])
 
                     maxPctDiff = 0
-                    for comp in hvsr_data['ppsds'].keys():
-                        currCompTimeLength = hvsr_data['ppsds'][comp][m].shape[0]
+                    for comp in hvsr_data['psds'].keys():
+                        currCompTimeLength = hvsr_data['psds'][comp][m].shape[0]
                         timeLengthDiff = currCompTimeLength - shortestTimeLength
                         percentageDiff = timeLengthDiff / currCompTimeLength
                         if percentageDiff > maxPctDiff:
                             maxPctDiff = percentageDiff
 
-                    for comp in hvsr_data['ppsds'].keys():
-                        while hvsr_data['ppsds'][comp][m].shape[0] > shortestTimeLength:
-                            hvsr_data['ppsds'][comp][m] = hvsr_data['ppsds'][comp][m][:-1]
+                    for comp in hvsr_data['psds'].keys():
+                        while hvsr_data['psds'][comp][m].shape[0] > shortestTimeLength:
+                            hvsr_data['psds'][comp][m] = hvsr_data['psds'][comp][m][:-1]
                     
                     
                     if maxPctDiff > 0.05 and timeDiffWarn:
@@ -4087,12 +4092,12 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
             currTStepList.append(np.ones_like(common_times[i]).astype(bool))
             for tk in time_data.keys():
                 if 'current_times_used' not in tk:
-                    for i, k in enumerate(hvsr_data['ppsds'].keys()):
+                    for i, k in enumerate(hvsr_data['psds'].keys()):
                         if k.lower() in ['z', 'e', 'n']:
                             colList.append(str(tk)+'_'+k)
                             currTStepList.append(time_data[tk][i][currTStep[i]])
             dfList.append(currTStepList)
-
+        
         return hvsr_data, dfList, colList, common_times
 
     if obspy_ppsds:
@@ -4105,48 +4110,48 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
         x_freqs = np.flip(np.logspace(np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1]), num_freq_bins))
         
         psdDictUpdate = {}
-        hvsr_data['ppsds'] = {}
+        hvsr_data['psds'] = {}
         for key, compdict in psdDict.items():
             psdDictUpdate[key] = np.array([list(np.flip(arr)) for time, arr in compdict.items()])
-            hvsr_data['ppsds'][key] = {}
+            hvsr_data['psds'][key] = {}
         
-        #hvsr_data['ppsds'] = {'Z':{}, 'E':{}, 'N':{}}
+        #hvsr_data['psds'] = {'Z':{}, 'E':{}, 'N':{}}
         for key, item in psdDict.items():
             currSt = hvsr_data.stream.select(component=key).merge()
                       
-            hvsr_data['ppsds'][key]['channel'] = currSt[0].stats.channel
-            hvsr_data['ppsds'][key]['current_times_used'] = common_times
-            hvsr_data['ppsds'][key]['delta'] = float(currSt[0].stats.delta)
-            #hvsr_data['ppsds'][key]['get_mean'] = np.nanmean(item)
-            #hvsr_data['ppsds'][key]['mean'] = np.nanmean(item)
-            #hvsr_data['ppsds'][key]['get_mode'] = scipy.stats.mode(item)
-            #hvsr_data['ppsds'][key]['mode'] = scipy.stats.mode(item)
-            hvsr_data['ppsds'][key]['id'] = currSt[0].id
-            hvsr_data['ppsds'][key]['len'] = int(window_length / hvsr_data['ppsds'][key]['delta'])
-            hvsr_data['ppsds'][key]['location'] = currSt[0].stats.location
-            hvsr_data['ppsds'][key]['metadata'] = [currSt[0].stats.response if hasattr(currSt[0].stats, 'response') else None][0]
-            hvsr_data['ppsds'][key]['network'] = currSt[0].stats.network
-            hvsr_data['ppsds'][key]['nfft'] = int(window_length / hvsr_data['ppsds'][key]['delta'])
-            hvsr_data['ppsds'][key]['nlap'] = int(overlap_pct*window_length / hvsr_data['ppsds'][key]['delta'])
-            hvsr_data['ppsds'][key]['overlap'] = overlap_pct
-            hvsr_data['ppsds'][key]['period_bin_centers'] = [round(1/float(f + np.diff(x_freqs)[i]/2), 4) for i, f in enumerate(x_freqs[:-1])]
-            hvsr_data['ppsds'][key]['period_bin_centers'].append(float(round(1/x_freqs[-1], 3)))
-            hvsr_data['ppsds'][key]['period_bin_centers'] = np.array(hvsr_data['ppsds'][key]['period_bin_centers'])
-            hvsr_data['ppsds'][key]['period_bin_left_edges'] = 1/x_freqs[:-1]
-            hvsr_data['ppsds'][key]['period_bin_right_edges'] = 1/x_freqs[1:]
-            hvsr_data['ppsds'][key]['period_xedges'] = 1/x_freqs
-            hvsr_data['ppsds'][key]['ppsd_length'] = window_length
-            hvsr_data['ppsds'][key]['psd_length'] = window_length
-            hvsr_data['ppsds'][key]['psd_frequencies'] = x_freqs
-            hvsr_data['ppsds'][key]['psd_periods'] = 1/x_freqs
-            hvsr_data['ppsds'][key]['psd_values'] = psdDictUpdate[key]
-            hvsr_data['ppsds'][key]['sampling_rate'] = currSt[0].stats.sampling_rate
-            hvsr_data['ppsds'][key]['skip_on_gaps'] = skip_on_gaps
-            hvsr_data['ppsds'][key]['station'] = currSt[0].stats.station
-            hvsr_data['ppsds'][key]['step'] = window_length * (1-overlap_pct)
-            hvsr_data['ppsds'][key]['times_data'] = common_times
-            hvsr_data['ppsds'][key]['times_gaps'] = [[None, None]]
-            hvsr_data['ppsds'][key]['times_processed'] = [[None, None]]
+            hvsr_data['psds'][key]['channel'] = currSt[0].stats.channel
+            hvsr_data['psds'][key]['current_times_used'] = common_times
+            hvsr_data['psds'][key]['delta'] = float(currSt[0].stats.delta)
+            #hvsr_data['psds'][key]['get_mean'] = np.nanmean(item)
+            #hvsr_data['psds'][key]['mean'] = np.nanmean(item)
+            #hvsr_data['psds'][key]['get_mode'] = scipy.stats.mode(item)
+            #hvsr_data['psds'][key]['mode'] = scipy.stats.mode(item)
+            hvsr_data['psds'][key]['id'] = currSt[0].id
+            hvsr_data['psds'][key]['len'] = int(window_length / hvsr_data['psds'][key]['delta'])
+            hvsr_data['psds'][key]['location'] = currSt[0].stats.location
+            hvsr_data['psds'][key]['metadata'] = [currSt[0].stats.response if hasattr(currSt[0].stats, 'response') else None][0]
+            hvsr_data['psds'][key]['network'] = currSt[0].stats.network
+            hvsr_data['psds'][key]['nfft'] = int(window_length / hvsr_data['psds'][key]['delta'])
+            hvsr_data['psds'][key]['nlap'] = int(overlap_pct*window_length / hvsr_data['psds'][key]['delta'])
+            hvsr_data['psds'][key]['overlap'] = overlap_pct
+            hvsr_data['psds'][key]['period_bin_centers'] = [round(1/float(f + np.diff(x_freqs)[i]/2), 4) for i, f in enumerate(x_freqs[:-1])]
+            hvsr_data['psds'][key]['period_bin_centers'].append(float(round(1/x_freqs[-1], 3)))
+            hvsr_data['psds'][key]['period_bin_centers'] = np.array(hvsr_data['psds'][key]['period_bin_centers'])
+            hvsr_data['psds'][key]['period_bin_left_edges'] = 1/x_freqs[:-1]
+            hvsr_data['psds'][key]['period_bin_right_edges'] = 1/x_freqs[1:]
+            hvsr_data['psds'][key]['period_xedges'] = 1/x_freqs
+            hvsr_data['psds'][key]['ppsd_length'] = window_length
+            hvsr_data['psds'][key]['psd_length'] = window_length
+            hvsr_data['psds'][key]['psd_frequencies'] = x_freqs
+            hvsr_data['psds'][key]['psd_periods'] = 1/x_freqs
+            hvsr_data['psds'][key]['psd_values'] = psdDictUpdate[key]
+            hvsr_data['psds'][key]['sampling_rate'] = currSt[0].stats.sampling_rate
+            hvsr_data['psds'][key]['skip_on_gaps'] = skip_on_gaps
+            hvsr_data['psds'][key]['station'] = currSt[0].stats.station
+            hvsr_data['psds'][key]['step'] = window_length * (1-overlap_pct)
+            hvsr_data['psds'][key]['times_data'] = common_times
+            hvsr_data['psds'][key]['times_gaps'] = [[None, None]]
+            hvsr_data['psds'][key]['times_processed'] = [[None, None]]
             
         hvsr_data['ppsds_obspy'] = {}
         dfList = []
@@ -4156,18 +4161,18 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
         colList = ["Use", "psd_values_Z", "psd_values_E", "psd_values_N"]
         # dfList: list of np.arrays, fitting the above column
         # common_times: times in common between all, should be length of 1 psd dimension above
-        # hvsr_data['ppsds']['Z']['times_gaps']: list of two-item lists with UTCDatetimes for gaps
+        # hvsr_data['psds']['Z']['times_gaps']: list of two-item lists with UTCDatetimes for gaps
         
-        # #Maybe not needed hvsr_data['ppsds']['Z']['current_times_used']
+        # #Maybe not needed hvsr_data['psds']['Z']['current_times_used']
 
     hvsrDF = pd.DataFrame(dfList, columns=colList)
     if verbose:
         print(f"\t\t{hvsrDF.shape[0]} processing windows generated and psd values stored in hvsr_windows_df with columns: {', '.join(hvsrDF.columns)}")
     hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
-    # Add azimuthal ppsds values
-    for k in hvsr_data['ppsds'].keys():
+    # Add azimuthal psds values
+    for k in hvsr_data['psds'].keys():
         if k.upper() not in ['Z', 'E', 'N']:
-            hvsrDF['psd_values_'+k] = hvsr_data['ppsds'][k]['psd_values'].tolist()
+            hvsrDF['psd_values_'+k] = hvsr_data['psds'][k]['psd_values'].tolist()
 
     hvsrDF['TimesProcessed_Obspy'] = common_times
     hvsrDF['TimesProcessed_ObspyEnd'] = hvsrDF['TimesProcessed_Obspy'] + obspy_ppsd_kwargs['ppsd_length']
@@ -4189,7 +4194,7 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
     
     # Take care of existing time gaps, in case not taken care of previously
     if obspy_ppsds:
-        for gap in hvsr_data['ppsds']['Z']['times_gaps']:
+        for gap in hvsr_data['psds']['Z']['times_gaps']:
             hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'].gt(gap[1].matplotlib_date))| \
                         (hvsrDF['TimesProcessed_MPLEnd'].lt(gap[0].matplotlib_date)).astype(bool)# | \
     
@@ -4210,8 +4215,8 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
     # Create dict entry to keep track of how many outlier hvsr curves are removed 
     # This is a (2-item list with [0]=current number, [1]=original number of curves)
     hvsr_data['tsteps_used'] = [int(hvsrDF['Use'].sum()), hvsrDF['Use'].shape[0]]
-    #hvsr_data['tsteps_used'] = [hvsr_data['ppsds']['Z']['times_processed'].shape[0], hvsr_data['ppsds']['Z']['times_processed'].shape[0]]
-    #hvsr_data['tsteps_used'][0] = hvsr_data['ppsds']['Z']['current_times_used'].shape[0]
+    #hvsr_data['tsteps_used'] = [hvsr_data['psds']['Z']['times_processed'].shape[0], hvsr_data['psds']['Z']['times_processed'].shape[0]]
+    #hvsr_data['tsteps_used'][0] = hvsr_data['psds']['Z']['current_times_used'].shape[0]
     
     hvsr_data = sprit_utils._make_it_classy(hvsr_data)
 
@@ -4934,10 +4939,8 @@ def input_params(input_data,
         else:
             pass
             #starttime = date+'T'+starttime
-    elif type(starttime) is datetime.datetime:
-        #date = str(starttime.date())
-        starttime = str(starttime.time())
-        ###HERE IS NEXT
+    elif isinstance(starttime, datetime.datetime):
+        starttime = starttime.time()
     elif type(starttime) is datetime.time():
         starttime = str(starttime)
     
@@ -5647,8 +5650,8 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
         hvsr_out = sprit_utils._check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
         return hvsr_out
     
-    ppsds = hvsr_data['ppsds'].copy()#[k]['psd_values']
-    ppsds = sprit_utils._check_xvalues(ppsds)
+    psds = hvsr_data['psds'].copy()#[k]['psd_values']
+    psds = sprit_utils._check_xvalues(psds)
 
     methodList = ['<placeholder_0>', # 0
                     'Diffuse Field Assumption', # 1
@@ -5679,10 +5682,10 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     resampleList = ['period_bin_centers', 'period_bin_left_edges', 'period_bin_right_edges', 'period_xedges',
                     'psd_frequencies', 'psd_periods']
 
-    for k in ppsds.keys():
-        #for ppsdk, ppsdv in ppsds[k].items():
+    for k in psds.keys():
+        #for ppsdk, ppsdv in psds[k].items():
             #print(ppsdk, isinstance(ppsdv, np.ndarray))
-        #input_ppsds = ppsds[k]['psd_values'] #original, not used anymore
+        #input_ppsds = psds[k]['psd_values'] #original, not used anymore
         input_ppsds = np.stack(hvsrDF['psd_values_'+k].values)
 
         #currPPSDs = hvsrDF['psd_values_'+k][hvsrDF['Use']].values
@@ -5713,7 +5716,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
             # Resample raw ppsd values
             for i, ppsd_t in enumerate(input_ppsds):
                 if i==0:
-                    psdRaw[k] = np.interp(x_periods[k], ppsds[k]['period_bin_centers'], ppsd_t)
+                    psdRaw[k] = np.interp(x_periods[k], psds[k]['period_bin_centers'], ppsd_t)
                     if smooth is not False and smooth is not None:
                         padRawKPad = np.pad(psdRaw[k], [padVal, padVal], mode='reflect')
                         #padRawKPadSmooth = scipy.signal.savgol_filter(padRawKPad, smooth, 3)
@@ -5721,7 +5724,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
                         psdRaw[k] = padRawKPadSmooth[padVal:-padVal]
 
                 else:
-                    psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], ppsds[k]['period_bin_centers'], ppsd_t)))
+                    psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], psds[k]['period_bin_centers'], ppsd_t)))
                     if smooth is not False:
                         padRawKiPad = np.pad(psdRaw[k][i], [padVal, padVal], mode='reflect')
                         #padRawKiPadSmooth = scipy.signal.savgol_filter(padRawKiPad, smooth, 3)
@@ -5731,22 +5734,22 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
             # Resample other values
             for keys in resampleList:
                 if keys == 'period_bin_centers':
-                    baseLength = len(ppsds[k][keys])
+                    baseLength = len(psds[k][keys])
                 
-                if ppsds[k][keys].ndim == 1:
-                    if ppsds[k][keys].shape[-1] == baseLength:
-                        ppsds[k][keys] = np.logspace(np.log10(min(ppsds[k][keys])), np.log10(max(ppsds[k][keys])), num=resample)
+                if psds[k][keys].ndim == 1:
+                    if psds[k][keys].shape[-1] == baseLength:
+                        psds[k][keys] = np.logspace(np.log10(min(psds[k][keys])), np.log10(max(psds[k][keys])), num=resample)
                     else:
-                        ppsds[k][keys] = np.logspace(np.log10(min(ppsds[k][keys])), np.log10(max(ppsds[k][keys])), num=resample-1)
+                        psds[k][keys] = np.logspace(np.log10(min(psds[k][keys])), np.log10(max(psds[k][keys])), num=resample-1)
                 else:
                     arrList = []
-                    for arr in ppsds[k][keys]:
+                    for arr in psds[k][keys]:
                         arrList.append(np.logspace(np.log10(min(arr)), np.log10(max(arr)), num=resample))
                     
-                    ppsds[k][keys] = np.array(arrList)
+                    psds[k][keys] = np.array(arrList)
         else:
             #If no resampling desired
-            x_periods[k] =  np.array(ppsds[k]['period_bin_centers'])#[:-1]#np.round([1/p for p in hvsr_data['ppsds'][k]['period_xedges'][:-1]], 3)
+            x_periods[k] =  np.array(psds[k]['period_bin_centers'])#[:-1]#np.round([1/p for p in hvsr_data['psds'][k]['period_xedges'][:-1]], 3)
 
             # Clean up edge freq. values
             x_periods[k][0] = 1/hvsr_data['hvsr_band'][1]
@@ -5792,7 +5795,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
         stDevValsP[k] = np.array(psdValsTAvg[k] + stDev[k])
 
         currTimesUsed[k] = np.stack(hvsrDF[use]['TimesProcessed_Obspy'])
-        #currTimesUsed[k] = ppsds[k]['current_times_used'] #original one
+        #currTimesUsed[k] = psds[k]['current_times_used'] #original one
     
     #print('XFREQS', x_freqs[k].shape)
     #print('XPERs', x_periods[k].shape)
@@ -5845,7 +5848,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
                 'ppsd_std_vals_m':stDevValsM,
                 'ppsd_std_vals_p':stDevValsP,
                 'horizontal_method':horizontal_method,
-                'ppsds':ppsds,
+                'psds':psds,
                 'ppsds_obspy':origPPSD,
                 'tsteps_used': hvsr_data['tsteps_used'].copy(),
                 'hvsr_windows_df':hvsr_data['hvsr_windows_df']
@@ -6074,19 +6077,24 @@ def read_tromino_files(input_data, struct_format='H', tromino_model=None, diagno
 
     blueModelList = ['blue', 'blu', 'tromino blu', 'tromino blue']
 
+    # Check if input_data is HVSRData object and extract filepath if so
+    input_filepath = input_data
+    if isinstance(input_data, HVSRData):
+        input_filepath = input_data['input_data']
+
     # Allow reading of tromino partition folders (and get the .trc file inside), not just .trc file
-    if pathlib.Path(input_data).is_dir():
-        trDirGlob = pathlib.Path(input_data).glob('*trc')
+    if pathlib.Path(input_filepath).is_dir():
+        trDirGlob = pathlib.Path(input_filepath).glob('*trc')
         for trcFile in trDirGlob:
             input_data = trcFile
         if verbose:
-            print(f'\t Input file updated to {pathlib.Path(input_data).name} in specified directory.')
+            print(f'\t Input file updated to {pathlib.Path(input_filepath).name} in specified directory.')
 
     if str(tromino_model).lower() in blueModelList or 'blue' in str(tromino_model).lower():
         tBlueKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(__read_tromino_data_blue).parameters.keys())}
         if 'sampling_rate' not in tBlueKwargs:
             tBlueKwargs['sampling_rate'] = sampling_rate
-            return __read_tromino_data_blue(input_data, verbose=False, **tBlueKwargs)
+            return __read_tromino_data_blue(input_filepath, verbose=False, **tBlueKwargs)
     else:
         return __read_tromino_data_yellow(input_data=input_data, sampling_rate=sampling_rate, 
                                    struct_format=struct_format, tromino_model="3G+",diagnose=diagnose,
@@ -6419,7 +6427,7 @@ def remove_noise(hvsr_data, remove_method=None,
     return output
 
 
-# Remove outlier ppsds
+# Remove outlier psds
 def remove_outlier_curves(hvsr_data, outlier_method='prototype',
                           outlier_threshold=50, use_percentile=True, min_pts=5,
                           use_hv_curves=False,
@@ -7420,8 +7428,12 @@ def __read_tromino_data_yellow(input_data, sampling_rate=None,
                                return_dict=True,
                                verbose=False, **kwargs):
     
+    input_filepath = input_data
+    if isinstance(input_data, HVSRData):
+        input_filepath = input_data['input_data']
+    
     # Reconfigure data for some of the analysis
-    swapped = __read_and_swap_bytes(input_data) 
+    swapped = __read_and_swap_bytes(input_filepath) 
     
     # Extract header information (text sections)
     header_text = __extract_text_sections(swapped.copy())
@@ -7463,7 +7475,7 @@ def __read_tromino_data_yellow(input_data, sampling_rate=None,
     structSize = strucSizes[structFormat]
 
     dataList = []
-    with open(input_data, 'rb') as f:
+    with open(input_filepath, 'rb') as f:
         while True:
             data = f.read(structSize)  # Read 4 bytes
             if not data:  # End of file
@@ -7490,11 +7502,11 @@ def __read_tromino_data_yellow(input_data, sampling_rate=None,
     try:
         if verbose:
             print("\t\tExtracting metadata from tromino yellow instrument:")
-        metaDict = __get_tromino_yellow_metadata(input_data)
+        metaDict = __get_tromino_yellow_metadata(input_filepath)
         if verbose:
             print(f"\t\t  Starttime: {metaDict['starttime']}\n\t\t  Number of Data Channels: {metaDict['no_data_channels']} \n\t\t  Sampling Rate: {metaDict['sampling_rate']}\n")
 
-        sTime = metaDict['starttime']
+        inst_sTime = metaDict['starttime']
         no_channels = metaDict['no_data_channels']
         sampling_rate = metaDict['sampling_rate']
     except Exception as e:
@@ -7509,7 +7521,7 @@ def __read_tromino_data_yellow(input_data, sampling_rate=None,
         if 'starttime' in kwargs:
             starttime = kwargs['starttime']
         
-        sTime = obspy.UTCDateTime(acq_date.year, acq_date.month, acq_date.day,
+        inst_sTime = obspy.UTCDateTime(acq_date.year, acq_date.month, acq_date.day,
                               starttime.hour, starttime.minute,
                               starttime.second, starttime.microsecond)
         no_channels = 3 # default to 3 channels (maybe programmatically check this at some point)
@@ -7522,9 +7534,9 @@ def __read_tromino_data_yellow(input_data, sampling_rate=None,
     if station is None:
         station='HVSRSite'
 
-# Get the actual data from the tromino yellow
-    dataArr = __extract_tromino_yellow_data(input_data=input_data, start_byte=start_byte,
-                                            swapped_bytes=__read_and_swap_bytes(input_data, return_unswapped=True), 
+    # Get the actual data from the tromino yellow
+    dataArr = __extract_tromino_yellow_data(input_data=input_filepath, start_byte=start_byte,
+                                            swapped_bytes=__read_and_swap_bytes(input_filepath, return_unswapped=True), 
                                             no_channels=no_channels, 
                                             data_start=0xC000)
     
@@ -7534,11 +7546,16 @@ def __read_tromino_data_yellow(input_data, sampling_rate=None,
     compZ = dataArr[2]
 
     # Calculate end time based on length of data
-    eTime = sTime + (((len(compN))/sampling_rate)/60)*60
+    eTime = inst_sTime + (((len(compN))/sampling_rate)/60)*60
 
     loc = ''
     if  station is not None and (type(station) is int or station.isdigit()):
         loc = str(station)
+
+    
+    sTime = inst_sTime
+    if hasattr(input_data, 'starttime') and input_data['starttime'].datetime!=NOWTIME:
+        sTime = input_data['starttime']
 
     traceHeaderN = {'sampling_rate':sampling_rate,
                     'calib' : 1,
@@ -7548,6 +7565,7 @@ def __read_tromino_data_yellow(input_data, sampling_rate=None,
                     'station' : station,
                     'channel':'?HN',
                     'starttime':sTime,
+                    'starttime_instrument':inst_sTime,
                     'site':station}
 
     traceHeaderE = traceHeaderN.copy()
@@ -9503,7 +9521,9 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_meth
             # PERFORM FFT analysis using Welch method if length of window is > 1 sample
             # If time window used, the start time will be recorded in window_out list
                 # and PSD will be stored in psdDict[key][str(starttime)] as numpy array.
-            if nsamplesperwin > 1:
+            
+            noNanCond = np.any(np.isnan(window_trace.data))
+            if nsamplesperwin > 1 and not noNanCond:
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore') # Sometimes unnecessary warnings arise
                     f, pxx = scipy.signal.welch(window_trace.data, fs=window_trace.stats.sampling_rate, 
@@ -9753,7 +9773,7 @@ def _dfa(x, hvsr_data=None, verbose=False):#, equal_interval_energy, median_dail
     hvsr_data['dfa']['equal_interval_energy'] = {'Z':{}, 'E':{}, 'N':{}}
 
     ti = 0    
-    for i, t_int in enumerate(hvsr_data['ppsds']['Z']['current_times_used']):
+    for i, t_int in enumerate(hvsr_data['psds']['Z']['current_times_used']):
         ti+=1
         hvsr_curve_tinterval = []
 
@@ -11093,7 +11113,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
             keyList.sort()
             hvsrDF = hvsr_data.hvsr_windows_df
             for key in keyList:
-                #hvsr_data['ppsds'][key]['psd_values']                
+                #hvsr_data['psds'][key]['psd_values']                
                 minY.append(hvsr_data['ppsd_std_vals_m'][key].min())
                 maxY.append(hvsr_data['ppsd_std_vals_p'][key].max())
                 #minY.append(np.min(np.stack(hvsrDF['psd_values_'+key][hvsrDF['Use']])))
@@ -11210,7 +11230,7 @@ def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, sh
 
 # Plot specgtrogram, private supporting function for plot_hvsr
 def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, azimuth='HV', save_dir=None, save_suffix='',**kwargs):
-    """Private function for plotting average spectrogram of all three channels from ppsds
+    """Private function for plotting average spectrogram of all three channels from psds
     """
     # Get all input parameters
     if fig is None and ax is None:
@@ -11282,9 +11302,9 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, azimuth='HV', save_dir=Non
     notused = ~hvsrDF['Use'].astype(bool)     
 
     # Setup
-    ppsds = hvsr_data['ppsds']#[k]['current_times_used']
+    psds = hvsr_data['psds']#[k]['current_times_used']
     import matplotlib.dates as mdates
-    anyKey = list(ppsds.keys())[0]
+    anyKey = list(psds.keys())[0]
     
     # Get data
     hvCurveColumn = 'HV_Curves'
@@ -11478,10 +11498,10 @@ def __check_curve_reliability(hvsr_data, _peak, col_id='HV'):
     _peak   : list
         List of dictionaries, same as above, except with information about curve reliability tests added
     """
-    anyKey = list(hvsr_data['ppsds'].keys())[0]#Doesn't matter which channel we use as key
+    anyKey = list(hvsr_data['psds'].keys())[0]#Doesn't matter which channel we use as key
 
-    delta = hvsr_data['ppsds'][anyKey]['delta']
-    window_len = hvsr_data['ppsds'][anyKey]['ppsd_length'] #Window length in seconds
+    delta = hvsr_data['psds'][anyKey]['delta']
+    window_len = hvsr_data['psds'][anyKey]['ppsd_length'] #Window length in seconds
     window_num = np.array(hvsr_data['psd_raw'][anyKey]).shape[0]
 
     for _i in range(len(_peak)):
