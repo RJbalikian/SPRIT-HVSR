@@ -237,11 +237,8 @@ el.replaceWith(d);
     instrument_grid = widgets.GridspecLayout(5, 10)
     # Date Picker labelled &#34;Acquisition Date&#34;
     acquisition_date_picker = widgets.DatePicker(description=&#39;Acq. Date:&#39;,
-                                            placeholder=datetime.datetime.today().date(),
-                                            value=datetime.datetime.today().date())
-    #acquisition_date_picker = widgets.NaiveDatetimePicker(description=&#39;Start time and Date&#39;,
-    #                                                      placeholder=datetime.datetime.now(),
-    #                                                      value=datetime.datetime.now())
+                                            placeholder=sprit_hvsr.NOWTIME.date(),
+                                            value=sprit_hvsr.NOWTIME.date())
 
     # Label that shows the Date currently selected in the Date Picker
     acquisition_doy = widgets.IntText(description=&#39;Day of Year&#39;,
@@ -275,13 +272,13 @@ el.replaceWith(d);
     # Time selector (hour and minute) labelled &#34;End Time&#34;. Same as Start Time otherwise.
     try:
         end_time_picker = widgets.TimePicker(description=&#39;End Time:&#39;,
-                                        placeholder=datetime.time(23,59),
-                                        value=datetime.time(23,59),)
+                                        placeholder=datetime.time(23, 59),
+                                        value=datetime.time(23, 59),)
                                         #layout=widgets.Layout(width=&#39;auto&#39;))
     except Exception as e:
         end_time_picker = widgets.Text(description=&#39;End Time:&#39;,
-                                        placeholder=&#39;23:59:59.999999&#39;,
-                                        value=&#39;23:59:59.999999&#39;,)
+                                        placeholder=&#39;23:59&#39;,
+                                        value=&#39;23:59&#39;,)
                                         #layout=widgets.Layout(width=&#39;auto&#39;))
 
     tzlist = list(available_timezones())
@@ -1258,26 +1255,27 @@ el.replaceWith(d);
         log_textArea.value += f&#34;\n\nREADING DATA [{datetime.datetime.now()}]&#34;
 
         ip_kwargs = get_input_params()
-        hvsr_data = sprit_hvsr.input_params(**ip_kwargs, verbose=verbose_check.value)
         log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\ninput_params():\n&#39;{ip_kwargs}&#34;
-        if button.description==&#39;Read Data&#39;:
-            progress_bar.value=0.333
+        hvsr_data = sprit_hvsr.input_params(**ip_kwargs, verbose=verbose_check.value)
+        if button.description == &#39;Read Data&#39;:
+            progress_bar.value = 0.333
         else:
-            progress_bar.value=0.1
+            progress_bar.value = 0.1
         fd_kwargs = get_fetch_data_params()
+        log_textArea.value += f&#34;\n\n{datetime.datetime.now()}\fetch_data():\n&#39;{fd_kwargs}&#34;
+        log_textArea.value += &#39;\n&#39;.join([str((k, v)) for k, v in hvsr_data.items()])
         hvsr_data = sprit_hvsr.fetch_data(hvsr_data, **fd_kwargs, verbose=verbose_check.value)
-        log_textArea.value += &#39;\n\n&#39;+str(datetime.datetime.now())+&#39;\nfetch_data():\n\t&#39;+str(fd_kwargs)
-        if button.description==&#39;Read Data&#39;:
-            progress_bar.value=0.666
+        if button.description == &#39;Read Data&#39;:
+            progress_bar.value = 0.666
         else:
-            progress_bar.value=0.2
+            progress_bar.value = 0.2
         
-        use_hv_curve_outliers_check.value=False
-        use_hv_curve_outliers_check.disabled=True
+        use_hv_curve_outliers_check.value = False
+        use_hv_curve_outliers_check.disabled = True
 
         update_preview_fig(hvsr_data, preview_fig)
 
-        if button.description==&#39;Read Data&#39;:
+        if button.description == &#39;Read Data&#39;:
             sprit_tabs.selected_index = 1
             progress_bar.value=0
         return hvsr_data
