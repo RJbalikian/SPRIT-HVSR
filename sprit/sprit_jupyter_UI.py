@@ -239,11 +239,8 @@ def create_jupyter_ui():
     instrument_grid = widgets.GridspecLayout(5, 10)
     # Date Picker labelled "Acquisition Date"
     acquisition_date_picker = widgets.DatePicker(description='Acq. Date:',
-                                            placeholder=datetime.datetime.today().date(),
-                                            value=datetime.datetime.today().date())
-    #acquisition_date_picker = widgets.NaiveDatetimePicker(description='Start time and Date',
-    #                                                      placeholder=datetime.datetime.now(),
-    #                                                      value=datetime.datetime.now())
+                                            placeholder=sprit_hvsr.NOWTIME.date(),
+                                            value=sprit_hvsr.NOWTIME.date())
 
     # Label that shows the Date currently selected in the Date Picker
     acquisition_doy = widgets.IntText(description='Day of Year',
@@ -277,13 +274,13 @@ def create_jupyter_ui():
     # Time selector (hour and minute) labelled "End Time". Same as Start Time otherwise.
     try:
         end_time_picker = widgets.TimePicker(description='End Time:',
-                                        placeholder=datetime.time(23,59),
-                                        value=datetime.time(23,59),)
+                                        placeholder=datetime.time(23, 59),
+                                        value=datetime.time(23, 59),)
                                         #layout=widgets.Layout(width='auto'))
     except Exception as e:
         end_time_picker = widgets.Text(description='End Time:',
-                                        placeholder='23:59:59.999999',
-                                        value='23:59:59.999999',)
+                                        placeholder='23:59',
+                                        value='23:59',)
                                         #layout=widgets.Layout(width='auto'))
 
     tzlist = list(available_timezones())
@@ -1260,26 +1257,27 @@ def create_jupyter_ui():
         log_textArea.value += f"\n\nREADING DATA [{datetime.datetime.now()}]"
 
         ip_kwargs = get_input_params()
-        hvsr_data = sprit_hvsr.input_params(**ip_kwargs, verbose=verbose_check.value)
         log_textArea.value += f"\n\n{datetime.datetime.now()}\ninput_params():\n'{ip_kwargs}"
-        if button.description=='Read Data':
-            progress_bar.value=0.333
+        hvsr_data = sprit_hvsr.input_params(**ip_kwargs, verbose=verbose_check.value)
+        if button.description == 'Read Data':
+            progress_bar.value = 0.333
         else:
-            progress_bar.value=0.1
+            progress_bar.value = 0.1
         fd_kwargs = get_fetch_data_params()
+        log_textArea.value += f"\n\n{datetime.datetime.now()}\fetch_data():\n'{fd_kwargs}"
+        log_textArea.value += '\n'.join([str((k, v)) for k, v in hvsr_data.items()])
         hvsr_data = sprit_hvsr.fetch_data(hvsr_data, **fd_kwargs, verbose=verbose_check.value)
-        log_textArea.value += '\n\n'+str(datetime.datetime.now())+'\nfetch_data():\n\t'+str(fd_kwargs)
-        if button.description=='Read Data':
-            progress_bar.value=0.666
+        if button.description == 'Read Data':
+            progress_bar.value = 0.666
         else:
-            progress_bar.value=0.2
+            progress_bar.value = 0.2
         
-        use_hv_curve_outliers_check.value=False
-        use_hv_curve_outliers_check.disabled=True
+        use_hv_curve_outliers_check.value = False
+        use_hv_curve_outliers_check.disabled = True
 
         update_preview_fig(hvsr_data, preview_fig)
 
-        if button.description=='Read Data':
+        if button.description == 'Read Data':
             sprit_tabs.selected_index = 1
             progress_bar.value=0
         return hvsr_data
