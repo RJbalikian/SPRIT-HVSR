@@ -226,6 +226,7 @@ def _format_time(inputDT, tzone='UTC'):
     if tzone is None:
         tzone = 'UTC'
 
+    outputTimeObj = inputDT
     # Parse whether inputDT has date or not
     if isinstance(inputDT, str):
         # tzone = 'America/Chicago'
@@ -341,10 +342,12 @@ def _format_time(inputDT, tzone='UTC'):
             minute = int(timeStrList[1])
             sec = int(timeStrList[2])
 
-        outputTimeObj = datetime.datetime(year=int(year),month=int(month), day=int(day),
+        outputTimeObj = datetime.datetime(year=int(year), month=int(month), day=int(day),
                                 hour=int(hour), minute=int(minute), second=int(sec), microsecond=int(microS))
     elif isinstance(inputDT, (datetime.datetime, datetime.time)):
         outputTimeObj = inputDT
+    elif isinstance(inputDT, datetime.date):
+        outputTimeObj = datetime.datetime(inputDT.year, inputDT.month, inputDT.day)
     elif isinstance(inputDT, UTCDateTime):
         outputTimeObj = inputDT.datetime
 
