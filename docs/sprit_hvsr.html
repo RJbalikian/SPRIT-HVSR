@@ -3243,7 +3243,7 @@ If not specified, does not write file</dd>
                 if pathlib.Path(hvsr_results[&#39;input_params&#39;][&#39;input_data&#39;]) in sampleFileKeyMap.values():
                     csvExportPath = pathlib.Path(os.getcwd())
                 else:
-                    csvExportPath = pathlib.Path(hvsr_results[&#39;input_params&#39;][&#39;input_data&#39;])
+                    csvExportPath = pathlib.Path(hvsr_results[&#39;input_params&#39;][&#39;input_data&#39;]).parent
             elif pathlib.Path(report_export_path).is_dir():
                 csvExportPath = report_export_path
             elif pathlib.Path(report_export_path).is_file():
