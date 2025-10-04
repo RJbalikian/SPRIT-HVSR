@@ -1184,7 +1184,7 @@ but the stream can first be trimmed using starttime, endtime, and tzone.</p>
     if export_plots is False:
         for pk in PLOT_KEYS:
             if hasattr(hvData, pk):
-                del hvData[pk]
+                delattr(hvData, pk)
 
     if isinstance(hvData, HVSRBatch):
         for sitename in hvData.keys():

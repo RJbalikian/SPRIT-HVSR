@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 3.2.0 documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 3.2.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=4f6ddb47"></script>
+      <script src="../../_static/documentation_options.js?v=eb155f5e"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -2886,7 +2886,7 @@
     <span class="k">if</span> <span class="n">export_plots</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">pk</span> <span class="ow">in</span> <span class="n">PLOT_KEYS</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvData</span><span class="p">,</span> <span class="n">pk</span><span class="p">):</span>
-                <span class="k">del</span> <span class="n">hvData</span><span class="p">[</span><span class="n">pk</span><span class="p">]</span>
+                <span class="nb">delattr</span><span class="p">(</span><span class="n">hvData</span><span class="p">,</span> <span class="n">pk</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvData</span><span class="p">,</span> <span class="n">HVSRBatch</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">sitename</span> <span class="ow">in</span> <span class="n">hvData</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
