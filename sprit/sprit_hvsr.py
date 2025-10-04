@@ -24,6 +24,7 @@ import sys
 import tempfile
 import traceback
 import warnings
+import webbrowser
 import xml.etree.ElementTree as ET
 import zoneinfo
 
@@ -40,6 +41,7 @@ import plotly
 from pyproj import CRS, Transformer
 import scipy
 from scipy.spatial.distance import squareform, pdist
+from xhtml2pdf import pisa
 
 try:  # For distribution
     from sprit import sprit_utils
@@ -4541,7 +4543,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                 if pathlib.Path(hvsr_results['input_params']['input_data']) in sampleFileKeyMap.values():
                     csvExportPath = pathlib.Path(os.getcwd())
                 else:
-                    csvExportPath = pathlib.Path(hvsr_results['input_params']['input_data'])
+                    csvExportPath = pathlib.Path(hvsr_results['input_params']['input_data']).parent
             elif pathlib.Path(report_export_path).is_dir():
                 csvExportPath = report_export_path
             elif pathlib.Path(report_export_path).is_file():
@@ -10454,30 +10456,32 @@ def _display_html_report(html_report):
 
     autodelete = platform.system() != "Windows"
 
-    with tempfile.NamedTemporaryFile(mode="w", delete=autodelete, suffix=".html") as tmp_file:
-        tmp_file.write(html_report)
-        file_path = tmp_file.name
-        file_path = file_path.replace('\\'[0], '/')
-        rawfpath = file_path
-        print(rawfpath)
-        
-        if autodelete:
-            client = webbrowser
-            if not file_path.startswith("file:///"):
-                file_path = f"file:///{file_path}"
-            client.open_new(file_path)                
-            # Adding a short sleep so that the file does not get cleaned
-            # up immediately in case the browser takes a while to boot.
-            time.sleep(3)
+    vsCodeCheck = 'vscode' in webbrowser.get().name
+    if not vsCodeCheck:
+        with tempfile.NamedTemporaryFile(mode="w", delete=autodelete, suffix=".html") as tmp_file:
+            tmp_file.write(html_report)
+            file_path = tmp_file.name
+            file_path = file_path.replace('\\'[0], '/')
+            rawfpath = file_path
+            print(rawfpath)
+            
+            if autodelete:
+                client = webbrowser
+                if not file_path.startswith(r"file://-"[:-1]):
+                    file_path = f"file://{file_path}"
+                client.open_new(file_path)                
+                # Adding a short sleep so that the file does not get cleaned
+                # up immediately in case the browser takes a while to boot.
+                time.sleep(5)
 
-    if not autodelete:
-        client = webbrowser
-        if not file_path.startswith("file:///"):
-            file_path = f"file:///{file_path}"
-        client.open_new(file_path)
-        
-        time.sleep(3)
-        os.unlink(rawfpath)  # Cleaning up the file in case of Windows
+            if not autodelete:
+                client = webbrowser
+                if not file_path.startswith(r"file://"[:-1]):
+                    file_path = f"file://{file_path}"
+                client.open_new(file_path)
+                
+                time.sleep(3)
+                os.unlink(rawfpath)  # Cleaning up the file in case of Windows
 
 
 # Private function for html report generation
@@ -10631,7 +10635,6 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
     verbose : bool, optional
         Whether to print verbose description of what the function is doing
     """
-    from xhtml2pdf import pisa
 
     # Generate HTML Report if not already (this will be converted to pdf using xhtml2pdf)
     if not hasattr(hvsr_results, "HTML_Report"):
@@ -10644,13 +10647,27 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
 
     if pdf_report_filepath is None:
         if verbose:
-            print('\t pdf_report_filepath not specified, saving to temporary file.')
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
-            pdf_export_path = temp_file.name  # Get the name of the temporary file
+            print('\t pdf_report_filepath not specified, attempting to save to temporary file.')
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
+                pdf_export_path = temp_file.name  # Get the name of the temporary file
 
-        # Now, open the file again for writing
-        with open(pdf_export_path, 'wb') as temp_file:
-            pisa_status = pisa.CreatePDF(htmlReport, dest=temp_file)
+            # Now, open the file again for writing
+            with open(pdf_export_path, 'wb') as temp_file:
+                pisa_status = pisa.CreatePDF(htmlReport, dest=temp_file)
+        except Exception:
+            print("\t Attempting BytesIO")
+
+            output = io.BytesIO()
+            pisa_status = 'All good'
+            pisa_status = pisa.CreatePDF(htmlReport,
+                            dest=output, # destination "file"
+                          )
+            
+            pdf_export_path = "PDF_Report attribute"
+            # You can get the PDF file bytes with `.getbuffer()`
+            print("\tPDF File created as bytes buffer of size", len(output.getbuffer()))
+            hvsr_results["PDF_Report"] = output.getbuffer()
 
     else:
         if pathlib.Path(pdf_report_filepath).is_dir():
@@ -10675,59 +10692,56 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
             with open(pdf_export_path, 'wb') as temp_file:
                 pisa_status = pisa.CreatePDF(htmlReport, dest=temp_file)
 
-        
     if verbose:
-        if not str(pisa_status.err) == '0':
+        if hasattr(pisa_status, 'err') and not str(pisa_status.err) == '0':
             print('\t', pisa_status.err)
 
     if show_html_report:
         _display_html_report(hvsr_results['HTML_Report'])
-        
+    
     if show_pdf_report:
         if verbose:
             print(f'\tAttempting to open pdf at {pdf_export_path}')
-        
+
         pdf_report_shown = False
-        if hasattr(os, 'startfile'):
+
+        if hasattr(os, 'startfile') and not pdf_report_shown:
             try:
+                print("\t  Attempting os.startfile")
                 os.startfile(pdf_export_path)
                 pdf_report_shown = True
             except Exception as e:
-                print(f"\tError opening pdf report: {e}")
+                print(f"\t\tError opening pdf report: {e}")
+        
+        #if not pdf_report_shown:
+        #    try:
+        #        print("\t  Attempting os.system")
+        #        os.system(pdf_export_path)
+        #        pdf_report_shown = True                
+        #    except Exception as e:
+        #        print(f"\t\tError opening pdf report: {e}")
+
+        try: # This freezes or throws errors in cloud environments sometimes, so try/except
+            webBrowserName = webbrowser.get().name
+            codespaces_check = 'vscode' in webBrowserName
+            print('\t  Attempting to open PDF Report via web browser')
+            if not pdf_report_shown and not codespaces_check:
+                webbrowser.open(pdf_export_path)
+                pdf_report_shown = True
+            else:
+                print('\t\tWeb browser opening not supported')
+        except Exception as e:
+            print(f"\tOpening pdf via webbrowser did not work. Error opening pdf report: {e}")
         
         if not pdf_report_shown:
-            try:
-                import webbrowser
-                webbrowser.open_new(pdf_export_path)
-                pdf_report_shown = True
-            except Exception as e:
-                print(f"\tOpening pdf via webbrowser did not work, Error opening pdf report: {e}")
-
-        if not pdf_report_shown:
-            try:
-                print(f"\tAttempting os.open()")
-                os.open(pdf_export_path, flags=os.O_RDWR)
-                pdf_report_shown = True            
-            except Exception as e:
-                print(f"\tError opening pdf report: {e}")
-
-        if not pdf_report_shown:
-            try:
-                print("\tAttempting os.system")
-                os.system(pdf_export_path)
-                pdf_report_shown = True                
-            except Exception as e:
-                print(f"\tError opening pdf report: {e}")
-                
-        if not pdf_report_shown:
-            print(f"\tSpRIT cannot open your pdf report, but it has been saved to {pdf_export_path}")
+            print(f"\tSpRIT cannot open your pdf report in this environment, but it has been saved to {pdf_export_path}")
             print('\tAttempting to open HTML version of report')
         
             try:
-                print('\tOpening via pdf did not work, opening HTML')
                 _display_html_report(hvsr_results['HTML_Report'])
             except Exception as e:
                 print('\tHTML Report could not be displayed, but has been saved to the .HTML_Report attribute')
+
 
     if return_pdf_path:
         return pdf_export_path
