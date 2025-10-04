@@ -2724,7 +2724,7 @@ def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr', export_type='gzip'
     if export_plots is False:
         for pk in PLOT_KEYS:
             if hasattr(hvData, pk):
-                del hvData[pk]
+                delattr(hvData, pk)
 
     if isinstance(hvData, HVSRBatch):
         for sitename in hvData.keys():
