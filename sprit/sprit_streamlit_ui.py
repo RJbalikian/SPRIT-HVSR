@@ -291,6 +291,7 @@ def main():
                 print_param(PARAM2PRINT)
 
             # Case matching
+            st.session_state.outlier_method = run_kwargs['outlier_method'] = st.session_state.outlier_method.title()
             st.session_state.data_export_format = run_kwargs['data_export_format'] = st.session_state.data_export_format.upper()
             st.session_state.detrend = run_kwargs['detrend'] = st.session_state.detrend.title()
             st.session_state.azimuth_type = run_kwargs['azimuth_type'] = st.session_state.azimuth_type.title()
@@ -306,7 +307,7 @@ def main():
             else:
                 st.session_state.remove_method = run_kwargs['remove_method'] = st.session_state.remove_method.title()
 
-            # Other updates
+            # Other updates for streamlit specifically
             st.session_state.azimuth_unit = run_kwargs['azimuth_unit'] = '°'
             st.session_state.plot_engine = run_kwargs['plot_engine'] = "Matplotlib"
             
@@ -408,15 +409,23 @@ def main():
             if key in st.session_state.run_kws:
                 if value != st.session_state.default_params[key]:
                     if str(value) != str(st.session_state.default_params[key]):
-                        srun[key] = value
+                        if isinstance(value, (tuple, list)):
+                            if tuple(value) != tuple(st.session_state.default_params[key]):
+                                srun[key] = value
+                                print("ADDED", key, value)
+                        else:
+                            srun[key] = value                           
             
             if key == 'plot_engine':
                 srun[key] = value
-                
+
         # Get plots all right
         #srun['plot_engine'] = 'matplotlib'
         srun['plot_input_stream'] = True
-        srun['show_outlier_plot'] = False
+        for rocK in inspect.signature(sprit_hvsr.remove_outlier_curves).parameters.keys():
+            if rocK in srun and rocK != 'plot_engine':
+                srun['show_outlier_plot'] = False
+                break        
         srun['show_plot'] = False
         srun['verbose'] = False #True
 
@@ -451,7 +460,8 @@ def main():
                                  'elev_unit':'m',
                                  'plot_type':'HVSR p ann C+ p ann Spec p',
                                  'suppress_report_outputs':True
-                                    }
+
+                                  }
             
             nonDefaultParams = False
 
@@ -503,6 +513,7 @@ def main():
                 spinnerText = spinnerText.replace("\n\t", tableHeader+tableHeader2, 1)
 
                 spinnerDF = pd.DataFrame(spinnerDFList, columns=['Parameter', "Value Selected", "Selected value type", 'Default Value', 'Default value type'])
+            print("SRUN", srun)
             with st.spinner(spinnerText, show_time=True):
                 st.session_state.hvsr_data = sprit_hvsr.run(input_data=st.session_state.input_data, **srun)
         
@@ -516,6 +527,7 @@ def main():
         st.toast('Displaying results (download available)')
         display_results()
         st.session_state.prev_datapath = st.session_state.input_data
+
 
     def on_read_data():
         if 'read_button' not in st.session_state.keys() or not st.session_state.read_button:
@@ -561,6 +573,7 @@ def main():
         else:
             st.session_state.plot_engine = "Matplotlib"
 
+
     def display_read_data(do_setup_tabs=False):
         
         if do_setup_tabs:
@@ -573,13 +586,13 @@ def main():
             st.session_state.input_fig = make_input_fig_pyplot()
             
             if not hasattr(st.session_state, 'data_plot'):
-                st.session_state.data_chart_event = st.session_state.inputTab.pyplot(st.session_state.input_fig, use_container_width=True)
+                st.session_state.data_chart_event = st.session_state.inputTab.pyplot(st.session_state.input_fig, width='stretch')
                 st.session_state.data_plot = None
         else:
             if not hasattr(st.session_state, 'data_plot'):
                 st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
                                                 on_select=update_data, key='data_plot', 
-                                                selection_mode='box', use_container_width=True, theme='streamlit')
+                                                selection_mode='box', width='stretch', theme='streamlit')
             else:
                 st.session_state.data_chart_event = st.session_state.data_plot
 
@@ -624,7 +637,7 @@ def main():
                 st.session_state.input_fig = make_input_fig_plotly()
                 st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
                                                     on_select=update_data, key='data_plot',
-                                                    selection_mode='box', use_container_width=True, theme='streamlit')
+                                                    selection_mode='box', width='stretch', theme='streamlit')
 
                 st.session_state.inputTab.write("Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.")
                 st.session_state.input_selection_mode = st.session_state.inputTab.pills('Window Selection Mode', options=['Add', "Delete"], key='input_selection_toggle',
@@ -650,7 +663,7 @@ def main():
                                                 on_change=display_buttons_and_results)
 
             if st.session_state.interactive_display:
-                st.session_state.plotReportTab.plotly_chart(st.session_state.hvsr_data['Plot_Report'], use_container_width=True)
+                st.session_state.plotReportTab.plotly_chart(st.session_state.hvsr_data['Plot_Report'], width='stretch')
             else:
                 st.session_state.plotReportTab.html(st.session_state.hvsr_data["HTML_Report"])
 
@@ -661,7 +674,7 @@ def main():
             # Input plot
             st.session_state.input_fig = make_input_fig_pyplot()
             st.session_state.data_chart_event = st.session_state.inputTab.pyplot(st.session_state.input_fig,
-                                                                                 use_container_width=True)
+                                                                                 width='stretch')
 
             # Info tab
             write_to_info_tab(st.session_state.infoTab)
@@ -670,12 +683,13 @@ def main():
             outlier_plot_in_tab()
 
             if st.session_state.interactive_display:
-                st.session_state.plotReportTab.pyplot(st.session_state.hvsr_data['Plot_Report'], use_container_width=True)
+                st.session_state.plotReportTab.pyplot(st.session_state.hvsr_data['Plot_Report'], width='stretch')
             else:
                 st.session_state.plotReportTab.html(st.session_state.hvsr_data["HTML_Report"])
-                #st.session_state.plotReportTab.pyplot(st.session_state.hvsr_data['Plot_Report'], use_container_width=True)
+                #st.session_state.plotReportTab.pyplot(st.session_state.hvsr_data['Plot_Report'], width='stretch')
             st.session_state.csvReportTab.dataframe(data=st.session_state.hvsr_data['Table_Report'])
             st.session_state.strReportTab.code(st.session_state.hvsr_data['Print_Report'], language=None)
+
 
     @st.fragment
     def display_download_buttons():
@@ -910,6 +924,7 @@ def main():
         st.session_state.hvsr_data.Input_Plot = inputFig
 
         return inputFig
+
 
     def make_input_fig_plotly():
         no_subplots = 5
@@ -1352,7 +1367,7 @@ def main():
             outlierFig = sprit_plot.plot_outlier_curves(st.session_state.hvsr_data, 
                                                         plot_engine='Matplotlib')
             st.session_state.outlierTab.pyplot(outlierFig, 
-                                               use_container_width=True)
+                                               width='stretch')
             st.session_state.outlier_plot = None
         else:
             hvDF = st.session_state.hvsr_data['hvsr_windows_df']
@@ -1415,7 +1430,7 @@ def main():
             st.session_state.outlierTab.plotly_chart(outlierFig, 
                                     on_select=update_outlier, 
                                     key='outlier_plot', 
-                                    use_container_width=True, 
+                                    width='stretch', 
                                     theme='streamlit') 
 
 
@@ -1461,11 +1476,11 @@ def main():
                 runLabel = 'Demo Run'
                 readLabel = 'Demo Read'
 
-            resetCol.button('Reset', disabled=False, use_container_width=True,
+            resetCol.button('Reset', disabled=False, width='stretch',
                             on_click=on_reset, key='reset_button')
-            readCol.button(readLabel, disabled=False, use_container_width=True,
+            readCol.button(readLabel, disabled=False, width='stretch',
                         on_click=on_read_data, key='read_button')
-            runCol.button(runLabel, type='primary',  use_container_width=True,
+            runCol.button(runLabel, type='primary',  width='stretch',
                         on_click=on_run_data, key='run_button')
         
 
@@ -1534,7 +1549,6 @@ def main():
 
             if VERBOSE:
                 print_param(PARAM2PRINT)
-
 
         st.header('Additional Settings', divider='gray')
         with st.expander('Expand to modify additional settings'):
@@ -1626,7 +1640,7 @@ def main():
 
                 rawNoiseCol.toggle("Raw data", disabled=noiseRemDisabled, help='Whether to use the raw input data to remove noise.', key='remove_raw_noise')
 
-                remNoisePopover = st.popover('Remove Noise options', disabled=noiseRemDisabled,  use_container_width=True)
+                remNoisePopover = st.popover('Remove Noise options', disabled=noiseRemDisabled,  width='stretch')
                 with remNoisePopover:
                     # Auto noise
                     st.toggle("Auto Noise Removal", value=False, disabled=noiseRemDisabled, 
@@ -1721,21 +1735,27 @@ def main():
 
                     st.number_input('Cooldown Time (seconds)', disabled=cooldownDisabled, step=1, key='cooldown_time')
 
+                def update_ROC():
+                    ocr = st.session_state.outlier_curves_removal
+                    if hasattr(st.session_state, 'outlier_method'):
+                        if not ocr:
+                            st.session_state.outlier_method=None
 
-                st.toggle("Remove Outlier Curves", value=False,
+                st.toggle("Remove Outlier Curves", value=False, on_change=update_ROC,
                             help='Whether to remove outlier curves from input data.', key='outlier_curves_removal')
                 outlierCurveDisabled = not st.session_state.outlier_curves_removal
 
                 # Outlier curves
-                remCurvePopover = st.popover('Remove Outlier Curve Options', disabled=outlierCurveDisabled,  use_container_width=True)
+                remCurvePopover = st.popover('Remove Outlier Curve Options', disabled=outlierCurveDisabled, width='stretch')
                 with remCurvePopover:
-                    st.number_input("Outlier Threshold", disabled=outlierCurveDisabled, value=98, key='rmse_thresh')
+                    st.selectbox("Outlier Detection Method", options=[None, 'Prototype', 'DBSCAN'], disabled=outlierCurveDisabled, index=0, key='outlier_method')
+                    st.number_input("Outlier Threshold", disabled=outlierCurveDisabled, value=98, key='outlier_threshold')
                     st.radio('Threshold type', horizontal=True, disabled=outlierCurveDisabled, options=['Percentile', 'Value'], key='threshRadio')
                     st.session_state.use_percentile = st.session_state.threshRadio=='Percentile'
-                    st.radio('Threshold curve', horizontal=True, disabled=outlierCurveDisabled, options=['HV Curve', 'Component Curves'], key='curveRadio')
+                    st.radio('Threshold curve', horizontal=True, disabled=outlierCurveDisabled, options=['HV Curve', 'Component Curves'], index=1, key='curveRadio')
                     st.session_state.use_hv_curves = (st.session_state.curveRadio=='HV Curve')
-
-
+                    min_ptsDisabled = (st.session_state.outlier_method !='DBSCAN')
+                    st.number_input("DBSCAN Minimum Neighborhood Size", disabled=min_ptsDisabled, value=5, key='min_pts')
 
                 #noise_rem_method_list = ['None', 'Auto', 'Manual', 'Stalta', 'Saturation Threshold', 'Noise Threshold', 'Warmup', 'Cooldown', 'Buffer']
                 #st.multiselect("Noise Removal Method",
