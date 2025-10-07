@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 3.2.1 documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 3.2.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=eb155f5e"></script>
+      <script src="../../_static/documentation_options.js?v=dcedd534"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -1692,6 +1692,8 @@
     <span class="n">data_curvesRemoved</span> <span class="o">=</span> <span class="n">psd_data</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">remove_outlier_curve_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">remove_outlier_curves</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">remove_outlier_curve_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">==</span><span class="mi">1</span> <span class="ow">and</span> <span class="s1">&#39;plot_engine&#39;</span> <span class="ow">in</span> <span class="n">remove_outlier_curve_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">remove_outlier_curve_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="s1">&#39;use_hv_curves&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">remove_outlier_curve_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">use_hv_curves</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">else</span><span class="p">:</span>
@@ -6829,8 +6831,22 @@
         <span class="n">colNames</span> <span class="o">=</span> <span class="n">compNames</span>
         <span class="n">col_prefix</span> <span class="o">=</span> <span class="s1">&#39;HV_Curves&#39;</span>
 
-    <span class="c1"># Remove outlier depending on method, prototype as default</span>
-    <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">outlier_method</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">dbscanList</span><span class="p">:</span>
+    <span class="c1"># Remove outlier depending on method, prototype as default if nothing else specified</span>
+    <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">outlier_method</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span> <span class="ow">or</span> <span class="n">outlier_method</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Skip all outlier removal</span>
+        <span class="k">if</span> <span class="s1">&#39;processing_parameters&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hvsr_out</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;remove_outlier_curves&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">exclude_params_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;hvsr_data&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">orig_args</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">exclude_params_list</span><span class="p">:</span>
+                <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;remove_outlier_curves&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;processing_status&#39;</span><span class="p">][</span><span class="s1">&#39;remove_outlier_curves_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">sprit_utils</span><span class="o">.</span><span class="n">_check_processing_status</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span> <span class="n">func_name</span><span class="o">=</span><span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="mi">3</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">hvsr_out</span>
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">outlier_method</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">dbscanList</span><span class="p">:</span>
         <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">__dbscan_outlier_detect</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">use_hv_curves</span><span class="o">=</span><span class="n">use_hv_curves</span><span class="p">,</span> 
                                            <span class="n">use_percentile</span><span class="o">=</span><span class="n">use_percentile</span><span class="p">,</span>
                                            <span class="n">neighborhood_size</span><span class="o">=</span><span class="n">outlier_threshold</span><span class="p">,</span>
@@ -6840,7 +6856,6 @@
                                            <span class="n">comp_names</span><span class="o">=</span><span class="n">compNames</span><span class="p">,</span>
                                            <span class="n">col_prefix</span><span class="o">=</span><span class="n">col_prefix</span><span class="p">,</span>
                                            <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
-        
     <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">outlier_method</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">prototypeList</span><span class="p">:</span>
         <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">__prototype_outlier_detect</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">use_hv_curves</span><span class="o">=</span><span class="n">use_hv_curves</span><span class="p">,</span> 
                                               <span class="n">use_percentile</span><span class="o">=</span><span class="n">use_percentile</span><span class="p">,</span>
@@ -10856,6 +10871,7 @@
         <span class="c1"># try Code to generate HTML report from template</span>
 
     <span class="n">htmlReport</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;HTML_Report&#39;</span><span class="p">]</span>
+    <span class="n">htmlReport</span> <span class="o">=</span> <span class="n">htmlReport</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;width=99%&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">pdf_report_filepath</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
