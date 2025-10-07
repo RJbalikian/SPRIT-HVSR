@@ -10945,8 +10945,22 @@ divided by the standard deviation calculated for the entire trace. This rolling 
         colNames = compNames
         col_prefix = &#39;HV_Curves&#39;
 
-    # Remove outlier depending on method, prototype as default
-    if str(outlier_method).lower() in dbscanList:
+    # Remove outlier depending on method, prototype as default if nothing else specified
+    if str(outlier_method).lower() == &#39;none&#39; or outlier_method is None:
+        # Skip all outlier removal
+        if &#39;processing_parameters&#39; not in hvsr_out.keys():
+            hvsr_out[&#39;processing_parameters&#39;] = {}
+        hvsr_out[&#39;processing_parameters&#39;][&#39;remove_outlier_curves&#39;] = {}
+        exclude_params_list = [&#39;hvsr_data&#39;]
+        for key, value in orig_args.items():
+            if key not in exclude_params_list:
+                hvsr_out[&#39;processing_parameters&#39;][&#39;remove_outlier_curves&#39;][key] = value
+
+        hvsr_out[&#39;processing_status&#39;][&#39;remove_outlier_curves_status&#39;] = None
+        
+        hvsr_out = sprit_utils._check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+        return hvsr_out
+    elif str(outlier_method).lower() in dbscanList:
         hvsr_out = __dbscan_outlier_detect(hvsr_data=hvsr_data, use_hv_curves=use_hv_curves, 
                                            use_percentile=use_percentile,
                                            neighborhood_size=outlier_threshold,
@@ -10956,7 +10970,6 @@ divided by the standard deviation calculated for the entire trace. This rolling 
                                            comp_names=compNames,
                                            col_prefix=col_prefix,
                                            verbose=verbose)
-        
     elif str(outlier_method).lower() in prototypeList:
         hvsr_out = __prototype_outlier_detect(hvsr_data, use_hv_curves=use_hv_curves, 
                                               use_percentile=use_percentile,
@@ -11405,6 +11418,8 @@ This is minimum number of points a point needs in its neighborhood to not be con
     data_curvesRemoved = psd_data
     try:
         remove_outlier_curve_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
+        if len(remove_outlier_curve_kwargs.keys())==1 and &#39;plot_engine&#39; in remove_outlier_curve_kwargs.keys():
+            remove_outlier_curve_kwargs = {}
         if &#39;use_hv_curves&#39; not in remove_outlier_curve_kwargs.keys():
             use_hv_curves = False
         else:
