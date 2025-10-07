@@ -1547,6 +1547,8 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     data_curvesRemoved = psd_data
     try:
         remove_outlier_curve_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
+        if len(remove_outlier_curve_kwargs.keys())==1 and 'plot_engine' in remove_outlier_curve_kwargs.keys():
+            remove_outlier_curve_kwargs = {}
         if 'use_hv_curves' not in remove_outlier_curve_kwargs.keys():
             use_hv_curves = False
         else:
@@ -6626,8 +6628,22 @@ def remove_outlier_curves(hvsr_data, outlier_method='prototype',
         colNames = compNames
         col_prefix = 'HV_Curves'
 
-    # Remove outlier depending on method, prototype as default
-    if str(outlier_method).lower() in dbscanList:
+    # Remove outlier depending on method, prototype as default if nothing else specified
+    if str(outlier_method).lower() == 'none' or outlier_method is None:
+        # Skip all outlier removal
+        if 'processing_parameters' not in hvsr_out.keys():
+            hvsr_out['processing_parameters'] = {}
+        hvsr_out['processing_parameters']['remove_outlier_curves'] = {}
+        exclude_params_list = ['hvsr_data']
+        for key, value in orig_args.items():
+            if key not in exclude_params_list:
+                hvsr_out['processing_parameters']['remove_outlier_curves'][key] = value
+
+        hvsr_out['processing_status']['remove_outlier_curves_status'] = None
+        
+        hvsr_out = sprit_utils._check_processing_status(hvsr_out, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+        return hvsr_out
+    elif str(outlier_method).lower() in dbscanList:
         hvsr_out = __dbscan_outlier_detect(hvsr_data=hvsr_data, use_hv_curves=use_hv_curves, 
                                            use_percentile=use_percentile,
                                            neighborhood_size=outlier_threshold,
@@ -6637,7 +6653,6 @@ def remove_outlier_curves(hvsr_data, outlier_method='prototype',
                                            comp_names=compNames,
                                            col_prefix=col_prefix,
                                            verbose=verbose)
-        
     elif str(outlier_method).lower() in prototypeList:
         hvsr_out = __prototype_outlier_detect(hvsr_data, use_hv_curves=use_hv_curves, 
                                               use_percentile=use_percentile,
@@ -10644,6 +10659,7 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
         # try Code to generate HTML report from template
 
     htmlReport = hvsr_results['HTML_Report']
+    htmlReport = htmlReport.replace('width=99%', '')
 
     if pdf_report_filepath is None:
         if verbose:
