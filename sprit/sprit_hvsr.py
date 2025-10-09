@@ -851,7 +851,7 @@ class HVSRData:
             return json.dumps(self, default=iterative_json_parser,
                               sort_keys=True, indent=indent, **kwargs)
 
-    def export(self, hvsr_export_path=None, ext='hvsr'):
+    def export(self, **kwargs):
         """Method to export HVSRData objects to .hvsr pickle files.
 
         Parameters
@@ -868,7 +868,9 @@ class HVSRData:
         export_hvsr
         
         """
-        export_hvsr(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
+        if 'hvsr_data' in kwargs:
+            del kwargs['hvsr_data']
+        export_hvsr(hvsr_data=self, **kwargs)
 
     def copy(self, copy_type='shallow'):
         """Make a copy of the HVSRData object. Uses python copy module.
@@ -8951,15 +8953,20 @@ def _select_windows(input):
 
     if isinstance(input, (HVSRData, dict)):
         if 'hvsr_curve' in input.keys():
-            fig = plot_hvsr(hvsr_data=input, plot_type='spec', returnfig=True, cmap='turbo')
-        else:
-            hvsr_data = input#.copy()
-            input_stream = hvsr_data['stream']
+            fig = plot_hvsr(hvsr_data=input, plot_type='spec', return_fig=True, cmap='turbo')
+        hvsr_data = input
+        input_stream = hvsr_data['stream']
+        #else:
+        #    hvsr_data = input#.copy()
+        #    input_stream = hvsr_data['stream']
     
     if isinstance(input_stream, obspy.core.stream.Stream):
-        fig, ax = sprit_plot._plot_input_stream_mpl(input_stream, component=['Z'])
+        fig = sprit_plot._plot_input_stream_mpl(input_stream, component=['Z'], return_fig=True)
+        ax = fig.get_axes()
+        if len(ax)==1:
+            ax = ax[0]
     elif isinstance(input_stream, obspy.core.trace.Trace):
-        fig, ax = sprit_plot._plot_input_stream_mpl(input_stream)
+        fig = sprit_plot._plot_input_stream_mpl(input_stream, return_fig=True)
 
     global lineArtist
     global winArtist

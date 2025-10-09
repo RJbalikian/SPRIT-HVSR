@@ -575,7 +575,6 @@ def main():
 
 
     def display_read_data(do_setup_tabs=False):
-        
         if do_setup_tabs:
             st.session_state.mainContainer = st.container()
             st.session_state.inputTab, st.session_state.infoTab = st.session_state.mainContainer.tabs(['Raw Seismic Data', 'Info'])
@@ -589,17 +588,14 @@ def main():
                 st.session_state.data_chart_event = st.session_state.inputTab.pyplot(st.session_state.input_fig, width='stretch')
                 st.session_state.data_plot = None
         else:
-            if not hasattr(st.session_state, 'data_plot'):
-                st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
+            st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
                                                 on_select=update_data, key='data_plot', 
                                                 selection_mode='box', width='stretch', theme='streamlit')
-            else:
-                st.session_state.data_chart_event = st.session_state.data_plot
 
             st.session_state.inputTab.write("Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.")
-            st.session_state.input_selection_mode = st.session_state.inputTab.pills('Window Selection Mode', options=['Add', "Delete"], key='input_selection_toggle',
-                                                        default='Add', on_change=update_selection_type, disabled=True,
-                                                        help='If in "Add" mode, windows for removal will be added at your selection. If "Delete" mode, these windows will be deleted. Currently only "Add" supported')
+            #st.session_state.input_selection_mode = st.session_state.inputTab.pills('Window Selection Mode', options=['Add', "Delete"], key='input_selection_toggle',
+            #                                            default='Add', on_change=update_selection_type, disabled=True,
+            #                                            help='If in "Add" mode, windows for removal will be added at your selection. If "Delete" mode, these windows will be deleted. Currently only "Add" supported')
         
 
         # Print information about the data to Info tab
@@ -640,9 +636,9 @@ def main():
                                                     selection_mode='box', width='stretch', theme='streamlit')
 
                 st.session_state.inputTab.write("Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.")
-                st.session_state.input_selection_mode = st.session_state.inputTab.pills('Window Selection Mode', options=['Add', "Delete"], key='input_selection_toggle',
-                                                        default='Add', on_change=update_selection_type, disabled=True, 
-                                                        help='If in "Add" mode, windows for removal will be added at your selection. If "Delete" mode, these windows will be deleted. Currently only "Add" supported')
+                #st.session_state.input_selection_mode = st.session_state.inputTab.pills('Window Selection Mode', options=['Add', "Delete"], key='input_selection_toggle',
+                #                                        default='Add', on_change=update_selection_type, disabled=True, 
+                #                                        help='If in "Add" mode, windows for removal will be added at your selection. If "Delete" mode, these windows will be deleted. Currently only "Add" supported')
             
             else:
                 st.session_state.inputTab.toggle(label='Display input data stream and windows used',
@@ -1234,9 +1230,9 @@ def main():
             st.session_state.hvsr_data['x_windows_out'].append(currUTCWin)
 
             # Trim data with gap in the middle where we remvoed data
-            if st.session_state.input_selection_mode == 'Add':
-                stream1.trim(starttime=stream1[0].stats.starttime, endtime=currUTCWin[0])
-                stream2.trim(starttime=currUTCWin[1], endtime=stream2[0].stats.endtime)
+            #if st.session_state.input_selection_mode == 'Add':
+            stream1.trim(starttime=stream1[0].stats.starttime, endtime=currUTCWin[0])
+            stream2.trim(starttime=currUTCWin[1], endtime=stream2[0].stats.endtime)
 
             # Merge data back
             newStream = (stream1 + stream2).merge()
@@ -1298,7 +1294,8 @@ def main():
 
 
     def update_selection_type():
-        st.session_state.input_selection_mode = st.session_state.input_selection_toggle
+        #st.session_state.input_selection_mode = st.session_state.input_selection_toggle
+        pass
 
 
     def write_to_info_tab(infoTab):
@@ -1488,6 +1485,10 @@ def main():
             print('Done setting up bottom container, session state length: ', len(st.session_state.keys()))
             print_param(PARAM2PRINT)
 
+        st.toggle(label='Display interactive charts (slower)', value=False, key='interactive_display',
+                    on_change=do_interactive_display,
+                    help="Whether to display interactive charts for the data, outliers, and results charts. Interactive charts take longer to display, but allow graphical editing of the data.")
+
         st.header('Settings')
         mainSettings = st.container()
 
@@ -1542,10 +1543,6 @@ def main():
             st.session_state.hvsr_band = st.select_slider('HVSR Band', options=bandVals, #key='hvsr_band',
                             value=st.session_state.hvsr_band
                             )
-
-            st.toggle(label='Display interactive charts (slower)', value=False, key='interactive_display',
-                      on_change=do_interactive_display,
-                      help="Whether to display interactive charts for the data, outliers, and results charts. Interactive charts take longer to display, but allow graphical editing of the data.")
 
             if VERBOSE:
                 print_param(PARAM2PRINT)

@@ -37,9 +37,6 @@ except:
     import sprit.sprit_calibration as sprit_calibration
 
 
-HVSR_BAND = [0.1, 50 ]# sprit_hvsr.DEFAULT_BAND
-
-
 # Plot cross section
 def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=True, show_feet=False, primary_unit='m', 
                        show_curves=True, annotate_curves=False, curve_alignment='peak',
@@ -2024,7 +2021,7 @@ def _plot_simple_stream_obspy(stream, hv_data=None, fig=None, axes=None, decimat
             if hasattr(hv_data, 'hvsr_band'):
                 xmin = hv_data['hvsr_band'][0]
             else:
-                xmin = HVSR_BAND[0]
+                xmin = sprit_hvsr.DEFAULT_BAND[0]
         axes[comp].set_xlim([xmin, xmax])
 
     if hasattr(hv_data, 'site'):
@@ -2142,7 +2139,7 @@ def _plot_input_stream_plotly(hv_data=None, stream=None, input_fig=None,
         if hasattr(hvsr_data, 'hvsr_band'):
             hvsrBand = hvsr_data['hvsr_band']
         else:
-            hvsrBand = HVSR_BAND
+            hvsrBand = sprit_hvsr.DEFAULT_BAND
 
         minz = np.percentile(psdArr, 1)
         maxz = np.percentile(psdArr, 99)
@@ -2367,7 +2364,7 @@ def _plot_input_stream_mpl(stream, hv_data=None, component='Z', stack_type='line
         cmap = 'turbo'
 
     if hv_data is None:
-        hvsr_band = DEFAULT_BAND
+        hvsr_band = sprit_hvsr.DEFAULT_BAND
     else:
         hvsr_band = hv_data['hvsr_band']
     ymin = hvsr_band[0]
