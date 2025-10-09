@@ -4171,9 +4171,11 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
     if obspy_ppsds:
         hvsr_data, dfList, colList, common_times = _get_obspy_ppsds(hvsr_data, **obspy_ppsd_kwargs)
     else:
-        psdDict, common_times = __single_psd_from_raw_data(hvsr_data, window_length=window_length, window_length_method=window_length_method, window_type=window_type,
+        psdDict, times_bool = __single_psd_from_raw_data(hvsr_data, window_length=window_length, window_length_method=window_length_method, window_type=window_type,
                                                            num_freq_bins=num_freq_bins,
                                                            overlap=overlap_pct, remove_response=remove_response, do_azimuths=azimuthal_psds, show_psd_plot=False)
+        common_times = [ct[0] for ct in times_bool]
+        use_times = [ut[1] for ut in times_bool]
 
         x_freqs = np.flip(np.logspace(np.log10(hvsr_data['hvsr_band'][0]), np.log10(hvsr_data['hvsr_band'][1]), num_freq_bins))
         
@@ -4225,7 +4227,7 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
         dfList = []
         for i, w in enumerate(common_times):
             ws = str(w)
-            dfList.append([True, psdDictUpdate['Z'][i], psdDictUpdate['E'][i], psdDictUpdate['N'][i]])
+            dfList.append([use_times[i], psdDictUpdate['Z'][i], psdDictUpdate['E'][i], psdDictUpdate['N'][i]])
         colList = ["Use", "psd_values_Z", "psd_values_E", "psd_values_N"]
         # dfList: list of np.arrays, fitting the above column
         # common_times: times in common between all, should be length of 1 psd dimension above
@@ -9588,6 +9590,14 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_meth
             # Handle gaps in data 
             # Only process longest continous data section in each window, if gaps exist
             window_st = window_trace.split()  # Split into continuous data sections
+
+            # Handle window where there is no data
+            if len(window_st)==0:
+                windows_out.append((stime, False))
+                psdDict[key][str(stime)] = np.full(x_freqs.shape, np.nan)
+                if verbose:
+                    print(f"\tWindow starting at {stime} not used  (does not exist in data))")
+                continue
             longest_trace = window_st[0] # Initialize longest as first trace
 
             if len(window_st) > 1: # if more than one trace comes out of .split()
@@ -9626,8 +9636,12 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_meth
                     psdDict[key][str(stime)] = interpPSD_dB
                     final_psds.append(interpPSD_dB)
                 
-                    windows_out.append(stime)
+                    windows_out.append((stime, True))
                 else:
+                    windows_out.append((stime, False))
+                    print("ADDING STIMES", stime)
+                    psdDict[key][str(stime)] = np.full(x_freqs.shape, np.nan)
+
                     if verbose:
                         print(f"\tWindow starting at {stime} not used ({len(window_trace)} samples long)")
             else:
