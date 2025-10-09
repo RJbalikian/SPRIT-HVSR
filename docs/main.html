@@ -6252,9 +6252,11 @@ See here for more information: <a href="https://docs.obspy.org/packages/autogen/
     if obspy_ppsds:
         hvsr_data, dfList, colList, common_times = _get_obspy_ppsds(hvsr_data, **obspy_ppsd_kwargs)
     else:
-        psdDict, common_times = __single_psd_from_raw_data(hvsr_data, window_length=window_length, window_length_method=window_length_method, window_type=window_type,
+        psdDict, times_bool = __single_psd_from_raw_data(hvsr_data, window_length=window_length, window_length_method=window_length_method, window_type=window_type,
                                                            num_freq_bins=num_freq_bins,
                                                            overlap=overlap_pct, remove_response=remove_response, do_azimuths=azimuthal_psds, show_psd_plot=False)
+        common_times = [ct[0] for ct in times_bool]
+        use_times = [ut[1] for ut in times_bool]
 
         x_freqs = np.flip(np.logspace(np.log10(hvsr_data[&#39;hvsr_band&#39;][0]), np.log10(hvsr_data[&#39;hvsr_band&#39;][1]), num_freq_bins))
         
@@ -6306,7 +6308,7 @@ See here for more information: <a href="https://docs.obspy.org/packages/autogen/
         dfList = []
         for i, w in enumerate(common_times):
             ws = str(w)
-            dfList.append([True, psdDictUpdate[&#39;Z&#39;][i], psdDictUpdate[&#39;E&#39;][i], psdDictUpdate[&#39;N&#39;][i]])
+            dfList.append([use_times[i], psdDictUpdate[&#39;Z&#39;][i], psdDictUpdate[&#39;E&#39;][i], psdDictUpdate[&#39;N&#39;][i]])
         colList = [&#34;Use&#34;, &#34;psd_values_Z&#34;, &#34;psd_values_E&#34;, &#34;psd_values_N&#34;]
         # dfList: list of np.arrays, fitting the above column
         # common_times: times in common between all, should be length of 1 psd dimension above
@@ -11050,14 +11052,14 @@ This is minimum number of points a point needs in its neighborhood to not be con
 <p><code>[scipy.spatial.distance.pdist](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html#scipy.spatial.distance.pdist)</code></p></div>
 </dd>
 <dt id="sprit.run"><code class="name flex">
-<span>def <span class="ident">run</span></span>(<span>input_data=None,<br>source='file',<br>azimuth_calculation=False,<br>noise_removal=False,<br>outlier_curves_removal=False,<br>verbose=False,<br>**kwargs)</span>
+<span>def <span class="ident">run</span></span>(<span>input_data=None,<br>source='file',<br>azimuth_calculation=False,<br>noise_removal=False,<br>outlier_curves_removal=False,<br>skip_steps=None,<br>verbose=False,<br>**kwargs)</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def run(input_data=None, source=&#39;file&#39;, azimuth_calculation=False, noise_removal=False, outlier_curves_removal=False, verbose=False, **kwargs):
+<pre><code class="python">def run(input_data=None, source=&#39;file&#39;, azimuth_calculation=False, noise_removal=False, outlier_curves_removal=False, skip_steps=None, verbose=False, **kwargs):
     &#34;&#34;&#34;The sprit.run() is the main function that allows you to do all your HVSR processing in one simple step (sprit.run() is how you would call it in your code, but it may also be called using sprit.sprit_hvsr.run())
     
     The input_data parameter of sprit.run() is the only required parameter (if nothing entered, it will run sample data). This can be either a single file, a list of files (one for each component, for example), a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance), a Rasp. Shake raw data directory, or sample data.
@@ -11093,6 +11095,9 @@ This is minimum number of points a point needs in its neighborhood to not be con
         Whether to remove noise (before processing PPSDs)
     outlier_curves_removal : bool, default=False
         Whether to remove outlier curves from HVSR time windows
+    skip_steps : list, str, or None
+        A list of function names to skip (as strings), to manually prevent any function from being performed. 
+        For example, skip_steps=[&#34;input_params&#34;, &#34;fetch_data&#34;] will prevent sprit.input_params() and sprit.fetch_data() from being called in sprit.run().
     show_plot : bool, default=True
         Whether to show plots. This does not affect whether the plots are created (and then inserted as an attribute of HVSRData), only whether they are shown.
     verbose : bool, optional
@@ -11175,6 +11180,7 @@ This is minimum number of points a point needs in its neighborhood to not be con
             raise RuntimeError(f&#39;Batch data read in was not successful:\n{e}&#39;)
     else:
         # Get the input parameters
+        params = input_data
         try:
             input_params_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(input_params).parameters.keys())}
             if &#39;acq_date&#39; not in input_params_kwargs:
@@ -11183,7 +11189,8 @@ This is minimum number of points a point needs in its neighborhood to not be con
             if &#39;starttime&#39; not in input_params_kwargs:
                 input_params_kwargs[&#39;starttime&#39;] = NOWTIME.time()
             
-            params = input_params(input_data=input_data, verbose=verbose, **input_params_kwargs)
+            if skip_steps is None or &#39;input_params&#39; not in skip_steps:
+                params = input_params(input_data=input_data, verbose=verbose, **input_params_kwargs)
         except Exception as e:
             if hasattr(e, &#39;message&#39;):
                 errMsg = e.message
@@ -11199,6 +11206,7 @@ This is minimum number of points a point needs in its neighborhood to not be con
             #params = sprit_utils._make_it_classy(params)
 
         # Fetch Data
+        hvsrDataIN = params
         try:
             fetch_data_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(fetch_data).parameters.keys())}
             fetch_data_kwargs.update({k: v for k, v in kwargs.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())})
@@ -11206,7 +11214,10 @@ This is minimum number of points a point needs in its neighborhood to not be con
                 fetch_data_kwargs[&#39;obspy_ppsds&#39;] = kwargs[&#39;obspy_ppsds&#39;]
             else:
                 fetch_data_kwargs[&#39;obspy_ppsds&#39;] = False
-            hvsrDataIN = fetch_data(params=params, source=source, verbose=verbose, **fetch_data_kwargs)    
+            
+            if skip_steps is None or &#39;fetch_data&#39; not in skip_steps:
+                hvsrDataIN = fetch_data(params=params, source=source, verbose=verbose, **fetch_data_kwargs)
+
         except Exception as e:
             # Even if batch, this is reading in data for all sites so we want to raise error, not just warn
             if hasattr(e, &#39;message&#39;):
@@ -11296,7 +11307,7 @@ This is minimum number of points a point needs in its neighborhood to not be con
     azCond3 = azimuth_calculation
     azCond4 = len(azimuth_kwargs.keys()) &gt; 0
 
-    if azCond1 or azCond2 or azCond3 or azCond4:
+    if (azCond1 or azCond2 or azCond3 or azCond4) and (skip_steps is None or &#39;calculate_azimuth&#39; not in skip_steps):
         azimuth_calculation = True
         azimuth_kwargs[&#39;azimuth_type&#39;] = kwargs[&#39;azimuth_type&#39;] = &#39;single&#39;
         
@@ -11334,7 +11345,8 @@ This is minimum number of points a point needs in its neighborhood to not be con
         if noise_removal or remove_noise_kwargs != {}:
             remove_noise_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
             try:
-                data_noiseRemoved = remove_noise(hvsr_data=data_noiseRemoved, verbose=verbose, **remove_noise_kwargs)   
+                if skip_steps is None or &#39;remove_noise&#39; not in skip_steps:
+                    data_noiseRemoved = remove_noise(hvsr_data=data_noiseRemoved, verbose=verbose, **remove_noise_kwargs)   
             except Exception as e:
                 if hasattr(e, &#39;message&#39;):
                     errMsg = e.message
@@ -11388,7 +11400,8 @@ This is minimum number of points a point needs in its neighborhood to not be con
         PPSDkwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(PPSD).parameters.keys())}
         generate_psds_kwargs.update(PPSDkwargs)
         generate_psds_kwargs[&#39;azimuthal_psds&#39;] = azimuth_calculation
-        psd_data = generate_psds(hvsr_data=psd_data, verbose=verbose, **generate_psds_kwargs)
+        if skip_steps is None or (&#39;generate_psds&#39; not in skip_steps and &#39;generate_ppsds&#39; not in skip_steps):
+            psd_data = generate_psds(hvsr_data=psd_data, verbose=verbose, **generate_psds_kwargs)
     except Exception as e:
         
         if hasattr(e, &#39;message&#39;):
@@ -11428,7 +11441,7 @@ This is minimum number of points a point needs in its neighborhood to not be con
         outlier_curve_keys_used = True
         if remove_outlier_curve_kwargs == {} or list(remove_outlier_curve_kwargs.keys()) == [&#39;show_plot&#39;]:
             outlier_curve_keys_used = False
-        if (outlier_curves_removal or outlier_curve_keys_used) and not use_hv_curves:
+        if (outlier_curves_removal or outlier_curve_keys_used) and not use_hv_curves and (skip_steps is None or &#39;remove_outlier_curves&#39; not in skip_steps):
             remove_outlier_curve_kwargs[&#39;remove_outliers_during_plot&#39;] = False
             data_curvesRemoved = remove_outlier_curves(hvsr_data=data_curvesRemoved, verbose=verbose,**remove_outlier_curve_kwargs)   
     except Exception as e:
@@ -11467,7 +11480,8 @@ This is minimum number of points a point needs in its neighborhood to not be con
             if azimuth_kwargs[&#39;azimuth_type&#39;] == &#39;single&#39;:
                 process_hvsr_kwargs[&#39;azimuth&#39;] = azimuth_kwargs[&#39;azimuth_angle&#39;]
         
-        hvsr_results = process_hvsr(hvsr_data=psd_data, verbose=verbose, **process_hvsr_kwargs)
+        if skip_steps is None or &#39;process_hvsr&#39; not in skip_steps:
+            hvsr_results = process_hvsr(hvsr_data=psd_data, verbose=verbose, **process_hvsr_kwargs)
     except Exception as e:
         sprit_utils._get_error_from_exception(e,
                                               print_error_message=True)
@@ -11494,7 +11508,7 @@ This is minimum number of points a point needs in its neighborhood to not be con
         outlier_curve_keys_used = True
         if remove_outlier_curve_kwargs == {} or list(remove_outlier_curve_kwargs.keys()) == [&#39;show_plot&#39;]:
             outlier_curve_keys_used = False
-        if (outlier_curves_removal or outlier_curve_keys_used) and use_hv_curves:
+        if (outlier_curves_removal or outlier_curve_keys_used) and use_hv_curves and (skip_steps is None or &#39;remove_outlier_curves&#39; not in skip_steps):
             remove_outlier_curve_kwargs[&#39;remove_outliers_during_plot&#39;] = False
             hvsr_results = remove_outlier_curves(hvsr_data=hvsr_results, verbose=verbose,**remove_outlier_curve_kwargs)   
     except Exception as e:
@@ -11528,7 +11542,8 @@ This is minimum number of points a point needs in its neighborhood to not be con
     # Final post-processing/reporting
     # Check peaks
     check_peaks_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
-    hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
+    if skip_steps is None or &#39;check_peaks&#39; not in skip_steps:
+        hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
 
     get_report_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(get_report).parameters.keys())}
     # Add &#39;az&#39; as a default plot if the following conditions
@@ -11583,7 +11598,8 @@ This is minimum number of points a point needs in its neighborhood to not be con
         if not az_requested and hasAz and hvsr_results.horizontal_method != &#39;Single Azimuth&#39;:
             get_report_kwargs[&#39;plot_type&#39;] = get_report_kwargs[&#39;plot_type&#39;] + &#39; az&#39;
 
-    hvsr_results = get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
+    if skip_steps is None or (&#39;get_report&#39; not in skip_steps and &#39;report&#39; not in skip_steps):
+        hvsr_results = get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
 
     if verbose:
         if &#39;report_formats&#39; in get_report_kwargs.keys():
@@ -11661,6 +11677,9 @@ For sample data, The following can be specified as the input_data parameter:
 <dd>Whether to remove noise (before processing PPSDs)</dd>
 <dt><strong><code>outlier_curves_removal</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
 <dd>Whether to remove outlier curves from HVSR time windows</dd>
+<dt><strong><code>skip_steps</code></strong> :&ensp;<code>list, str,</code> or <code>None</code></dt>
+<dd>A list of function names to skip (as strings), to manually prevent any function from being performed.
+For example, skip_steps=["input_params", "fetch_data"] will prevent sprit.input_params() and sprit.fetch_data() from being called in sprit.run().</dd>
 <dt><strong><code>show_plot</code></strong> :&ensp;<code>bool</code>, default=<code>True</code></dt>
 <dd>Whether to show plots. This does not affect whether the plots are created (and then inserted as an attribute of HVSRData), only whether they are shown.</dd>
 <dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, optional</dt>
@@ -13336,7 +13355,7 @@ For return_fig, returns it to the 'Plot_Report' attribute of each HVSRData objec
             return json.dumps(self, default=iterative_json_parser,
                               sort_keys=True, indent=indent, **kwargs)
 
-    def export(self, hvsr_export_path=None, ext=&#39;hvsr&#39;):
+    def export(self, **kwargs):
         &#34;&#34;&#34;Method to export HVSRData objects to .hvsr pickle files.
 
         Parameters
@@ -13353,7 +13372,9 @@ For return_fig, returns it to the 'Plot_Report' attribute of each HVSRData objec
         export_hvsr
         
         &#34;&#34;&#34;
-        export_hvsr(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
+        if &#39;hvsr_data&#39; in kwargs:
+            del kwargs[&#39;hvsr_data&#39;]
+        export_hvsr(hvsr_data=self, **kwargs)
 
     def copy(self, copy_type=&#39;shallow&#39;):
         &#34;&#34;&#34;Make a copy of the HVSRData object. Uses python copy module.
@@ -13674,14 +13695,14 @@ Defaults to shallow.</dd>
 </dl></div>
 </dd>
 <dt id="sprit.HVSRData.export"><code class="name flex">
-<span>def <span class="ident">export</span></span>(<span>self, hvsr_export_path=None, ext='hvsr')</span>
+<span>def <span class="ident">export</span></span>(<span>self, **kwargs)</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def export(self, hvsr_export_path=None, ext=&#39;hvsr&#39;):
+<pre><code class="python">def export(self, **kwargs):
     &#34;&#34;&#34;Method to export HVSRData objects to .hvsr pickle files.
 
     Parameters
@@ -13698,7 +13719,9 @@ Defaults to shallow.</dd>
     export_hvsr
     
     &#34;&#34;&#34;
-    export_hvsr(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)</code></pre>
+    if &#39;hvsr_data&#39; in kwargs:
+        del kwargs[&#39;hvsr_data&#39;]
+    export_hvsr(hvsr_data=self, **kwargs)</code></pre>
 </details>
 <div class="desc"><p>Method to export HVSRData objects to .hvsr pickle files.</p>
 <h2 id="parameters">Parameters</h2>

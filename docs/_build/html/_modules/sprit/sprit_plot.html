@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_plot &mdash; sprit 3.2.2 documentation</title>
+  <title>sprit.sprit_plot &mdash; sprit 3.2.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=dcedd534"></script>
+      <script src="../../_static/documentation_options.js?v=7895512d"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -106,9 +106,6 @@
 <span class="k">except</span><span class="p">:</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">sprit.sprit_hvsr</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sprit_hvsr</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">sprit.sprit_calibration</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sprit_calibration</span>
-
-
-<span class="n">HVSR_BAND</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">50</span> <span class="p">]</span><span class="c1"># sprit_hvsr.DEFAULT_BAND</span>
 
 
 <span class="c1"># Plot cross section</span>
@@ -2113,7 +2110,7 @@
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="s1">&#39;hvsr_band&#39;</span><span class="p">):</span>
                 <span class="n">xmin</span> <span class="o">=</span> <span class="n">hv_data</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">xmin</span> <span class="o">=</span> <span class="n">HVSR_BAND</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">xmin</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">DEFAULT_BAND</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">axes</span><span class="p">[</span><span class="n">comp</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">])</span>
 
     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hv_data</span><span class="p">,</span> <span class="s1">&#39;site&#39;</span><span class="p">):</span>
@@ -2231,7 +2228,7 @@
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="s1">&#39;hvsr_band&#39;</span><span class="p">):</span>
             <span class="n">hvsrBand</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">hvsrBand</span> <span class="o">=</span> <span class="n">HVSR_BAND</span>
+            <span class="n">hvsrBand</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">DEFAULT_BAND</span>
 
         <span class="n">minz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">psdArr</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">maxz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">psdArr</span><span class="p">,</span> <span class="mi">99</span><span class="p">)</span>
@@ -2456,7 +2453,7 @@
         <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;turbo&#39;</span>
 
     <span class="k">if</span> <span class="n">hv_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">hvsr_band</span> <span class="o">=</span> <span class="n">DEFAULT_BAND</span>
+        <span class="n">hvsr_band</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">DEFAULT_BAND</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">hvsr_band</span> <span class="o">=</span> <span class="n">hv_data</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">]</span>
     <span class="n">ymin</span> <span class="o">=</span> <span class="n">hvsr_band</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>

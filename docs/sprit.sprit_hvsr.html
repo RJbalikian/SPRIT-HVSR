@@ -6,12 +6,12 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr module &mdash; sprit 3.2.2 documentation</title>
+  <title>sprit.sprit_hvsr module &mdash; sprit 3.2.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="_static/documentation_options.js?v=dcedd534"></script>
+      <script src="_static/documentation_options.js?v=7895512d"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -439,7 +439,7 @@ It contains all the processed data, input parameters, and reports.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.copy" title="sprit.sprit_hvsr.HVSRData.copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code></a>([copy_type])</p></td>
 <td><p>Make a copy of the HVSRData object.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.export" title="sprit.sprit_hvsr.HVSRData.export"><code class="xref py py-obj docutils literal notranslate"><span class="pre">export</span></code></a>([hvsr_export_path, ext])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.export" title="sprit.sprit_hvsr.HVSRData.export"><code class="xref py py-obj docutils literal notranslate"><span class="pre">export</span></code></a>(**kwargs)</p></td>
 <td><p>Method to export HVSRData objects to .hvsr pickle files.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#sprit.sprit_hvsr.HVSRData.export_settings" title="sprit.sprit_hvsr.HVSRData.export_settings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">export_settings</span></code></a>([export_settings_path, ...])</p></td>
@@ -501,7 +501,7 @@ Defaults to shallow.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.HVSRData.export">
-<span class="sig-name descname"><span class="pre">export</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hvsr'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRData.export"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.HVSRData.export" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">export</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRData.export"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.HVSRData.export" title="Link to this definition">¶</a></dt>
 <dd><p>Method to export HVSRData objects to .hvsr pickle files.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1572,7 +1572,7 @@ divided by the standard deviation calculated for the entire trace. This rolling 
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.run">
-<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'file'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth_calculation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_removal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlier_curves_removal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.run" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'file'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth_calculation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_removal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlier_curves_removal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.run" title="Link to this definition">¶</a></dt>
 <dd><p>The sprit.run() is the main function that allows you to do all your HVSR processing in one simple step (sprit.run() is how you would call it in your code, but it may also be called using sprit.sprit_hvsr.run())</p>
 <p>The input_data parameter of sprit.run() is the only required parameter (if nothing entered, it will run sample data). This can be either a single file, a list of files (one for each component, for example), a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance), a Rasp. Shake raw data directory, or sample data.</p>
 <dl class="field-list">
@@ -1596,6 +1596,9 @@ For sample data, The following can be specified as the input_data parameter:</p>
 <dt><strong>noise_removal</strong><span class="classifier">bool, default=False</span></dt><dd><p>Whether to remove noise (before processing PPSDs)</p>
 </dd>
 <dt><strong>outlier_curves_removal</strong><span class="classifier">bool, default=False</span></dt><dd><p>Whether to remove outlier curves from HVSR time windows</p>
+</dd>
+<dt><strong>skip_steps</strong><span class="classifier">list, str, or None</span></dt><dd><p>A list of function names to skip (as strings), to manually prevent any function from being performed. 
+For example, skip_steps=[“input_params”, “fetch_data”] will prevent sprit.input_params() and sprit.fetch_data() from being called in sprit.run().</p>
 </dd>
 <dt><strong>show_plot</strong><span class="classifier">bool, default=True</span></dt><dd><p>Whether to show plots. This does not affect whether the plots are created (and then inserted as an attribute of HVSRData), only whether they are shown.</p>
 </dd>

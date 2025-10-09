@@ -145,7 +145,6 @@ el.replaceWith(d);
     initial_setup_fun(&#39;tabs_setup&#39;, False)
     initial_setup_fun(&#39;mainContain_setup&#39;, False)
 
-
     def setup_session_state():
         if st.session_state.initial_setup:
             # &#34;Splash screen&#34; (only shows at initial startup)
@@ -206,6 +205,8 @@ el.replaceWith(d);
             if VERBOSE:
                 print(&#39;Start sig loop, session state length: &#39;, len(st.session_state.keys()))
                 print_param(PARAM2PRINT)
+
+            st.session_state.session_log = f&#39;\n ## Application started at {datetime.datetime.now()}\n\n&#39;
 
             # Get all function defaults
             for fun, funDict in funList:
@@ -327,6 +328,23 @@ el.replaceWith(d);
             st.session_state[&#39;NewSessionState&#39;] = copy.copy(st.session_state)
 
 
+    def update_session_log(message=&#39;&#39;):
+        if not hasattr(st.session_state, &#39;session_log&#39;):
+            st.session_state.session_log=&#39;# Log&#39;
+        newLogEntry = f&#39;\n[{datetime.datetime.now()}]  &#39;
+        if message == &#39;&#39;:
+            newLogEntry += &#39;&lt;action taken. message not specified&gt;&#39;
+        else:
+            newLogEntry += message
+        newLogEntry += &#39;\n&#39;
+        st.session_state.session_log += newLogEntry
+
+
+    def show_logs():
+        st.info(st.session_state.session_log, icon=&#39;:material/overview:&#39;)
+            
+
+
     def check_if_default():
         if len(st.session_state.keys()) &gt; 0:
             print(&#39;Checking defaults, session state length: &#39;, len(st.session_state.keys()))
@@ -353,6 +371,7 @@ el.replaceWith(d);
             print(file.name)
         st.session_state.input_data = path.as_posix()
 
+        update_session_log(f&#39;File uploaded: {file}\n\t Stored at {path.as_posix})&#39;)
 
     # Set up main container
     def setup_main_container(do_setup_tabs=False):
@@ -361,7 +380,7 @@ el.replaceWith(d);
 
         if do_setup_tabs:
             setup_tabs(mainContainer)
-        
+
         st.session_state.mainContain_setup = True
 
 
@@ -372,12 +391,14 @@ el.replaceWith(d);
     # Set up tabs
     def setup_tabs(mainContainer):
         
-        resultsTab, inputTab, outlierTab, infoTab = mainContainer.tabs([&#39;Results&#39;, &#39;Data&#39;, &#39;Outliers&#39;, &#39;Info&#39;])
+        resultsTab, inputTab, outlierTab, infoTab, logsTab = mainContainer.tabs([&#39;Results&#39;, &#39;Data&#39;, &#39;Outliers&#39;, &#39;Info&#39;, &#39;Logs&#39;])
         plotReportTab, csvReportTab, strReportTab = resultsTab.tabs([&#39;Summary/Plot&#39;, &#39;Results Table&#39;, &#39;Print Report&#39;])
 
         st.session_state.inputTab = inputTab
         st.session_state.outlierTab = outlierTab
         st.session_state.infoTab = infoTab
+        st.session_state.logTab = logsTab
+
         st.session_state.resultsTab = resultsTab
         st.session_state.plotReportTab = plotReportTab
         st.session_state.csvReportTab = csvReportTab
@@ -387,6 +408,7 @@ el.replaceWith(d);
 
 
     def on_run_data():
+        update_session_log(&#34;Started data processing&#34;)
         # Runs sample data if nothing specified
         if st.session_state.input_data == &#39;&#39;:
             st.session_state.input_data = &#39;sample&#39;
@@ -501,10 +523,18 @@ el.replaceWith(d);
                 spinnerText = spinnerText.replace(&#34;\n\t&#34;, tableHeader+tableHeader2, 1)
 
                 spinnerDF = pd.DataFrame(spinnerDFList, columns=[&#39;Parameter&#39;, &#34;Value Selected&#34;, &#34;Selected value type&#34;, &#39;Default Value&#39;, &#39;Default value type&#39;])
-            print(&#34;SRUN&#34;, srun)
+            
+            inputData = st.session_state.input_data
+            if hasattr(st.session_state, &#39;data_ingested&#39;) and st.session_state.data_ingested:
+                inputData = st.session_state.stream_edited
+
+            SRUNText = &#39;\n\n    -&#39;.join([f&#34;{str(k).ljust(25)} : {v}&#34; for k, v in srun.items()])
+            update_session_log(f&#34;Processing parameters:\n\n    -{SRUNText}&#34;)
+
             with st.spinner(spinnerText, show_time=True):
-                st.session_state.hvsr_data = sprit_hvsr.run(input_data=st.session_state.input_data, **srun)
-        
+                st.session_state.hvsr_data = sprit_hvsr.run(input_data=inputData, **srun)
+            update_session_log(&#39;Processing Complete&#39;)
+
         st.balloons()
 
         st.session_state.stream = st.session_state.hvsr_data[&#39;stream&#39;]
@@ -515,9 +545,11 @@ el.replaceWith(d);
         st.toast(&#39;Displaying results (download available)&#39;)
         display_results()
         st.session_state.prev_datapath = st.session_state.input_data
-
+        update_session_log(&#34;Processed data displayed&#34;)
+        st.session_state.logTab.markdown(st.session_state.session_log)
 
     def on_read_data():
+        update_session_log(f&#34;Started data read: {st.session_state.input_data}&#34;)
         if &#39;read_button&#39; not in st.session_state.keys() or not st.session_state.read_button:
             return
 
@@ -526,7 +558,7 @@ el.replaceWith(d);
             st.session_state.input_data = &#39;sample&#39;
 
         st.session_state.mainContainer = st.container()
-        st.session_state.inputTab, st.session_state.infoTab = st.session_state.mainContainer.tabs([&#39;Raw Seismic Data&#39;, &#39;Info&#39;])
+        st.session_state.inputTab, st.session_state.infoTab, st.session_state.logTab = st.session_state.mainContainer.tabs([&#39;Raw Seismic Data&#39;, &#39;Info&#39;, &#39;Logs&#39;])
 
         if st.session_state.input_data != &#39;&#39;:
             srun = {}
@@ -552,18 +584,22 @@ el.replaceWith(d);
         else:
             st.session_state.stream_edited = st.session_state.hvsr_data.stream.copy()
 
+        update_session_log(f&#34;Data ingested: \n{str(st.session_state.hvsr_data.stream).replace(&#39;Stream:&#39;, &#39;Stream:\n\n\t&#39;).replace(&#39;samples&#39;, &#39;samples\n\n\t&#39;)}&#34;)
         display_read_data(do_setup_tabs=False)
-
+        st.session_state.data_ingested = True
+        update_session_log(&#34;Ingested data displayed&#34;)
+        st.session_state.logTab.markdown(st.session_state.session_log)
 
     def do_interactive_display():
         if st.session_state.interactive_display:
             st.session_state.plot_engine = &#34;Plotly&#34;
+            update_session_log(&#34;Interactive plots activated (now using plotly)&#34;)
         else:
             st.session_state.plot_engine = &#34;Matplotlib&#34;
+            update_session_log(&#34;Interactive plots deactivated (now using matplotlib)&#34;)
 
 
     def display_read_data(do_setup_tabs=False):
-        
         if do_setup_tabs:
             st.session_state.mainContainer = st.container()
             st.session_state.inputTab, st.session_state.infoTab = st.session_state.mainContainer.tabs([&#39;Raw Seismic Data&#39;, &#39;Info&#39;])
@@ -577,17 +613,14 @@ el.replaceWith(d);
                 st.session_state.data_chart_event = st.session_state.inputTab.pyplot(st.session_state.input_fig, width=&#39;stretch&#39;)
                 st.session_state.data_plot = None
         else:
-            if not hasattr(st.session_state, &#39;data_plot&#39;):
-                st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
+            st.session_state.data_chart_event = st.session_state.inputTab.plotly_chart(st.session_state.input_fig,
                                                 on_select=update_data, key=&#39;data_plot&#39;, 
                                                 selection_mode=&#39;box&#39;, width=&#39;stretch&#39;, theme=&#39;streamlit&#39;)
-            else:
-                st.session_state.data_chart_event = st.session_state.data_plot
 
             st.session_state.inputTab.write(&#34;Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.&#34;)
-            st.session_state.input_selection_mode = st.session_state.inputTab.pills(&#39;Window Selection Mode&#39;, options=[&#39;Add&#39;, &#34;Delete&#34;], key=&#39;input_selection_toggle&#39;,
-                                                        default=&#39;Add&#39;, on_change=update_selection_type, disabled=True,
-                                                        help=&#39;If in &#34;Add&#34; mode, windows for removal will be added at your selection. If &#34;Delete&#34; mode, these windows will be deleted. Currently only &#34;Add&#34; supported&#39;)
+            #st.session_state.input_selection_mode = st.session_state.inputTab.pills(&#39;Window Selection Mode&#39;, options=[&#39;Add&#39;, &#34;Delete&#34;], key=&#39;input_selection_toggle&#39;,
+            #                                            default=&#39;Add&#39;, on_change=update_selection_type, disabled=True,
+            #                                            help=&#39;If in &#34;Add&#34; mode, windows for removal will be added at your selection. If &#34;Delete&#34; mode, these windows will be deleted. Currently only &#34;Add&#34; supported&#39;)
         
 
         # Print information about the data to Info tab
@@ -628,9 +661,9 @@ el.replaceWith(d);
                                                     selection_mode=&#39;box&#39;, width=&#39;stretch&#39;, theme=&#39;streamlit&#39;)
 
                 st.session_state.inputTab.write(&#34;Select any time window with the Box Selector (see the top right of chart) to remove it from analysis.&#34;)
-                st.session_state.input_selection_mode = st.session_state.inputTab.pills(&#39;Window Selection Mode&#39;, options=[&#39;Add&#39;, &#34;Delete&#34;], key=&#39;input_selection_toggle&#39;,
-                                                        default=&#39;Add&#39;, on_change=update_selection_type, disabled=True, 
-                                                        help=&#39;If in &#34;Add&#34; mode, windows for removal will be added at your selection. If &#34;Delete&#34; mode, these windows will be deleted. Currently only &#34;Add&#34; supported&#39;)
+                #st.session_state.input_selection_mode = st.session_state.inputTab.pills(&#39;Window Selection Mode&#39;, options=[&#39;Add&#39;, &#34;Delete&#34;], key=&#39;input_selection_toggle&#39;,
+                #                                        default=&#39;Add&#39;, on_change=update_selection_type, disabled=True, 
+                #                                        help=&#39;If in &#34;Add&#34; mode, windows for removal will be added at your selection. If &#34;Delete&#34; mode, these windows will be deleted. Currently only &#34;Add&#34; supported&#39;)
             
             else:
                 st.session_state.inputTab.toggle(label=&#39;Display input data stream and windows used&#39;,
@@ -810,6 +843,7 @@ el.replaceWith(d);
     def on_reset():
         st.toast(&#34;Session state cleared&#34;)
         st.session_state = st.session_state[&#39;NewSessionState&#39;]
+        update_session_log(&#34;Session state cleared&#34;)
 
 
     def _get_use_array(hvsr_data, f=None, timeWindowArr=None, psdArr=None):
@@ -1180,6 +1214,7 @@ el.replaceWith(d);
 
 
     def update_data():
+        update_session_log(&#34;Manually removed data times used for processing/analysis&#34;)
         st.session_state.data_chart_event = st.session_state.data_plot
         specKey = &#39;Z&#39;
         hvsrBand = st.session_state.hvsr_data.hvsr_band
@@ -1222,9 +1257,9 @@ el.replaceWith(d);
             st.session_state.hvsr_data[&#39;x_windows_out&#39;].append(currUTCWin)
 
             # Trim data with gap in the middle where we remvoed data
-            if st.session_state.input_selection_mode == &#39;Add&#39;:
-                stream1.trim(starttime=stream1[0].stats.starttime, endtime=currUTCWin[0])
-                stream2.trim(starttime=currUTCWin[1], endtime=stream2[0].stats.endtime)
+            #if st.session_state.input_selection_mode == &#39;Add&#39;:
+            stream1.trim(starttime=stream1[0].stats.starttime, endtime=currUTCWin[0])
+            stream2.trim(starttime=currUTCWin[1], endtime=stream2[0].stats.endtime)
 
             # Merge data back
             newStream = (stream1 + stream2).merge()
@@ -1286,7 +1321,8 @@ el.replaceWith(d);
 
 
     def update_selection_type():
-        st.session_state.input_selection_mode = st.session_state.input_selection_toggle
+        #st.session_state.input_selection_mode = st.session_state.input_selection_toggle
+        pass
 
 
     def write_to_info_tab(infoTab):
@@ -1322,6 +1358,7 @@ el.replaceWith(d);
 
 
     def update_outlier():
+        update_session_log(&#34;Manually selected curves to remove from H/V analysis&#34;)
         hvDF = st.session_state.hvsr_data[&#39;hvsr_windows_df&#39;]
         
         st.session_state.outlier_chart_event = st.session_state.outlier_plot
@@ -1476,6 +1513,10 @@ el.replaceWith(d);
             print(&#39;Done setting up bottom container, session state length: &#39;, len(st.session_state.keys()))
             print_param(PARAM2PRINT)
 
+        st.toggle(label=&#39;Display interactive charts (slower)&#39;, value=False, key=&#39;interactive_display&#39;,
+                    on_change=do_interactive_display,
+                    help=&#34;Whether to display interactive charts for the data, outliers, and results charts. Interactive charts take longer to display, but allow graphical editing of the data.&#34;)
+
         st.header(&#39;Settings&#39;)
         mainSettings = st.container()
 
@@ -1530,10 +1571,6 @@ el.replaceWith(d);
             st.session_state.hvsr_band = st.select_slider(&#39;HVSR Band&#39;, options=bandVals, #key=&#39;hvsr_band&#39;,
                             value=st.session_state.hvsr_band
                             )
-
-            st.toggle(label=&#39;Display interactive charts (slower)&#39;, value=False, key=&#39;interactive_display&#39;,
-                      on_change=do_interactive_display,
-                      help=&#34;Whether to display interactive charts for the data, outliers, and results charts. Interactive charts take longer to display, but allow graphical editing of the data.&#34;)
 
             if VERBOSE:
                 print_param(PARAM2PRINT)
@@ -1865,6 +1902,8 @@ el.replaceWith(d);
                 if VERBOSE:
                     print_param(PARAM2PRINT)
 
+        st.button(&#39;View Logs&#39;,key=&#39;view_logs&#39;, help=&#39;Click to view logs on the main screen, or select the Logs tab if available&#39;,
+                  on_click=show_logs)
         if VERBOSE:
             print(&#39;Done setting up sidebar, session state length: &#39;, len(st.session_state.keys()))
             print(&#39;Done setting up everything (end of main), session state length: &#39;, len(st.session_state.keys()))
