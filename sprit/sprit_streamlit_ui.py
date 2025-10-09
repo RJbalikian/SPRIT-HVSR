@@ -157,7 +157,6 @@ def main():
     initial_setup_fun('tabs_setup', False)
     initial_setup_fun('mainContain_setup', False)
 
-
     def setup_session_state():
         if st.session_state.initial_setup:
             # "Splash screen" (only shows at initial startup)
@@ -218,6 +217,8 @@ def main():
             if VERBOSE:
                 print('Start sig loop, session state length: ', len(st.session_state.keys()))
                 print_param(PARAM2PRINT)
+
+            st.session_state.session_log = f'\n ## Application started at {datetime.datetime.now()}\n\n'
 
             # Get all function defaults
             for fun, funDict in funList:
@@ -339,6 +340,21 @@ def main():
             st.session_state['NewSessionState'] = copy.copy(st.session_state)
 
 
+    def update_session_log(message=''):
+        if not hasattr(st.session_state, 'session_log'):
+            st.session_state.session_log='# Log'
+        newLogEntry = f'\n[{datetime.datetime.now()}]  '
+        if message == '':
+            newLogEntry += '<action taken. message not specified>'
+        newLogEntry += '\n'
+        st.session_state.session_log += newLogEntry
+
+
+    def show_logs():
+        st.info(st.session_state.session_log)
+            
+
+
     def check_if_default():
         if len(st.session_state.keys()) > 0:
             print('Checking defaults, session state length: ', len(st.session_state.keys()))
@@ -365,6 +381,7 @@ def main():
             print(file.name)
         st.session_state.input_data = path.as_posix()
 
+        update_session_log(f'File uploaded: {file}\n\t Stored at {path.as_posix})')
 
     # Set up main container
     def setup_main_container(do_setup_tabs=False):
@@ -372,8 +389,9 @@ def main():
         st.session_state.mainContainer = mainContainer
 
         if do_setup_tabs:
+            update_session_log("Setting up main container with tabs")
             setup_tabs(mainContainer)
-        
+        update_session_log("Setting up main container (no tabs)")
         st.session_state.mainContain_setup = True
 
 
@@ -399,6 +417,7 @@ def main():
 
 
     def on_run_data():
+        update_session_log("Started data processing")
         # Runs sample data if nothing specified
         if st.session_state.input_data == '':
             st.session_state.input_data = 'sample'
@@ -516,14 +535,15 @@ def main():
             
             inputData = st.session_state.input_data
             if hasattr(st.session_state, 'data_ingested') and st.session_state.data_ingested:
-                #srun['skip_steps'] = ['input_params', 'fetch_data']
                 inputData = st.session_state.stream_edited
 
-            st.write("INPUTDATA" +str(inputData))
-            st.write(srun)
+            SRUNText = '\n\t'.join([f"{str(k).ljust(12)} : {v}" for k, v in srun.items()])
+            update_session_log(f"Processing parameters:\n{SRUNText}")
+
             with st.spinner(spinnerText, show_time=True):
                 st.session_state.hvsr_data = sprit_hvsr.run(input_data=inputData, **srun)
-        
+            update_session_log('Processing Complete')
+
         st.balloons()
 
         st.session_state.stream = st.session_state.hvsr_data['stream']
@@ -534,9 +554,11 @@ def main():
         st.toast('Displaying results (download available)')
         display_results()
         st.session_state.prev_datapath = st.session_state.input_data
+        update_session_log("Processed data displayed")
 
 
     def on_read_data():
+        update_session_log(f"Started data read: {st.session_state.input_data}")
         if 'read_button' not in st.session_state.keys() or not st.session_state.read_button:
             return
 
@@ -571,14 +593,19 @@ def main():
         else:
             st.session_state.stream_edited = st.session_state.hvsr_data.stream.copy()
 
+        update_session_log(f"Data ingested: \n{st.session_state.hvsr_data.stream}")
         display_read_data(do_setup_tabs=False)
         st.session_state.data_ingested = True
+        update_session_log("Ingested data displayed")
+
 
     def do_interactive_display():
         if st.session_state.interactive_display:
             st.session_state.plot_engine = "Plotly"
+            update_session_log("Interactive plots activated (now using plotly)")
         else:
             st.session_state.plot_engine = "Matplotlib"
+            update_session_log("Interactive plots deactivated (now using matplotlib)")
 
 
     def display_read_data(do_setup_tabs=False):
@@ -825,6 +852,7 @@ def main():
     def on_reset():
         st.toast("Session state cleared")
         st.session_state = st.session_state['NewSessionState']
+        update_session_log("Session state cleared")
 
 
     def _get_use_array(hvsr_data, f=None, timeWindowArr=None, psdArr=None):
@@ -1195,6 +1223,7 @@ def main():
 
 
     def update_data():
+        update_session_log("Manually removed data times used for processing/analysis")
         st.session_state.data_chart_event = st.session_state.data_plot
         specKey = 'Z'
         hvsrBand = st.session_state.hvsr_data.hvsr_band
@@ -1338,6 +1367,7 @@ def main():
 
 
     def update_outlier():
+        update_session_log("Manually selected curves to remove from H/V analysis")
         hvDF = st.session_state.hvsr_data['hvsr_windows_df']
         
         st.session_state.outlier_chart_event = st.session_state.outlier_plot
@@ -1881,6 +1911,8 @@ def main():
                 if VERBOSE:
                     print_param(PARAM2PRINT)
 
+        st.button("View Logs", key='view_logs',help="Click to view session logs",
+                  on_click=show_logs, icon=':material/overview:')
         if VERBOSE:
             print('Done setting up sidebar, session state length: ', len(st.session_state.keys()))
             print('Done setting up everything (end of main), session state length: ', len(st.session_state.keys()))
