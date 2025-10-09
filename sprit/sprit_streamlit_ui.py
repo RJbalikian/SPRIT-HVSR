@@ -513,9 +513,16 @@ def main():
                 spinnerText = spinnerText.replace("\n\t", tableHeader+tableHeader2, 1)
 
                 spinnerDF = pd.DataFrame(spinnerDFList, columns=['Parameter', "Value Selected", "Selected value type", 'Default Value', 'Default value type'])
-            print("SRUN", srun)
+            
+            inputData = st.session_state.input_data
+            if hasattr(st.session_state, 'data_ingested') and st.session_state.data_ingested:
+                #srun['skip_steps'] = ['input_params', 'fetch_data']
+                inputData = st.session_state.stream_edited
+
+            st.write("INPUTDATA" +str(inputData))
+            st.write(srun)
             with st.spinner(spinnerText, show_time=True):
-                st.session_state.hvsr_data = sprit_hvsr.run(input_data=st.session_state.input_data, **srun)
+                st.session_state.hvsr_data = sprit_hvsr.run(input_data=inputData, **srun)
         
         st.balloons()
 
@@ -565,7 +572,7 @@ def main():
             st.session_state.stream_edited = st.session_state.hvsr_data.stream.copy()
 
         display_read_data(do_setup_tabs=False)
-
+        st.session_state.data_ingested = True
 
     def do_interactive_display():
         if st.session_state.interactive_display:

@@ -1188,7 +1188,7 @@ def gui(kind: str = 'browser'):
 
 # FUNCTIONS AND METHODS
 # The run function to rule them all (runs all needed for simply processing HVSR)
-def run(input_data=None, source='file', azimuth_calculation=False, noise_removal=False, outlier_curves_removal=False, verbose=False, **kwargs):
+def run(input_data=None, source='file', azimuth_calculation=False, noise_removal=False, outlier_curves_removal=False, skip_steps=None, verbose=False, **kwargs):
     """The sprit.run() is the main function that allows you to do all your HVSR processing in one simple step (sprit.run() is how you would call it in your code, but it may also be called using sprit.sprit_hvsr.run())
     
     The input_data parameter of sprit.run() is the only required parameter (if nothing entered, it will run sample data). This can be either a single file, a list of files (one for each component, for example), a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance), a Rasp. Shake raw data directory, or sample data.
@@ -1224,6 +1224,9 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         Whether to remove noise (before processing PPSDs)
     outlier_curves_removal : bool, default=False
         Whether to remove outlier curves from HVSR time windows
+    skip_steps : list, str, or None
+        A list of function names to skip (as strings), to manually prevent any function from being performed. 
+        For example, skip_steps=["input_params", "fetch_data"] will prevent sprit.input_params() and sprit.fetch_data() from being called in sprit.run().
     show_plot : bool, default=True
         Whether to show plots. This does not affect whether the plots are created (and then inserted as an attribute of HVSRData), only whether they are shown.
     verbose : bool, optional
@@ -1306,6 +1309,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
             raise RuntimeError(f'Batch data read in was not successful:\n{e}')
     else:
         # Get the input parameters
+        params = input_data
         try:
             input_params_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(input_params).parameters.keys())}
             if 'acq_date' not in input_params_kwargs:
@@ -1314,7 +1318,8 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
             if 'starttime' not in input_params_kwargs:
                 input_params_kwargs['starttime'] = NOWTIME.time()
             
-            params = input_params(input_data=input_data, verbose=verbose, **input_params_kwargs)
+            if skip_steps is None or 'input_params' not in skip_steps:
+                params = input_params(input_data=input_data, verbose=verbose, **input_params_kwargs)
         except Exception as e:
             if hasattr(e, 'message'):
                 errMsg = e.message
@@ -1330,6 +1335,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
             #params = sprit_utils._make_it_classy(params)
 
         # Fetch Data
+        hvsrDataIN = params
         try:
             fetch_data_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(fetch_data).parameters.keys())}
             fetch_data_kwargs.update({k: v for k, v in kwargs.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())})
@@ -1337,7 +1343,10 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
                 fetch_data_kwargs['obspy_ppsds'] = kwargs['obspy_ppsds']
             else:
                 fetch_data_kwargs['obspy_ppsds'] = False
-            hvsrDataIN = fetch_data(params=params, source=source, verbose=verbose, **fetch_data_kwargs)    
+            
+            if skip_steps is None or 'fetch_data' not in skip_steps:
+                hvsrDataIN = fetch_data(params=params, source=source, verbose=verbose, **fetch_data_kwargs)
+
         except Exception as e:
             # Even if batch, this is reading in data for all sites so we want to raise error, not just warn
             if hasattr(e, 'message'):
@@ -1427,7 +1436,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     azCond3 = azimuth_calculation
     azCond4 = len(azimuth_kwargs.keys()) > 0
 
-    if azCond1 or azCond2 or azCond3 or azCond4:
+    if (azCond1 or azCond2 or azCond3 or azCond4) and (skip_steps is None or 'calculate_azimuth' not in skip_steps):
         azimuth_calculation = True
         azimuth_kwargs['azimuth_type'] = kwargs['azimuth_type'] = 'single'
         
@@ -1465,7 +1474,8 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         if noise_removal or remove_noise_kwargs != {}:
             remove_noise_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
             try:
-                data_noiseRemoved = remove_noise(hvsr_data=data_noiseRemoved, verbose=verbose, **remove_noise_kwargs)   
+                if skip_steps is None or 'remove_noise' not in skip_steps:
+                    data_noiseRemoved = remove_noise(hvsr_data=data_noiseRemoved, verbose=verbose, **remove_noise_kwargs)   
             except Exception as e:
                 if hasattr(e, 'message'):
                     errMsg = e.message
@@ -1519,7 +1529,8 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         PPSDkwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(PPSD).parameters.keys())}
         generate_psds_kwargs.update(PPSDkwargs)
         generate_psds_kwargs['azimuthal_psds'] = azimuth_calculation
-        psd_data = generate_psds(hvsr_data=psd_data, verbose=verbose, **generate_psds_kwargs)
+        if skip_steps is None or ('generate_psds' not in skip_steps and 'generate_ppsds' not in skip_steps):
+            psd_data = generate_psds(hvsr_data=psd_data, verbose=verbose, **generate_psds_kwargs)
     except Exception as e:
         
         if hasattr(e, 'message'):
@@ -1559,7 +1570,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         outlier_curve_keys_used = True
         if remove_outlier_curve_kwargs == {} or list(remove_outlier_curve_kwargs.keys()) == ['show_plot']:
             outlier_curve_keys_used = False
-        if (outlier_curves_removal or outlier_curve_keys_used) and not use_hv_curves:
+        if (outlier_curves_removal or outlier_curve_keys_used) and not use_hv_curves and (skip_steps is None or 'remove_outlier_curves' not in skip_steps):
             remove_outlier_curve_kwargs['remove_outliers_during_plot'] = False
             data_curvesRemoved = remove_outlier_curves(hvsr_data=data_curvesRemoved, verbose=verbose,**remove_outlier_curve_kwargs)   
     except Exception as e:
@@ -1598,7 +1609,8 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
             if azimuth_kwargs['azimuth_type'] == 'single':
                 process_hvsr_kwargs['azimuth'] = azimuth_kwargs['azimuth_angle']
         
-        hvsr_results = process_hvsr(hvsr_data=psd_data, verbose=verbose, **process_hvsr_kwargs)
+        if skip_steps is None or 'process_hvsr' not in skip_steps:
+            hvsr_results = process_hvsr(hvsr_data=psd_data, verbose=verbose, **process_hvsr_kwargs)
     except Exception as e:
         sprit_utils._get_error_from_exception(e,
                                               print_error_message=True)
@@ -1625,7 +1637,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         outlier_curve_keys_used = True
         if remove_outlier_curve_kwargs == {} or list(remove_outlier_curve_kwargs.keys()) == ['show_plot']:
             outlier_curve_keys_used = False
-        if (outlier_curves_removal or outlier_curve_keys_used) and use_hv_curves:
+        if (outlier_curves_removal or outlier_curve_keys_used) and use_hv_curves and (skip_steps is None or 'remove_outlier_curves' not in skip_steps):
             remove_outlier_curve_kwargs['remove_outliers_during_plot'] = False
             hvsr_results = remove_outlier_curves(hvsr_data=hvsr_results, verbose=verbose,**remove_outlier_curve_kwargs)   
     except Exception as e:
@@ -1659,7 +1671,8 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     # Final post-processing/reporting
     # Check peaks
     check_peaks_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
-    hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
+    if skip_steps is None or 'check_peaks' not in skip_steps:
+        hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
 
     get_report_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(get_report).parameters.keys())}
     # Add 'az' as a default plot if the following conditions
@@ -1714,7 +1727,8 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         if not az_requested and hasAz and hvsr_results.horizontal_method != 'Single Azimuth':
             get_report_kwargs['plot_type'] = get_report_kwargs['plot_type'] + ' az'
 
-    hvsr_results = get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
+    if skip_steps is None or ('get_report' not in skip_steps and 'report' not in skip_steps):
+        hvsr_results = get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
 
     if verbose:
         if 'report_formats' in get_report_kwargs.keys():
