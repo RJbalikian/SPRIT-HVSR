@@ -346,12 +346,14 @@ def main():
         newLogEntry = f'\n[{datetime.datetime.now()}]  '
         if message == '':
             newLogEntry += '<action taken. message not specified>'
+        else:
+            newLogEntry += message
         newLogEntry += '\n'
         st.session_state.session_log += newLogEntry
 
 
     def show_logs():
-        st.info(st.session_state.session_log)
+        st.infos(st.session_state.session_log)
             
 
 
@@ -389,9 +391,8 @@ def main():
         st.session_state.mainContainer = mainContainer
 
         if do_setup_tabs:
-            update_session_log("Setting up main container with tabs")
             setup_tabs(mainContainer)
-        update_session_log("Setting up main container (no tabs)")
+
         st.session_state.mainContain_setup = True
 
 
@@ -402,12 +403,14 @@ def main():
     # Set up tabs
     def setup_tabs(mainContainer):
         
-        resultsTab, inputTab, outlierTab, infoTab = mainContainer.tabs(['Results', 'Data', 'Outliers', 'Info'])
+        resultsTab, inputTab, outlierTab, infoTab, logsTab = mainContainer.tabs(['Results', 'Data', 'Outliers', 'Info', 'Logs'])
         plotReportTab, csvReportTab, strReportTab = resultsTab.tabs(['Summary/Plot', 'Results Table', 'Print Report'])
 
         st.session_state.inputTab = inputTab
         st.session_state.outlierTab = outlierTab
         st.session_state.infoTab = infoTab
+        st.session_state.logTab = logsTab
+
         st.session_state.resultsTab = resultsTab
         st.session_state.plotReportTab = plotReportTab
         st.session_state.csvReportTab = csvReportTab
@@ -537,8 +540,8 @@ def main():
             if hasattr(st.session_state, 'data_ingested') and st.session_state.data_ingested:
                 inputData = st.session_state.stream_edited
 
-            SRUNText = '\n\t'.join([f"{str(k).ljust(12)} : {v}" for k, v in srun.items()])
-            update_session_log(f"Processing parameters:\n{SRUNText}")
+            SRUNText = '\n\n    -'.join([f"{str(k).ljust(25)} : {v}" for k, v in srun.items()])
+            update_session_log(f"Processing parameters:\n\n    -{SRUNText}")
 
             with st.spinner(spinnerText, show_time=True):
                 st.session_state.hvsr_data = sprit_hvsr.run(input_data=inputData, **srun)
@@ -555,7 +558,7 @@ def main():
         display_results()
         st.session_state.prev_datapath = st.session_state.input_data
         update_session_log("Processed data displayed")
-
+        st.session_state.logTab.markdown(st.session_state.session_log)
 
     def on_read_data():
         update_session_log(f"Started data read: {st.session_state.input_data}")
@@ -567,7 +570,7 @@ def main():
             st.session_state.input_data = 'sample'
 
         st.session_state.mainContainer = st.container()
-        st.session_state.inputTab, st.session_state.infoTab = st.session_state.mainContainer.tabs(['Raw Seismic Data', 'Info'])
+        st.session_state.inputTab, st.session_state.infoTab, st.session_state.logTab = st.session_state.mainContainer.tabs(['Raw Seismic Data', 'Info', 'Logs'])
 
         if st.session_state.input_data != '':
             srun = {}
@@ -593,11 +596,11 @@ def main():
         else:
             st.session_state.stream_edited = st.session_state.hvsr_data.stream.copy()
 
-        update_session_log(f"Data ingested: \n{st.session_state.hvsr_data.stream}")
+        update_session_log(f"Data ingested: \n{str(st.session_state.hvsr_data.stream).replace('Stream:', 'Stream:\n\n\t').replace('samples', 'samples\n\n\t')}")
         display_read_data(do_setup_tabs=False)
         st.session_state.data_ingested = True
         update_session_log("Ingested data displayed")
-
+        st.session_state.logTab.markdown(st.session_state.session_log)
 
     def do_interactive_display():
         if st.session_state.interactive_display:
@@ -1911,8 +1914,8 @@ def main():
                 if VERBOSE:
                     print_param(PARAM2PRINT)
 
-        st.button("View Logs", key='view_logs',help="Click to view session logs",
-                  on_click=show_logs, icon=':material/overview:')
+        st.button('View Logs',key='view_logs', help='Click to view logs on the main screen, or select the Logs tab if available',
+                  on_click=show_logs)
         if VERBOSE:
             print('Done setting up sidebar, session state length: ', len(st.session_state.keys()))
             print('Done setting up everything (end of main), session state length: ', len(st.session_state.keys()))
