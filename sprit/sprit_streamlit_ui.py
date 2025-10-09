@@ -353,7 +353,7 @@ def main():
 
 
     def show_logs():
-        st.infos(st.session_state.session_log)
+        st.info(st.session_state.session_log)
             
 
 
