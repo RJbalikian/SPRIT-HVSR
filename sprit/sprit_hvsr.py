@@ -1438,7 +1438,8 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
 
     if (azCond1 or azCond2 or azCond3 or azCond4) and (skip_steps is None or 'calculate_azimuth' not in skip_steps):
         azimuth_calculation = True
-        azimuth_kwargs['azimuth_type'] = kwargs['azimuth_type'] = 'single'
+        if 'azimuth_type' not in kwargs.keys():
+            azimuth_kwargs['azimuth_type'] = kwargs['azimuth_type'] = 'single'
         
         if 'azimuth_angle' not in kwargs.keys():
             azimuth_kwargs['azimuth_angle'] = kwargs['azimuth_angle'] = 45
@@ -1675,6 +1676,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
 
     get_report_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(get_report).parameters.keys())}
+    print("GRKREAD", get_report_kwargs)
     # Add 'az' as a default plot if the following conditions
     # first check if report_formats is specified, if not, add default value
     if 'report_formats' not in get_report_kwargs.keys():
@@ -1728,6 +1730,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
             get_report_kwargs['plot_type'] = get_report_kwargs['plot_type'] + ' az'
 
     if skip_steps is None or ('get_report' not in skip_steps and 'report' not in skip_steps):
+        print("GRK!", get_report_kwargs)
         hvsr_results = get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
 
     if verbose:
@@ -2222,7 +2225,9 @@ def calculate_azimuth(hvsr_data, azimuth_angle=45, azimuth_type='multiple', azim
 
         multAzList = ['multiple azimuths', 'multiple', 'multi', 'mult', 'm']
         singleAzList = ['single azimuth', 'single', 'sing', 's']
+        print('azimuth_type????', azimuth_type)
         if azimuth_type.lower() in multAzList:
+            print("MULTIPLE???????")
             azimuth_list = list(np.arange(0, np.pi, az_angle_rad))
             azimuth_list_deg = list(np.arange(0, 180, az_angle_deg))
         elif azimuth_type.lower() in singleAzList:
@@ -2258,6 +2263,7 @@ def calculate_azimuth(hvsr_data, azimuth_angle=45, azimuth_type='multiple', azim
         for key, value in eComp[0].stats.items():
             statsDict[key] = value
 
+        print("AZZLIST", azimuth_list)
         for i, az_rad in enumerate(azimuth_list):
             az_deg = azimuth_list_deg[i]
             statsDict['location'] = f"{str(round(az_deg,0)).zfill(3)}" #Change location name
@@ -4187,7 +4193,10 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
         
         #hvsr_data['psds'] = {'Z':{}, 'E':{}, 'N':{}}
         for key, item in psdDict.items():
-            currSt = hvsr_data.stream.select(component=key).merge()
+            if 'AZ' in key:
+                currSt = hvsr_data.stream.select(component='R', location=key[2:])
+            else:
+                currSt = hvsr_data.stream.select(component=key).merge()
                       
             hvsr_data['psds'][key]['channel'] = currSt[0].stats.channel
             hvsr_data['psds'][key]['current_times_used'] = common_times
@@ -5207,18 +5216,19 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
         azDataList = []
         azExtraDataList = []
 
-        for k in sorted(hvsr_data.hvsr_az.keys()):
+        freq = hvsr_data.x_freqs['Z'].tolist()[1:]
+        a = np.deg2rad(np.array(sorted(list(set([int(tr.stats.location) for tr in hvsr_data.stream])))))
+        # a = np.deg2rad(np.array(sorted(hvsr_data.hvsr_az.keys())).astype(float)) # old version
+        b = a + np.pi
+
+        print("HVAZ", hvsr_data.hvsr_az)
+        for k in a:
             currData = hvsr_data.hvsr_az[k]
             azDataList.append(currData)
             azExtraDataList.append(currData)
-        
-            
-        freq = hvsr_data.x_freqs['Z'].tolist()[1:]
-        a = np.deg2rad(np.array(sorted(hvsr_data.hvsr_az.keys())).astype(float))
-        b = a + np.pi
 
         z = np.array(azDataList)
-        z2 =np.array(azExtraDataList)
+        z2 = np.array(azExtraDataList)
 
         def interp_along_theta(orig_array, orig_ind):
             newArrayList = []
@@ -5239,6 +5249,9 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
 
 
         if interpolate_azimuths:
+            print("THETAS?", z)
+            print("THETAS?2", z2)
+            print("THETALENGSH", z.shape, a.shape, z2.shape)
             z = interp_along_theta(z, a)
             z2 = interp_along_theta(z2, a)
 
@@ -9508,10 +9521,10 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_meth
         azimuthStream = hvsr_data.stream.select(component='R').merge()
         
         for azimuthTrace in azimuthStream:
-            dataDict[azimuthTrace.stats.component.upper()] = azimuthTrace
+            keyName = f"AZ{azimuthTrace.stats.location}" 
+            print("KNNNNN", keyName)
+            dataDict[keyName] = azimuthTrace
         
-    
-
     if remove_response:
         for key, compStream in dataDict.items():
             compStream = compStream.split()
@@ -10046,9 +10059,11 @@ def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose
             psd2 = [psd['N'][j], psd['N'][j + 1]]
             f =    [x[j], x[j + 1]]
 
-            hvratio = __get_hvsr(psd0, psd1, psd2, f, azimuth=azimuth, use_method=horizontal_method)
+            # First do hv calc for main hv curve
+            hvratio = __get_hvsr(psd0, psd1, psd2, f, azimuth='HV', use_method=horizontal_method)
             hvsr_curve.append(hvratio)
             
+
             # Do azimuth HVSR Calculations, if applicable
             hvratio_az = 0
             for k in psd.keys():
@@ -10108,7 +10123,7 @@ def __get_hvsr(_dbz, _db1, _db2, _x, azimuth=None, use_method=3):
 
         if az == 'HV':
             return math.sqrt(_h1 * _h2)
-
+        print("AZIN", az)
         az_rad = np.deg2rad(az)
         return np.add(h2 * np.cos(az_rad), h1 * np.sin(az_rad))
 
@@ -10136,6 +10151,7 @@ def __get_hvsr(_dbz, _db1, _db2, _x, azimuth=None, use_method=3):
     elif use_method == 7 or str(use_method) == '7':
         _hCombined = min(_h1, _h2)
     elif use_method == 8 or str(use_method) == '8':
+        
         _hCombined = az_calc(azimuth, _h1, _h2)
     elif use_method == 'az' or str(use_method) == 'az':
         _hCombined = _h1

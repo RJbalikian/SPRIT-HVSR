@@ -13,3 +13,4 @@ docs/pyinstaller/dist/SpRIT.exe
 *.pkg
 *sprit.egg-info/*
 *temp*.py
+build
