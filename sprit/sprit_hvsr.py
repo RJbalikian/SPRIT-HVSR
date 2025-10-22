@@ -2649,7 +2649,7 @@ def export_data(hvsr_data, data_export_path, data_export_format='mseed', startti
         if not dePath.exists():
             dePath.mkdir(parents=True)
         outfPath = dePath.joinpath(autoFname)
-    elif dePath.is_file():
+    else: # dePath.is_file():
         outfPath = dePath
     
     # Trim stream as needed
@@ -7633,9 +7633,11 @@ def __read_tromino_data_yellow(input_data, sampling_rate=None,
 
     loc = ''
     if  station is not None and (type(station) is int or station.isdigit()):
-        loc = str(station)
+        loc = str(station)  
+    elif 'GRILLA' in str(input_filepath) and pathlib.Path(input_filepath).exists():
+        # Get partition number and make that the location
+        loc = pathlib.Path(input_filepath).stem.split(' ')[0].split('GRILLA')[1]
 
-    
     sTime = inst_sTime
     if hasattr(input_data, 'starttime') and input_data['starttime'].datetime!=NOWTIME:
         sTime = input_data['starttime']
