@@ -189,6 +189,8 @@ class HVSRBatch:
         
         self.batch = True
         
+        print(batch_input)
+        print(pathlib.Path(batch_input).exists())
         if isinstance(batch_input, (list, tuple,)):
             # This is for a list/tuple with the following structure:
             # batch_input = [HVSRData, HVSRData, HVSRData]
@@ -249,7 +251,7 @@ class HVSRBatch:
         elif isinstance(batch_input, HVSRData):
             # If iniitializing HVSRBatch with single HVSRData
             self.batch_dict[batch_input['site']] = batch_input
-        elif pathlib.Path(batch_input).exists():
+        elif type(batch_input) is str or isinstance(batch_input, pathlib.Path):
             # This is intended for filepaths
             if pathlib.Path(batch_input).is_dir():
                 if batch_ext is not None:
@@ -1428,7 +1430,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     # Calculate azimuths
     hvsr_az = hvsrDataIN
     azimuth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(calculate_azimuth).parameters.keys())}
-    
+    print("AZZKKKWARGS", azimuth_kwargs)
     azList = ['azimuth', 'single azimuth', 'single']
     
     azCond1 = 'horizontal_method' in kwargs.keys() and str(kwargs['horizontal_method']) == '8'
@@ -1441,10 +1443,10 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         if 'azimuth_type' not in kwargs.keys():
             azimuth_kwargs['azimuth_type'] = kwargs['azimuth_type'] = 'single'
         
-        if 'azimuth_angle' not in kwargs.keys():
-            azimuth_kwargs['azimuth_angle'] = kwargs['azimuth_angle'] = 45
-        
-        kwargs['azimuth'] = "R"  # str(kwargs['azimuth_angle']).zfill(3)
+            if 'azimuth_angle' not in kwargs.keys():
+                azimuth_kwargs['azimuth_angle'] = kwargs['azimuth_angle'] = 45
+            
+            kwargs['azimuth'] = "AZ"+str(kwargs['azimuth_angle']).zfill(3)
         
         if 'horizontal_method' not in kwargs.keys():
             kwargs['horizontal_method'] = 'Single Azimuth'
@@ -1676,7 +1678,6 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
 
     get_report_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(get_report).parameters.keys())}
-    print("GRKREAD", get_report_kwargs)
     # Add 'az' as a default plot if the following conditions
     # first check if report_formats is specified, if not, add default value
     if 'report_formats' not in get_report_kwargs.keys():
@@ -5208,8 +5209,10 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
                 except:
                     print(f"ERROR: {site_name} will not have azimuths plotted.")
     elif isinstance(hvsr_data, HVSRData):
+        fontSize = 6
         if fig is None:
             fig = plt.figure()
+            fontSize = 10
 
         hvsr_band = hvsr_data.hvsr_band
 
@@ -5217,13 +5220,15 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
         azExtraDataList = []
 
         freq = hvsr_data.x_freqs['Z'].tolist()[1:]
-        a = np.deg2rad(np.array(sorted(list(set([int(tr.stats.location) for tr in hvsr_data.stream])))))
+
+        a = np.deg2rad(np.array((list(set([int(tr.stats.location) for tr in hvsr_data.stream])))))
+        aDeg = np.array(list(set([int(tr.stats.location) for tr in hvsr_data.stream])))
         # a = np.deg2rad(np.array(sorted(hvsr_data.hvsr_az.keys())).astype(float)) # old version
         b = a + np.pi
 
-        print("HVAZ", hvsr_data.hvsr_az)
-        for k in a:
-            currData = hvsr_data.hvsr_az[k]
+        for k in aDeg:
+            aKey = 'AZ'+str(int(k)).zfill(3)
+            currData = hvsr_data.hvsr_az[aKey]
             azDataList.append(currData)
             azExtraDataList.append(currData)
 
@@ -5266,13 +5271,14 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
         if ax is None:
             ax = plt.subplot(polar=True)
             plt.title(hvsr_data['site'])
-
         else:
             plt.sca(ax)
 
         plt.semilogy()
         ax.set_theta_zero_location("N")
         ax.set_theta_direction(-1)
+        plt.xticks(fontsize=fontSize)  # Change X-axis label size
+        plt.yticks(fontsize=fontSize)  # Change Y-axis label size
         plt.xlim([0, np.pi*2])
         plt.ylim([hvsr_band[1], hvsr_band[0]])
 
