@@ -189,8 +189,6 @@ class HVSRBatch:
         
         self.batch = True
         
-        print(batch_input)
-        print(pathlib.Path(batch_input).exists())
         if isinstance(batch_input, (list, tuple,)):
             # This is for a list/tuple with the following structure:
             # batch_input = [HVSRData, HVSRData, HVSRData]
@@ -1302,10 +1300,13 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         kwargs['processing_parameters'] = {}
     
     # Separate out input_params and fetch_data processes based on whether batch has been specified
-    batchlist = ['batch', 'bach', 'bath', 'b']
+    batchlist = ['batch', 'bach', 'bath', 'b', 'dir', 'directory']
+    dirList = ['dir', 'directory', 'd']
     if str(source).lower() in batchlist and str('input_data').lower() not in SAMPLE_LIST:
         try:
             batch_data_read_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(batch_data_read).parameters.keys())}
+            if str(source).lower() in dirList:
+                batch_data_read_kwargs['batch_type'] = 'dir'
             hvsrDataIN = batch_data_read(batch_data=input_data, verbose=verbose, **batch_data_read_kwargs)
         except Exception as e:
             raise RuntimeError(f'Batch data read in was not successful:\n{e}')
@@ -1421,6 +1422,9 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
             else:
                 if s == 0:
                     table_reports = pd.DataFrame()
+                else:
+                    pass
+
                 
         hvsrBatchData['Table_Report'] = pd.merge(left=hvsrBatchData.input_df, right=table_reports,
                                                  how='outer',
@@ -1430,7 +1434,6 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     # Calculate azimuths
     hvsr_az = hvsrDataIN
     azimuth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(calculate_azimuth).parameters.keys())}
-    print("AZZKKKWARGS", azimuth_kwargs)
     azList = ['azimuth', 'single azimuth', 'single']
     
     azCond1 = 'horizontal_method' in kwargs.keys() and str(kwargs['horizontal_method']) == '8'
@@ -1731,7 +1734,6 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
             get_report_kwargs['plot_type'] = get_report_kwargs['plot_type'] + ' az'
 
     if skip_steps is None or ('get_report' not in skip_steps and 'report' not in skip_steps):
-        print("GRK!", get_report_kwargs)
         hvsr_results = get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
 
     if verbose:
@@ -1864,8 +1866,11 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
         sample_data = False
     
     # Dictionary to store the stream objects
+    dirList = ['dir', 'directory', 'd']
     stream_dict = {}
     data_dict = {}
+    verboseStatement = []
+
     if batch_type == 'table':
         # If this is sample data, we need to create absolute paths to the filepaths
         if sample_data:
@@ -1934,7 +1939,6 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
         # Get processing parameters, either from column param_col or from individual columns
         # If param_col, format is string of format: "param_name=param_val, param_name2=param_val2"
         param_dict_list = []
-        verboseStatement = []
         if param_col is None:  # Not a single parameter column, each col=parameter
             for row_ind in range(dataReadInfoDF.shape[0]):
                 param_dict = {}
@@ -1965,7 +1969,6 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
                 for item in splitRow:
                     param_dict[item.split('=')[0]] = item.split('=')[1]
                 param_dict_list.append(param_dict)
-
     elif batch_type == 'filelist':
         if not isinstance(batch_data, (list, tuple)):
             raise RuntimeError(f"If batch_type is specified as 'filelist' or 'list', batch_data must be list or tuple, not {type(batch_data)}.")
@@ -1988,7 +1991,22 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
         # Read and process each MiniSEED file
         for i, file in enumerate(batch_data):
             param_dict_list[i]['input_data'] = file
-    
+    elif str(batch_type).lower() in dirList:
+        if pathlib.Path(batch_data).is_file():
+            batch_type = pathlib.Path(batch_data).parent
+            if verbose:
+                print("\t For batch_type={batch_type}, batch_data must be directory. Using parent directory of batch_data={batch_data}")
+        
+        if not pathlib.Path(batch_data).exists():
+            raise RuntimeError("File/directory specified for batch_data does not exists")
+        elif not pathlib.Path(batch_data).exists() and not pathlib.Path(batch_data).parent.exists():
+            raise RuntimeError("Batch input is not usable with directory batch_type. The file or directory does not exist: {batch_data}")
+
+        param_dict_list = []
+        for file in pathlib.Path(batch_data).glob('*'):
+            if file.suffix.replace('.', '').upper() in OBSPY_FORMATS:
+                param_dict_list.append({'input_data': file, 'site':file.stem} )
+        
     # Get a uniformly formatted input DataFrame
     input_df_uniformatted = pd.DataFrame(param_dict_list)   
     
@@ -2226,9 +2244,7 @@ def calculate_azimuth(hvsr_data, azimuth_angle=45, azimuth_type='multiple', azim
 
         multAzList = ['multiple azimuths', 'multiple', 'multi', 'mult', 'm']
         singleAzList = ['single azimuth', 'single', 'sing', 's']
-        print('azimuth_type????', azimuth_type)
         if azimuth_type.lower() in multAzList:
-            print("MULTIPLE???????")
             azimuth_list = list(np.arange(0, np.pi, az_angle_rad))
             azimuth_list_deg = list(np.arange(0, 180, az_angle_deg))
         elif azimuth_type.lower() in singleAzList:
@@ -9528,7 +9544,6 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_meth
         
         for azimuthTrace in azimuthStream:
             keyName = f"AZ{azimuthTrace.stats.location}" 
-            print("KNNNNN", keyName)
             dataDict[keyName] = azimuthTrace
         
     if remove_response:
