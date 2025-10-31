@@ -45,10 +45,6 @@ Aside from the modules in the python standard library, the following package dep
 - [plotly](https://plotly.com/python/): Open Source Graphing Library for Python that makes interactive, publication-quality graphs.
 
 ## Dependencies specifically for GUIs
-### TKinter GUI
-- [pyqt5-sip](https://pypi.org/project/PyQt5): Python binding of Qt GUI toolkit (used for window selection in jupyter notebooks)
-- tkinter (may not be installed with python on linux systems)
-
 ### Jupyter Widget GUI
 - ipython
 - ipywidgets
