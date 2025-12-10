@@ -1,6 +1,8 @@
 import datetime
 import functools
+import importlib
 import inspect
+import json
 import os
 import pathlib
 import subprocess
@@ -17,6 +19,8 @@ try:  # For distribution
 except Exception: #For testing
     import sprit_hvsr
     pass
+
+RESOURCE_DIR = sprit_hvsr.RESOURCE_DIR
 
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
@@ -414,7 +418,7 @@ def _get_error_from_exception(exception=None, print_error_message=True, return_e
             return f"{error_category} ({errLineNo}): {error_message}\n\n{lineno} {filename} {f}"
 
 
-#Check that input strema has Z, E, N channels
+# Check that input strema has Z, E, N channels
 def _has_required_channels(stream):
     channel_set = set()
     
@@ -425,7 +429,7 @@ def _has_required_channels(stream):
     # Check if Z, E, and N channels are present
     return {'Z', 'E', 'N'}.issubset(channel_set)
 
-#Make input data (dict) into sprit_hvsr class
+# Make input data (dict) into sprit_hvsr class
 def _make_it_classy(input_data, verbose=False):
     if isinstance(input_data, (sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch)):
         for k, v in input_data.items():
@@ -445,7 +449,7 @@ def _make_it_classy(input_data, verbose=False):
     return output_class
 
 
-#Read data directly from Raspberry Shake
+# Read data directly from Raspberry Shake
 def _read_from_RS(dest, src='SHAKENAME@HOSTNAME:/opt/data/archive/YEAR/AM/STATION/', opts='az', username='myshake', password='shakeme',hostname='rs.local', year='2023', sta='RAC84',sleep_time=0.1, verbose=True, save_progress=True, method='scp'):
     src = src.replace('SHAKENAME', username)
     src = src.replace('SHAKENAME', hostname)
@@ -520,6 +524,60 @@ def _read_from_RS(dest, src='SHAKENAME@HOSTNAME:/opt/data/archive/YEAR/AM/STATIO
     return dest
 
 
+# Read default json file into dict
+def _read_default_json_file():
+    with open(RESOURCE_DIR.joinpath('defaults.json').as_posix(), 'r') as jf:
+        jsonDict = json.load(jf)
+    return jsonDict
+
+
+# Reset default values in jason
+def _reset_default_json(verbose=False):
+    """Function to reset default parameter values json file.
+       This json file can be changed for ease of processing.
+       This function changes the defaults back to the defaults for the SpRIT release.
+
+    Parameters
+    ----------
+    verbose : bool, optional
+        Whether to print the data to terminal, by default True
+    """
+    replace_map = {None:"null", 
+                   False:"false", 
+                   True:"true",
+                   '=':':',
+                   "'":'"'}
+
+    funcs_to_get = [sprit_hvsr.input_params, sprit_hvsr.fetch_data,
+                    sprit_hvsr.calculate_azimuth, sprit_hvsr.remove_noise,
+                    sprit_hvsr.generate_psds, sprit_hvsr.process_hvsr,
+                    sprit_hvsr.remove_outlier_curves,
+                    sprit_hvsr.check_peaks,
+                    sprit_hvsr.get_report,
+                    sprit_hvsr.export_hvsr,
+                    ]
+
+    keyDict = {}
+    for fun in funcs_to_get:
+        if verbose:
+            print(fun)
+        funSig = inspect.signature(fun)
+        currKeyList = list(funSig.parameters.keys())
+        for k in currKeyList:
+            if verbose:
+                print('\t', k, funSig.parameters[k].default)
+            if not funSig.parameters[k].default is inspect._empty and k not in keyDict:
+                defaultVal = funSig.parameters[k].default
+                if str(defaultVal) in replace_map.keys():
+                    defaultVal = replace_map[defaultVal]
+                keyDict[k] = defaultVal
+
+    with open(RESOURCE_DIR.joinpath('defaults.json').as_posix(), "w") as fp:
+        json.dump(keyDict, fp, indent=4)
+        
+    return json.dumps(keyDict, indent=4)
+
+
 def _run_docstring():
     """This function updates the docstring the sprit.run() function, for documentation or help(sprit.run()) purposes
 
@@ -592,6 +650,21 @@ def _time_it(_t, proc_name='', verbose=True):
         t = t1
     return t
 
+
+# Update a value in the default json file
+def _update_default(parameter, new_default):
+    jsonDict = _read_default_json_file()
+
+    if parameter not in jsonDict:
+        print(f"{parameter} not a parameter name. Must be one of the following parameters:")
+        [print(pname+', ', end='') for pname in jsonDict.keys()]
+    else:
+        old_default = jsonDict[parameter]
+        jsonDict[parameter] = new_default
+        print(f"Default value for {parameter} updated from {old_default} to {new_default}")
+    
+    with open(RESOURCE_DIR.joinpath('defaults.json'), 'w') as fp:
+        json.dump(jsonDict, fp, indent=4)
 
 #Get x mark (for negative test results)
 def _x_mark(incolor=False, inTerminal=False):

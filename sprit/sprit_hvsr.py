@@ -60,11 +60,14 @@ OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX',
                  'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 
                  'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'TRC',
                  'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
-DEFAULT_BAND = [0.5, 40]
 PLOT_KEYS = ["Input_Plot", "Outlier_Plot", "Plot_Report", "Depth_Plot", "Plot_Report"]
+RESOURCE_DIR = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources')
+
+with open(RESOURCE_DIR.joinpath('defaults.json'), 'r') as fp:
+    DEFAULT_PARAMS_DICT = json.load(fp)
+DEFAULT_BAND = DEFAULT_PARAMS_DICT['hvsr_band']
 
 # Resources directory path, and the other paths as well
-RESOURCE_DIR = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources')
 SAMPLE_DATA_DIR = RESOURCE_DIR.joinpath('sample_data')
 SETTINGS_DIR = RESOURCE_DIR.joinpath('settings')
 
@@ -2158,6 +2161,7 @@ def calculate_azimuth(hvsr_data, azimuth_angle=45, azimuth_type='multiple', azim
                     orig_args[k] = v
                                      
     azimuth_angle = orig_args['azimuth_angle']
+    azimuth_type = orig_args['azimuth_type']
     azimuth_unit = orig_args['azimuth_unit']
     show_az_plot = orig_args['show_az_plot']
     verbose = orig_args['verbose']
@@ -2205,6 +2209,16 @@ def calculate_azimuth(hvsr_data, azimuth_angle=45, azimuth_type='multiple', azim
         return output
     elif isinstance(hvsr_data, (HVSRData, dict, obspy.Stream)):
 
+        # Handle east/north keywords
+        if str(azimuth_angle).lower() in ['e', 'east'] or str(azimuth_type).lower() in ['e', 'east']:
+            azimuth_angle = 90
+            azimuth_unit = 'degrees'
+            azimuth_type = 'single'
+        elif str(azimuth_angle).lower() in ['n', 'north'] or str(azimuth_type).lower() in ['n', 'north']:
+            azimuth_angle = 0
+            azimuth_unit = 'degrees'
+            azimuth_type = 'single'
+
         degList = ['degrees', 'deg', 'd', '°']
         radList = ['radians', 'rad', 'r']
         if azimuth_unit.lower() in degList:
@@ -2243,7 +2257,7 @@ def calculate_azimuth(hvsr_data, azimuth_angle=45, azimuth_type='multiple', azim
             print(f' degrees --> {az_angle_deg} degrees.')
 
         multAzList = ['multiple azimuths', 'multiple', 'multi', 'mult', 'm']
-        singleAzList = ['single azimuth', 'single', 'sing', 's']
+        singleAzList = ['single azimuth', 'single', 'sing', 's', 'e', 'east', 'n', 'north']
         if azimuth_type.lower() in multAzList:
             azimuth_list = list(np.arange(0, np.pi, az_angle_rad))
             azimuth_list_deg = list(np.arange(0, 180, az_angle_deg))
@@ -2280,7 +2294,6 @@ def calculate_azimuth(hvsr_data, azimuth_angle=45, azimuth_type='multiple', azim
         for key, value in eComp[0].stats.items():
             statsDict[key] = value
 
-        print("AZZLIST", azimuth_list)
         for i, az_rad in enumerate(azimuth_list):
             az_deg = azimuth_list_deg[i]
             statsDict['location'] = f"{str(round(az_deg,0)).zfill(3)}" #Change location name
@@ -3371,7 +3384,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
         elif source == 'file' and str(params['input_data']).lower() not in SAMPLE_LIST:
             # Read the file specified by input_data
             # Automatically read tromino data
-            if str(inst).lower() in trominoNameList or 'tromino' in str(inst).lower() or 'trc' in dPath.suffix:
+            if (str(inst).lower() in trominoNameList and 'trc' in dPath.suffix) or 'trc' in dPath.suffix:
                 params['instrument'] = 'Tromino'
                 params['params']['instrument'] = 'Tromino'
 
@@ -3916,7 +3929,7 @@ def generate_ppsds(hvsr_data, **gen_psds_kwargs):
 # Generate PSDs for each channel
 def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='hann', window_length_method='length', 
                   remove_response=False, skip_on_gaps=True, num_freq_bins=512, hvsr_band=DEFAULT_BAND,
-                  obspy_ppsds=False, azimuthal_psds=False, verbose=False, plot_psds=False, **obspy_ppsd_kwargs):
+                  obspy_ppsds=False, azimuthal_psds=False, plot_psds=False, verbose=False, **obspy_ppsd_kwargs):
     
     """Calculate Power Spectral Density (PSD) curves for each channel.
         Uses the [scipy.signal.welch()](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html) function 
@@ -8671,7 +8684,6 @@ def __remove_warmup_cooldown(stream, warmup_time = 0, cooldown_time = 0, verbose
         window_UTC = []
         window_MPL = []
 
-        print("warmup starttime", startT)
         # Initiate list with starttimes
         for w, win in enumerate(windows_samples):
             # win is a list with start/end time for each buffer, in samples
