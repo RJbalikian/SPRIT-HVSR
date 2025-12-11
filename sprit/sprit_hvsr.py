@@ -594,10 +594,13 @@ class HVSRData:
         #self.tsteps_used = []
 
         for key, value in params.items():
-            setattr(self, key, value)
             if key == 'input_params':
                 for k, v in params[key].items():
                     setattr(self, k, v)
+            else:
+                setattr(self, key, value)
+
+                
 
         self.processing_status = {'input_params_status': None,
                                   'fetch_data_status': None,
@@ -1560,7 +1563,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
                 errMsg = e
             if not ('batch' in data_noiseRemoved.keys() and data_noiseRemoved['batch']):
                 raise RuntimeError(f"generate_psds() error: {errMsg}")
-    
+
     # Generate PPSDs
     psd_data = data_noiseRemoved
     try:
@@ -1645,7 +1648,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
             if not data_curvesRemoved_interim[site_name]['batch']:
                 data_curvesRemoved_interim = data_curvesRemoved_interim[site_name]
         data_curvesRemoved = data_curvesRemoved_interim
-        
+
     # Process HVSR Curves
     hvsr_results = data_curvesRemoved
     try:
@@ -1672,6 +1675,8 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
             # If it wasn't originally HVSRBatch, make it HVSRData object again
             if not hvsr_results[site_name]['batch']:
                 hvsr_results = hvsr_results[site_name]            
+
+    print('ph', hasattr(hvsr_results, 'input_stream'))
 
     # Remove outlier HV Curves
     try:
@@ -1720,100 +1725,128 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
 
     # Final post-processing/reporting
     # Check peaks
-    check_peaks_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
-    updated_cp_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
-    check_peaks_kwargs.update({k: v for k, v in updated_cp_defaults.items() if k not in check_peaks_kwargs})
-    if skip_steps is None or 'check_peaks' not in skip_steps:
-        hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
+    try:
+        check_peaks_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
+        updated_cp_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
+        check_peaks_kwargs.update({k: v for k, v in updated_cp_defaults.items() if k not in check_peaks_kwargs})
+        if skip_steps is None or 'check_peaks' not in skip_steps:
+            hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
 
-    get_report_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(get_report).parameters.keys())}
-    updated_gr_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(get_report).parameters.keys())}
-    get_report_kwargs.update({k: v for k, v in updated_gr_defaults.items() if k not in get_report_kwargs})
-    # Add 'az' as a default plot if the following conditions
-    # first check if report_formats is specified, if not, add default value
-    if 'report_formats' not in get_report_kwargs.keys():
-        get_report_kwargs['report_formats'] = inspect.signature(get_report).parameters['report_formats'].default
-    
-    # Now, check if plot is specified, then if plot_type is specified, then add 'az' if stream has azimuths
-    if 'plot' in get_report_kwargs['report_formats']:
-        plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
-        updated_phv_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
-        #plot_hvsr_kwargs.update({k: v for k, v in updated_phv_defaults.items() if k not in plot_hvsr_kwargs})
-        get_report_kwargs.update(plot_hvsr_kwargs)
-        usingDefault = True
-        if 'plot_type' not in get_report_kwargs.keys():
-            get_report_kwargs['plot_type'] = inspect.signature(get_report).parameters['plot_type'].default
-        else:
-            usingDefault = False
-
-        # Check if az is already specified as plot output
-        azList = ['azimuth', 'az', 'a', 'radial', 'r']
-        az_requested = False
+        get_report_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(get_report).parameters.keys())}
+        updated_gr_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(get_report).parameters.keys())}
+        get_report_kwargs.update({k: v for k, v in updated_gr_defaults.items() if k not in get_report_kwargs})
+        # Add 'az' as a default plot if the following conditions
+        # first check if report_formats is specified, if not, add default value
+        if 'report_formats' not in get_report_kwargs.keys():
+            get_report_kwargs['report_formats'] = inspect.signature(get_report).parameters['report_formats'].default
         
-        get_report_kwargs['plot_type'] = [item.lower() for item in get_report_kwargs['plot_type'].split(' ')]
-        for azStr in azList:
-            if azStr.lower() in get_report_kwargs['plot_type']:
-                az_requested = True
-                break
-        get_report_kwargs['plot_type'] = ' '.join(get_report_kwargs['plot_type'])
-
-        if isinstance(hvsr_results, HVSRData):
-            hvsr_results_interim = {hvsr_results['site']: hvsr_results}
-        else:
-            hvsr_results_interim = hvsr_results
-
-        for site_name in hvsr_results_interim.keys():  # This should work more or less the same for batch and regular data now
-            # Check if data has azimuth data
-            hasAz = False
-            if 'stream' in hvsr_results_interim[site_name].keys():
-                for tr in hvsr_results_interim[site_name]['stream']:
-                    if tr.stats.component == 'R':
-                        hasAz = True
-                        break
-            
-            # Assuming all sites in batch have az if one does
-            if hasAz:
-                break
-
-            # If it wasn't originally HVSRBatch, make it HVSRData object again
-            #if not hvsr_results_interim[site_name]['batch']:
-            #    hvsr_results_interim = hvsr_results_interim[site_name]            
-            
-        # Add azimuth as a requested plot if azimuthal data exists but not requested in plot
-        if not az_requested and hasAz and hvsr_results.horizontal_method != 'Single Azimuth':
-            get_report_kwargs['plot_type'] = get_report_kwargs['plot_type'] + ' az'
-
-    if skip_steps is None or ('get_report' not in skip_steps and 'report' not in skip_steps):
-        hvsr_results = get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
-
-    if verbose:
-        if 'report_formats' in get_report_kwargs.keys():
-            if type(get_report_kwargs['report_formats']) is str:
-                report_formats = get_report_kwargs['report_formats'].lower()
-            elif isinstance(get_report_kwargs['report_formats'], (tuple, list)):
-                for i, rf in enumerate(get_report_kwargs['report_formats']):
-                    get_report_kwargs['report_formats'][i] = rf.lower()
-                    
-            # if report_formats is 'print', we would have already printed it in previous step
-            if get_report_kwargs['report_formats'] == 'print' or 'print' in get_report_kwargs['report_formats'] or isinstance(hvsr_results, HVSRBatch):
-                # We do not need to print another report if already printed to terminal
-                pass
+        # Now, check if plot is specified, then if plot_type is specified, then add 'az' if stream has azimuths
+        if 'plot' in get_report_kwargs['report_formats']:
+            plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
+            updated_phv_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
+            #plot_hvsr_kwargs.update({k: v for k, v in updated_phv_defaults.items() if k not in plot_hvsr_kwargs})
+            get_report_kwargs.update(plot_hvsr_kwargs)
+            usingDefault = True
+            if 'plot_type' not in get_report_kwargs.keys():
+                get_report_kwargs['plot_type'] = inspect.signature(get_report).parameters['plot_type'].default
             else:
-                # We will just change the report_formats kwarg to print, since we already got the originally intended report format above, 
-                #   now need to print for verbose output
-                get_report_kwargs['report_formats'] = 'print'
-                get_report(hvsr_results=hvsr_results, **get_report_kwargs)
+                usingDefault = False
+
+            # Check if az is already specified as plot output
+            azList = ['azimuth', 'az', 'a', 'radial', 'r']
+            az_requested = False
+            
+            get_report_kwargs['plot_type'] = [item.lower() for item in get_report_kwargs['plot_type'].split(' ')]
+            for azStr in azList:
+                if azStr.lower() in get_report_kwargs['plot_type']:
+                    az_requested = True
+                    break
+            get_report_kwargs['plot_type'] = ' '.join(get_report_kwargs['plot_type'])
+
+            if isinstance(hvsr_results, HVSRData):
+                hvsr_results_interim = {hvsr_results['site']: hvsr_results}
+            else:
+                hvsr_results_interim = hvsr_results
+
+            for site_name in hvsr_results_interim.keys():  # This should work more or less the same for batch and regular data now
+                # Check if data has azimuth data
+                hasAz = False
+                if 'stream' in hvsr_results_interim[site_name].keys():
+                    for tr in hvsr_results_interim[site_name]['stream']:
+                        if tr.stats.component == 'R':
+                            hasAz = True
+                            break
                 
-            if get_report_kwargs['report_formats'] == 'plot' or 'plot' in get_report_kwargs['report_formats']:
-                # We do not need to plot another report if already plotted
-                pass
+                # Assuming all sites in batch have az if one does
+                if hasAz:
+                    break
+
+                # If it wasn't originally HVSRBatch, make it HVSRData object again
+                #if not hvsr_results_interim[site_name]['batch']:
+                #    hvsr_results_interim = hvsr_results_interim[site_name]            
+                
+            # Add azimuth as a requested plot if azimuthal data exists but not requested in plot
+            if not az_requested and hasAz and hvsr_results.horizontal_method != 'Single Azimuth':
+                get_report_kwargs['plot_type'] = get_report_kwargs['plot_type'] + ' az'
+
+        if skip_steps is None or ('get_report' not in skip_steps and 'report' not in skip_steps):
+            hvsr_results = get_report(hvsr_results=hvsr_results, verbose=verbose, **get_report_kwargs)
+
+        if verbose:
+            if 'report_formats' in get_report_kwargs.keys():
+                if type(get_report_kwargs['report_formats']) is str:
+                    report_formats = get_report_kwargs['report_formats'].lower()
+                elif isinstance(get_report_kwargs['report_formats'], (tuple, list)):
+                    for i, rf in enumerate(get_report_kwargs['report_formats']):
+                        get_report_kwargs['report_formats'][i] = rf.lower()
+                        
+                # if report_formats is 'print', we would have already printed it in previous step
+                if get_report_kwargs['report_formats'] == 'print' or 'print' in get_report_kwargs['report_formats'] or isinstance(hvsr_results, HVSRBatch):
+                    # We do not need to print another report if already printed to terminal
+                    pass
+                else:
+                    # We will just change the report_formats kwarg to print, since we already got the originally intended report format above, 
+                    #   now need to print for verbose output
+                    get_report_kwargs['report_formats'] = 'print'
+                    get_report(hvsr_results=hvsr_results, **get_report_kwargs)
+                    
+                if get_report_kwargs['report_formats'] == 'plot' or 'plot' in get_report_kwargs['report_formats']:
+                    # We do not need to plot another report if already plotted
+                    pass
+                else:
+                    # hvplot_kwargs = {k: v for k, v in kwargs.items() if k in plot_hvsr.__code__.co_varnames}
+                    # hvsr_results['Plot_Report'] = plot_hvsr(hvsr_results, return_fig=True, show_plot=False, close_figs=True)
+                    pass
             else:
-                # hvplot_kwargs = {k: v for k, v in kwargs.items() if k in plot_hvsr.__code__.co_varnames}
-                # hvsr_results['Plot_Report'] = plot_hvsr(hvsr_results, return_fig=True, show_plot=False, close_figs=True)
                 pass
+    except Exception as e:
+        traceback.print_exception(sys.exc_info()[1])
+        exc_type, exc_obj, tb = sys.exc_info()
+        f = tb.tb_frame
+        lineno = tb.tb_lineno
+        filename = f.f_code.co_filename
+        errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+        error_category = type(e).__name__.title().replace('error', 'Error')
+        error_message = f"{e} ({errLineNo})"
+        print(f"{error_category} ({errLineNo}): {error_message}")
+        print(lineno, filename, f)
+        
+        # Reformat data so HVSRData and HVSRBatch data both work here
+        if isinstance(hvsr_results, HVSRData):
+            hvsr_results = {hvsr_results['site']: hvsr_results}
         else:
-            pass
+            hvsr_results = hvsr_results
+        
+        for site_name in hvsr_results.keys():  # This should work more or less the same for batch and regular data now
+            hvsr_results[site_name]['processing_status']['check_peaks'] = False
+            #data_curvesRemoved_interim[site_name]['processing_status']['overall_status'] = False
     
+            #If it wasn't originally HVSRBatch, make it HVSRData object again
+            if not hvsr_results[site_name]['batch']:
+                hvsr_results = hvsr_results[site_name]
+        print("H/V data processed, could not check peaks")
+        return hvsr_results
+
     # Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
     if 'hvsr_export_path' in kwargs.keys() or DPD['hvsr_export_path'] is not None:
         if kwargs['hvsr_export_path'] is None:
@@ -2898,7 +2931,7 @@ def export_report(hvsr_results, report_export_path=None, report_export_format=['
             ref == 'pdf'
             ext = '.pdf'
             
-        sitename = hvsr_results['input_params']['site']
+        sitename = hvsr_results['site']
         fname = f"{sitename}_REPORT_{hvsr_results['hvsr_id']}_{datetime.date.today()}{ext}"
         fname = fname.replace(':', '')
 
@@ -2906,13 +2939,13 @@ def export_report(hvsr_results, report_export_path=None, report_export_format=['
         outFile = pathlib.Path().home().joinpath(fname)
         if report_export_path is True or report_export_path is None:
             # Check so we don't write in sample directory
-            if pathlib.Path(hvsr_results['input_params']['input_data']) in sampleFileKeyMap.values():
+            if pathlib.Path(hvsr_results['input_data']) in sampleFileKeyMap.values():
                 if pathlib.Path(os.getcwd()) in sampleFileKeyMap.values(): #Just in case current working directory is also sample directory
                     inFile = pathlib.Path.home() #Use the path to user's home if all else fails
                 else:
                     inFile = pathlib.Path(os.getcwd())
             else:
-                inFile = pathlib.Path(hvsr_results['input_params']['input_data'])
+                inFile = pathlib.Path(hvsr_results['input_data'])
                             
             if inFile.is_dir():
                 outFile = inFile.joinpath(fname)
@@ -3407,7 +3440,7 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
                         if hasattr(input_parameters, 'site'):
                             input_parameters['site'] = rawDataIN[0].stats.site
                         if hasattr(input_parameters, input_params):
-                            input_parameters['input_params']['site'] = rawDataIN[0].stats.site
+                            input_parameters['site'] = rawDataIN[0].stats.site
                 else:
                     if inst.lower() not in raspShakeInstNameList:
                         print(f"Unrecognized value instrument={inst}. Defaulting to raw raspberry shake data.")
@@ -4059,8 +4092,8 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
     if 'period_limits' not in obspy_ppsd_kwargs.keys():
         if 'hvsr_band' in hvsr_data.keys():
             obspy_ppsd_kwargs_sprit_defaults['period_limits'] = [1/hvsr_data['hvsr_band'][1], 1/hvsr_data['hvsr_band'][0]]
-        elif 'input_params' in hvsr_data.keys() and 'hvsr_band' in hvsr_data['input_params'].keys():
-            obspy_ppsd_kwargs_sprit_defaults['period_limits'] = [1/hvsr_data['input_params']['hvsr_band'][1], 1/hvsr_data['input_params']['hvsr_band'][0]]
+        elif 'input_params' in hvsr_data.keys() and 'hvsr_band' in hvsr_data.keys():
+            obspy_ppsd_kwargs_sprit_defaults['period_limits'] = [1/hvsr_data['hvsr_band'][1], 1/hvsr_data['hvsr_band'][0]]
         else:
             obspy_ppsd_kwargs_sprit_defaults['period_limits'] = [1/hvsr_band[1], 1/hvsr_band[0]]
     else:
@@ -4073,8 +4106,8 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
             else:
                 hvsr_data['hvsr_band'] = np.round([1/obspy_ppsd_kwargs['period_limits'][1], 1/obspy_ppsd_kwargs['period_limits'][0]], 2).tolist()
         
-        if 'input_params' in hvsr_data.keys() and 'hvsr_band' in hvsr_data['input_params'].keys():
-            hvsr_data['input_params']['hvsr_band'] = np.round([1/obspy_ppsd_kwargs['period_limits'][1], 1/obspy_ppsd_kwargs['period_limits'][0]], 2).tolist()
+        if 'input_params' in hvsr_data.keys() and 'hvsr_band' in hvsr_data.keys():
+            hvsr_data['hvsr_band'] = np.round([1/obspy_ppsd_kwargs['period_limits'][1], 1/obspy_ppsd_kwargs['period_limits'][0]], 2).tolist()
             
         
     # Get Probablistic power spectral densities (PPSDs)
@@ -4663,10 +4696,10 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
         
         if report_export_path is not None:
             if report_export_path is True:
-                if pathlib.Path(hvsr_results['input_params']['input_data']) in sampleFileKeyMap.values():
+                if pathlib.Path(hvsr_results['input_data']) in sampleFileKeyMap.values():
                     csvExportPath = pathlib.Path(os.getcwd())
                 else:
-                    csvExportPath = pathlib.Path(hvsr_results['input_params']['input_data']).parent
+                    csvExportPath = pathlib.Path(hvsr_results['input_data']).parent
             elif pathlib.Path(report_export_path).is_dir():
                 csvExportPath = report_export_path
             elif pathlib.Path(report_export_path).is_file():
@@ -5258,7 +5291,17 @@ def input_params(input_data,
         for msg_line in update_msg:
             print(msg_line)
         print()
-        
+
+    if 'processing_parameters' not in inputParamDict.keys():
+        inputParamDict['processing_parameters'] = {}
+    inputParamDict['processing_parameters']['input_params'] = {}
+    exclude_params_list = ['params']
+    for key, value in orig_args.items():
+        if key not in exclude_params_list:
+            if key == 'input_data':
+                value = str(value)
+            inputParamDict['processing_parameters']['input_params'][key] = value
+
     #Format everything nicely
     params = sprit_utils._make_it_classy(inputParamDict)
     params['processing_status']['input_params_status'] = True
@@ -6018,7 +6061,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     #print('hvaz', np.array(hvsr_az).shape)
 
     #Add some other variables to our output dictionary
-    hvsr_dataUpdate = {'input_params':hvsr_data,
+    hvsr_dataUpdate = {
                 'x_freqs':x_freqs,
                 'hvsr_curve':hvsr_curve,
                 'hvsr_az':hvsr_az,
@@ -6036,7 +6079,11 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
                 'hvsr_windows_df':hvsr_data['hvsr_windows_df']
                 }
     
-    hvsr_out = HVSRData(hvsr_dataUpdate)
+    hvsr_out = hvsr_data.copy()
+    for k, v in hvsr_dataUpdate.items():
+        hvsr_out[k] = v
+
+    #hvsr_out = HVSRData(hvsr_dataUpdate)
 
     #This is if manual editing was used (should probably be updated at some point to just use masks)
     if 'x_windows_out' in hvsr_data.keys():
@@ -6201,7 +6248,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     hvsr_out = __gethvsrparams(hvsr_out)
 
     #Include the original obspy stream in the output
-    hvsr_out['input_stream'] = hvsr_dataUpdate['input_params']['input_stream'] #input_stream
+    #hvsr_out['input_stream'] = hvsr_dataUpdate['input_stream'] #input_stream
     hvsr_out = sprit_utils._make_it_classy(hvsr_out)
     hvsr_out['processing_status']['process_hvsr_status'] = True
 
@@ -6573,7 +6620,7 @@ def remove_noise(hvsr_data, remove_method=None,
 
         output = __remove_windows_from_df(output, verbose=verbose)
 
-        #if 'hvsr_windows_df' in output.keys() or ('params' in output.keys() and 'hvsr_windows_df' in output['params'].keys())or ('input_params' in output.keys() and 'hvsr_windows_df' in output['input_params'].keys()):
+        #if 'hvsr_windows_df' in output.keys() or ('params' in output.keys() and 'hvsr_windows_df' in output['params'].keys())or ('input_params' in output.keys() and 'hvsr_windows_df' in output.keys()):
         #    hvsrDF = output['hvsr_windows_df']
         #    
         #    outStream = output['stream_edited'].split()
@@ -7043,9 +7090,9 @@ def __check_peaks_batch(**check_peaks_kwargs):
     try:
         hvsr_data = check_peaks(**check_peaks_kwargs)
         if check_peaks_kwargs['verbose']:
-            print('\t{} succesfully completed check_peaks()'.format(hvsr_data['input_params']['site']))    
+            print('\t{} succesfully completed check_peaks()'.format(hvsr_data['site']))    
     except:
-        warnings.warn(f"Error in check_peaks({check_peaks_kwargs['hvsr_data']['input_params']['site']}, **check_peaks_kwargs)", RuntimeWarning)
+        warnings.warn(f"Error in check_peaks({check_peaks_kwargs['hvsr_data']['site']}, **check_peaks_kwargs)", RuntimeWarning)
         hvsr_data = check_peaks_kwargs['hvsr_data']
         
     return hvsr_data
@@ -7080,7 +7127,7 @@ def __get_report_batch(**get_report_kwargs):
                 get_report(**get_report_kwargs)
         
     except:
-        warnMsg = f"Error in get_report({get_report_kwargs['hvsr_results']['input_params']['site']}, **get_report_kwargs)"
+        warnMsg = f"Error in get_report({get_report_kwargs['hvsr_results']['site']}, **get_report_kwargs)"
         if get_report_kwargs['verbose']:
             print('\t'+warnMsg)
         else:
@@ -7097,7 +7144,7 @@ def __azimuth_batch(**azimuth_kwargs):
 
         if azimuth_kwargs['verbose']:
             if 'input_params' in hvsr_data.keys():
-                print('\t{} successfully completed calculate_azimuth()'.format(hvsr_data['input_params']['site']))
+                print('\t{} successfully completed calculate_azimuth()'.format(hvsr_data['site']))
             elif 'site' in hvsr_data.keys():
                 print('\t{} successfully completed calculate_azimuth()'.format(hvsr_data['site']))
     except Exception as e:
@@ -7113,7 +7160,7 @@ def __remove_noise_batch(**remove_noise_kwargs):
 
         if remove_noise_kwargs['verbose']:
             if 'input_params' in hvsr_data.keys():
-                print('\t{} successfully completed remove_noise()'.format(hvsr_data['input_params']['site']))
+                print('\t{} successfully completed remove_noise()'.format(hvsr_data['site']))
             elif 'site' in hvsr_data.keys():
                 print('\t{} successfully completed remove_noise()'.format(hvsr_data['site']))
     except Exception as e:
@@ -7129,7 +7176,7 @@ def __remove_outlier_curves(**remove_outlier_curves_kwargs):
 
         if remove_outlier_curves_kwargs['verbose']:
             if 'input_params' in hvsr_data.keys():
-                print('\t{} successfully completed remove_outlier_curves()'.format(hvsr_data['input_params']['site']))
+                print('\t{} successfully completed remove_outlier_curves()'.format(hvsr_data['site']))
             elif 'site' in hvsr_data.keys():
                 print('\t{} successfully completed remove_outlier_curves()'.format(hvsr_data['site']))
     except Exception as e:
@@ -7143,7 +7190,7 @@ def __hvsr_plot_batch(**hvsr_plot_kwargs):
     try:
         hvsr_data = plot_hvsr(**hvsr_plot_kwargs)
     except:
-        warnings.warn(f"Error in plotting ({hvsr_plot_kwargs['hvsr_data']['input_params']['site']}, **hvsr_plot_kwargs)", RuntimeWarning)
+        warnings.warn(f"Error in plotting ({hvsr_plot_kwargs['hvsr_data']['site']}, **hvsr_plot_kwargs)", RuntimeWarning)
         hvsr_data = hvsr_plot_kwargs['hvsr_data']
         
     return hvsr_data
@@ -7154,7 +7201,7 @@ def __plot_azimuth_batch(**plot_azimuth_kwargs):
     try:
         hvsr_data['Azimuth_Fig'] = plot_azimuth(**plot_azimuth_kwargs)
         if plot_azimuth_kwargs['verbose']:
-            print('\t{} successfully completed plot_azimuth()'.format(hvsr_data['input_params']['site']))
+            print('\t{} successfully completed plot_azimuth()'.format(hvsr_data['site']))
     except:
         errMsg = f"Error in plot_azimuth({plot_azimuth_kwargs['hvsr_data']['site']}, **plot_azimuth_kwargs)"
         if plot_azimuth_kwargs['verbose']:
@@ -7171,7 +7218,7 @@ def __process_hvsr_batch(**process_hvsr_kwargs):
     try:
         hvsr_data = process_hvsr(**process_hvsr_kwargs)
         if process_hvsr_kwargs['verbose']:
-            print('\t{} successfully completed process_hvsr()'.format(hvsr_data['input_params']['site']))
+            print('\t{} successfully completed process_hvsr()'.format(hvsr_data['site']))
     except:
         errMsg=f"Error in process_hvsr({process_hvsr_kwargs['hvsr_data']['site']}, **process_hvsr_kwargs)"
         if process_hvsr_kwargs['verbose']:
@@ -9081,18 +9128,18 @@ def _select_windows(input):
         if 'hvsr_curve' in input.keys():
             fig = plot_hvsr(hvsr_data=input, plot_type='spec', return_fig=True, cmap='turbo')
         hvsr_data = input
-        input_stream = hvsr_data['stream']
+        streamIN = hvsr_data['stream']
         #else:
         #    hvsr_data = input#.copy()
-        #    input_stream = hvsr_data['stream']
+        #    streamIN = hvsr_data['stream']
     
-    if isinstance(input_stream, obspy.core.stream.Stream):
-        fig = sprit_plot._plot_input_stream_mpl(input_stream, component=['Z'], return_fig=True)
+    if isinstance(streamIN, obspy.core.stream.Stream):
+        fig = sprit_plot._plot_input_stream_mpl(streamIN, component=['Z'], return_fig=True)
         ax = fig.get_axes()
         if len(ax)==1:
             ax = ax[0]
-    elif isinstance(input_stream, obspy.core.trace.Trace):
-        fig = sprit_plot._plot_input_stream_mpl(input_stream, return_fig=True)
+    elif isinstance(streamIN, obspy.core.trace.Trace):
+        fig = sprit_plot._plot_input_stream_mpl(streamIN, return_fig=True)
 
     global lineArtist
     global winArtist
@@ -9904,7 +9951,7 @@ def __remove_windows_from_df(hvsr_data, verbose=False):
         trEndTime = trace.stats.endtime
     
     gaps = list(zip(gaps0, gaps1))
-    hvsr_windows_df_exists = ('hvsr_windows_df' in hvsr_data.keys()) or ('input_params' in hvsr_data.keys() and 'hvsr_windows_df' in hvsr_data['input_params'].keys())
+    hvsr_windows_df_exists = ('hvsr_windows_df' in hvsr_data.keys()) or ('input_params' in hvsr_data.keys() and 'hvsr_windows_df' in hvsr_data.keys())
     if hvsr_windows_df_exists:
         hvsrDF = hvsr_data['hvsr_windows_df']
         use_before = hvsrDF["Use"].copy().astype(bool)
@@ -10435,7 +10482,7 @@ def _generate_print_report(hvsr_results, azimuth="HV", show_print_report=True, v
     internalSeparator = intSepSymbol.center(sepLen-4, intSepSymbol).center(sepLen, ' ')
 
     extSiteSeparator = "".center(sepLen, extSepSymbol)
-    siteSeparator = f"{hvsr_results['input_params']['site']}".center(sepLen - siteWhitespace, ' ').center(sepLen, siteSepSymbol)
+    siteSeparator = f"{hvsr_results['site']}".center(sepLen - siteWhitespace, ' ').center(sepLen, siteSepSymbol)
     endSiteSeparator = "".center(sepLen, siteSepSymbol)
 
     #Start building list to print
@@ -10446,15 +10493,15 @@ def _generate_print_report(hvsr_results, azimuth="HV", show_print_report=True, v
     report_string_list.append(extSiteSeparator)
     #report_string_list.append(internalSeparator)
     report_string_list.append('')
-    report_string_list.append(f"\tSite Name: {hvsr_results['input_params']['site']}")
-    report_string_list.append(f"\tAcq. Date: {hvsr_results['input_params']['acq_date']}")
-    report_string_list.append(f"\tLocation : {hvsr_results['input_params']['longitude']}°, {hvsr_results['input_params']['latitude']}°")
-    report_string_list.append(f"\tElevation: {hvsr_results['input_params']['elevation']} meters")
+    report_string_list.append(f"\tSite Name: {hvsr_results['site']}")
+    report_string_list.append(f"\tAcq. Date: {hvsr_results['acq_date']}")
+    report_string_list.append(f"\tLocation : {hvsr_results['longitude']}°, {hvsr_results['latitude']}°")
+    report_string_list.append(f"\tElevation: {hvsr_results['elevation']} meters")
     report_string_list.append('')
     report_string_list.append(internalSeparator)
     report_string_list.append('')
     if 'BestPeak' not in hvsr_results.keys():
-        report_string_list.append('\tNo identifiable BestPeak was present between {} for {}'.format(hvsr_results['input_params']['hvsr_band'], hvsr_results['input_params']['site']))
+        report_string_list.append('\tNo identifiable BestPeak was present between {} for {}'.format(hvsr_results['hvsr_band'], hvsr_results['site']))
     else:
         curvTestsPassed = (hvsr_results['BestPeak'][azimuth]['PassList']['WinLen'] +
                             hvsr_results['BestPeak'][azimuth]['PassList']['SigCycles']+
@@ -10542,15 +10589,15 @@ def _generate_table_report(hvsr_results, azimuth='HV', show_table_report=True, v
         This is a pandas.DataFrame instance, but can be exported to csv.
     """
     
-    coord0Dir = hvsr_results['input_params']['output_crs'].axis_info[0].direction
+    coord0Dir = hvsr_results['output_crs'].axis_info[0].direction
 
     # Figure out which coordinate axis is which (some CRS do Y, X)
     if coord0Dir.lower() in ['north', 'south']:
-        xaxisinfo = hvsr_results['input_params']['output_crs'].axis_info[1]
-        yaxisinfo = hvsr_results['input_params']['output_crs'].axis_info[0]
+        xaxisinfo = hvsr_results['output_crs'].axis_info[1]
+        yaxisinfo = hvsr_results['output_crs'].axis_info[0]
     else:
-        xaxisinfo = hvsr_results['input_params']['output_crs'].axis_info[0]
-        yaxisinfo = hvsr_results['input_params']['output_crs'].axis_info[1]
+        xaxisinfo = hvsr_results['output_crs'].axis_info[0]
+        yaxisinfo = hvsr_results['output_crs'].axis_info[1]
     
     # Get the axis name
     xaxis_name = xaxisinfo.name
@@ -10570,7 +10617,7 @@ def _generate_table_report(hvsr_results, azimuth='HV', show_table_report=True, v
     criteriaList.append(hvsr_results['BestPeak'][azimuth]["PeakPasses"])
     for p in hvsr_results['BestPeak'][azimuth]["PassList"]:
         criteriaList.append(hvsr_results['BestPeak'][azimuth]["PassList"][p])
-    dfList = [[d['input_params']['site'], d['input_params']['acq_date'], d['input_params']['xcoord'], d['input_params']['ycoord'], d['input_params']['elevation'], round(d['BestPeak'][azimuth]['f0'], 3), round(d['BestPeak'][azimuth]['Sf'], 4)]]
+    dfList = [[d['site'], d['acq_date'], d['xcoord'], d['ycoord'], d['elevation'], round(d['BestPeak'][azimuth]['f0'], 3), round(d['BestPeak'][azimuth]['Sf'], 4)]]
     dfList[0].extend(criteriaList)
 
     outDF = pd.DataFrame(dfList, columns=pdCols)
@@ -10743,15 +10790,15 @@ def _generate_html_report(hvsr_results, azimuth='HV', show_html_report=False, ve
         tableValue = htmlTable.iloc[:,i][0]
         html = html.replace(f"TableData_{str(i).zfill(2)}", str(tableValue))
 
-    coord0Dir = hvsr_results['input_params']['output_crs'].axis_info[0].direction
+    coord0Dir = hvsr_results['output_crs'].axis_info[0].direction
 
     # Figure out which coordinate axis is which (some CRS do Y, X)
     if coord0Dir.lower() in ['north', 'south']:
-        xaxisinfo = hvsr_results['input_params']['output_crs'].axis_info[1]
-        yaxisinfo = hvsr_results['input_params']['output_crs'].axis_info[0]
+        xaxisinfo = hvsr_results['output_crs'].axis_info[1]
+        yaxisinfo = hvsr_results['output_crs'].axis_info[0]
     else:
-        xaxisinfo = hvsr_results['input_params']['output_crs'].axis_info[0]
-        yaxisinfo = hvsr_results['input_params']['output_crs'].axis_info[1]
+        xaxisinfo = hvsr_results['output_crs'].axis_info[0]
+        yaxisinfo = hvsr_results['output_crs'].axis_info[1]
 
     # Get the axis name
     xaxis_name = xaxisinfo.name
@@ -10950,7 +10997,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
         xlabel = 'Period [s]'
 
     if save_dir is not None:
-        filename = hvsr_data['input_params']['site']
+        filename = hvsr_data['site']
     else:
         filename = ""
 
@@ -10984,7 +11031,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     ax.set_ylabel('H/V Ratio'+'\n['+hvsr_data['horizontal_method']+']', fontsize='small',)
     ax.tick_params(axis='x', labelsize=8)
     ax.tick_params(axis='y', labelsize=5)
-    plt.suptitle(hvsr_data['input_params']['site'])
+    plt.suptitle(hvsr_data['site'])
 
     if 'processing_parameters' in hvsr_data.keys() and 'generate_psds' in hvsr_data['processing_parameters'].keys():
         if hvsr_data['processing_parameters']['generate_psds']['obspy_ppsds']:
@@ -11562,8 +11609,8 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, azimuth='HV', save_dir=Non
         day = str(hvsr_data['hvsr_windows_df'].index[0].date())
 
     #Get extents
-    ymin = hvsr_data['input_params']['hvsr_band'][0]
-    ymax = hvsr_data['input_params']['hvsr_band'][1]
+    ymin = hvsr_data['hvsr_band'][0]
+    ymax = hvsr_data['hvsr_band'][1]
 
     freqticks = np.flip(hvsr_data['x_freqs'][anyKey])
     yminind = np.argmin(np.abs(ymin-freqticks))
@@ -11607,7 +11654,7 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, azimuth='HV', save_dir=Non
             boxYPerc = 0.002
             vertAlign = 'bottom'
         xLocation = float(xmin) + (float(xmax)-float(xmin))*0.99
-        yLocation = hvsr_data['input_params']['hvsr_band'][0] + (hvsr_data['input_params']['hvsr_band'][1]-hvsr_data['input_params']['hvsr_band'][0])*(boxYPerc)
+        yLocation = hvsr_data['hvsr_band'][0] + (hvsr_data['hvsr_band'][1]-hvsr_data['hvsr_band'][0])*(boxYPerc)
         ann = ax.text(x=xLocation, y=yLocation, fontsize='x-small', s=f"Peak at {hvsr_data['BestPeak'][azimuth]['f0']:0.2f} Hz", ha='right', va=vertAlign, 
                       bbox={'alpha':0.8, 'edgecolor':None, 'linewidth':0, 'fc':'w', 'pad':0.3})
 
