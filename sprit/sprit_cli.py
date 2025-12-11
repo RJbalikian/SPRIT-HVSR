@@ -67,7 +67,7 @@ def main():
         
     
     # Add argument and options to the parser
-    intermediate_params_list = ['params', 'input', 'hvsr_data', 'hvsr_results']
+    intermediate_params_list = ['params', 'input_parameters', 'input', 'hvsr_data', 'hvsr_results']
     paramNamesList = []
     for i, param in enumerate(parameters):
         for name, parameter in param.items():

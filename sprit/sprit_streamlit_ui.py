@@ -1344,7 +1344,7 @@ def main():
     def write_to_info_tab(infoTab):
         with infoTab:
             st.markdown("# Processing Parameters Used")
-            hvsrDataList = ['params', 'hvsr_data', 'hvsr_results']
+            hvsrDataList = ['params', 'input_paramters', 'hvsr_data', 'hvsr_results']
             for fun, kwargDict in funList:
                 funSig = inspect.signature(fun)
                 # excludeKeys = ['params', 'hvsr_data', 'hvsr_results']

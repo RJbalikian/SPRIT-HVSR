@@ -416,7 +416,7 @@ def create_jupyter_ui():
                                             layout=widgets.Layout(width='10%'))
     proc_settings_hbox = widgets.HBox([proc_settings_text, proc_settings_read_button, proc_settings_browse_button])
     
-    excluded_params = ['hvsr_data', 'params', 'hvsr_results']
+    excluded_params = ['hvsr_data', 'params', 'input_parameters', 'hvsr_results']
     funcList = [sprit_hvsr.fetch_data, sprit_hvsr.remove_noise,
                 sprit_hvsr.generate_psds, sprit_hvsr.process_hvsr,
                 sprit_hvsr.remove_outlier_curves, sprit_hvsr.check_peaks,
@@ -443,9 +443,9 @@ def create_jupyter_ui():
                 proc_settings_text.value = pathlib.Path(proc_f).as_posix()
                 proc_settings = sprit_hvsr.import_settings(settings_import_path=pathlib.Path(proc_f).as_posix(), settings_import_type='processing')
                 
-                for func, params in proc_settings.items():
+                for func, proc_params in proc_settings.items():
                     if func in widget_param_dict.keys():
-                        for prm, val in params.items():
+                        for prm, val in proc_params.items():
                             if prm in widget_param_dict[func].keys():
                                 #print(prm, ':', widget_param_dict[func][prm],' |  ', val)
                                 if val is None or val=='None':
@@ -1140,7 +1140,7 @@ def create_jupyter_ui():
     
     # Update fetch_data call
     def update_fetch_data_call():
-        fetch_data_text = f"""(params=hvsr_data, source={data_source_type.value}, data_export_path={data_export_path_textbox.value},
+        fetch_data_text = f"""(input_parameters=hvsr_data, source={data_source_type.value}, data_export_path={data_export_path_textbox.value},
                             data_export_format={data_export_format_dropdown.value}, 
                             detrend_type={detrend_type_dropdown.value}, detrend_options={detrend_options.value}, 
                             filter_type={filter_type_dropdown.value}, filter_options={filter_options.value},

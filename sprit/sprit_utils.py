@@ -599,7 +599,7 @@ def _run_docstring():
     funcStrList = []
     funcParams = []
     funcDefaults = []
-    prevOutputList = ['params', 'hvsr_data', 'hvsr_results']
+    prevOutputList = ['params', 'input_parameters', 'hvsr_data', 'hvsr_results']
     requiredList = []
     for func in functionList:
         parameters = inspect.signature(func).parameters

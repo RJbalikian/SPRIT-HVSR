@@ -589,7 +589,7 @@ class HVSRData:
     """
     @check_instance    
     def __init__(self, params):
-        self.params = params
+        #self.params = params
         self.batch = False
         #self.tsteps_used = []
 
@@ -628,8 +628,8 @@ class HVSRData:
         def __get_ip_default(parameter):
             if parameter in inspect.signature(input_params).parameters:
                 return inspect.signature(input_params).parameters[parameter].default
-            elif parameter in params:
-                return params[parameter]
+            elif parameter in self.keys():
+                return self[parameter]
             else:
                 return parameter
 
@@ -642,8 +642,8 @@ class HVSRData:
         hvsrIDStr = ''
         if hasattr(self, 'hvsr_id'):
             hvsrIDStr = self.hvsr_id
-        elif 'hvsr_id' in params:
-            hvsrIDStr = params['hvsr_id']
+        elif 'hvsr_id' in self.keys():
+            hvsrIDStr = self['hvsr_id']
 
         titleInfoStr =f"\nSpRIT HVSR DATA INFORMATION\n"
         titleLen = len(titleInfoStr)
@@ -891,7 +891,7 @@ class HVSRData:
         if copy_type.lower() == 'deep':
             return copy.deepcopy(self)
         else:
-            return HVSRData(copy.copy(self.params))
+            return copy.copy(self)
 
     def export_settings(self, export_settings_path='default', export_settings_type='all', include_location=False, verbose=True):
         """Method to export settings from HVSRData object. Simply calls sprit.export_settings() from the HVSRData object. See sprit.export_settings() for more details.
@@ -933,7 +933,7 @@ class HVSRData:
         dict_items
             A dict_items object of the HVSRData objects attributes, parameters, etc.
         """                
-        return self.params.items()
+        return self.__dict__.items()
 
     def keys(self):
         """Method to return the "keys" of the HVSRData object. For HVSRData objects, these are the attributes and parameters of the object. Functions similar to dict.keys().
@@ -988,22 +988,11 @@ class HVSRData:
             warnings.Warn("HVSRData.select() method applied, but 'stream' attribute (obspy.Stream object) not found")
 
     # ATTRIBUTES
-    @property
-    def params(self):
-        """Dictionary containing the parameters used to process the data
-
-        Returns
-        -------
-        dict
-            Dictionary containing the process parameters
-        """
-        return self._params
-
-    @params.setter
-    def params(self, value):
-        if not (isinstance(value, dict)):
+    #@params.setter
+    #def params(self, value):
+    #    if not (isinstance(value, dict)):
             raise ValueError("params must be a dict type, currently passing {} type.".format(type(value)))
-        self._params = value
+    #    self._params = value
     
     # batch
     @property
@@ -1331,7 +1320,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     if 'processing_parameters' not in kwargs.keys():
         kwargs['processing_parameters'] = {}
 
-
+    # START PROCESSING
     # Separate out input_params and fetch_data processes based on whether batch has been specified
     batchlist = ['batch', 'bach', 'bath', 'b', 'dir', 'directory']
     dirList = ['dir', 'directory', 'd']
@@ -1389,7 +1378,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
                 updated_fd_defaults.update({k: v for k, v in DPD.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())})
                 fetch_data_kwargs.update({k:v for k,v in updated_fd_defaults.items() if k not in fetch_data_kwargs})
 
-                hvsrDataIN = fetch_data(params=params, source=source, verbose=verbose, **fetch_data_kwargs)
+                hvsrDataIN = fetch_data(input_parameters=params, source=source, verbose=verbose, **fetch_data_kwargs)
         except Exception as e:
             # Even if batch, this is reading in data for all sites so we want to raise error, not just warn
             if hasattr(e, 'message'):
@@ -3173,9 +3162,9 @@ def export_settings(hvsr_data, export_settings_path='default', export_settings_t
 
 
 # Reads in traces to obspy stream
-def fetch_data(params, source='file', data_export_path=None, data_export_format='mseed', 
+def fetch_data(input_parameters, source='file', data_export_path=None, data_export_format='mseed', 
                detrend='spline', detrend_options=2, filter_type=None, filter_options={},
-               update_metadata=True, 
+               update_metadata=False, 
                plot_input_stream=False, plot_engine='matplotlib', show_plot=True, 
                verbose=False, **kwargs):
     
@@ -3183,14 +3172,14 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     
     Parameters
     ----------
-    params  : dict
-        Dictionary containing all the necessary params to get data.
+    input_parameters  : dict
+        Dictionary containing all the necessary information to get data.
             Parameters defined using input_params() function.
     source  : str, {'raw', 'dir', 'file', 'batch'}
         String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
             'raw' finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
             'dir' is used if the day's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
-            'file' is used if the params['input_data'] specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
+            'file' is used if the 'input_data' specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
             'batch' is used to read a list or specified set of seismic files. 
                 Most commonly, a csv file can be read in with all the parameters. Each row in the csv is a separate file. Columns can be arranged by parameter.
     data_export_path : None or str or pathlib obj, default=None
@@ -3227,8 +3216,8 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
         
     Returns
     -------
-    params : HVSRData or HVSRBatch object
-        Same as params parameter, but with an additional "stream" attribute with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
+    hvsrData : HVSRData or HVSRBatch object
+        Same as input_parameters, but with an additional "stream" attribute with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)
     """
     # Get intput paramaters
     orig_args = locals().copy()
@@ -3238,14 +3227,14 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     update_msg = []
 
     # Update with processing parameters specified previously in input_params, if applicable
-    if 'processing_parameters' in params.keys():
-        if 'fetch_data' in params['processing_parameters'].keys():
+    if 'processing_parameters' in input_parameters.keys():
+        if 'fetch_data' in input_parameters['processing_parameters'].keys():
             defaultVDict = dict(zip(inspect.getfullargspec(fetch_data).args[1:], 
                         inspect.getfullargspec(fetch_data).defaults))
             defaultVDict['kwargs'] = kwargs
-            for k, v in params['processing_parameters']['fetch_data'].items():
+            for k, v in input_parameters['processing_parameters']['fetch_data'].items():
                 # Manual input to function overrides the imported parameter values
-                if k != 'params' and k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
+                if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
                     update_msg.append(f'\t\t{k} = {v} (previously {orig_args[k]})')
                     orig_args[k] = v
                     
@@ -3271,64 +3260,70 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                 print('\t  {}={}'.format(key, value))
         print()
         
-        if 'processing_parameters' in params.keys() and 'fetch_data' in params['processing_parameters'].keys():
-            if update_msg != []:
-                update_msg.insert(0, '\tThe following parameters were updated using the processing_parameters attribute:')
-                for msg_line in update_msg:
-                    print(msg_line)
-                print()
+        if 'processing_parameters' in input_parameters.keys():
+            if 'fetch_data' in input_parameters['processing_parameters'].keys():
+                if update_msg != []:
+                    update_msg.insert(0, '\tThe following parameters were updated using the processing_parameters attribute:')
+                    for msg_line in update_msg:
+                        print(msg_line)
+                    print()
 
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     trominoNameList = ['tromino', 'trom','tromino blue', 'tromino blu', 'tromino 3g', 'tromino 3g+', 'tr', 't']
 
     # Check if data is from tromino, and adjust parameters accordingly
-    if 'trc' in pathlib.Path(str(params['input_data'])).suffix:
-        if verbose and hasattr(params, 'instrument') and params['instrument'].lower() not in trominoNameList:
-            print(f"\t Data from tromino detected. Changing instrument from {params['instrument']} to 'Tromino'")
-        if 'tromino' not in str(params['instrument']).lower():
-            params['instrument'] = 'Tromino'
+    if 'trc' in pathlib.Path(str(input_parameters['input_data'])).suffix:
+        if verbose and hasattr(input_parameters, 'instrument') and input_parameters['instrument'].lower() not in trominoNameList:
+            print(f"\t Data from tromino detected. Changing instrument from {input_parameters['instrument']} to 'Tromino'")
+        if 'tromino' not in str(input_parameters['instrument']).lower():
+            input_parameters['instrument'] = 'Tromino'
 
     # Get metadata (inventory/response information)
-    params = get_metadata(params, update_metadata=update_metadata, source=source, verbose=verbose)
-    inv = params['inv']
-    date = params['acq_date']
+    if 'inv' not in input_parameters.keys():
+        input_parameters['inv'] = None
+    if 'paz' not in input_parameters.keys():
+        input_parameters['paz'] = None
+    if update_metadata:
+        input_parameters = get_metadata(input_parameters, update_metadata=update_metadata, source=source, verbose=verbose)
+    inv = input_parameters['inv']
+    date = input_parameters['acq_date']
 
     # Cleanup for gui input
-    if isinstance(params['input_data'], (obspy.Stream, obspy.Trace)):
+    if isinstance(input_parameters['input_data'], (obspy.Stream, obspy.Trace)):
         pass
-    elif '}' in str(params['input_data']): # This is how tkinter gui data comes in
-        params['input_data'] = params['input_data'].as_posix().replace('{', '')
-        params['input_data'] = params['input_data'].split('}')
+    elif '}' in str(input_parameters['input_data']): # This is how tkinter gui data comes in
+        input_parameters['input_data'] = input_parameters['input_data'].as_posix().replace('{', '')
+        input_parameters['input_data'] = input_parameters['input_data'].split('}')
 
     # Make sure input_data is pointing to an actual file
-    if isinstance(params['input_data'], list):
-        for i, d in enumerate(params['input_data']):
-            params['input_data'][i] = sprit_utils._checkifpath(str(d).strip(), sample_list=SAMPLE_LIST)
-        dPath = params['input_data']
-    elif isinstance(params['input_data'], (obspy.Stream, obspy.Trace)):
-        dPath = pathlib.Path() #params['input_data']
-    elif isinstance(params['input_data'], HVSRData):
-        dPath = pathlib.Path(params['input_data']['input_data'])
-        if not isinstance(params['input_data']['stream'], (obspy.Stream, obspy.Trace)):
+    if isinstance(input_parameters['input_data'], list):
+        for i, d in enumerate(input_parameters['input_data']):
+            input_parameters['input_data'][i] = sprit_utils._checkifpath(str(d).strip(), sample_list=SAMPLE_LIST)
+        dPath = input_parameters['input_data']
+    elif isinstance(input_parameters['input_data'], (obspy.Stream, obspy.Trace)):
+        dPath = pathlib.Path() #input_parameters['input_data']
+    elif isinstance(input_parameters['input_data'], HVSRData):
+        dPath = pathlib.Path(input_parameters['input_data']['input_data'])
+        if not isinstance(input_parameters['input_data']['stream'], (obspy.Stream, obspy.Trace)):
             try:
-                for k, v in params.items():
+                for k, v in input_parameters.items():
                     if isinstance(v, (obspy.Trace, obspy.Stream)):
-                        params['input_data']['stream'] = v
+                        input_parameters['input_data']['stream'] = v
                     elif pathlib.Path(str(v)).exists():
                         try:
-                            params['input_data']['stream'] = obspy.read(v)
+                            input_parameters['input_data']['stream'] = obspy.read(v)
                         except Exception as e:
                             pass
             except:
-                raise RuntimeError(f'The params["input_data"] parameter of fetch_data() was determined to be an HVSRData object, but no data in the "stream" attribute.')
+                raise RuntimeError(f'The input_parameters["input_data"] parameter of fetch_data() was determined to be an HVSRData object, but no data in the "stream" attribute.')
         else:
             if verbose:
-                print('\tThe params["input_data"] argument is already an HVSRData obect.')
+                print('\tThe input_parameters["input_data"] argument is already an HVSRData obect.')
                 print("\tChecking metadata then moving on.")
     else:
-        dPath = sprit_utils._checkifpath(params['input_data'], sample_list=SAMPLE_LIST)
+        dPath = sprit_utils._checkifpath(input_parameters['input_data'], sample_list=SAMPLE_LIST)
 
-    inst = params['instrument']
+    inst = input_parameters['instrument']
 
     # Need to put dates and times in right formats first
     if type(date) is datetime.datetime:
@@ -3382,93 +3377,94 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
             obspyReadKwargs[argName] = kwargs[argName]
 
     # Select how reading will be done
-    if isinstance(params['input_data'], obspy.Stream):
-        rawDataIN = params['input_data'].copy()
-        tr = params['input_data'][0]
-        params['input_data'] = '_'.join([tr.id, str(tr.stats.starttime)[:10],
+    if isinstance(input_parameters['input_data'], obspy.Stream):
+        rawDataIN = input_parameters['input_data'].copy()
+        tr = input_parameters['input_data'][0]
+        input_parameters['input_data'] = '_'.join([tr.id, str(tr.stats.starttime)[:10],
                                        str(tr.stats.starttime)[11:19],
                                        str(tr.stats.endtime)[11:19]])
-    elif isinstance(params['input_data'], obspy.Trace):
-        rawDataIN = obspy.Stream(params['input_data'])
-        tr = params['input_data']
-        params['input_data'] = '_'.join([tr.id, str(tr.stats.starttime)[:10], 
+    elif isinstance(input_parameters['input_data'], obspy.Trace):
+        rawDataIN = obspy.Stream(input_parameters['input_data'])
+        tr = input_parameters['input_data']
+        input_parameters['input_data'] = '_'.join([tr.id, str(tr.stats.starttime)[:10], 
                                        str(tr.stats.starttime)[11:19], 
                                        str(tr.stats.endtime)[11:19]])
-    elif isinstance(params['input_data'], HVSRData):
-        rawDataIN = params['input_data']['stream']
+    elif isinstance(input_parameters['input_data'], HVSRData):
+        rawDataIN = input_parameters['input_data']['stream']
     else:
         if   source == 'raw':
             try:
                 if inst.lower() in trominoNameList:
-                    params['instrument'] = 'Tromino'
-                    params['params']['instrument'] = 'Tromino'
+                    input_parameters['instrument'] = 'Tromino'
+                    #input_parameters['params']['instrument'] = 'Tromino'
 
                     trominoKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())}
-                    paramDict = {k: v for k, v in params.items()}
+                    paramDict = {k: v for k, v in input_parameters.items()}
                     trominoKwargs.update(paramDict)
-                    rawDataIN = read_tromino_files(params, verbose=verbose, **trominoKwargs)
+                    rawDataIN = read_tromino_files(input_parameters, verbose=verbose, **trominoKwargs)
 
                     if 'site' in rawDataIN[0].stats:
-                        if hasattr(params, 'site'):
-                            params['site'] = rawDataIN[0].stats.site
-                        if hasattr(params, input_params):
-                            params['input_params']['site'] = rawDataIN[0].stats.site
+                        if hasattr(input_parameters, 'site'):
+                            input_parameters['site'] = rawDataIN[0].stats.site
+                        if hasattr(input_parameters, input_params):
+                            input_parameters['input_params']['site'] = rawDataIN[0].stats.site
                 else:
                     if inst.lower() not in raspShakeInstNameList:
                         print(f"Unrecognized value instrument={inst}. Defaulting to raw raspberry shake data.")
-                    rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
+                    rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, input_parameters, verbose=verbose)
 
             except Exception as e:
-                raise RuntimeError(f"Data not fetched for {params['site']}. Check input parameters or the data file.\n\n{e}")
-        elif source == 'stream' or isinstance(params, (obspy.Stream, obspy.Trace)):
-            rawDataIN = params['input_data'].copy()
+                raise RuntimeError(f"Data not fetched for {input_parameters['site']}. Check input parameters or the data file.\n\n{e}")
+        elif source == 'stream' or isinstance(input_parameters, (obspy.Stream, obspy.Trace)):
+            rawDataIN = input_parameters['input_data'].copy()
         elif source == 'dir':
             if inst.lower() in raspShakeInstNameList:
-                rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, params, verbose=verbose)
+                rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, input_parameters, verbose=verbose)
             else:
                 obspyFiles = {}
                 for obForm in OBSPY_FORMATS:
                     temp_file_glob = pathlib.Path(dPath.as_posix().lower()).glob('.'+obForm.lower())
                     for f in temp_file_glob:
-                        currParams = params
+                        currParams = input_parameters
                         currParams['input_data'] = f
 
-                        curr_data = fetch_data(params, source='file', #all the same as input, except just reading the one file using the source='file'
+                        curr_data = fetch_data(input_parameters, source='file', #all the same as input, except just reading the one file using the source='file'
                                     data_export_path=data_export_path, data_export_format=data_export_format, detrend=detrend, detrend_options=detrend_options, update_metadata=update_metadata, verbose=verbose, **kwargs)
                         curr_data.merge()
                         obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath's stem as the site name
                 return HVSRBatch(obspyFiles)
-        elif source == 'file' and str(params['input_data']).lower() not in SAMPLE_LIST:
+        elif source == 'file' and str(input_parameters['input_data']).lower() not in SAMPLE_LIST:
             # Read the file specified by input_data
             # Automatically read tromino data
             if (str(inst).lower() in trominoNameList and 'trc' in dPath.suffix) or 'trc' in dPath.suffix:
-                params['instrument'] = 'Tromino'
-                params['params']['instrument'] = 'Tromino'
+                input_parameters['instrument'] = 'Tromino'
+                #input_parameters['params']['instrument'] = 'Tromino'
 
                 if 'blu' in str(inst).lower():
-                    params['instrument'] = 'Tromino Blue'
-                    params['params']['instrument'] = 'Tromino Blue'
+                    input_parameters['instrument'] = 'Tromino Blue'
+                    #input_parameters['params']['instrument'] = 'Tromino Blue'
 
                 try:
                     trominoKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())}
-                    paramDict = {k: v for k, v in params.items()}
+                    paramDict = {k: v for k, v in input_parameters.items()}
 
                     if 'input_data' in trominoKwargs:
                         del trominoKwargs['input_data']
                     if 'tromino_model' not in trominoKwargs:
-                        trominoKwargs['tromino_model'] = params['instrument']
+                        trominoKwargs['tromino_model'] = input_parameters['instrument']
                     
-                    rawDataIN = read_tromino_files(input_data=params, verbose=verbose, **trominoKwargs)
+                    rawDataIN = read_tromino_files(input_data=input_parameters, verbose=verbose, **trominoKwargs)
 
-                    if 'site' in rawDataIN[0].stats and params['site'] == 'HVSRSite':
-                        if hasattr(params, 'site'):
-                            params['site'] = rawDataIN[0].stats.site
-                        if hasattr(params, 'params'):
-                            params['params']['site'] = rawDataIN[0].stats.site
+                    if 'site' in rawDataIN[0].stats and input_parameters['site'] == 'HVSRSite':
+                        if hasattr(input_parameters, 'site'):
+                            input_parameters['site'] = rawDataIN[0].stats.site
+                        if hasattr(input_parameters, 'params'):
+                            #params['params']['site'] = rawDataIN[0].stats.site
+                            input_parameters['site'] = rawDataIN[0].stats.site
 
-                    params['acq_date'] = rawDataIN[0].stats.starttime.date
-                    params['starttime'] = rawDataIN[0].stats.starttime
-                    params['endtime'] = rawDataIN[0].stats.endtime
+                    input_parameters['acq_date'] = rawDataIN[0].stats.starttime.date
+                    input_parameters['starttime'] = rawDataIN[0].stats.starttime
+                    input_parameters['endtime'] = rawDataIN[0].stats.endtime
 
                 except Exception:
                     try:
@@ -3489,39 +3485,39 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                 elif str(dPath)[:6].lower() == 'sample':
                     pass
                 else:
-                    rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
+                    rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(input_parameters['starttime']), endttime=obspy.core.UTCDateTime(input_parameters['endtime']), nearest_sample =True)
 
-        elif source == 'batch' and str(params['input_data']).lower() not in SAMPLE_LIST:
+        elif source == 'batch' and str(input_parameters['input_data']).lower() not in SAMPLE_LIST:
             if verbose:
                 print('\nFetching data (fetch_data())')
             batch_data_read_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(batch_data_read).parameters.keys())}
-            params = batch_data_read(batch_data=params['input_data'], verbose=verbose, **batch_data_read_kwargs)
-            params = HVSRBatch(params, df_as_read=params.input_df)
-            return params
-        elif str(params['input_data']).lower() in SAMPLE_LIST or f"sample{params['input_data'].lower()}" in SAMPLE_LIST:
+            input_parameters = batch_data_read(batch_data=input_parameters['input_data'], verbose=verbose, **batch_data_read_kwargs)
+            input_parameters = HVSRBatch(input_parameters, df_as_read=input_parameters.input_df)
+            return input_parameters
+        elif str(input_parameters['input_data']).lower() in SAMPLE_LIST or f"sample{input_parameters['input_data'].lower()}" in SAMPLE_LIST:
             if source=='batch':
-                params['input_data'] = SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv')
-                params = batch_data_read(batch_data=params['input_data'], batch_type='sample', verbose=verbose)
-                params = HVSRBatch(params, df_as_read=params.input_df)
-                return params
+                input_parameters['input_data'] = SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv')
+                input_parameters = batch_data_read(batch_data=input_parameters['input_data'], batch_type='sample', verbose=verbose)
+                input_parameters = HVSRBatch(input_parameters, df_as_read=input_parameters.input_df)
+                return input_parameters
             elif source=='dir':
-                params['input_data'] = SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv')
-                params = batch_data_read(batch_data=params['input_data'], batch_type='sample', verbose=verbose)
-                params = HVSRBatch(params, df_as_read=params.input_df)
-                return params
+                input_parameters['input_data'] = SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv')
+                input_parameters = batch_data_read(batch_data=input_parameters['input_data'], batch_type='sample', verbose=verbose)
+                input_parameters = HVSRBatch(input_parameters, df_as_read=input_parameters.input_df)
+                return input_parameters
             elif source=='file':
-                params['input_data'] = str(params['input_data']).lower()
+                input_parameters['input_data'] = str(input_parameters['input_data']).lower()
                 
-                if params['input_data'].lower() in sampleFileKeyMap.keys():
-                    if params['input_data'].lower() == 'sample':
-                        params['input_data'] = sampleFileKeyMap
+                if input_parameters['input_data'].lower() in sampleFileKeyMap.keys():
+                    if input_parameters['input_data'].lower() == 'sample':
+                        input_parameters['input_data'] = sampleFileKeyMap
                         
-                    params['input_data'] = sampleFileKeyMap[params['input_data'].lower()]
+                    input_parameters['input_data'] = sampleFileKeyMap[input_parameters['input_data'].lower()]
                 else:
-                    params['input_data'] = SAMPLE_DATA_DIR.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED')
+                    input_parameters['input_data'] = SAMPLE_DATA_DIR.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED')
 
-                dPath = params['input_data']
-                rawDataIN = obspy.read(dPath)#, starttime=obspy.core.UTCDateTime(params['starttime']), endttime=obspy.core.UTCDateTime(params['endtime']), nearest_sample =True)
+                dPath = input_parameters['input_data']
+                rawDataIN = obspy.read(dPath)#, starttime=obspy.core.UTCDateTime(input_parameters['starttime']), endttime=obspy.core.UTCDateTime(input_parameters['endtime']), nearest_sample =True)
                 #import warnings
                 #with warnings.catch_warnings():
                 #    warnings.simplefilter(action='ignore', category=UserWarning)
@@ -3547,7 +3543,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
             print("\t\t  ", trace)
             prevComponent = trace.stats.component
         print()
-        
+
     # Get metadata from the data itself, if not reading raw data
     try:
         # If the data already exists (not reading in raw from RS, for example), get the parameters from the data
@@ -3557,68 +3553,70 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
             # site
             site_default = inspect.signature(input_params).parameters['site'].default
             updateMsg = []
-            if params['site'] == site_default and params['site'] != dPath.stem:
+            if input_parameters['site'] == site_default and input_parameters['site'] != dPath.stem:
                 if isinstance(dPath, (list, tuple)):
                     dPath = dPath[0]
-                params['site'] = dPath.stem
-                params['params']['site'] = dPath.stem
+                input_parameters['site'] = dPath.stem
+                #input_parameters['params']['site'] = dPath.stem
                 if verbose:
-                    updateMsg.append(f"\tSite name updated to {params['site']}")
+                    updateMsg.append(f"\tSite name updated to {input_parameters['site']}")
             
             # network
             net_default = inspect.signature(input_params).parameters['network'].default
-            if params['net'] == net_default and net_default != dataIN[0].stats.network:
-                params['net'] = dataIN[0].stats.network
-                params['params']['net'] = dataIN[0].stats.network
+            if input_parameters['net'] == net_default and net_default != dataIN[0].stats.network:
+                input_parameters['net'] = dataIN[0].stats.network
+                #input_parameters['params']['net'] = dataIN[0].stats.network
                 if verbose:
-                    updateMsg.append(f"\tNetwork name updated to {params['net']}")
+                    updateMsg.append(f"\tNetwork name updated to {input_parameters['net']}")
 
             # station
             sta_default = inspect.signature(input_params).parameters['station'].default
-            if str(params['sta']) == sta_default and str(params['sta']) != dataIN[0].stats.station:
-                params['sta'] = dataIN[0].stats.station
-                params['station'] = dataIN[0].stats.station
-                params['params']['sta'] = dataIN[0].stats.station
-                params['params']['station'] = dataIN[0].stats.station
+            if str(input_parameters['sta']) == sta_default and str(input_parameters['sta']) != dataIN[0].stats.station:
+                input_parameters['sta'] = dataIN[0].stats.station
+                input_parameters['station'] = dataIN[0].stats.station
+                #input_parameters['params']['sta'] = dataIN[0].stats.station
+                #input_parameters['params']['station'] = dataIN[0].stats.station
                 if verbose:
-                    updateMsg.append(f"\tStation name updated to {params['sta']}")
+                    updateMsg.append(f"\tStation name updated to {input_parameters['sta']}")
 
             # location
             loc_default = inspect.signature(input_params).parameters['location'].default
-            if params['location'] == loc_default and params['location'] != dataIN[0].stats.location:
-                params['location'] = dataIN[0].stats.location
-                params['params']['location'] = dataIN[0].stats.location
+            if input_parameters['location'] == loc_default and input_parameters['location'] != dataIN[0].stats.location:
+                input_parameters['location'] = dataIN[0].stats.location
+                #input_parameters['params']['location'] = dataIN[0].stats.location
                 if verbose:
-                    updateMsg.append(f"\tLocation updated to {params['location']}")
+                    updateMsg.append(f"\tLocation updated to {input_parameters['location']}")
 
             # channels
             channelList = []
             cha_default = inspect.signature(input_params).parameters['channels'].default
-            if str(params['cha']) == cha_default:
+            if str(input_parameters['cha']) == cha_default:
                 for tr in dataIN:
                     if tr.stats.channel not in channelList:
                         channelList.append(tr.stats.channel)
                         channelList.sort(reverse=True) #Just so z is first, just in case
-                if set(params['cha']) != set(channelList):
-                    params['cha'] = channelList
-                    params['params']['cha'] = channelList
+                if set(input_parameters['cha']) != set(channelList):
+                    input_parameters['cha'] = channelList
+                    #input_parameters['params']['cha'] = channelList
                     if verbose:
-                        updateMsg.append(f"\tChannels updated to {params['cha']}")
+                        updateMsg.append(f"\tChannels updated to {input_parameters['cha']}")
 
             # Acquisition date
             # acqdate_default = inspect.signature(input_params).parameters['acq_date'].default
             acqdate_default = str(NOWTIME.date())
 
             # If input date is default date and does not match date in the data, update to match data
-            if str(params['acq_date']) == acqdate_default and params['acq_date'] != dataIN[0].stats.starttime.date:
-                params['acq_date'] = params['params']['acq_date'] = dataIN[0].stats.starttime.date
+            if str(input_parameters['acq_date']) == acqdate_default and input_parameters['acq_date'] != dataIN[0].stats.starttime.date:
+                input_parameters['acq_date'] = dataIN[0].stats.starttime.date
+                #input_parameters['params']['acq_date'] = dataIN[0].stats.starttime.date
                 
                 if verbose:
-                    updateMsg.append(f"\tAcquisition Date updated to {params['acq_date']}")
-            elif params['acq_date'] != dataIN[0].stats.starttime.date:
+                    updateMsg.append(f"\tAcquisition Date updated to {input_parameters['acq_date']}")
+            elif input_parameters['acq_date'] != dataIN[0].stats.starttime.date:
                 # If date has been input manually and does not match data date, update the data
-                newStartDate = sprit_utils._format_time(params['acq_date'])
-                params['acq_date'] = params['params']['acq_date'] = newStartDate.date()
+                newStartDate = sprit_utils._format_time(input_parameters['acq_date'])
+                input_parameters['acq_date'] = newStartDate.date()
+                #input_parameters['params']['acq_date'] = newStartDate.date()
                 for tr in dataIN.merge():
                     tr.stats.starttime = obspy.UTCDateTime(newStartDate.year,
                                                  newStartDate.month,
@@ -3634,17 +3632,17 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                                                                  day=datetime.date.today().day,
                                                                 hour=0, minute=0, second=0, microsecond=0))
             
-            maxStarttime = datetime.datetime(year=params['acq_date'].year, month=params['acq_date'].month, day=params['acq_date'].day, 
+            maxStarttime = datetime.datetime(year=input_parameters['acq_date'].year, month=input_parameters['acq_date'].month, day=input_parameters['acq_date'].day, 
                                              hour=0, minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc)
 
             stime_default = obspy.UTCDateTime(NOWTIME)
-            sTimeIsDefault = params['starttime'] == stime_default
+            sTimeIsDefault = input_parameters['starttime'] == stime_default
                 
             # Check if stime is not the same as the data starttime (if it is, leave it alone!)
-            if params['starttime'] != dataIN.merge()[0].stats.starttime:
-                # Check if stime in params is the default value
+            if input_parameters['starttime'] != dataIN.merge()[0].stats.starttime:
+                # Check if stime in input_parameters is the default value
                 if sTimeIsDefault:
-                    # We will update the params starttime to match the data if it is the default input
+                    # We will update the input_parameters starttime to match the data if it is the default input
 
                     # Ensure we are getting the largest starttime from the data traces (assumes they all start at the same time, but may be slightly off)
                     for tr in dataIN.merge():
@@ -3661,23 +3659,23 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                                                      second=maxStarttime.second, microsecond=maxStarttime.microsecond)
                     
                     # Update parameters to match new starttime (this will be trimmed later if maxStarttime is different than trace starttimes)
-                    params['starttime'] = newStarttime
-                    params['params']['starttime'] = newStarttime
+                    input_parameters['starttime'] = newStarttime
+                    #input_parameters['params']['starttime'] = newStarttime
                     if verbose:
-                        updateMsg.append(f"\tStarttime updated to {params['starttime']}")
+                        updateMsg.append(f"\tStarttime updated to {input_parameters['starttime']}")
                 
                 else:
                     # If we manually set a starttime in order to trim or otherwise update the data
                     
                     # For trimming data (starttime within data time bounds)
-                    sTimeInDataTime = params['starttime'] > dataIN.merge()[0].stats.starttime and params['starttime'] < dataIN.merge()[-1].stats.endtime
+                    sTimeInDataTime = input_parameters['starttime'] > dataIN.merge()[0].stats.starttime and input_parameters['starttime'] < dataIN.merge()[-1].stats.endtime
                     if sTimeInDataTime:
                         # Don't update anything, will use for trimming later
                         pass
                         if verbose:
-                            updateMsg.append(f"\tStart of data will be trimmed to {params['starttime']}")
+                            updateMsg.append(f"\tStart of data will be trimmed to {input_parameters['starttime']}")
                     else:
-                        # If params['starttime'] is not in data time bounds, assume that the dataset timing should be updated
+                        # If input_parameters['starttime'] is not in data time bounds, assume that the dataset timing should be updated
                         
                         minStartTime = dataIN.merge()[-1].stats.starttime
                         for tr in dataIN.merge():
@@ -3686,19 +3684,19 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                                 minStartTime = tr.stats.starttime
                         
                         # Calculate the offset between the earliest trace starttime and specified starttime
-                        timeOffset = minStartTime - params['starttime']
+                        timeOffset = minStartTime - input_parameters['starttime']
                         
                         # Update the startime for each trace based on offset
                         for tr in dataIN.merge():
                             tr.stats.starttime = tr.stats.starttime - timeOffset
                             
                         if verbose:
-                            updateMsg.append(f"\tStarttime updated to {params['starttime']}")                    
+                            updateMsg.append(f"\tStarttime updated to {input_parameters['starttime']}")                    
 
             # endttime
             # Endtime only matters if it is used to trim the data
             eTimeDefault = obspy.UTCDateTime(NOWTIME.year, NOWTIME.month, NOWTIME.day, 23, 59, 59, 999999)
-            eTimeIsDefault = params['endtime'] == eTimeDefault
+            eTimeIsDefault = input_parameters['endtime'] == eTimeDefault
             
             minEndTime = dataIN.merge()[-1].stats.endtime
             for i, tr in enumerate(dataIN.merge()):
@@ -3707,23 +3705,25 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
             
             # Check if etime is anything other than default
             if not eTimeIsDefault:
-                # If endtime is not default, change params['endtime'] to match data endtime unless it falls within the data time (in which case, will be used to trim later)
-                eTimeInDataTimeBounds = (params['endtime'] > dataIN.merge()[0].stats.starttime) and (params['endtime'] < minEndTime)
+                # If endtime is not default, change input_parameters['endtime'] to match data endtime unless it falls within the data time (in which case, will be used to trim later)
+                eTimeInDataTimeBounds = (input_parameters['endtime'] > dataIN.merge()[0].stats.starttime) and (input_parameters['endtime'] < minEndTime)
                 if not eTimeInDataTimeBounds:
-                    params['endtime'] = params['params']['endtime'] = minEndTime    
+                    input_parameters['endtime'] = minEndTime
+                    #input_parameters['params']['endtime'] = minEndTime    
             else:
-                params['endtime'] = params['params']['endtime'] = minEndTime
+                input_parameters['endtime'] = minEndTime
+                #params['params']['endtime'] = minEndTime
 
             # HVSR_ID (derived)
-            project = params['project']
+            project = input_parameters['project']
             if project is None:
                 proj_id = ''
             else:
                 proj_id = str(project)+'-'
                         
             # Update HVSR_ID with new information
-            params['hvsr_id'] = f"{proj_id}{params['acq_date'].strftime('%Y%m%d')}-{params['starttime'].strftime('%H%M')}-{params['station']}"
-            params['params']['hvsr_id'] = f"{proj_id}{params['acq_date'].strftime('%Y%m%d')}-{params['starttime'].strftime('%H%M')}-{params['station']}"
+            input_parameters['hvsr_id'] = f"{proj_id}{input_parameters['acq_date'].strftime('%Y%m%d')}-{input_parameters['starttime'].strftime('%H%M')}-{input_parameters['station']}"
+            #input_parameters['input_parameters']['hvsr_id'] = f"{proj_id}{input_parameters['acq_date'].strftime('%Y%m%d')}-{input_parameters['starttime'].strftime('%H%M')}-{input_parameters['station']}"
 
             if verbose and len(updateMsg) > 0:
                 updateMsg.insert(0, 'The following parameters have been updated directly from the data:')
@@ -3733,7 +3733,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
 
             # Clean up
             dataIN = dataIN.split()
-            dataIN = dataIN.trim(starttime=params['starttime'], endtime=params['endtime'])
+            dataIN = dataIN.trim(starttime=input_parameters['starttime'], endtime=input_parameters['endtime'])
             dataIN.merge()
 
     except Exception as e:
@@ -3742,19 +3742,24 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     # Latitude, Longitude, Elevation
     # Maybe make this more comprehensive, like for all input_params
     if hasattr(dataIN[0].stats, 'latitude'):
-        params['latitude'] = params['params']['latitude'] = dataIN[0].stats['latitude']
+        input_parameters['latitude'] = dataIN[0].stats['latitude']
+        #input_parameters['params']['latitude'] = dataIN[0].stats['latitude']
     if hasattr(dataIN[0].stats, 'longitude'):
-        params['longitude'] = params['params']['longitude'] = dataIN[0].stats['longitude']
+        input_parameters['longitude'] = dataIN[0].stats['longitude']
+        #input_parameters['params']['longitude'] = dataIN[0].stats['longitude']
     if hasattr(dataIN[0].stats, 'elevation'):
-        params['elevation']  = params['params']['elevation'] = dataIN[0].stats['elevation']
+        input_parameters['elevation'] = dataIN[0].stats['elevation']
+        #input_parameters['params']['elevation'] = dataIN[0].stats['elevation']
     if hasattr(dataIN[0].stats, 'elev_unit'):
-        params['elev_unit'] = params['params']['elev_unit'] = dataIN[0].stats['elev_unit']
+        input_parameters['elev_unit'] = dataIN[0].stats['elev_unit']
+        #input_parameters['params']['elev_unit'] = dataIN[0].stats['elev_unit']
     if hasattr(dataIN[0].stats, 'input_crs'):
-        params['input_crs'] = params['params']['input_crs'] = dataIN[0].stats['input_crs']
+        input_parameters['input_crs'] = dataIN[0].stats['input_crs']
+        #input_parameters['params']['input_crs'] = dataIN[0].stats['input_crs']
 
     # Get and update metadata after updating data from source
-    params = get_metadata(params, update_metadata=update_metadata, source=source)
-    inv = params['inv']
+    input_parameters = get_metadata(input_parameters, update_metadata=update_metadata, source=source)
+    inv = input_parameters['inv']
 
     # Trim and save data as specified
     if data_export_path == 'None':
@@ -3763,10 +3768,10 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
     if not data_export_path:
         pass
     else:
-        if isinstance(params, HVSRBatch):
+        if isinstance(input_parameters, HVSRBatch):
             pass
         else:
-            dataIN = _trim_data(input=params, stream=dataIN, export_dir=data_export_path, source=source, data_export_format=data_export_format)
+            dataIN = _trim_data(input=input_parameters, stream=dataIN, export_dir=data_export_path, source=source, data_export_format=data_export_format)
 
     # Split data if masked array (if there are gaps)...detrending cannot be done without
     for tr in dataIN:
@@ -3776,13 +3781,13 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
             break
 
     # Detrend data
-    if isinstance(params, HVSRBatch):
+    if isinstance(input_parameters, HVSRBatch):
         pass
     else:
         dataIN = __detrend_data(input=dataIN, detrend=detrend, detrend_options=detrend_options, verbose=verbose, source=source)
 
     # Filter data
-    if isinstance(params, HVSRBatch):
+    if isinstance(input_parameters, HVSRBatch):
         pass
     elif filter_type is None:
         pass
@@ -3799,16 +3804,16 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                 specComp = kwargs['spectrogram_component']
             else:
                 specComp = 'Z'
-            params['Input_Plot'] = sprit_plot.plot_input_stream(hv_data=params, stream=dataIN, spectrogram_component=specComp, show_plot=show_plot, return_fig=True)
+            input_parameters['Input_Plot'] = sprit_plot.plot_input_stream(hv_data=input_parameters, stream=dataIN, spectrogram_component=specComp, show_plot=show_plot, return_fig=True)
         elif plot_engine.lower() in ['obspy', 'ospby', 'osbpy', 'opsby', 'opspy', 'o']:
-            params['Input_Plot'] = dataIN.plot(method='full', linewidth=0.25, handle=True, show=False)
+            input_parameters['Input_Plot'] = dataIN.plot(method='full', linewidth=0.25, handle=True, show=False)
             if show_plot:
                 plt.show()
             else:
                 plt.close()
         else:
             try:
-                params['Input_Plot'] = sprit_plot._plot_input_stream_mpl(stream=dataIN, hv_data=params, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, ylimstd=3, return_fig=True, fig=None, ax=None, show_plot=False)
+                input_parameters['Input_Plot'] = sprit_plot._plot_input_stream_mpl(stream=dataIN, hv_data=input_parameters, component='Z', stack_type='linear', detrend='mean', dbscale=True, fill_gaps=None, ylimstd=3, return_fig=True, fig=None, ax=None, show_plot=False)
                 
                 if show_plot:
                     plt.show()
@@ -3816,16 +3821,16 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                     plt.close()                    
             except Exception as e:
                 print(f'Error with default plotting method: {e}.\n Falling back to internal obspy plotting method')
-                params['Input_Plot'] = dataIN.plot(method='full', linewidth=0.25, handle=True, show=False)
+                input_parameters['Input_Plot'] = dataIN.plot(method='full', linewidth=0.25, handle=True, show=False)
                 if show_plot:
                     plt.show()
                 else:
                     plt.close()
     else:
-        params['Input_Plot'] = None
+        input_parameters['Input_Plot'] = None
 
     # Sort channels (make sure Z is first, makes things easier later)
-    if isinstance(params, HVSRBatch):
+    if isinstance(input_parameters, HVSRBatch):
         pass
     else:
         dataIN = _sort_channels(input=dataIN, source=source, verbose=verbose)
@@ -3862,29 +3867,29 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
             pass
         dataIN.merge()
     
-    params['batch'] = False  # Set False by default, will get corrected later if batch
-    params['input_stream'] = dataIN.copy()  # Original stream as read
-    params['stream'] = dataIN.copy()  # Stream that may be modified later
+    input_parameters['batch'] = False  # Set False by default, will get corrected later if batch
+    input_parameters['input_stream'] = dataIN.copy()  # Original stream as read
+    input_parameters['stream'] = dataIN.copy()  # Stream that may be modified later
     
-    if 'processing_parameters' not in params.keys():
-        params['processing_parameters'] = {}
-    params['processing_parameters']['fetch_data'] = {}
-    exclude_params_list = ['params']
+    if 'processing_parameters' not in input_parameters.keys():
+        input_parameters['processing_parameters'] = {}
+    input_parameters['processing_parameters']['fetch_data'] = {}
+    exclude_params_list = ['input_parameters']
     for key, value in orig_args.items():
         if key not in exclude_params_list:
-            params['processing_parameters']['fetch_data'][key] = value
+            input_parameters['processing_parameters']['fetch_data'][key] = value
 
     # Attach response data to stream and get paz (for PPSD later)
     # Check if response can be attached
     try:
         responseMatch = {}
-        for trace in params['stream']:
+        for trace in input_parameters['stream']:
             k = trace.stats.component
             
             # Check if station, channel, location, and timing match
             responseMatch[k] = False  # Default to false until proven otherwise
 
-            for sta in params['inv'].networks[0].stations:  # Assumes only one network per inst
+            for sta in input_parameters['inv'].networks[0].stations:  # Assumes only one network per inst
                 hasCha = False  # all default to false until proven otherwise
                 hasLoc = False
                 hasSta = False
@@ -3892,7 +3897,7 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                 notEnded = False
                 
                 # Check station
-                if sta.code == params['stream'][0].stats.station:
+                if sta.code == input_parameters['stream'][0].stats.station:
                     hasSta = True
                 else:
                     continue
@@ -3919,11 +3924,11 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                         responseMatch[k] = True
 
             if responseMatch[k] is not True:
-                responseMatch[k] = {'Station':  (hasSta, [sta.code for sta in params['inv'].networks[0].stations]),
-                                    'Channel':  (hasCha, [cha.code for cha in sta for sta in params['inv'].networks[0].stations]), 
-                                    'Location': (hasLoc, [cha.location_code for cha in sta for sta in params['inv'].networks[0].stations]), 
-                                    'Starttime':(isStarted, [cha.start_date for cha in sta for sta in params['inv'].networks[0].stations]), 
-                                    'Endtime':  (notEnded,  [cha.end_date for cha in sta for sta in params['inv'].networks[0].stations])}
+                responseMatch[k] = {'Station':  (hasSta, [sta.code for sta in input_parameters['inv'].networks[0].stations]),
+                                    'Channel':  (hasCha, [cha.code for cha in sta for sta in input_parameters['inv'].networks[0].stations]), 
+                                    'Location': (hasLoc, [cha.location_code for cha in sta for sta in input_parameters['inv'].networks[0].stations]), 
+                                    'Starttime':(isStarted, [cha.start_date for cha in sta for sta in input_parameters['inv'].networks[0].stations]), 
+                                    'Endtime':  (notEnded,  [cha.end_date for cha in sta for sta in input_parameters['inv'].networks[0].stations])}
 
         metadataMatchError = False
         for comp, matchItems in responseMatch.items():
@@ -3932,21 +3937,21 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                 errorMsg = 'The following items in your data need to be matched in the instrument response/metadata:'
                 for matchType, match in matchItems.items():
                     if match[0] is False:
-                        errorMsg = errorMsg + f"\n\t{matchType} does not match {match[1]} correctly for component {comp}: {params['stream'].select(component=comp)[0].stats[matchType.lower()]}"
+                        errorMsg = errorMsg + f"\n\t{matchType} does not match {match[1]} correctly for component {comp}: {input_parameters['stream'].select(component=comp)[0].stats[matchType.lower()]}"
 
         if metadataMatchError:
             if verbose:
                 print(errorMsg)
             raise ValueError('Instrument Response/Metadata does not match input data and cannot be used!!\n'+errorMsg)
         else:
-            params['stream'].attach_response(params['inv'])
-            for tr in params['stream']:
+            input_parameters['stream'].attach_response(input_parameters['inv'])
+            for tr in input_parameters['stream']:
                 cmpnt = tr.stats.component
 
-                params['paz'][cmpnt]['poles'] = tr.stats.response.get_paz().poles
-                params['paz'][cmpnt]['zeros'] = tr.stats.response.get_paz().zeros
-                params['paz'][cmpnt]['sensitivity'] = tr.stats.response.get_paz().stage_gain
-                params['paz'][cmpnt]['gain'] = tr.stats.response.get_paz().normalization_factor
+                input_parameters['paz'][cmpnt]['poles'] = tr.stats.response.get_paz().poles
+                input_parameters['paz'][cmpnt]['zeros'] = tr.stats.response.get_paz().zeros
+                input_parameters['paz'][cmpnt]['sensitivity'] = tr.stats.response.get_paz().stage_gain
+                input_parameters['paz'][cmpnt]['gain'] = tr.stats.response.get_paz().normalization_factor
     except Exception as e:
         if 'obspy_ppsds' in kwargs and kwargs['obspy_ppsds']:
             errMsg = "Metadata missing, incomplete, or incorrect. Instrument response cannot be removed."
@@ -3957,16 +3962,16 @@ def fetch_data(params, source='file', data_export_path=None, data_export_format=
                 print("\tMetadata/instrument response does not match data.")
                 print("\t  Raw data (without the instrument response removed) will be used for processing.")
     
-    params['processing_status']['fetch_data_status'] = True
-    if verbose and not isinstance(params, HVSRBatch):
+    input_parameters['processing_status']['fetch_data_status'] = True
+    if verbose and not isinstance(input_parameters, HVSRBatch):
         print('\n')
         dataINStr = dataIN.__str__().split('\n')
         for line in dataINStr:
             print('\t\t', line)
     
-    params = sprit_utils._check_processing_status(params, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+    input_parameters = sprit_utils._check_processing_status(input_parameters, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
-    return params
+    return input_parameters
 
 
 # For backwards compatibility (now generate_psds()
@@ -4117,17 +4122,17 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
         # If running batch, we'll loop through each one
         for site_name in hvsr_data.keys():
             args = orig_args.copy()  # Make a copy so we don't accidentally overwrite
-            individual_params = hvsr_data[site_name]  # Get what would normally be the "hvsr_data" variable for each site
-            args['hvsr_data'] = individual_params  # reset the hvsr_data parameter we originally read in to an individual site hvsr_data
+            site_HVSRData = hvsr_data[site_name]  # Get what would normally be the "hvsr_data" variable for each site
+            args['hvsr_data'] = site_HVSRData  # reset the hvsr_data parameter we originally read in to an individual site hvsr_data
 
             if hvsr_data[site_name]['processing_status']['overall_status']:
                 try:
                     hvsr_data[site_name] = __generate_ppsds_batch(**args) #Call another function, that lets us run this function again
                 except:
-                    hvsr_data[site_name]['processing_status']['generate_psds_status']=False
+                    hvsr_data[site_name]['processing_status']['generate_psds_status'] = False
                     hvsr_data[site_name]['processing_status']['overall_status'] = False                     
             else:
-                hvsr_data[site_name]['processing_status']['generate_psds_status']=False
+                hvsr_data[site_name]['processing_status']['generate_psds_status'] = False
                 hvsr_data[site_name]['processing_status']['overall_status'] = False                
             
             try:
@@ -4410,14 +4415,14 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
 
 
 # Gets the metadata for Raspberry Shake, specifically for 3D v.7
-def get_metadata(params, write_path='', update_metadata=True, source=None, verbose=False, **read_inventory_kwargs):
+def get_metadata(input_parameters, write_path='', update_metadata=True, source=None, verbose=False, **read_inventory_kwargs):
     """Get metadata and calculate or get paz parameter needed for PSD
-       Adds an obspy.Inventory object to the "inv" attribute or key of params
+       Adds an obspy.Inventory object to the "inv" attribute or key of input_parameters
     
 
     Parameters
     ----------
-    params : dict
+    input_parameters : dict
         Dictionary containing all the input and other parameters needed for processing
             Ouput from input_params() function
     write_path : str
@@ -4430,22 +4435,22 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, verbo
 
     Returns
     -------
-    params : dict
-        Modified input dictionary with additional key:value pair containing paz dictionary (key = "paz")
+    input_parameters : dict
+        Modified input dictionary with additional key:value pair containing paz or inv dictionary (key = "paz")
     """
     
-    invPath = params['metadata']
+    invPath = input_parameters['metadata']
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 
                              'rs', 'rs3d', 'rasp. shake', 
                              'raspshake', 'raspberry shake 3d']
     trominoNameList = ['tromino', 'trom', 'trm', 't']
        
-    if str(params['instrument']).lower() in raspShakeInstNameList:
+    if str(input_parameters['instrument']).lower() in raspShakeInstNameList:
         if update_metadata:
-            params = _update_shake_metadata(filepath=invPath, params=params, write_path=write_path, verbose=verbose)
-        params = _read_RS_Metadata(params, source=source)
-    elif params['instrument'].lower() in trominoNameList:
-        params['paz'] = {'Z':{}, 'E':{}, 'N':{}}
+            input_parameters = _update_shake_metadata(filepath=invPath, params=input_parameters, write_path=write_path, verbose=verbose)
+        input_parameters = _read_RS_Metadata(input_parameters, source=source)
+    elif input_parameters['instrument'].lower() in trominoNameList:
+        input_parameters['paz'] = {'Z':{}, 'E':{}, 'N':{}}
 
         # Initially started here: https://ds.iris.edu/NRL/sensors/Sunfull/RESP.XX.NS721..BHZ.PS-4.5C1_LF4.5_RC3400_RSNone_SG82_STgroundVel
         tromino_paz = { 'zeros': [-3.141592653589793/2-0j, -3.141592653589793/2-0j],
@@ -4455,7 +4460,7 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, verbo
                         'normalization_frequency':5, 
                         'normalization_factor':1}
         
-        params['paz']['Z'] =  params['paz']['E'] = params['paz']['N'] = tromino_paz
+        input_parameters['paz']['Z'] =  input_parameters['paz']['E'] = input_parameters['paz']['N'] = tromino_paz
         
         tromChaResponse = obspy.core.inventory.response.Response().from_paz(**tromino_paz)
 
@@ -4463,26 +4468,26 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, verbo
         obspyNow = obspy.UTCDateTime.now()
 
         # Update location code to match partition
-        if type(params['station']) is int or str(params['station']).isdigit():
-            params['location'] = str(params['station'])
+        if type(input_parameters['station']) is int or str(input_parameters['station']).isdigit():
+            input_parameters['location'] = str(input_parameters['station'])
 
         # Create channel objects to be used in inventory                
-        channelObj_Z = obspy.core.inventory.channel.Channel(code='EHZ', location_code=params['location'], latitude=params['params']['latitude'], 
-                                                longitude=params['params']['longitude'], elevation=params['params']['elevation'], depth=params['params']['depth'], 
+        channelObj_Z = obspy.core.inventory.channel.Channel(code='EHZ', location_code=input_parameters['location'], latitude=input_parameters['latitude'], 
+                                                longitude=input_parameters['longitude'], elevation=input_parameters['elevation'], depth=input_parameters['depth'], 
                                                 azimuth=0, dip=90, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse)
-        channelObj_E = obspy.core.inventory.channel.Channel(code='EHE', location_code=params['location'], latitude=params['params']['latitude'], 
-                                                longitude=params['params']['longitude'], elevation=params['params']['elevation'], depth=params['params']['depth'], 
+        channelObj_E = obspy.core.inventory.channel.Channel(code='EHE', location_code=input_parameters['location'], latitude=input_parameters['latitude'], 
+                                                longitude=input_parameters['longitude'], elevation=input_parameters['elevation'], depth=input_parameters['depth'], 
                                                 azimuth=90, dip=0, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse) 
-        channelObj_N = obspy.core.inventory.channel.Channel(code='EHN', location_code=params['location'], latitude=params['params']['latitude'], 
-                                                longitude=params['params']['longitude'], elevation=params['params']['elevation'], depth=params['params']['depth'], 
+        channelObj_N = obspy.core.inventory.channel.Channel(code='EHN', location_code=input_parameters['location'], latitude=input_parameters['latitude'], 
+                                                longitude=input_parameters['longitude'], elevation=input_parameters['elevation'], depth=input_parameters['depth'], 
                                                 azimuth=0, dip=0, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse) 
         
         # Create site object for inventory
-        siteObj = obspy.core.inventory.util.Site(name=params['params']['site'], description=None, town=None, county=None, region=None, country=None)
+        siteObj = obspy.core.inventory.util.Site(name=input_parameters['site'], description=None, town=None, county=None, region=None, country=None)
         
         # Create station object for inventory
-        stationObj = obspy.core.inventory.station.Station(code='TRMNO', latitude=params['params']['latitude'], longitude=params['params']['longitude'], 
-                                            elevation=params['params']['elevation'], channels=[channelObj_Z, channelObj_E, channelObj_N], site=siteObj, 
+        stationObj = obspy.core.inventory.station.Station(code='TRMNO', latitude=input_parameters['latitude'], longitude=input_parameters['longitude'], 
+                                            elevation=input_parameters['elevation'], channels=[channelObj_Z, channelObj_E, channelObj_N], site=siteObj, 
                                             vault=None, geology=None, equipments=None, operators=None, creation_date=obspyStartDate,
                                             termination_date=obspy.UTCDateTime(2100,1,1), total_number_of_channels=3, 
                                             selected_number_of_channels=3, description='Estimated data for Tromino, this is NOT from the manufacturer',
@@ -4497,12 +4502,12 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, verbo
                                             end_date=obspyNow, restricted_status=None, alternate_code=None, historical_code=None, 
                                             data_availability=None, identifiers=None, operators=None, source_id=None)]
         
-        params['inv'] = obspy.Inventory(networks=network)
+        input_parameters['inv'] = obspy.Inventory(networks=network)
     else:
         if not invPath:
             pass #if invPath is None
         elif not pathlib.Path(invPath).exists() or invPath == '':
-            warnings.warn(f"The metadata parameter was not specified correctly. Returning original params value {params['metadata']}")
+            warnings.warn(f"The metadata parameter was not specified correctly. Returning original input_parameters value {input_parameters['metadata']}")
         readInvKwargs = {}
         argspecs = inspect.getfullargspec(obspy.read_inventory)
         for argName in argspecs[0]:
@@ -4510,11 +4515,11 @@ def get_metadata(params, write_path='', update_metadata=True, source=None, verbo
                 readInvKwargs[argName] = read_inventory_kwargs[argName]
 
         readInvKwargs['path_or_file_object'] = invPath
-        params['inv'] = obspy.read_inventory(invPath)
-        if 'params' in params.keys():
-            params['params']['inv'] = params['inv']
+        input_parameters['inv'] = obspy.read_inventory(invPath)
+        #if 'params' in input_parameters.keys():
+        #    input_parameters['params']['inv'] = params['inv']
 
-    return params
+    return input_parameters
 
 
 # Get report (report generation and export)
@@ -4588,7 +4593,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                     update_msg.append(f'\t\t{k} = {v} (previously {orig_args[k]})')
                     orig_args[k] = v
 
-    if azimuth is None or str(azimuth).lower() is 'none':
+    if str(azimuth).lower() == 'none':
         orig_args['azimuth'] = "HV"
     azimuth = orig_args['azimuth']
     report_formats = orig_args['report_formats']
@@ -5289,8 +5294,8 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
         #If running batch, we'll loop through each site
         for site_name in hvsr_data.keys():
             args = orig_args.copy() #Make a copy so we don't accidentally overwrite
-            individual_params = hvsr_data[site_name] #Get what would normally be the "params" variable for each site
-            args['hvsr_data'] = individual_params #reset the params parameter we originally read in to an individual site params
+            site_hvsrData = hvsr_data[site_name] #Get what would normally be the "params" variable for each site
+            args['hvsr_data'] = site_hvsrData #reset the params parameter we originally read in to an individual site params
             if hvsr_data[site_name]['processing_status']['overall_status']:
                 try:
                     hvsr_data['Azimuth_Fig'] = __plot_azimuth_batch(**args) #Call another function, that lets us run this function again
@@ -6932,11 +6937,8 @@ def update_elevation(hvsr_data, updated_surface_elevation, updated_elevation_uni
                                                               peakReport['Report']['Print_Report'])
                 
     # Update processing_parameters to reflect new elevations
-    hvsr_data['processing_parameters']['fetch_data']['params']['elevation'] = updated_surface_elevation
-    hvsr_data['processing_parameters']['fetch_data']['params']['elev_unit'] = 'meters'
-    hvsr_data['processing_parameters']['fetch_data']['params']['params']['elevation'] = updated_surface_elevation
-    hvsr_data['processing_parameters']['fetch_data']['params']['params']['elev_unit'] = 'meters'
-    
+    hvsr_data['processing_parameters']['input_params']['elevation'] = updated_surface_elevation
+    hvsr_data['processing_parameters']['input_params']['elev_unit'] = 'meters'    
     return hvsr_data
 
 
@@ -7052,15 +7054,15 @@ def __check_peaks_batch(**check_peaks_kwargs):
 # Support function for running batch
 def __generate_ppsds_batch(**generate_psds_kwargs):
     try:
-        params = generate_psds(**generate_psds_kwargs)
+        hvData = generate_psds(**generate_psds_kwargs)
         if generate_psds_kwargs['verbose']:
-            print('\t{} successfully completed generate_psds()'.format(params['site']))
+            print('\t{} successfully completed generate_psds()'.format(generate_psds_kwargs['hvsr_data']['site']))
     except Exception as e:
         print(e)
-        warnings.warn(f"Error in generate_psds({generate_psds_kwargs['params']['site']}, **generate_psds_kwargs)", RuntimeWarning)
-        params = generate_psds_kwargs['params']
+        warnings.warn(f"Error in generate_psds({generate_psds_kwargs['hvsr_data']['site']}, **generate_psds_kwargs)", RuntimeWarning)
+        hvData = generate_psds_kwargs['hvsr_data']
         
-    return params
+    return hvData
 
 
 # Helper function for batch processing of get_report
@@ -7154,12 +7156,12 @@ def __plot_azimuth_batch(**plot_azimuth_kwargs):
         if plot_azimuth_kwargs['verbose']:
             print('\t{} successfully completed plot_azimuth()'.format(hvsr_data['input_params']['site']))
     except:
-        errMsg = f"Error in plot_azimuth({plot_azimuth_kwargs['params']['site']}, **plot_azimuth_kwargs)"
+        errMsg = f"Error in plot_azimuth({plot_azimuth_kwargs['hvsr_data']['site']}, **plot_azimuth_kwargs)"
         if plot_azimuth_kwargs['verbose']:
             print('\t'+errMsg)
         else:
             warnings.warn(errMsg, RuntimeWarning)
-        hvsr_data = plot_azimuth_kwargs['params']
+        hvsr_data = plot_azimuth_kwargs['hvsr_data']
         
     return hvsr_data
 
@@ -7171,12 +7173,12 @@ def __process_hvsr_batch(**process_hvsr_kwargs):
         if process_hvsr_kwargs['verbose']:
             print('\t{} successfully completed process_hvsr()'.format(hvsr_data['input_params']['site']))
     except:
-        errMsg=f"Error in process_hvsr({process_hvsr_kwargs['params']['site']}, **process_hvsr_kwargs)"
+        errMsg=f"Error in process_hvsr({process_hvsr_kwargs['hvsr_data']['site']}, **process_hvsr_kwargs)"
         if process_hvsr_kwargs['verbose']:
             print('\t'+errMsg)
         else:
             warnings.warn(errMsg, RuntimeWarning)
-        hvsr_data = process_hvsr_kwargs['params']
+        hvsr_data = process_hvsr_kwargs['hvsr_data']
         
     return hvsr_data
 
@@ -7294,7 +7296,7 @@ def _update_shake_metadata(filepath, params, write_path='', verbose=False):
             os.remove(write_file.as_posix())
 
     params['inv'] = inv
-    params['params']['inv'] = inv
+    #params['params']['inv'] = inv
     return params
 
 
@@ -7397,7 +7399,7 @@ def _read_RS_Metadata(params, source=None):
             c = str(c)[-1].upper()
         paz[str(c)] = channelPaz
     params['paz'] = paz
-    params['params']['paz'] = paz
+    #params['params']['paz'] = paz
 
     return params
 
@@ -9902,7 +9904,7 @@ def __remove_windows_from_df(hvsr_data, verbose=False):
         trEndTime = trace.stats.endtime
     
     gaps = list(zip(gaps0, gaps1))
-    hvsr_windows_df_exists = ('hvsr_windows_df' in hvsr_data.keys()) or ('params' in hvsr_data.keys() and 'hvsr_windows_df' in hvsr_data['params'].keys()) or ('input_params' in hvsr_data.keys() and 'hvsr_windows_df' in hvsr_data['input_params'].keys())
+    hvsr_windows_df_exists = ('hvsr_windows_df' in hvsr_data.keys()) or ('input_params' in hvsr_data.keys() and 'hvsr_windows_df' in hvsr_data['input_params'].keys())
     if hvsr_windows_df_exists:
         hvsrDF = hvsr_data['hvsr_windows_df']
         use_before = hvsrDF["Use"].copy().astype(bool)

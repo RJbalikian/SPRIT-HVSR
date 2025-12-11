@@ -167,7 +167,7 @@ def calculate_depth(freq_input,
     # initialize values
     a = 0
     b = 0
-    params = None
+    depth_model_params = None
 
     # Fetch parameters for frequency-depth model
     if isinstance(depth_model, (tuple, list, dict)):
@@ -183,16 +183,16 @@ def calculate_depth(freq_input,
                     break
 
         elif depth_model.casefold() in swave:
-            params = depth_model.casefold()
+            depth_model_params = depth_model.casefold()
 
         elif depth_model.casefold() == "all":
-            params = depth_model.casefold()
+            depth_model_params = depth_model.casefold()
 
         else:   # parameters a and b could be passed in as a parsable string
-            params = depth_model.split(',')
+            depth_model_params = depth_model.split(',')
             # Work on re update[int(s) for s in re.findall(r"[-+]?(?:\d*\.*\d+)", 
             # depth_model)]  #figure this out later for floating points; works for integers
-            (a, b) = params
+            (a, b) = depth_model_params
             if a == 0 or b == 0:
                 raise ValueError("Parameters cannot be zero, check model inputs")            
 
