@@ -63,6 +63,7 @@ OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX',
 PLOT_KEYS = ["Input_Plot", "Outlier_Plot", "Plot_Report", "Depth_Plot", "Plot_Report"]
 RESOURCE_DIR = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources')
 
+
 with open(RESOURCE_DIR.joinpath('defaults.json'), 'r') as fp:
     DEFAULT_PARAMS_DICT = json.load(fp)
 DEFAULT_BAND = DEFAULT_PARAMS_DICT['hvsr_band']
@@ -1192,9 +1193,16 @@ def gui(kind: str = 'browser'):
 # FUNCTIONS AND METHODS
 # The run function to rule them all (runs all needed for simply processing HVSR)
 def run(input_data=None, source='file', azimuth_calculation=False, noise_removal=False, outlier_curves_removal=False, skip_steps=None, verbose=False, **kwargs):
-    """The sprit.run() is the main function that allows you to do all your HVSR processing in one simple step (sprit.run() is how you would call it in your code, but it may also be called using sprit.sprit_hvsr.run())
+    """The sprit.run() is the main function 
+       that allows you to do all your HVSR processing in one simple step 
+       (sprit.run() is how you would call it in your code, 
+       but it may also be called using sprit.sprit_hvsr.run())
     
-    The input_data parameter of sprit.run() is the only required parameter (if nothing entered, it will run sample data). This can be either a single file, a list of files (one for each component, for example), a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance), a Rasp. Shake raw data directory, or sample data.
+    The input_data parameter of sprit.run() is the only required parameter 
+    (if nothing entered, it will run sample data). 
+    This can be either a single file, a list of files (one for each component, for example), 
+    a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance), 
+    a Rasp. Shake raw data directory, select Tromino binary (.trc) files, or sample data.
     
     Notes
     -----
@@ -1266,12 +1274,14 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     """
     
-    if input_data is None or input_data == '':
-        print("********************* PROCESSING SAMPLE DATA *****************************************")
+    if input_data is None or input_data == '' or str(input_data).lower() == 'sample':
+        print("**************************** PROCESSING SAMPLE DATA **********************************")
         print("To read in your own data, use sprit.run(input_data='/path/to/your/seismic/data.mseed')")
-        print("See SpRIT Wiki or API documentation for more information:")
-        print("\t Wiki: https://github.com/RJbalikian/SPRIT-HVSR/wiki")
-        print("\t API Documentation: https://sprit.readthedocs.io/en/latest/#")
+        print("      Any file format supported by osbpy.read() can be input to sprit_run()           ")
+        print("      Raw data (.trc) files from select Tromino Portable are also supported           ")
+        print("           See SpRIT Wiki or API documentation for more information:                  ")
+        print("              Wiki: https://github.com/RJbalikian/SPRIT-HVSR/wiki                     ")
+        print("          API Documentation: https://sprit.readthedocs.io/en/latest/#                 ")
         print("**************************************************************************************")
         print()
         input_data = 'sample'
@@ -1280,6 +1290,25 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     global do_run
     do_run = True
 
+    # Handle repeat args in DEFAULT PARAMS DICT
+    DPD = DEFAULT_PARAMS_DICT.copy()
+    if 'verbose' in DPD:
+        if DPD['verbose']:
+            verbose = True
+            orig_args['verbose'] = verbose
+            print(f"verbose parameter has been updated from defaults.json to True")
+        del DPD['verbose']
+    if 'input_data' in DPD:
+        del DPD['input_data']
+    if 'source' in DPD:
+        if DPD['source'] != source:
+            source = DPD['source']
+            orig_args['source'] = source
+            if verbose:
+                print(f"source parameter has been updated from defaults.json from 'file' to '{source}'")
+        del DPD['source']
+
+    # Start processing tasks
     if verbose:
         print('Using sprit.run() with the following parameters:')
         print(f'\tinput_data = {input_data}')
@@ -1301,7 +1330,8 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         kwargs['peak_freq_range'] = inspect.signature(input_params).parameters['peak_freq_range'].default
     if 'processing_parameters' not in kwargs.keys():
         kwargs['processing_parameters'] = {}
-    
+
+
     # Separate out input_params and fetch_data processes based on whether batch has been specified
     batchlist = ['batch', 'bach', 'bath', 'b', 'dir', 'directory']
     dirList = ['dir', 'directory', 'd']
@@ -1317,6 +1347,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         # Get the input parameters
         params = input_data
         try:
+            # Check for any specified kwargs
             input_params_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(input_params).parameters.keys())}
             if 'acq_date' not in input_params_kwargs:
                 input_params_kwargs['acq_date'] = NOWTIME.date()
@@ -1325,6 +1356,9 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
                 input_params_kwargs['starttime'] = NOWTIME.time()
             
             if skip_steps is None or 'input_params' not in skip_steps:
+                # Check for any updated defaults
+                updated_ip_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(input_params).parameters.keys())}
+                input_params_kwargs.update({k: v for k, v in updated_ip_defaults.items() if k not in input_params_kwargs}) # Don't overwrite specified kwargs
                 params = input_params(input_data=input_data, verbose=verbose, **input_params_kwargs)
         except Exception as e:
             if hasattr(e, 'message'):
@@ -1351,8 +1385,11 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
                 fetch_data_kwargs['obspy_ppsds'] = False
             
             if skip_steps is None or 'fetch_data' not in skip_steps:
-                hvsrDataIN = fetch_data(params=params, source=source, verbose=verbose, **fetch_data_kwargs)
+                updated_fd_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(fetch_data).parameters.keys())}
+                updated_fd_defaults.update({k: v for k, v in DPD.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())})
+                fetch_data_kwargs.update({k:v for k,v in updated_fd_defaults.items() if k not in fetch_data_kwargs})
 
+                hvsrDataIN = fetch_data(params=params, source=source, verbose=verbose, **fetch_data_kwargs)
         except Exception as e:
             # Even if batch, this is reading in data for all sites so we want to raise error, not just warn
             if hasattr(e, 'message'):
@@ -1396,6 +1433,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
                     if v != inspect.signature(run).parameters[k].default:
                         run_kwargs[k] = v
                                    
+            # RUN FOR THIS SITE
             try:
                 hvsrBatchDict[site_name] = run(**run_kwargs)
                 run_kwargs_for_df.append(run_kwargs)
@@ -1427,7 +1465,6 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
                     table_reports = pd.DataFrame()
                 else:
                     pass
-
                 
         hvsrBatchData['Table_Report'] = pd.merge(left=hvsrBatchData.input_df, right=table_reports,
                                                  how='outer',
@@ -1457,6 +1494,9 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         if 'horizontal_method' not in kwargs.keys():
             kwargs['horizontal_method'] = 'Single Azimuth'
 
+        updated_az_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(calculate_azimuth).parameters.keys())}
+        azimuth_kwargs.update({k: v for k, v in updated_az_defaults.items() if k not in azimuth_kwargs}) # Don't overwrite specified kwargs
+
         try:
             hvsr_az = calculate_azimuth(hvsrDataIN, verbose=verbose, **azimuth_kwargs)
         except Exception as e:
@@ -1481,7 +1521,8 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     try:
         remove_noise_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
         if noise_removal or remove_noise_kwargs != {}:
-            remove_noise_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
+            updated_rn_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
+            remove_noise_kwargs.update({k:v for k,v in updated_rn_defaults.items() if k not in remove_noise_kwargs})
             try:
                 if skip_steps is None or 'remove_noise' not in skip_steps:
                     data_noiseRemoved = remove_noise(hvsr_data=data_noiseRemoved, verbose=verbose, **remove_noise_kwargs)   
@@ -1536,7 +1577,9 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     try:
         generate_psds_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(generate_psds).parameters.keys())}
         PPSDkwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(PPSD).parameters.keys())}
+        updated_gp_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(generate_psds).parameters.keys())}
         generate_psds_kwargs.update(PPSDkwargs)
+        generate_psds_kwargs.update({k:v for k, v in updated_gp_defaults.items() if k not in generate_psds_kwargs})
         generate_psds_kwargs['azimuthal_psds'] = azimuth_calculation
         if skip_steps is None or ('generate_psds' not in skip_steps and 'generate_ppsds' not in skip_steps):
             psd_data = generate_psds(hvsr_data=psd_data, verbose=verbose, **generate_psds_kwargs)
@@ -1569,7 +1612,8 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     data_curvesRemoved = psd_data
     try:
         remove_outlier_curve_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
-        if len(remove_outlier_curve_kwargs.keys())==1 and 'plot_engine' in remove_outlier_curve_kwargs.keys():
+        # Correct for repeated plot_engine inputs so plot_engine is not the only thing that "sets off" run outlier curve condition
+        if len(remove_outlier_curve_kwargs.keys()) == 1 and 'plot_engine' in remove_outlier_curve_kwargs.keys():
             remove_outlier_curve_kwargs = {}
         if 'use_hv_curves' not in remove_outlier_curve_kwargs.keys():
             use_hv_curves = False
@@ -1581,6 +1625,10 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
             outlier_curve_keys_used = False
         if (outlier_curves_removal or outlier_curve_keys_used) and not use_hv_curves and (skip_steps is None or 'remove_outlier_curves' not in skip_steps):
             remove_outlier_curve_kwargs['remove_outliers_during_plot'] = False
+    
+            updated_roc_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
+            remove_outlier_curve_kwargs.update({k:v for k, v in updated_roc_defaults.items() if k not in remove_outlier_curve_kwargs})
+
             data_curvesRemoved = remove_outlier_curves(hvsr_data=data_curvesRemoved, verbose=verbose,**remove_outlier_curve_kwargs)   
     except Exception as e:
         traceback.print_exception(sys.exc_info()[1])
@@ -1613,7 +1661,8 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     hvsr_results = data_curvesRemoved
     try:
         process_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(process_hvsr).parameters.keys())}
-        
+        updated_ph_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(process_hvsr).parameters.keys())}
+        process_hvsr_kwargs.update({k: v for k, v in updated_ph_defaults.items() if k not in process_hvsr_kwargs})
         if azimuth_calculation:
             if azimuth_kwargs['azimuth_type'] == 'single':
                 process_hvsr_kwargs['azimuth'] = azimuth_kwargs['azimuth_angle']
@@ -1648,6 +1697,9 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
             outlier_curve_keys_used = False
         if (outlier_curves_removal or outlier_curve_keys_used) and use_hv_curves and (skip_steps is None or 'remove_outlier_curves' not in skip_steps):
             remove_outlier_curve_kwargs['remove_outliers_during_plot'] = False
+            updated_roc_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
+            remove_outlier_curve_kwargs.update({k:v for k, v in updated_roc_defaults.items() if k not in remove_outlier_curve_kwargs})
+
             hvsr_results = remove_outlier_curves(hvsr_data=hvsr_results, verbose=verbose,**remove_outlier_curve_kwargs)   
     except Exception as e:
         traceback.print_exception(sys.exc_info()[1])
@@ -1680,10 +1732,14 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     # Final post-processing/reporting
     # Check peaks
     check_peaks_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
+    updated_cp_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
+    check_peaks_kwargs.update({k: v for k, v in updated_cp_defaults.items() if k not in check_peaks_kwargs})
     if skip_steps is None or 'check_peaks' not in skip_steps:
         hvsr_results = check_peaks(hvsr_data=hvsr_results, verbose=verbose, **check_peaks_kwargs)
 
     get_report_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(get_report).parameters.keys())}
+    updated_gr_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(get_report).parameters.keys())}
+    get_report_kwargs.update({k: v for k, v in updated_gr_defaults.items() if k not in get_report_kwargs})
     # Add 'az' as a default plot if the following conditions
     # first check if report_formats is specified, if not, add default value
     if 'report_formats' not in get_report_kwargs.keys():
@@ -1692,6 +1748,8 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     # Now, check if plot is specified, then if plot_type is specified, then add 'az' if stream has azimuths
     if 'plot' in get_report_kwargs['report_formats']:
         plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
+        updated_phv_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
+        #plot_hvsr_kwargs.update({k: v for k, v in updated_phv_defaults.items() if k not in plot_hvsr_kwargs})
         get_report_kwargs.update(plot_hvsr_kwargs)
         usingDefault = True
         if 'plot_type' not in get_report_kwargs.keys():
@@ -1768,7 +1826,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
             pass
     
     # Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
-    if 'hvsr_export_path' in kwargs.keys():
+    if 'hvsr_export_path' in kwargs.keys() or DPD['hvsr_export_path'] is not None:
         if kwargs['hvsr_export_path'] is None:
             pass
         else:
@@ -1777,10 +1835,9 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
             else:
                 ext = 'hvsr'
             export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], ext=ext, verbose=verbose)        
-    if 'show_plot' in kwargs:
+    if 'show_plot' in kwargs or DPD['show_plot'] is not True:
         if not kwargs['show_plot']:
             plt.close()
-
 
     return hvsr_results
 
@@ -4530,9 +4587,11 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                 if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     update_msg.append(f'\t\t{k} = {v} (previously {orig_args[k]})')
                     orig_args[k] = v
-                    
-    report_formats = orig_args['report_formats']
+
+    if azimuth is None or str(azimuth).lower() is 'none':
+        orig_args['azimuth'] = "HV"
     azimuth = orig_args['azimuth']
+    report_formats = orig_args['report_formats']
     plot_type = orig_args['plot_type']
     plot_engine = orig_args['plot_engine']
     show_print_report = orig_args['show_print_report']

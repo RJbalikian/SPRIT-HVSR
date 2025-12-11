@@ -20,7 +20,7 @@ except Exception: #For testing
     import sprit_hvsr
     pass
 
-RESOURCE_DIR = sprit_hvsr.RESOURCE_DIR
+RESOURCE_DIR = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources')
 
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
@@ -553,7 +553,7 @@ def _reset_default_json(verbose=False):
                     sprit_hvsr.generate_psds, sprit_hvsr.process_hvsr,
                     sprit_hvsr.remove_outlier_curves,
                     sprit_hvsr.check_peaks,
-                    sprit_hvsr.get_report,
+                    sprit_hvsr.get_report, sprit_hvsr.plot_hvsr,
                     sprit_hvsr.export_hvsr,
                     ]
 
@@ -679,3 +679,4 @@ def _x_mark(incolor=False, inTerminal=False):
     else:
         xmark = _get_char(u'\u2718')
     return xmark
+
