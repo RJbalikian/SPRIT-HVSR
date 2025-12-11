@@ -786,57 +786,9 @@ class HVSRData:
     def to_json(self, json_filepath=None, export_json=True, return_json=False, **kwargs):
         """Not yet supported, will export HVSRData object to json"""
 
+        # Not currently using this, but keeping for now
         class_keys_to_convert = (datetime.date, obspy.UTCDateTime, 
                              datetime.time, CRS, obspy.Inventory)
-
-        def iterative_json_parser(input_attrib=self, level=0):
-            outValue = input_attrib
-            
-            if isinstance(input_attrib, dict):  # simplified condition for demo
-            # if isinstance(input_attrib, (dict, sprit.HVSRData)):  # use this line instead
-                outValue = {}
-                level += 1
-                for i, (key, value) in enumerate(input_attrib.items()):
-                    outKey = key
-                    print(level, "".join(['  ']*level), outKey)
-                    if not isinstance(outKey, (str, int, float, bool, type(None))):
-                        outKey = str(outKey)
-                    
-                    # Recursively process the value
-                    processed_value = iterative_json_parser(value, level)
-                    
-                    # Apply string conversion if needed
-                    if isinstance(processed_value, class_keys_to_convert):
-                        processed_value = str(processed_value)
-                    
-                    outValue[outKey] = processed_value
-                
-                return outValue
-            
-            elif isinstance(input_attrib, list):
-                outValue = []
-                for item in input_attrib:
-                    if isinstance(item, np.ndarray):
-                        outValue.append(item.tolist())
-                    else:
-                        # Recursively process list items
-                        outValue.append(iterative_json_parser(item, level))
-                return outValue
-            
-            elif isinstance(input_attrib, np.ndarray):
-                outValue = input_attrib.tolist()
-                return outValue
-            
-            elif isinstance(input_attrib, pd.DataFrame):
-                # Convert DataFrame to dict, but then recursively process it
-                dict_value = input_attrib.to_dict()
-                return iterative_json_parser(dict_value, level)
-            
-            elif isinstance(input_attrib, class_keys_to_convert):
-                return str(input_attrib)
-            
-            else:
-                return input_attrib
 
         sKeys = True
         if 'sort_keys' in kwargs:
@@ -848,15 +800,29 @@ class HVSRData:
             indent = kwargs['indent']
             del kwargs['indent']
 
+        dict_for_json = {}
+        for k, v in self.__dict__.items():
+            if k=='_batch':
+                continue
+            
+            try:
+                json.dumps({k:v})
+                dict_for_json[k] = v
+            except Exception as e:
+                dict_for_json[k] = str(v)
+
         if export_json and json_filepath is not None:
             with open(json_filepath, 'w') as f:
                 # dump the JSON string to the file
-                json.dump(self, fp=f, default=iterative_json_parser, 
-                        sort_keys=True, indent=indent, **kwargs)
+                json.dump(dict_for_json, 
+                          fp=f,
+                          sort_keys=sKeys, 
+                          indent=indent,
+                          **kwargs)
 
         if return_json or json_filepath is None:
-            return json.dumps(self, default=iterative_json_parser,
-                              sort_keys=True, indent=indent, **kwargs)
+            return json.dumps(dict_for_json,
+                              sort_keys=sKeys, indent=indent, **kwargs)
 
     def export(self, **kwargs):
         """Method to export HVSRData objects to .hvsr pickle files.
