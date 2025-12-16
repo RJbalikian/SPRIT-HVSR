@@ -705,20 +705,32 @@ class HVSRData:
         aDateStr = self.acq_date
         sTimeStr = self.starttime
         eTimeStr = self.endtime
-        if hasattr(self, 'stream'):
+        if hasattr(self, 'stream') and hasattr(self['stream'], 'stats'):
             dataST = self.stream
             utcSTime = dataST[0].stats.starttime
             utcETime = dataST[0].stats.endtime
         else:
-            utcSTime = self.starttime
-            utcETime = self.endtime
-        
-        minDur = int(str((utcETime - utcSTime)//60).split('.')[0])
-        secDur = float(round((((utcETime - utcSTime) / 60) - int(minDur)) * 60, 3))
-        if secDur >= 60:
-            minDur += int(secDur//60)
-            secDur = secDur - (secDur//60)*60
-
+            if 'T' in sTimeStr:
+                utcSTime = obspy.UTCDateTime(sTimeStr)
+                utcETime = obspy.UTCDateTime(eTimeStr)
+            else:
+                try:
+                    utcSTime = obspy.UTCDateTime(str(aDateStr).split('T')[0]+'T'+str(sTimeStr)+'Z')
+                    utcETime = obspy.UTCDateTime(str(aDateStr).split('T')[0]+'T'+str(eTimeStr)+'Z')
+                except Exception:
+                    utcSTime = 0
+                    utcSTime = 0
+            
+        try:
+            minDur = int(str((utcETime - utcSTime)//60).split('.')[0])
+            secDur = float(round((((utcETime - utcSTime) / 60) - int(minDur)) * 60, 3))
+            if secDur >= 60:
+                minDur += int(secDur//60)
+                secDur = secDur - (secDur//60)*60
+        except Exception:
+            minDur = 0
+            secDur = 0
+            
         acqDurStr = f'Record duration: {minDur}:{secDur:06.3f} ({utcETime-utcSTime} seconds)'
         if aDateStr == __get_ip_default('acq_date') and sTimeStr == __get_ip_default('starttime'):
             acqTimeStr += 'No acquisition time specified.\n'
@@ -749,11 +761,11 @@ class HVSRData:
 
             peakInfoStr = "\nCALCULATED F₀\n"
             peakInfoStr += "-"*(len(peakInfoStr) - 3) + '\n'
-            peakInfoStr += '{0:.3f} Hz ± {1:.4f} Hz'.format(self['BestPeak'][azimuth]['f0'], float(self["BestPeak"][azimuth]['Sf']))
+            peakInfoStr += '{0:.3f} Hz ± {1:.4f} Hz'.format(float(self['BestPeak'][azimuth]['f0']), float(self["BestPeak"][azimuth]['Sf']))
             if curvePass and peakPass:
-                peakInfoStr += '\n\t  {} Peak at {} Hz passed SESAME quality tests! :D'.format(sprit_utils._check_mark(), round(self['BestPeak'][azimuth]['f0'],3))
+                peakInfoStr += f'\n\t  {sprit_utils._check_mark()} Peak at {float(self['BestPeak'][azimuth]['f0']):.3f} Hz passed SESAME quality tests! :D'
             else:
-                peakInfoStr += '\n\t  {} Peak at {} Hz did NOT pass SESAME quality tests :('.format(sprit_utils._x_mark(), round(self['BestPeak'][azimuth]['f0'],3))
+                peakInfoStr += f'\n\t  {sprit_utils._x_mark()} Peak at {float(self['BestPeak'][azimuth]['f0']):.3f} Hz did NOT pass SESAME quality tests :('
         else:
             peakInfoStr = 'F₀ not Calculated'
 
@@ -783,47 +795,56 @@ class HVSRData:
         return self.__str__()
 
     # METHODS (many reflect dictionary methods)    
-    def to_json(self, json_filepath=None, export_json=True, return_json=False, **kwargs):
-        """Not yet supported, will export HVSRData object to json"""
+    def to_json(self, json_export_path=None, 
+                return_json_string=False, return_dict=False,
+                include_dataframe=False, include_plots=False,
+                verbose=False, **kwargs):
+        """Method to export HVSRData object to JSON file or string.
+           These JSON files or strings can be imported to an HVSRData object again using sprit.from_json().
+           Import to `HVSRData` objects is still experimental. 
+           This is essentially a method alias of export_json()
+           
 
-        # Not currently using this, but keeping for now
-        class_keys_to_convert = (datetime.date, obspy.UTCDateTime, 
-                             datetime.time, CRS, obspy.Inventory)
-
-        sKeys = True
-        if 'sort_keys' in kwargs:
-            sKeys = kwargs['sort_keys']
-            del kwargs['sort_keys']
-
-        indent = 4
-        if 'indent' in kwargs:
-            indent = kwargs['indent']
-            del kwargs['indent']
-
-        dict_for_json = {}
-        for k, v in self.__dict__.items():
-            if k=='_batch':
-                continue
+        Parameters
+        ----------
+        json_filepath : {None, pathlike object}, optional
+            Filepath at which to save a JSON representation of the HVSRData object, by default None.
+            If None, does not export (unless )
+        json_export_path : bool, optional
+            Whether to return a string of the JSON representation of the HVSRData Object, by default False.
+        return_dict : bool, optional
+            Whether to return a dictionary of the string JSON representation of the HVSRData object, by default False.
+            Note that this will be differently formatted than the HVSRData.__dict__ representation of the HVSRData object.
+            This first carries out json.dumps() on a formatted version of the HVSRData object, then json.loads() it into a dict.
+        include_dataframe : bool, optional
+            Whether to include the `hvsr_windows_df` dataframe in the JSON output, by default False.
+            Including this may triple the size of the JSON file.
+        include_plots : bool, optional
+            NOT YET SUPPORTED. If True, will include the plots of the HVSRData object as a bytestring, by default False.
+            The main Plot_Report plot is by default exported as a part of the HTML_Report.
+        verbose : bool, optional
+            Whether to print information about JSON export to terminal.
+        
+        Returns
+        -------
+        str, dict
+            Returns string if return_json is True. Returns dict if return_dict is True.
+            If both are set to True, dict will override string.
             
-            try:
-                json.dumps({k:v})
-                dict_for_json[k] = v
-            except Exception as e:
-                dict_for_json[k] = str(v)
+        See Also
+        --------
+        export_json
+        """
 
-        if export_json and json_filepath is not None:
-            with open(json_filepath, 'w') as f:
-                # dump the JSON string to the file
-                json.dump(dict_for_json, 
-                          fp=f,
-                          sort_keys=sKeys, 
-                          indent=indent,
-                          **kwargs)
+        returnedItem = export_json(hvsr_results=self, json_export_path=json_export_path,
+                                   return_json_string=return_json_string, return_dict=return_dict,
+                                   include_dataframe=include_dataframe, include_plots=include_plots,
+                                   verbose=verbose, **kwargs)
 
-        if return_json or json_filepath is None:
-            return json.dumps(dict_for_json,
-                              sort_keys=sKeys, indent=indent, **kwargs)
+        if return_json_string or return_dict or json_export_path is None:
+            return returnedItem
 
+    # Export to HVSRDat objects
     def export(self, **kwargs):
         """Method to export HVSRData objects to .hvsr pickle files.
 
@@ -1233,14 +1254,15 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     """
     
     if input_data is None or input_data == '' or str(input_data).lower() == 'sample':
-        print("**************************** PROCESSING SAMPLE DATA **********************************")
-        print("To read in your own data, use sprit.run(input_data='/path/to/your/seismic/data.mseed')")
-        print("      Any file format supported by osbpy.read() can be input to sprit_run()           ")
-        print("      Raw data (.trc) files from select Tromino Portable are also supported           ")
-        print("           See SpRIT Wiki or API documentation for more information:                  ")
-        print("              Wiki: https://github.com/RJbalikian/SPRIT-HVSR/wiki                     ")
-        print("          API Documentation: https://sprit.readthedocs.io/en/latest/#                 ")
-        print("**************************************************************************************")
+        
+        print(" PROCESSING SAMPLE DATA ".center(99, '*'))
+        print('*'+"To read in your own data, use sprit.run(input_data='/path/to/your/seismic/data.mseed')".center(97)+'*')
+        print('*'+"Any file format supported by osbpy.read() can be input to sprit_run()".center(97)+'*')
+        print('*'+"Raw data (.trc) files from select Tromino Portable are also supported".center(97)+'*')
+        print('*'+"See SpRIT Wiki or API documentation for more information:".center(97)+'*')
+        print('*'+"Wiki: https://github.com/RJbalikian/SPRIT-HVSR/wiki".center(97)+'*')
+        print('*'+"API Documentation: https://sprit.readthedocs.io/en/latest/#".center(97)+'*')
+        print("".center(99, '*'))
         print()
         input_data = 'sample'
     
@@ -1642,8 +1664,6 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
             if not hvsr_results[site_name]['batch']:
                 hvsr_results = hvsr_results[site_name]            
 
-    print('ph', hasattr(hvsr_results, 'input_stream'))
-
     # Remove outlier HV Curves
     try:
         remove_outlier_curve_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
@@ -1822,10 +1842,18 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
                 ext = kwargs['ext']
             else:
                 ext = 'hvsr'
-            export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], ext=ext, verbose=verbose)        
-    if 'show_plot' in kwargs or DPD['show_plot'] is not True:
-        if not kwargs['show_plot']:
-            plt.close()
+            export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], ext=ext, verbose=verbose)
+    if 'json_export_path' in kwargs.keys() or DPD['json_export_path'] is not None:
+        if kwargs['json_export_path'] is None:
+            pass
+        else:
+            export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
+            export_json(hvsr_results=hvsr_results, verbose=verbose, **export_json_kwargs)
+            
+    if 'show_plot_report' in get_report_kwargs and not get_report_kwargs['show_plot_report']:
+        plt.close()
+    if 'suppress_report_outputs' in get_report_kwargs and get_report_kwargs['suppress_report_outputs']:
+        plt.close()
 
     return hvsr_results
 
@@ -2837,6 +2865,274 @@ def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr', export_type='gzip'
     
     return
 
+
+# Function to export data to .json file
+def export_json(hvsr_results, json_export_path=None,
+                return_json_string=False, return_dict=False,
+                include_dataframe=False, include_plots=False,
+                verbose=False, **kwargs):
+    """Method to export HVSRData object to JSON file or string.
+        These JSON files or strings can be imported to an HVSRData object again using sprit.from_json().
+        Import to `HVSRData` objects is still experimental. 
+
+    Parameters
+    ----------
+    json_export_path : {None, pathlike object}, optional
+        Filepath at which to save a JSON representation of the HVSRData object, by default None.
+        If None, does not export (unless )
+    return_json : bool, optional
+        Whether to return a string of the JSON representation of the HVSRData Object, by default False.
+    return_dict : bool, optional
+        Whether to return a dictionary of the string JSON representation of the HVSRData object, by default False.
+        Note that this will be differently formatted than the HVSRData.__dict__ representation of the HVSRData object.
+        This first carries out json.dumps() on a formatted version of the HVSRData object, then json.loads() it into a dict.
+    include_dataframe : bool, optional
+        Whether to include the `hvsr_windows_df` dataframe in the JSON output, by default False.
+        Including this may triple the size of the JSON file.
+    include_plots : bool, optional
+        NOT YET SUPPORTED. If True, will include the plots of the HVSRData object as a bytestring, by default False.
+        The main Plot_Report plot is by default exported as a part of the HTML_Report.
+    verbose : bool, optional
+        Whether to print information about the export to terminal.
+
+    Returns
+    -------
+    str, dict
+        Returns string if return_json is True. Returns dict if return_dict is True.
+        If both are set to True, dict will override string.
+    """
+
+    stringOK = ['acq_date', 'starttime', 'endtime', 'input_crs', 'output_crs', 'inv',
+                'input_stream', 'stream', 'stream_edited', 'current_times_used']
+
+    channel_dicts = ['x_freqs', 'x_period', 'psd_raw', 'psds', 'psd_values_tavg', 
+                        'ppsd_std', 'ppsd_std_vals_m', 'ppsd_std_vals_p'] 
+
+    az_dicts = ['ind_hvsr_curves', 'ind_hvsr_stdDev', 'ind_hvsr_peak_indices',
+                'hvsr_peak_indices', 'hvsr_peak_freqs', 'hvsr_log_std',
+                'hvsrp', 'hvsrm', 'hvsrp2', 'hvsrm2',
+                ]
+
+    # May use this later if plot binary string support added
+    # plots = ['Input_Plot', "Plot_Report", "Outlier_Plot"]
+
+    sKeys = False
+    if 'sort_keys' in kwargs:
+        sKeys = kwargs['sort_keys']
+        del kwargs['sort_keys']
+
+    indent = 4
+    if 'indent' in kwargs:
+        indent = kwargs['indent']
+        del kwargs['indent']
+
+    dict_for_json = {}
+    dict_str_list = []
+    for k, v in hvsr_results.__dict__.items():
+        if k == '_batch':
+            continue
+        
+        # Get the Table Report formatted for json export
+        if k == 'Table_Report':
+            v = v.set_index('Site Name', drop=True)
+            for i, row in v.iterrows():
+                v.loc[i, 'Acq_Date'] = str(row['Acq_Date'])
+            v = v.transpose()
+            v = v.to_dict()
+
+        # Format hvsr_windows_df appropriately for export, if include_dataframe
+        if k == 'hvsr_windows_df':
+            if not include_dataframe:
+                continue
+            cols = hvsr_results['hvsr_windows_df'].columns
+            hvDF = hvsr_results['hvsr_windows_df']
+            npCols = []
+            for i, (ind, row) in enumerate(hvsr_results['hvsr_windows_df'].iterrows()):
+                for ci, c in enumerate(cols):
+                    if isinstance(row[c], np.ndarray):
+                        npCols.append(c)
+            npCols = list(set(npCols))
+
+            newDF = pd.DataFrame()
+            obspyCols = ['TimesProcessed_Obspy', 'TimesProcessed_ObspyEnd', 'TimesProcessed_End']
+            for c in cols:
+                if c in npCols and 'indices' not in c.lower():
+                    currNPCol = hvDF[c].apply(lambda x: np.round(x, 3).tolist())
+                    newDF[c] = currNPCol
+                elif 'indices' in c.lower() and c in npCols:
+                    newDF[c] = [row.tolist() for row in hvDF[c]]
+                elif c in obspyCols:
+                    obspyCol = hvDF[c].astype(str)
+                    newDF[c] = obspyCol
+                elif 'MPL' in c:
+                    newDF[c] = [float(row) for row in hvDF[c]]
+                elif 'PeakFreqs' in c:
+                    currCol = hvDF[c].apply(lambda x: np.round(x, 3).tolist())
+                    newDF[c] = currCol
+                else:
+                    newDF[c] = hvDF[c]
+            newDF.index = [str(i) for i in hvDF.index]
+            v = newDF.to_dict()
+
+        try:
+            json.dumps({k: v})  # This is just a test to ensure item can be dumped
+            dict_for_json[k] = v
+        except Exception:
+            dict_for_json[k] = str(v)
+
+            if k in stringOK:
+                dict_for_json[k] = str(v)
+                continue
+
+            # Special processing for BestPeak dict
+            if k == 'BestPeak':
+                bpStr = indSpcs+f'"{k}": '+'{\n'+indSpcs+indSpcs
+                del dict_for_json[k]
+                for azName, azDict in v.items():
+                    bpStr += f'"{azName}": ' + '{\n'+indSpcs+indSpcs+indSpcs
+                    for azDictKey, azDictData in azDict.items():
+                        if azDictKey == 'Report':
+                            bpStr += f'"{azDictKey}": ' + '{\n'+indSpcs+indSpcs+indSpcs+indSpcs
+                            for repKey, repVal in azDictData.items():
+                                if repKey not in ['Table_Report', 'Print_Report']:
+                                    if isinstance(repVal, bool):
+                                        repVal = str(repVal).lower()
+                                    bpStr += f'"{repKey}": "{repVal}", \n'+indSpcs+indSpcs+indSpcs+indSpcs
+                            bpStr = bpStr[:-1*(len(indSpcs)*4+3)]
+                            bpStr += "\n"+indSpcs+indSpcs+indSpcs+"},\n"+indSpcs+indSpcs+indSpcs
+                        elif azDictKey == 'PassList':
+                            bpStr += f'"{azDictKey}": '+ '{\n'+indSpcs+indSpcs+indSpcs+indSpcs
+                            for plKey, plVal in azDictData.items():
+                                plVal = str(plVal).lower()
+                                bpStr += f'"{plKey}": {plVal}, \n'+indSpcs+indSpcs+indSpcs+indSpcs
+                            bpStr = bpStr[:-1*(len(indSpcs)*4+3)] + '\n'+indSpcs+indSpcs+indSpcs+'},\n'
+                            bpStr += indSpcs+indSpcs+indSpcs
+                        else:
+                            bpStr += f'"{azDictKey}": "{azDictData}", \n'+indSpcs+indSpcs+indSpcs
+                    bpStr = bpStr[:-1*(3 * len(indSpcs) + 3)] + '\n'+indSpcs+indSpcs
+                bpStr = bpStr + '}\n'+indSpcs+'}'+indSpcs
+                dict_str_list.append(bpStr)
+
+            # Special processing of hvsr_curve array
+            if k == 'hvsr_curve':
+                del dict_for_json[k]
+                hvStr = indSpcs+'"hvsr_curve": '+str(np.round(v, 5).tolist()).replace('\n', ' ')+',\n'
+                dict_str_list.append(hvStr)
+
+            # Special processing of processing_parameters dict
+            if k == 'processing_parameters':
+                del dict_for_json[k]
+                ppStr = indSpcs+f'"{k}": '+'{\n'+indSpcs+indSpcs
+                for funKey, funParam in v.items():
+                    ppStr += f'"{funKey}": \n'+indSpcs+indSpcs+indSpcs+'{'
+                    for prmName, prmVal in funParam.items():
+                        if prmName == 'processing_paramters':
+                            continue
+                        
+                        try:
+                            if isinstance(prmVal, bool):
+                                prmVal = str(prmVal).lower()
+                            if prmVal is None:
+                                prmVal = 'null'
+                            
+                            if isinstance(prmVal, numbers.Number):
+                                ppStr += f'"{prmName}": {prmVal}, '
+                            elif isinstance(prmVal, (list, tuple)):
+                                newStr = f'"{prmName}": ['
+                                for item in prmVal:
+                                    if isinstance(item, numbers.Number):
+                                        newStr += item +', '
+                                    else:
+                                        newStr += f'"{item}", '
+                                ppStr += newStr[:-2]+'], '
+                            else:
+                                ppStr += f'"{prmName}": "{prmVal}", '
+                        except Exception:
+                            ppStr += f'"{prmName}": "{prmVal}", '
+
+                    ppStr = ppStr[:-2]+ '},\n'+indSpcs+indSpcs
+                minInd = -1*(len(indSpcs) * 2 + 3)
+                dict_str_list.append(ppStr[:minInd]+'}\n'+indSpcs+'},\n')
+
+            # Get string to add to end of json.dumps output later for dicts with az and channels
+            indSpcs = ''.join([' ']*indent)
+            if k in channel_dicts or k in az_dicts:
+                del dict_for_json[k]
+                dictString = f'{indSpcs}"{k}": '+'{\n'+indSpcs+indSpcs
+                for chaz, chazVals in v.items():
+                    if k == 'psds':
+                        dictString += f'"{chaz}": ' + '{\n' + indSpcs+indSpcs+indSpcs
+                        for psdKey, psdVal in v[chaz].items():
+                            if isinstance(psdVal, np.ndarray):
+                                dictString += json.dumps({psdKey: np.round(psdVal, 5).tolist()}).replace('{', '').replace("}", '') + ',\n'+indSpcs+indSpcs+indSpcs
+                            else:
+                                if isinstance(psdVal, (list, tuple)):
+                                    newList = []
+                                    for item in psdVal:
+                                        newList.append(str(item))
+                                    psdVal = newList
+                                outerDict = {psdKey: psdVal}
+                                dictString += json.dumps(outerDict).replace('{', '').replace("}", '') + ',\n'+indSpcs+indSpcs+indSpcs
+
+                        dictString = dictString[:-14] +"\n" +indSpcs+indSpcs+"},\n"+indSpcs+indSpcs
+                    else:
+                        outDict = {chaz:chazVals}
+                        if isinstance(chazVals, np.ndarray):
+                            outDict = {chaz: np.round(chazVals, 3).tolist()}
+                        if "Indices" in chaz:
+                            listList = []
+                            for arr in chazVals:
+                                listList.append(arr.tolist())
+                            outDict = {chaz: listList}
+
+                        dictString += json.dumps(outDict).replace('{', '').replace("}", '') + ',\n'+indSpcs+indSpcs
+                dict_str_list.append(dictString[:dictString.rfind(',')] + f'\n{indSpcs}'+'},\n')
+    
+    dict_str_list[-1] = dict_str_list[-1][:-2]+'\n'
+
+    if json_export_path is not None:
+        with open(json_export_path, 'w') as f:
+            # dump the JSON string to the file
+            json.dump(dict_for_json, 
+                      fp=f,
+                      sort_keys=sKeys, 
+                      indent=indent,
+                      **kwargs)
+
+        with open(json_export_path, 'r') as f:
+            readLines = f.readlines()
+        readLines = readLines[:-1]
+        readLines[-1] = readLines[-1].replace('\n',',\n')
+        readLines.extend(dict_str_list)
+        readLines.append('}')
+
+        with open(json_export_path, encoding='UTF-8', mode='w') as f:
+            f.writelines(readLines)
+        if verbose:
+            print(f'HVSRData object exported in JSON format to {json_export_path}')
+            
+    if return_json_string or return_dict or (json_export_path is None):
+        jsonString = json.dumps(dict_for_json,
+                                sort_keys=sKeys, 
+                                indent=indent, **kwargs)
+        
+        jsonStringOUT = jsonString
+        if len(dict_str_list) > 1: 
+            jsonStringOUT = jsonStringOUT[:-2]+',\n'
+
+        for ds in dict_str_list:
+            jsonStringOUT = jsonStringOUT + ds
+        jsonStringOUT = jsonStringOUT + '}'
+        
+        if return_dict:
+            if verbose:
+                print('Returning HVSRData as JSON-ified dict')
+            return json.loads(jsonStringOUT)
+        
+        if verbose:
+            print("Returning JSON-formatted string version of HVSRData")
+        return jsonStringOUT
+    
 
 # Function to export reports to disk in various formats
 def export_report(hvsr_results, report_export_path=None, report_export_format=['pdf'], azimuth='HV', csv_handling='rename', show_report=True, verbose=False):
@@ -3971,6 +4267,50 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
     input_parameters = sprit_utils._check_processing_status(input_parameters, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
     return input_parameters
+
+
+# Import from json
+def from_json(json_input, return_hvsr=True, **kwargs):
+    """Read HVSR data from JSON-formatted text or file.
+    This can be returned as a string, dict, or converted to a HVSRData object 
+
+    Parameters
+    ----------
+    json_input : str or pathlike object
+        A JSON string or filepath to .json file.
+        This is intended to read in data as exported using the HVSRData.to_json() method.
+    return_hvsr : bool, optional
+        Whether to reutn an HVSRData object (will return HVSRData object if True), by default True
+
+    Returns
+    -------
+    HVSRData, dict, or str
+        If return_hvsr is True, will attempt to return HVSRData object.
+        If it cannot do that, or return_hvsr=False, will attempt to return dict.
+        If it cannot do that, it will attempt to return a string representation of the input object.
+    """
+    if pathlib.Path(json_input).exists():
+        try:
+            with open(json_input, 'r') as ji:
+                jsonDictIN = json.load(ji)
+        except Exception:
+            print(f"Could not read json data in file: {json_input}. Will read in text of file")
+            with open(json_input, 'r') as ji:
+                jsonDictIN = ji.read()
+    else:
+        try:
+            jsonDictIN = json.loads(json_input)
+        except Exception:
+            print("Could not be loaded as json dict, returning string")
+            return str(json_input)
+    
+    if return_hvsr:
+        try:
+            return HVSRData(jsonDictIN)
+        except Exception:
+            return jsonDictIN
+    
+    return jsonDictIN
 
 
 # For backwards compatibility (now generate_psds()
