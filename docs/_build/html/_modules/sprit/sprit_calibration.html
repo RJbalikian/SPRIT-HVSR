@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_calibration &mdash; sprit 3.2.3 documentation</title>
+  <title>sprit.sprit_calibration &mdash; sprit 3.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=7895512d"></script>
+      <script src="../../_static/documentation_options.js?v=26f62d79"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -243,7 +243,7 @@
     <span class="c1"># initialize values</span>
     <span class="n">a</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">b</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">params</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">depth_model_params</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="c1"># Fetch parameters for frequency-depth model</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">depth_model</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)):</span>
@@ -259,16 +259,16 @@
                     <span class="k">break</span>
 
         <span class="k">elif</span> <span class="n">depth_model</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span> <span class="ow">in</span> <span class="n">swave</span><span class="p">:</span>
-            <span class="n">params</span> <span class="o">=</span> <span class="n">depth_model</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span>
+            <span class="n">depth_model_params</span> <span class="o">=</span> <span class="n">depth_model</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span>
 
         <span class="k">elif</span> <span class="n">depth_model</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
-            <span class="n">params</span> <span class="o">=</span> <span class="n">depth_model</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span>
+            <span class="n">depth_model_params</span> <span class="o">=</span> <span class="n">depth_model</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span>
 
         <span class="k">else</span><span class="p">:</span>   <span class="c1"># parameters a and b could be passed in as a parsable string</span>
-            <span class="n">params</span> <span class="o">=</span> <span class="n">depth_model</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+            <span class="n">depth_model_params</span> <span class="o">=</span> <span class="n">depth_model</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
             <span class="c1"># Work on re update[int(s) for s in re.findall(r&quot;[-+]?(?:\d*\.*\d+)&quot;, </span>
             <span class="c1"># depth_model)]  #figure this out later for floating points; works for integers</span>
-            <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="o">=</span> <span class="n">params</span>
+            <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="o">=</span> <span class="n">depth_model_params</span>
             <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">b</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Parameters cannot be zero, check model inputs&quot;</span><span class="p">)</span>            
 

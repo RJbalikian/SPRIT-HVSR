@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_jupyter_UI &mdash; sprit 3.2.3 documentation</title>
+  <title>sprit.sprit_jupyter_UI &mdash; sprit 3.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=7895512d"></script>
+      <script src="../../_static/documentation_options.js?v=26f62d79"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -489,7 +489,7 @@
                                             <span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s1">&#39;10%&#39;</span><span class="p">))</span>
     <span class="n">proc_settings_hbox</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">HBox</span><span class="p">([</span><span class="n">proc_settings_text</span><span class="p">,</span> <span class="n">proc_settings_read_button</span><span class="p">,</span> <span class="n">proc_settings_browse_button</span><span class="p">])</span>
     
-    <span class="n">excluded_params</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;hvsr_data&#39;</span><span class="p">,</span> <span class="s1">&#39;params&#39;</span><span class="p">,</span> <span class="s1">&#39;hvsr_results&#39;</span><span class="p">]</span>
+    <span class="n">excluded_params</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;hvsr_data&#39;</span><span class="p">,</span> <span class="s1">&#39;params&#39;</span><span class="p">,</span> <span class="s1">&#39;input_parameters&#39;</span><span class="p">,</span> <span class="s1">&#39;hvsr_results&#39;</span><span class="p">]</span>
     <span class="n">funcList</span> <span class="o">=</span> <span class="p">[</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">fetch_data</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_noise</span><span class="p">,</span>
                 <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">generate_psds</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">process_hvsr</span><span class="p">,</span>
                 <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_outlier_curves</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">check_peaks</span><span class="p">,</span>
@@ -516,9 +516,9 @@
                 <span class="n">proc_settings_text</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">proc_f</span><span class="p">)</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span>
                 <span class="n">proc_settings</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">import_settings</span><span class="p">(</span><span class="n">settings_import_path</span><span class="o">=</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">proc_f</span><span class="p">)</span><span class="o">.</span><span class="n">as_posix</span><span class="p">(),</span> <span class="n">settings_import_type</span><span class="o">=</span><span class="s1">&#39;processing&#39;</span><span class="p">)</span>
                 
-                <span class="k">for</span> <span class="n">func</span><span class="p">,</span> <span class="n">params</span> <span class="ow">in</span> <span class="n">proc_settings</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">func</span><span class="p">,</span> <span class="n">proc_params</span> <span class="ow">in</span> <span class="n">proc_settings</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                     <span class="k">if</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">widget_param_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                        <span class="k">for</span> <span class="n">prm</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="k">for</span> <span class="n">prm</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">proc_params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                             <span class="k">if</span> <span class="n">prm</span> <span class="ow">in</span> <span class="n">widget_param_dict</span><span class="p">[</span><span class="n">func</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                                 <span class="c1">#print(prm, &#39;:&#39;, widget_param_dict[func][prm],&#39; |  &#39;, val)</span>
                                 <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">val</span><span class="o">==</span><span class="s1">&#39;None&#39;</span><span class="p">:</span>
@@ -1213,7 +1213,7 @@
     
     <span class="c1"># Update fetch_data call</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">update_fetch_data_call</span><span class="p">():</span>
-        <span class="n">fetch_data_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;(params=hvsr_data, source=</span><span class="si">{</span><span class="n">data_source_type</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, data_export_path=</span><span class="si">{</span><span class="n">data_export_path_textbox</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">,</span>
+        <span class="n">fetch_data_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;(input_parameters=hvsr_data, source=</span><span class="si">{</span><span class="n">data_source_type</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, data_export_path=</span><span class="si">{</span><span class="n">data_export_path_textbox</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">,</span>
 <span class="s2">                            data_export_format=</span><span class="si">{</span><span class="n">data_export_format_dropdown</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, </span>
 <span class="s2">                            detrend_type=</span><span class="si">{</span><span class="n">detrend_type_dropdown</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, detrend_options=</span><span class="si">{</span><span class="n">detrend_options</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, </span>
 <span class="s2">                            filter_type=</span><span class="si">{</span><span class="n">filter_type_dropdown</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, filter_options=</span><span class="si">{</span><span class="n">filter_options</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">,</span>

@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_streamlit_ui &mdash; sprit 3.2.3 documentation</title>
+  <title>sprit.sprit_streamlit_ui &mdash; sprit 3.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=7895512d"></script>
+      <script src="../../_static/documentation_options.js?v=26f62d79"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -80,10 +80,11 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">zoneinfo</span>
-
+        
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
@@ -93,6 +94,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="kn">import</span> <span class="n">Heatmap</span> <span class="k">as</span> <span class="n">goHeatmap</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">plotly.graph_objs._figurewidget</span><span class="w"> </span><span class="kn">import</span> <span class="n">FigureWidget</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">plotly.subplots</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_subplots</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyproj</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">streamlit</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">st</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">obspy</span><span class="w"> </span><span class="kn">import</span> <span class="n">UTCDateTime</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">obspy.signal.spectral_estimation</span><span class="w"> </span><span class="kn">import</span> <span class="n">PPSD</span>
@@ -119,6 +121,8 @@
 <span class="n">DEFAULT_BAND_LIST</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">DEFAULT_BAND</span><span class="p">)</span>
 
 <span class="n">spritLogoPath</span> <span class="o">=</span> <span class="n">RESOURCE_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s2">&quot;icon&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s2">&quot;SpRITLogo.png&quot;</span><span class="p">)</span>
+
+<span class="n">GMRT_BASE_URL</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;https://www.gmrt.org:443/services/GridServer?minlongitude&amp;maxlongitude%2C%20&amp;minlatitude&amp;maxlatitude&amp;format=geotiff&amp;resolution=default&amp;layer=topo&quot;</span>
 
 <span class="k">if</span> <span class="n">VERBOSE</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Start of file, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
@@ -1416,7 +1420,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">write_to_info_tab</span><span class="p">(</span><span class="n">infoTab</span><span class="p">):</span>
         <span class="k">with</span> <span class="n">infoTab</span><span class="p">:</span>
             <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;# Processing Parameters Used&quot;</span><span class="p">)</span>
-            <span class="n">hvsrDataList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">,</span> <span class="s1">&#39;hvsr_data&#39;</span><span class="p">,</span> <span class="s1">&#39;hvsr_results&#39;</span><span class="p">]</span>
+            <span class="n">hvsrDataList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">,</span> <span class="s1">&#39;input_paramters&#39;</span><span class="p">,</span> <span class="s1">&#39;hvsr_data&#39;</span><span class="p">,</span> <span class="s1">&#39;hvsr_results&#39;</span><span class="p">]</span>
             <span class="k">for</span> <span class="n">fun</span><span class="p">,</span> <span class="n">kwargDict</span> <span class="ow">in</span> <span class="n">funList</span><span class="p">:</span>
                 <span class="n">funSig</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">fun</span><span class="p">)</span>
                 <span class="c1"># excludeKeys = [&#39;params&#39;, &#39;hvsr_data&#39;, &#39;hvsr_results&#39;]</span>
@@ -1551,6 +1555,44 @@
         <span class="k">pass</span>
 
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_gmrt_elev</span><span class="p">():</span>
+        <span class="c1"># Only do this if inputs have been defined</span>
+        <span class="k">if</span> <span class="s1">&#39;xcoord&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">:</span>
+            <span class="k">return</span>
+        
+        <span class="n">elevation_source</span> <span class="o">=</span> <span class="n">GMRT_BASE_URL</span>
+        <span class="n">points_crs</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">input_crs</span>
+        <span class="n">raster_crs</span> <span class="o">=</span> <span class="mi">4326</span>
+        <span class="n">xcoord</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">xcoord</span><span class="p">)</span>
+        <span class="n">ycoord</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">ycoord</span><span class="p">)</span>
+
+        <span class="n">ptCoordTransformerRaster</span> <span class="o">=</span> <span class="n">pyproj</span><span class="o">.</span><span class="n">Transformer</span><span class="o">.</span><span class="n">from_crs</span><span class="p">(</span><span class="n">crs_from</span><span class="o">=</span><span class="n">points_crs</span><span class="p">,</span>
+                                                           <span class="n">crs_to</span><span class="o">=</span><span class="n">raster_crs</span><span class="p">,</span>
+                                                           <span class="n">always_xy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">xcoord_RAST</span><span class="p">,</span> <span class="n">ycoord_RAST</span> <span class="o">=</span> <span class="n">ptCoordTransformerRaster</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">xcoord</span><span class="p">,</span> <span class="n">ycoord</span><span class="p">)</span>
+
+        <span class="c1">#GMRT_URL = r&quot;https://www.gmrt.org:443/services/GridServer?minlongitude=-88.4&amp;maxlongitude=-88.2%2C%20&amp;minlatitude=40.1&amp;maxlatitude=40.3&amp;format=geotiff&amp;resolution=default&amp;layer=topo&quot;</span>
+        <span class="n">GMRT_URL</span> <span class="o">=</span> <span class="n">GMRT_BASE_URL</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;minlongitude&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;minlongitude=</span><span class="si">{</span><span class="n">xcoord_RAST</span><span class="o">-</span><span class="mi">1</span><span class="si">:</span><span class="s2">0.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">GMRT_URL</span> <span class="o">=</span> <span class="n">GMRT_URL</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;maxlongitude&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;maxlongitude=</span><span class="si">{</span><span class="n">xcoord_RAST</span><span class="o">+</span><span class="mi">1</span><span class="si">:</span><span class="s2">0.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">GMRT_URL</span> <span class="o">=</span> <span class="n">GMRT_URL</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;minlatitude&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;minlatitude=</span><span class="si">{</span><span class="n">ycoord_RAST</span><span class="o">-</span><span class="mi">1</span><span class="si">:</span><span class="s2">0.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">GMRT_URL</span> <span class="o">=</span> <span class="n">GMRT_URL</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;maxlatitude&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;maxlatitude=</span><span class="si">{</span><span class="n">ycoord_RAST</span><span class="o">+</span><span class="mi">1</span><span class="si">:</span><span class="s2">0.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">rioxarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">rxr</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;You must have rioxarray installed (pip install rioxarray) in your python environment to use GMRT elevation data.&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">GMRT_URL</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">elevData_m</span> <span class="o">=</span> <span class="n">rxr</span><span class="o">.</span><span class="n">open_rasterio</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;band&#39;</span> <span class="ow">in</span> <span class="n">elevData_m</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+            <span class="n">elevData_m</span> <span class="o">=</span> <span class="n">elevData_m</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">band</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">elevVal</span> <span class="o">=</span> <span class="n">elevData_m</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xcoord_RAST</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">ycoord_RAST</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">elevation</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">elevVal</span><span class="si">:</span><span class="s2">.02f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Elevation updated to </span><span class="si">{</span><span class="n">elevVal</span><span class="si">:</span><span class="s1">.02f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="c1"># Initial setup</span>
     <span class="n">setup_session_state</span><span class="p">()</span>
 
@@ -1601,9 +1643,14 @@
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done setting up bottom container, session state length: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
             <span class="n">print_param</span><span class="p">(</span><span class="n">PARAM2PRINT</span><span class="p">)</span>
 
-        <span class="n">st</span><span class="o">.</span><span class="n">toggle</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;Display interactive charts (slower)&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;interactive_display&#39;</span><span class="p">,</span>
+        <span class="n">interCol</span><span class="p">,</span> <span class="n">gmrtCol</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mf">0.6</span><span class="p">,</span><span class="mf">0.4</span><span class="p">])</span>
+        <span class="n">interCol</span><span class="o">.</span><span class="n">toggle</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;Display interactive charts (slower)&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;interactive_display&#39;</span><span class="p">,</span>
                     <span class="n">on_change</span><span class="o">=</span><span class="n">do_interactive_display</span><span class="p">,</span>
                     <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Whether to display interactive charts for the data, outliers, and results charts. Interactive charts take longer to display, but allow graphical editing of the data.&quot;</span><span class="p">)</span>
+        <span class="n">gmrtCol</span><span class="o">.</span><span class="n">checkbox</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;Use GMRT for Elevation&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+                         <span class="n">on_change</span><span class="o">=</span><span class="n">get_gmrt_elev</span><span class="p">,</span>
+                         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Select this box to use the [Global Multiresolution Topography Synthesis](https://www.gmrt.org/about/index.php) data for elevation.&#39;</span><span class="p">,</span>
+                         <span class="n">key</span><span class="o">=</span><span class="s1">&#39;elev_wms_check&#39;</span><span class="p">)</span>
 
         <span class="n">st</span><span class="o">.</span><span class="n">header</span><span class="p">(</span><span class="s1">&#39;Settings&#39;</span><span class="p">)</span>
         <span class="n">mainSettings</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">container</span><span class="p">()</span>
@@ -1621,15 +1668,18 @@
                             <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Seismometer&#39;</span><span class="p">,</span> <span class="s1">&#39;Raspberry Shake&#39;</span><span class="p">,</span> <span class="s1">&#39;Tromino Yellow&#39;</span><span class="p">,</span> <span class="s1">&#39;Tromino Blue&#39;</span><span class="p">],</span>
                             <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Some instruments require special inputs to read in the data correctly. If not one of the instruments listed, or if reading in an obspy-supported file directly, leave as &quot;Seismometer&quot;&#39;</span><span class="p">)</span>
 
-            <span class="n">xCoordCol</span><span class="p">,</span> <span class="n">yCoordCol</span><span class="p">,</span> <span class="n">inCRSCol</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mf">0.3333</span><span class="p">,</span> <span class="mf">0.3333</span><span class="p">,</span> <span class="mf">0.3333</span><span class="p">])</span>
+            <span class="n">xCoordCol</span><span class="p">,</span> <span class="n">yCoordCol</span><span class="p">,</span> <span class="n">zCoordCol</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">])</span>
+            <span class="n">inCRSCol</span><span class="p">,</span> <span class="n">outCRSCol</span><span class="p">,</span> <span class="n">elevUnitCol</span>  <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">])</span>
             <span class="n">xCoordCol</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;X Coordinate&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;i.e., Longitude or Easting&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;xcoord&#39;</span><span class="p">)</span>
             <span class="n">yCoordCol</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;Y Coordinate&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;i.e., Latitude or Northing&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;ycoord&#39;</span><span class="p">)</span>
+            <span class="n">ZTB_disabled</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">elev_wms_check</span>       
+            <span class="n">zCoordCol</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;Z Coordinate&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;i.e., Elevation&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;elevation&#39;</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="n">ZTB_disabled</span><span class="p">)</span>
+
+
+     
             <span class="n">inCRSCol</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;CRS&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;By default, &quot;EPSG:4326&quot;. Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;input_crs&#39;</span><span class="p">)</span>        
-            
-            <span class="n">zCoordCol</span><span class="p">,</span> <span class="n">elevUnitCol</span><span class="p">,</span> <span class="n">outCRSCol</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mf">0.333</span><span class="p">,</span> <span class="mf">0.333</span><span class="p">,</span> <span class="mf">0.333</span><span class="p">])</span>
-            <span class="n">zCoordCol</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;Z Coordinate&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;i.e., Elevation&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;elevation&#39;</span><span class="p">)</span>
-            <span class="n">elevUnitCol</span><span class="o">.</span><span class="n">selectbox</span><span class="p">(</span><span class="s1">&#39;Elev. (Z) Unit&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;meters&#39;</span><span class="p">,</span> <span class="s1">&#39;feet&#39;</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;elev_unit&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;i.e., Elevation unit&#39;</span><span class="p">)</span>
             <span class="n">outCRSCol</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;CRS for Export&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;output_crs&#39;</span><span class="p">)</span>
+            <span class="n">elevUnitCol</span><span class="o">.</span><span class="n">selectbox</span><span class="p">(</span><span class="s1">&#39;Elev. (Z) Unit&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;meters&#39;</span><span class="p">,</span> <span class="s1">&#39;feet&#39;</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;elev_unit&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;i.e., Elevation unit&#39;</span><span class="p">)</span>
 
             <span class="c1"># Date/time settings</span>
             <span class="n">dateCol</span><span class="p">,</span> <span class="n">sTimeCol</span><span class="p">,</span> <span class="n">eTimeCol</span><span class="p">,</span> <span class="n">tzoneCol</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mf">0.3</span><span class="p">,</span><span class="mf">0.25</span><span class="p">,</span><span class="mf">0.25</span><span class="p">,</span><span class="mf">0.2</span><span class="p">])</span>
