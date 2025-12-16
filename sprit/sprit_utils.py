@@ -542,11 +542,11 @@ def _reset_default_json(verbose=False):
     verbose : bool, optional
         Whether to print the data to terminal, by default True
     """
-    replace_map = {None:"null", 
-                   False:"false", 
-                   True:"true",
-                   '=':':',
-                   "'":'"'}
+    replace_map = {None: "null",
+                   False: "false",
+                   True: "true",
+                   '=': ':',
+                   "'": '"'}
 
     funcs_to_get = [sprit_hvsr.input_params, sprit_hvsr.fetch_data,
                     sprit_hvsr.calculate_azimuth, sprit_hvsr.remove_noise,
@@ -554,7 +554,7 @@ def _reset_default_json(verbose=False):
                     sprit_hvsr.remove_outlier_curves,
                     sprit_hvsr.check_peaks,
                     sprit_hvsr.get_report, sprit_hvsr.plot_hvsr,
-                    sprit_hvsr.export_hvsr,
+                    sprit_hvsr.export_hvsr, sprit_hvsr.export_json
                     ]
 
     keyDict = {}
@@ -573,9 +573,11 @@ def _reset_default_json(verbose=False):
                 keyDict[k] = defaultVal
 
     with open(RESOURCE_DIR.joinpath('defaults.json').as_posix(), "w") as fp:
-        json.dump(keyDict, fp, indent=4)
-        
-    return json.dumps(keyDict, indent=4)
+        json.dump(keyDict, fp, indent=4, sort_keys=True)
+    if verbose:
+        print(f"Parameter values reset to 'factory' defaults. See: {RESOURCE_DIR.joinpath('defaults.json')}")
+
+    return json.dumps(keyDict, indent=4, sort_keys=True)
 
 
 def _run_docstring():
