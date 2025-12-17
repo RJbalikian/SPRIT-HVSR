@@ -6090,7 +6090,7 @@ def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=
 
 # Main function for processing HVSR Curve
 def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='konno ohmachi', 
-                 f_smooth_width=40, resample=True, 
+                 f_smooth_width=40, resample=True, array_processing=True,
                  outlier_curve_percentile_threshold=False, azimuth=None, verbose=False):
     """Process the input data and get HVSR data
     
@@ -6130,6 +6130,10 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
         bool or int. 
             If True, default to resample H/V data to include 1000 frequency values for the rest of the analysis
             If int, the number of data points to interpolate/resample/smooth the component psd/HV curve data to.
+    array_processing : bool, default=True
+        Whether to use a modified, vectorized version of the original IRIS H/V algorithms.
+        False uses original IRIS H/V algorithms, True uses modified, vectorized versions of the same.
+        In tests, this reduces processing time by 2x or more, and no differences in results have been recorded.
     outlier_curve_percentile_threshold : bool, float, default = False
         If False, outlier curve removal is not carried out here. 
         If True, defaults to 98 (98th percentile). 
@@ -6165,6 +6169,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     freq_smooth = orig_args['freq_smooth']
     f_smooth_width = orig_args['f_smooth_width']
     resample = orig_args['resample']
+    array_processing = orig_args['array_processing']
     outlier_curve_percentile_threshold = orig_args['outlier_curve_percentile_threshold']
     verbose = orig_args['verbose']
 
@@ -6389,7 +6394,11 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
 
     #This gets the main hvsr curve averaged from all time steps
     anyK = list(x_freqs.keys())[0]
-    hvsr_curve, hvsr_az, hvsr_tSteps = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, horizontal_method=methodInt, hvsr_data=hvsr_data, azimuth=azimuth, verbose=verbose)
+    hvsr_curve, hvsr_az, hvsr_tSteps = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, 
+                                                        horizontal_method=methodInt, hvsr_data=hvsr_data, 
+                                                        azimuth=azimuth, array_processing=array_processing,
+                                                        verbose=verbose)
+        
     origPPSD = hvsr_data['ppsds_obspy'].copy()
 
     #print('hvcurv', np.array(hvsr_curve).shape)
@@ -6493,7 +6502,10 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
             tStepDict = {}
             for k in hvsr_out['psd_raw']:
                 tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
-            hvsr_tstep, hvsr_az_tstep, _ = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, horizontal_method=methodInt, hvsr_data=hvsr_out, verbose=verbose)
+            hvsr_tstep, hvsr_az_tstep, _ = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, 
+                                                            horizontal_method=methodInt, hvsr_data=hvsr_out,
+                                                            azimuth=azimuth, array_processing=array_processing,
+                                                            verbose=verbose)
             
             hvsr_tSteps.append(np.float64(hvsr_tstep)) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
             for k, v in hvsr_az_tstep.items():
@@ -10502,7 +10514,7 @@ def __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth):
 
 
 # Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
-def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose=False):
+def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, array_processing=True, verbose=False):
     """ Get an HVSR curve from three components over the same time period/frequency intervals
 
     Parameters
@@ -10529,6 +10541,96 @@ def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose
     if horizontal_method==1 or horizontal_method =='dfa' or horizontal_method =='Diffuse Field Assumption':
         hvsr_tSteps = _dfa(x, hvsr_data, verbose)
         hvsr_curve = np.mean(hvsr_tSteps, axis=0)
+    elif array_processing:
+        def az_calc_arr(az, h_arr, compList):
+            if az is None:
+                az = 90
+            if az == 'HV':
+                outArr = np.ones_like(h_arr[0])
+                for arr in h_arr:
+                    outArr *= arr
+                return np.sqrt(outArr)
+            elif 'az' in str(az).lower():
+                return h_arr
+            
+            az_rad = np.deg2rad(az)
+            
+            for i, c in enumerate(compList):
+                if 'e' in str(c).lower():
+                    eAz = h_arr[i] * np.sin(az_rad)
+                elif 'n' in str(c).lower():
+                    nAz = h_arr[i] * np.cos(az_rad)
+                else:
+                    return h_arr[0]
+            return np.add(eAz, nAz)
+
+        
+        # Convert inputs to float64 1D arrays
+        freqArr = np.asarray(x, dtype=np.float64)
+        hList = []
+        compList = []
+        for key, psdArr in psd.items():
+            dataArr = np.asarray(psdArr, dtype=np.float64)
+
+            # Basic sanity checks
+            if freqArr.ndim != 1 or dataArr.ndim != 1:
+                raise ValueError("Frequency and data arrays must be 1D arrays.")
+            if freqArr.size != dataArr.size:
+                raise ValueError("Frequency and data arrays must have the same length.")
+            if freqArr.size < 2:
+                raise ValueError("Arrays must have length >= 2 for adjacent operations.")
+
+            # __remove_db, vectorized
+            dataArr_nodB = np.power(10.0, dataArr / 10.0)
+
+            # Ensure no zeros (may not be the best implementation)
+            dataArr_nodB = np.maximum(dataArr_nodB, 10e-300)
+
+            # __get_power equivalent (mean of adjacent values * freq difference)
+            dataArr_pow = np.multiply(0.5 * (dataArr_nodB[:-1] + dataArr_nodB[1:]), 
+                                      np.abs(np.diff(freqArr)))
+            
+            if key.upper() == "Z":
+                ZArr = np.sqrt(dataArr_pow)
+            elif key.upper() not in ['Z', 'E', 'N']:
+                hvsr_azimuth[key] = az_calc_arr(key, np.sqrt(dataArr_pow), compList)
+            else:
+                hList.append(dataArr_pow)
+                compList.append(key)
+                
+        hArr = np.sqrt(hList)
+
+        if horizontal_method == 2 or str(horizontal_method) == '2':
+            # Arithmetic mean
+            hCombArr = np.nanmean(hArr, axis=0)
+        elif horizontal_method == 3 or str(horizontal_method) == '3':
+            # Geometric mean
+            outArr = np.ones_like(hArr[0])
+            for arr in hArr:
+                outArr *= arr
+            hCombArr = np.sqrt(outArr)            
+        elif horizontal_method == 4 or str(horizontal_method) == '4':
+            # Vector summation
+            hCombArr = np.sqrt(np.sum(hList, axis=0))
+        elif horizontal_method == 5 or str(horizontal_method) == '5':
+            # Quadratic Mean
+            hCombArr = np.sqrt(np.nanmean(hList, axis=0))
+        elif horizontal_method == 6 or str(horizontal_method) == '6':
+            # Max Value
+            hCombArr = np.nanmax(hArr, axis=0)
+        elif horizontal_method == 7 or str(horizontal_method) == '7':
+            # Min value
+            hCombArr = np.nanmin(hArr, axis=0)
+        elif horizontal_method == 8 or str(horizontal_method) == '8':
+            # Azimuth
+            hCombArr = az_calc_arr(azimuth, hArr, compList)
+        elif horizontal_method == 'az' or str(horizontal_method) == 'az':
+            hCombArr = hArr[0]            
+        else:
+            hCombArr = hArr[0]
+            
+        hvsr_curve = np.divide(hCombArr, ZArr)
+        hvsr_tSteps = None # Only used for DFA        
     else:
         for j in range(len(x)-1):
             psd0 = [psd['Z'][j], psd['Z'][j + 1]]
@@ -10553,7 +10655,6 @@ def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose
                         hvsr_azimuth[k].append(hvratio_az)
             
         hvsr_tSteps = None # Only used for DFA
-
 
     return np.array(hvsr_curve), hvsr_azimuth, hvsr_tSteps
 
@@ -10600,11 +10701,10 @@ def __get_hvsr(_dbz, _db1, _db2, _x, azimuth=None, use_method=3):
 
         if az == 'HV':
             return math.sqrt(_h1 * _h2)
-        print("AZIN", az)
         az_rad = np.deg2rad(az)
         return np.add(h2 * np.cos(az_rad), h1 * np.sin(az_rad))
 
-    # Previous structure from IRIS module
+    # Previous structure from IRIS module, takes too long
     #_h = {  2: (_h1 + _h2) / 2.0, # Arithmetic mean
     #        3: math.sqrt(_h1 * _h2), # Geometric mean
     #        4: math.sqrt(_p1 + _p2), # Vector summation
@@ -10627,8 +10727,7 @@ def __get_hvsr(_dbz, _db1, _db2, _x, azimuth=None, use_method=3):
         _hCombined = max(_h1, _h2)
     elif use_method == 7 or str(use_method) == '7':
         _hCombined = min(_h1, _h2)
-    elif use_method == 8 or str(use_method) == '8':
-        
+    elif use_method == 8 or str(use_method) == '8':    
         _hCombined = az_calc(azimuth, _h1, _h2)
     elif use_method == 'az' or str(use_method) == 'az':
         _hCombined = _h1
