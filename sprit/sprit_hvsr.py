@@ -705,12 +705,15 @@ class HVSRData:
         aDateStr = self.acq_date
         sTimeStr = self.starttime
         eTimeStr = self.endtime
-        if hasattr(self, 'stream') and hasattr(self['stream'], 'stats'):
+        if hasattr(self, 'stream') and isinstance(self['stream'], (obspy.Stream, obspy.Trace)):
             dataST = self.stream
-            utcSTime = dataST[0].stats.starttime
-            utcETime = dataST[0].stats.endtime
+            dataTr = dataST
+            if isinstance(dataST, obspy.Stream):
+                dataTr = dataST[0]
+            utcSTime = dataTr.stats.starttime
+            utcETime = dataTr.stats.endtime
         else:
-            if 'T' in sTimeStr:
+            if 'T' in str(sTimeStr):
                 utcSTime = obspy.UTCDateTime(sTimeStr)
                 utcETime = obspy.UTCDateTime(eTimeStr)
             else:
@@ -1495,7 +1498,6 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     else:
         azimuth_calculation = False
         
-     
     # Remove Noise
     data_noiseRemoved = hvsr_az
     try:
@@ -1833,28 +1835,45 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         print("H/V data processed, could not check peaks")
         return hvsr_results
 
-    # Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
-    if 'hvsr_export_path' in kwargs.keys() or DPD['hvsr_export_path'] is not None:
-        if kwargs['hvsr_export_path'] is None:
-            pass
-        else:
-            if 'ext' in kwargs.keys():
-                ext = kwargs['ext']
+    try:
+        # Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
+        if 'hvsr_export_path' in kwargs.keys() or DPD['hvsr_export_path'] is not None:
+            if kwargs['hvsr_export_path'] is None:
+                pass
             else:
-                ext = 'hvsr'
-            export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], ext=ext, verbose=verbose)
-    if 'json_export_path' in kwargs.keys() or DPD['json_export_path'] is not None:
-        if kwargs['json_export_path'] is None:
-            pass
+                if 'ext' in kwargs.keys():
+                    ext = kwargs['ext']
+                else:
+                    ext = 'hvsr'
+                export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], ext=ext, verbose=verbose)
+        if 'json_export_path' in kwargs.keys() or DPD['json_export_path'] is not None:
+            if kwargs['json_export_path'] is None:
+                pass
+            else:
+                export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
+                export_json(hvsr_results=hvsr_results, verbose=verbose, **export_json_kwargs)
+                
+        if 'show_plot_report' in get_report_kwargs and not get_report_kwargs['show_plot_report']:
+            plt.close()
+        elif 'suppress_report_outputs' in get_report_kwargs and get_report_kwargs['suppress_report_outputs']:
+            plt.close()
         else:
-            export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
-            export_json(hvsr_results=hvsr_results, verbose=verbose, **export_json_kwargs)
-            
-    if 'show_plot_report' in get_report_kwargs and not get_report_kwargs['show_plot_report']:
-        plt.close()
-    if 'suppress_report_outputs' in get_report_kwargs and get_report_kwargs['suppress_report_outputs']:
-        plt.close()
-
+            if 'plot_engine' in get_report_kwargs and 'y' not in get_report_kwargs['plot_engine']:
+                print("Showing plot")
+                plt.show()
+    except Exception as e:
+        print("Error in data export or report generation. Results have been returned.\n")
+        traceback.print_exception(sys.exc_info()[1])
+        exc_type, exc_obj, tb = sys.exc_info()
+        f = tb.tb_frame
+        lineno = tb.tb_lineno
+        filename = f.f_code.co_filename
+        errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+        error_category = type(e).__name__.title().replace('error', 'Error')
+        error_message = f"{e} ({errLineNo})"
+        print(f"{error_category} ({errLineNo}): {error_message}")
+        print(lineno, filename, f)
+                
     return hvsr_results
 
 
@@ -3687,7 +3706,7 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
     elif isinstance(input_parameters['input_data'], HVSRData):
         rawDataIN = input_parameters['input_data']['stream']
     else:
-        if   source == 'raw':
+        if source == 'raw':
             try:
                 if inst.lower() in trominoNameList:
                     input_parameters['instrument'] = 'Tromino'
@@ -3731,7 +3750,7 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
         elif source == 'file' and str(input_parameters['input_data']).lower() not in SAMPLE_LIST:
             # Read the file specified by input_data
             # Automatically read tromino data
-            if (str(inst).lower() in trominoNameList and 'trc' in dPath.suffix) or 'trc' in dPath.suffix:
+            if str(inst).lower() in trominoNameList or 'trc' in dPath.suffix:
                 input_parameters['instrument'] = 'Tromino'
                 #input_parameters['params']['instrument'] = 'Tromino'
 
@@ -3781,7 +3800,6 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
                     pass
                 else:
                     rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(input_parameters['starttime']), endttime=obspy.core.UTCDateTime(input_parameters['endtime']), nearest_sample =True)
-
         elif source == 'batch' and str(input_parameters['input_data']).lower() not in SAMPLE_LIST:
             if verbose:
                 print('\nFetching data (fetch_data())')
@@ -5191,7 +5209,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             verbose_pdf = verbose
 
             # Don't repeat html printing, etc. if already done
-            if 'html' in report_formats:
+            if 'html' in report_formats[:i]:
                 show_html_report = False
             else:
                 show_html_report = show_html_report
@@ -6635,6 +6653,7 @@ def read_tromino_files(input_data, struct_format='H', tromino_model=None, diagno
                                    struct_format=struct_format, tromino_model="3G+",diagnose=diagnose,
                                    set_record_duration=set_record_duration, start_byte=start_byte,
                                    return_dict=False, verbose=verbose, **kwargs)
+
 
 # Function to remove noise windows from data
 def remove_noise(hvsr_data, remove_method=None, 
@@ -8094,12 +8113,12 @@ def __read_tromino_data_yellow(input_data, sampling_rate=None,
     eTime = inst_sTime + (((len(compN))/sampling_rate)/60)*60
 
     loc = ''
-    if  station is not None and (type(station) is int or station.isdigit()):
-        loc = str(station)  
-    elif 'GRILLA' in str(input_filepath) and pathlib.Path(input_filepath).exists():
+    if 'GRILLA' in str(input_filepath) and pathlib.Path(input_filepath).exists():
         # Get partition number and make that the location
         loc = pathlib.Path(input_filepath).stem.split(' ')[0].split('GRILLA')[1]
-
+    elif  station is not None and (type(station) is int or station.isdigit()):
+        loc = str(station)  
+    
     sTime = inst_sTime
     if hasattr(input_data, 'starttime') and input_data['starttime'].datetime!=NOWTIME:
         sTime = input_data['starttime']
@@ -10978,26 +10997,31 @@ def _display_html_report(html_report):
             file_path = tmp_file.name
             file_path = file_path.replace('\\'[0], '/')
             rawfpath = file_path
-            print(rawfpath)
             
-            if autodelete:
-                client = webbrowser
-                if not file_path.startswith(r"file://-"[:-1]):
-                    file_path = f"file://{file_path}"
-                client.open_new(file_path)                
-                # Adding a short sleep so that the file does not get cleaned
-                # up immediately in case the browser takes a while to boot.
-                time.sleep(5)
+            try:
+                from IPython.display import HTML, display
+                display(HTML(html_report))
+            except Exception:
+                if autodelete:
+                    client = webbrowser
+                    if not file_path.startswith(r"file://-"[:-1]):
+                        file_path = f"file://{file_path}"
+                    client.open_new(file_path)
+                    # Adding a short sleep so that the file does not get cleaned
+                    # up immediately in case the browser takes a while to boot.
+                    time.sleep(5)
 
-            if not autodelete:
-                client = webbrowser
-                if not file_path.startswith(r"file://"[:-1]):
-                    file_path = f"file://{file_path}"
-                client.open_new(file_path)
-                
-                time.sleep(3)
-                os.unlink(rawfpath)  # Cleaning up the file in case of Windows
-
+                if not autodelete:
+                    client = webbrowser
+                    if not file_path.startswith(r"file://"[:-1]):
+                        file_path = f"file://{file_path}"
+                    client.open_new(file_path)
+                    
+                    time.sleep(3)
+                    try:
+                        os.unlink(rawfpath)  # Cleaning up the file in case of Windows
+                    except Exception:
+                        pass
 
 # Private function for html report generation
 def _generate_html_report(hvsr_results, azimuth='HV', show_html_report=False, verbose=False):
@@ -11221,13 +11245,13 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
 
         pdf_report_shown = False
 
-        if hasattr(os, 'startfile') and not pdf_report_shown:
-            try:
-                print("\t  Attempting os.startfile")
-                os.startfile(pdf_export_path)
-                pdf_report_shown = True
-            except Exception as e:
-                print(f"\t\tError opening pdf report: {e}")
+        #if hasattr(os, 'startfile') and not pdf_report_shown:
+        #    try:
+        #        print("\t  Attempting os.startfile")
+        #        os.startfile(pdf_export_path)
+        #        pdf_report_shown = True
+        #    except Exception as e:
+        #        print(f"\t\tError opening pdf report: {e}")
         
         #if not pdf_report_shown:
         #    try:
@@ -11236,19 +11260,26 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
         #        pdf_report_shown = True                
         #    except Exception as e:
         #        print(f"\t\tError opening pdf report: {e}")
-
-        try: # This freezes or throws errors in cloud environments sometimes, so try/except
-            webBrowserName = webbrowser.get().name
-            codespaces_check = 'vscode' in webBrowserName
-            print('\t  Attempting to open PDF Report via web browser')
-            if not pdf_report_shown and not codespaces_check:
-                webbrowser.open(pdf_export_path)
-                pdf_report_shown = True
-            else:
-                print('\t\tWeb browser opening not supported')
-        except Exception as e:
-            print(f"\tOpening pdf via webbrowser did not work. Error opening pdf report: {e}")
-        
+        if not pdf_report_shown:
+            try: # This freezes or throws errors in cloud environments sometimes, so try/except
+                webBrowserName = webbrowser.get().name
+                codespaces_check = 'vscode' in webBrowserName
+                if verbose:
+                    print('\t  Attempting to open PDF Report via web browser')
+                if not pdf_report_shown and not codespaces_check:
+                    webbrowser.open(pdf_export_path)
+                    #pdf_report_shown = True
+                if codespaces_check:
+                    if verbose:
+                        print("PDF not working, attempting to open HTML Report")
+                    from IPython.display import display, HTML
+                    HTML(hvsr_results["HTML_Report"])
+                else:
+                    if verbose:
+                        print('\t\tWeb browser opening not supported')
+            except Exception as e:
+                print(f"\tOpening pdf via webbrowser did not work. Error opening pdf report: {e}")
+            
         if not pdf_report_shown:
             print(f"\tSpRIT cannot open your pdf report in this environment, but it has been saved to {pdf_export_path}")
             print('\tAttempting to open HTML version of report')
@@ -11257,7 +11288,6 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
                 _display_html_report(hvsr_results['HTML_Report'])
             except Exception as e:
                 print('\tHTML Report could not be displayed, but has been saved to the .HTML_Report attribute')
-
 
     if return_pdf_path:
         return pdf_export_path
