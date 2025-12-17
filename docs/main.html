@@ -1352,6 +1352,7 @@ Not currently supported.</dd>
             Object containing previous input data, plus information about peak tests
     &#34;&#34;&#34;
     orig_args = locals().copy() # Get the initial arguments
+    start_time = datetime.datetime.now()
     
     # Update with processing parameters specified previously in input_params, if applicable
     if &#39;processing_parameters&#39; in hvsr_data.keys():
@@ -1547,6 +1548,10 @@ Not currently supported.</dd>
         for key, value in orig_args.items():
             if key not in exclude_params_list:  
                 hvsr_data[&#39;processing_parameters&#39;][&#39;check_peaks&#39;][key] = value
+    
+    hvsr_data = sprit_utils._check_processing_status(hvsr_data, start_time=start_time, 
+                                                     func_name=inspect.stack()[0][3], verbose=verbose)
+    
     return hvsr_data</code></pre>
 </details>
 <div class="desc"><p>Function to run tests on HVSR peaks to find best one and see if it passes SESAME quality checks</p>
@@ -10163,7 +10168,7 @@ This is the default, so usually 'i' is not needed.
 </dl></div>
 </dd>
 <dt id="sprit.process_hvsr"><code class="name flex">
-<span>def <span class="ident">process_hvsr</span></span>(<span>hvsr_data,<br>horizontal_method=None,<br>smooth=True,<br>freq_smooth='konno ohmachi',<br>f_smooth_width=40,<br>resample=True,<br>outlier_curve_percentile_threshold=False,<br>azimuth=None,<br>verbose=False)</span>
+<span>def <span class="ident">process_hvsr</span></span>(<span>hvsr_data,<br>horizontal_method=None,<br>smooth=True,<br>freq_smooth='konno ohmachi',<br>f_smooth_width=40,<br>resample=True,<br>array_processing=True,<br>outlier_curve_percentile_threshold=False,<br>azimuth=None,<br>verbose=False)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -10171,7 +10176,7 @@ This is the default, so usually 'i' is not needed.
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth=&#39;konno ohmachi&#39;, 
-                 f_smooth_width=40, resample=True, 
+                 f_smooth_width=40, resample=True, array_processing=True,
                  outlier_curve_percentile_threshold=False, azimuth=None, verbose=False):
     &#34;&#34;&#34;Process the input data and get HVSR data
     
@@ -10211,6 +10216,10 @@ This is the default, so usually 'i' is not needed.
         bool or int. 
             If True, default to resample H/V data to include 1000 frequency values for the rest of the analysis
             If int, the number of data points to interpolate/resample/smooth the component psd/HV curve data to.
+    array_processing : bool, default=True
+        Whether to use a modified, vectorized version of the original IRIS H/V algorithms.
+        False uses original IRIS H/V algorithms, True uses modified, vectorized versions of the same.
+        In tests, this reduces processing time by 2x or more, and no differences in results have been recorded.
     outlier_curve_percentile_threshold : bool, float, default = False
         If False, outlier curve removal is not carried out here. 
         If True, defaults to 98 (98th percentile). 
@@ -10246,6 +10255,7 @@ This is the default, so usually 'i' is not needed.
     freq_smooth = orig_args[&#39;freq_smooth&#39;]
     f_smooth_width = orig_args[&#39;f_smooth_width&#39;]
     resample = orig_args[&#39;resample&#39;]
+    array_processing = orig_args[&#39;array_processing&#39;]
     outlier_curve_percentile_threshold = orig_args[&#39;outlier_curve_percentile_threshold&#39;]
     verbose = orig_args[&#39;verbose&#39;]
 
@@ -10470,7 +10480,11 @@ This is the default, so usually 'i' is not needed.
 
     #This gets the main hvsr curve averaged from all time steps
     anyK = list(x_freqs.keys())[0]
-    hvsr_curve, hvsr_az, hvsr_tSteps = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, horizontal_method=methodInt, hvsr_data=hvsr_data, azimuth=azimuth, verbose=verbose)
+    hvsr_curve, hvsr_az, hvsr_tSteps = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, 
+                                                        horizontal_method=methodInt, hvsr_data=hvsr_data, 
+                                                        azimuth=azimuth, array_processing=array_processing,
+                                                        verbose=verbose)
+        
     origPPSD = hvsr_data[&#39;ppsds_obspy&#39;].copy()
 
     #print(&#39;hvcurv&#39;, np.array(hvsr_curve).shape)
@@ -10574,7 +10588,10 @@ This is the default, so usually 'i' is not needed.
             tStepDict = {}
             for k in hvsr_out[&#39;psd_raw&#39;]:
                 tStepDict[k] = hvsr_out[&#39;psd_raw&#39;][k][tStep]
-            hvsr_tstep, hvsr_az_tstep, _ = __get_hvsr_curve(x=hvsr_out[&#39;x_freqs&#39;][anyK], psd=tStepDict, horizontal_method=methodInt, hvsr_data=hvsr_out, verbose=verbose)
+            hvsr_tstep, hvsr_az_tstep, _ = __get_hvsr_curve(x=hvsr_out[&#39;x_freqs&#39;][anyK], psd=tStepDict, 
+                                                            horizontal_method=methodInt, hvsr_data=hvsr_out,
+                                                            azimuth=azimuth, array_processing=array_processing,
+                                                            verbose=verbose)
             
             hvsr_tSteps.append(np.float64(hvsr_tstep)) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
             for k, v in hvsr_az_tstep.items():
@@ -10737,6 +10754,10 @@ See here for more information: <a href="https://www.geopsy.org/documentation/geo
 <dt>bool or int.</dt>
 <dt>If True, default to resample H/V data to include 1000 frequency values for the rest of the analysis</dt>
 <dt>If int, the number of data points to interpolate/resample/smooth the component psd/HV curve data to.</dt>
+<dt><strong><code>array_processing</code></strong> :&ensp;<code>bool</code>, default=<code>True</code></dt>
+<dd>Whether to use a modified, vectorized version of the original IRIS H/V algorithms.
+False uses original IRIS H/V algorithms, True uses modified, vectorized versions of the same.
+In tests, this reduces processing time by 2x or more, and no differences in results have been recorded.</dd>
 <dt><strong><code>outlier_curve_percentile_threshold</code></strong> :&ensp;<code>bool, float</code>, default <code>= False</code></dt>
 <dd>If False, outlier curve removal is not carried out here.
 If True, defaults to 98 (98th percentile).
@@ -11599,6 +11620,7 @@ This is minimum number of points a point needs in its neighborhood to not be con
     orig_args = locals().copy()  # Get the initial arguments
     global do_run
     do_run = True
+    run_starttime = datetime.datetime.now()
 
     # Handle repeat args in DEFAULT PARAMS DICT
     DPD = DEFAULT_PARAMS_DICT.copy()
@@ -12037,9 +12059,8 @@ This is minimum number of points a point needs in its neighborhood to not be con
                 data_curvesRemoved_interim = data_curvesRemoved_interim[site_name]
         hvsr_results = data_curvesRemoved_interim
         
-
     # Final post-processing/reporting
-    # Check peaks
+    # Check peaks &amp; Get Report
     try:
         check_peaks_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
         updated_cp_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
@@ -12162,6 +12183,7 @@ This is minimum number of points a point needs in its neighborhood to not be con
         print(&#34;H/V data processed, could not check peaks&#34;)
         return hvsr_results
 
+    # Data export and report display
     try:
         # Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
         if &#39;hvsr_export_path&#39; in kwargs.keys() or DPD[&#39;hvsr_export_path&#39;] is not None:
@@ -12200,7 +12222,12 @@ This is minimum number of points a point needs in its neighborhood to not be con
         error_message = f&#34;{e} ({errLineNo})&#34;
         print(f&#34;{error_category} ({errLineNo}): {error_message}&#34;)
         print(lineno, filename, f)
-                
+
+    if verbose:
+        elapsed = (datetime.datetime.now()-run_starttime)
+        print(f&#34;\nProcessing completed in  {str(elapsed)[:-3]}\n&#34;)
+        print(&#34;&#34;.center(99, &#39;*&#39;))
+
     return hvsr_results</code></pre>
 </details>
 <div class="desc"><p>The sprit.run() is the main function
@@ -12431,6 +12458,8 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 <dt><strong><code>f_smooth_width</code></strong> :&ensp;<code>any</code>, default <code>= 40</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.process_hvsr" href="#sprit.process_hvsr">process_hvsr()</a>)</code> for specifics.</dd>
 <dt><strong><code>resample</code></strong> :&ensp;<code>any</code>, default <code>= True</code></dt>
+<dd>See API documentation at link above or at <code>help(<a title="sprit.process_hvsr" href="#sprit.process_hvsr">process_hvsr()</a>)</code> for specifics.</dd>
+<dt><strong><code>array_processing</code></strong> :&ensp;<code>any</code>, default <code>= True</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.process_hvsr" href="#sprit.process_hvsr">process_hvsr()</a>)</code> for specifics.</dd>
 <dt><strong><code>outlier_curve_percentile_threshold</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.process_hvsr" href="#sprit.process_hvsr">process_hvsr()</a>)</code> for specifics.</dd>
