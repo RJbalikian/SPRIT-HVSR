@@ -1272,6 +1272,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     orig_args = locals().copy()  # Get the initial arguments
     global do_run
     do_run = True
+    run_starttime = datetime.datetime.now()
 
     # Handle repeat args in DEFAULT PARAMS DICT
     DPD = DEFAULT_PARAMS_DICT.copy()
@@ -1710,9 +1711,8 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
                 data_curvesRemoved_interim = data_curvesRemoved_interim[site_name]
         hvsr_results = data_curvesRemoved_interim
         
-
     # Final post-processing/reporting
-    # Check peaks
+    # Check peaks & Get Report
     try:
         check_peaks_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
         updated_cp_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
@@ -1835,6 +1835,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         print("H/V data processed, could not check peaks")
         return hvsr_results
 
+    # Data export and report display
     try:
         # Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
         if 'hvsr_export_path' in kwargs.keys() or DPD['hvsr_export_path'] is not None:
@@ -1873,7 +1874,12 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         error_message = f"{e} ({errLineNo})"
         print(f"{error_category} ({errLineNo}): {error_message}")
         print(lineno, filename, f)
-                
+
+    if verbose:
+        elapsed = (datetime.datetime.now()-run_starttime)
+        print(f"\nProcessing completed in  {str(elapsed)[:-3]}\n")
+        print("".center(99, '*'))
+
     return hvsr_results
 
 
@@ -2460,6 +2466,7 @@ def check_peaks(hvsr_data, hvsr_band=DEFAULT_BAND, peak_selection='max', peak_fr
             Object containing previous input data, plus information about peak tests
     """
     orig_args = locals().copy() # Get the initial arguments
+    start_time = datetime.datetime.now()
     
     # Update with processing parameters specified previously in input_params, if applicable
     if 'processing_parameters' in hvsr_data.keys():
@@ -2655,6 +2662,10 @@ def check_peaks(hvsr_data, hvsr_band=DEFAULT_BAND, peak_selection='max', peak_fr
         for key, value in orig_args.items():
             if key not in exclude_params_list:  
                 hvsr_data['processing_parameters']['check_peaks'][key] = value
+    
+    hvsr_data = sprit_utils._check_processing_status(hvsr_data, start_time=start_time, 
+                                                     func_name=inspect.stack()[0][3], verbose=verbose)
+    
     return hvsr_data
 
 
@@ -10948,7 +10959,7 @@ def _generate_table_report(hvsr_results, azimuth='HV', show_table_report=True, v
     outDF = pd.DataFrame(dfList, columns=pdCols)
     outDF.index.name = 'ID'
     
-    if show_table_report or verbose:
+    if show_table_report:
         print('\nTable Report:\n')
         maxColWidth = 13
         print('  ', end='')

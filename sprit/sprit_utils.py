@@ -1,11 +1,9 @@
 import datetime
-import functools
 import importlib
 import inspect
 import json
 import os
 import pathlib
-import subprocess
 import sys
 import traceback
 import warnings
@@ -25,6 +23,7 @@ RESOURCE_DIR = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('r
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
 
+
 def _assert_check(var, cond=None, var_type=None, error_message='Output not valid', verbose=False):
     if var_type is not None:
         assert isinstance(var, var_type), error_message
@@ -39,7 +38,7 @@ def _assert_check(var, cond=None, var_type=None, error_message='Output not valid
             else:
                 print(' and ', end='')
             print(f"test condition is met.")
-  
+
 
 def _check_gui_requirements():
     #First, check requirements
@@ -70,7 +69,7 @@ def _check_gui_requirements():
     #        os.system("sudo apt install qtwayland5")
 
 
-#Get check mark
+# Get check mark
 def _check_mark(incolor=False, interminal=False):
     """The default Windows terminal is not able to display the check mark character correctly.
        This function returns another displayable character if platform is Windows"""
@@ -87,7 +86,7 @@ def _check_mark(incolor=False, interminal=False):
     return check
 
 
-#Converts filepaths to pathlib paths, if not already
+# Converts filepaths to pathlib paths, if not already
 def _checkifpath(filepath, sample_list='', verbose=False, raise_error=False):
     """Support function to check if a filepath is a pathlib.Path object and tries to convert if not
 
@@ -140,7 +139,7 @@ def _check_tsteps(hvsr_data):
     return minTStep
 
 
-#Check the x-values for each channel, to make sure they are all the same length
+# Check the x-values for each channel, to make sure all are the same length
 def _check_xvalues(ppsds):
     """Check x_values of PPSDS to make sure they are all the same length"""
     xLengths = []
@@ -155,7 +154,7 @@ def _check_xvalues(ppsds):
 
 
 # Special helper function that checks the processing status at each stage of processing to help determine if any processing steps were skipped
-def _check_processing_status(hvsr_data, start_time=datetime.datetime.now(), func_name='', verbose=False):
+def _check_processing_status(hvsr_data, start_time=datetime.datetime.now(), func_name=None, verbose=False):
     """Internal function to check processing status, used primarily in the sprit.run() function to allow processing to continue if one site is bad.
 
     Parameters
@@ -171,28 +170,34 @@ def _check_processing_status(hvsr_data, start_time=datetime.datetime.now(), func
 
     # Convert HVSRData to same format as HVSRBatch so same code works the same on both
     if isinstance(hvsr_data, sprit_hvsr.HVSRData):
-        siteName = hvsr_data['site']
-        hvsr_interim = {siteName: hvsr_data}
+        sn = hvsr_data['site']
+        hvsr_interim = {sn: hvsr_data}
     else:
         hvsr_interim = hvsr_data
     
     # Check overall processing status on all (or only 1 if HVSRData) site(s)
-    optional = ['remove_noise_status', 'remove_outlier_curves_status', 'calculate_azimuths_status', 'overall_status']
-    for sitename in hvsr_interim.keys():
-        statusOK = True
-        for status_type, status_value in hvsr_interim[sitename]['processing_status'].items():
-            if status_value is False and status_type.lower() not in optional:
-                statusOK = False
+    status_funcs = ['input_params', 'fetch_data', 'remove_noise',
+                    'calculate_azimuths', 'generate_psds',
+                    'remove_outlier_curves', 'process_hvsr', 'check_peaks']
+    if func_name in status_funcs:
+        optional = ['remove_noise_status', 'remove_outlier_curves_status',
+                    'calculate_azimuths_status', 'overall_status']
 
-        if statusOK:
-            hvsr_interim[sitename]['processing_status']['overall_status'] = True
-        else:
-            hvsr_interim[sitename]['processing_status']['overall_status'] = False
+        for sn in hvsr_interim.keys():
+            statusOK = True
+            for status_type, status_value in hvsr_interim[sn]['processing_status'].items():
+                if status_value is False and status_type.lower() not in optional:
+                    statusOK = False
+
+            if statusOK:
+                hvsr_interim[sn]['processing_status']['overall_status'] = True
+            else:
+                hvsr_interim[sn]['processing_status']['overall_status'] = False
 
     # Get back original data in HVSRData format, if that was the input
     if isinstance(hvsr_data, sprit_hvsr.HVSRData):
-        hvsr_data = hvsr_interim[siteName]
-    
+        hvsr_data = hvsr_interim[sn]
+
     # Print how long it took to perform function
     if verbose:
         elapsed = (datetime.datetime.now()-start_time)
@@ -378,7 +383,7 @@ def _format_time(inputDT, tzone='UTC'):
     return outputTimeObj
 
 
-#Get character for printing
+# Get character for printing
 def _get_char(in_char):
     """Outputs character with proper encoding/decoding"""
     if in_char in greek_chars.keys():
@@ -428,6 +433,7 @@ def _has_required_channels(stream):
     
     # Check if Z, E, and N channels are present
     return {'Z', 'E', 'N'}.issubset(channel_set)
+
 
 # Make input data (dict) into sprit_hvsr class
 def _make_it_classy(input_data, verbose=False):
@@ -668,7 +674,8 @@ def _update_default(parameter, new_default):
     with open(RESOURCE_DIR.joinpath('defaults.json'), 'w') as fp:
         json.dump(jsonDict, fp, indent=4)
 
-#Get x mark (for negative test results)
+
+# Get x mark (for negative test results)
 def _x_mark(incolor=False, inTerminal=False):
     """The default Windows terminal is not able to display the check mark character correctly.
        This function returns another displayable character if platform is Windows"""
@@ -681,4 +688,3 @@ def _x_mark(incolor=False, inTerminal=False):
     else:
         xmark = _get_char(u'\u2718')
     return xmark
-
