@@ -2173,7 +2173,7 @@ If 'processing', saves the processing settings to their respective file. By defa
     elif isinstance(input_parameters[&#39;input_data&#39;], HVSRData):
         rawDataIN = input_parameters[&#39;input_data&#39;][&#39;stream&#39;]
     else:
-        if   source == &#39;raw&#39;:
+        if source == &#39;raw&#39;:
             try:
                 if inst.lower() in trominoNameList:
                     input_parameters[&#39;instrument&#39;] = &#39;Tromino&#39;
@@ -2217,7 +2217,7 @@ If 'processing', saves the processing settings to their respective file. By defa
         elif source == &#39;file&#39; and str(input_parameters[&#39;input_data&#39;]).lower() not in SAMPLE_LIST:
             # Read the file specified by input_data
             # Automatically read tromino data
-            if (str(inst).lower() in trominoNameList and &#39;trc&#39; in dPath.suffix) or &#39;trc&#39; in dPath.suffix:
+            if str(inst).lower() in trominoNameList or &#39;trc&#39; in dPath.suffix:
                 input_parameters[&#39;instrument&#39;] = &#39;Tromino&#39;
                 #input_parameters[&#39;params&#39;][&#39;instrument&#39;] = &#39;Tromino&#39;
 
@@ -2267,7 +2267,6 @@ If 'processing', saves the processing settings to their respective file. By defa
                     pass
                 else:
                     rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(input_parameters[&#39;starttime&#39;]), endttime=obspy.core.UTCDateTime(input_parameters[&#39;endtime&#39;]), nearest_sample =True)
-
         elif source == &#39;batch&#39; and str(input_parameters[&#39;input_data&#39;]).lower() not in SAMPLE_LIST:
             if verbose:
                 print(&#39;\nFetching data (fetch_data())&#39;)
@@ -3851,7 +3850,7 @@ If not specified, does not write file</dd>
             verbose_pdf = verbose
 
             # Don&#39;t repeat html printing, etc. if already done
-            if &#39;html&#39; in report_formats:
+            if &#39;html&#39; in report_formats[:i]:
                 show_html_report = False
             else:
                 show_html_report = show_html_report
@@ -6781,7 +6780,6 @@ This is minimum number of points a point needs in its neighborhood to not be con
     else:
         azimuth_calculation = False
         
-     
     # Remove Noise
     data_noiseRemoved = hvsr_az
     try:
@@ -7119,28 +7117,45 @@ This is minimum number of points a point needs in its neighborhood to not be con
         print(&#34;H/V data processed, could not check peaks&#34;)
         return hvsr_results
 
-    # Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
-    if &#39;hvsr_export_path&#39; in kwargs.keys() or DPD[&#39;hvsr_export_path&#39;] is not None:
-        if kwargs[&#39;hvsr_export_path&#39;] is None:
-            pass
-        else:
-            if &#39;ext&#39; in kwargs.keys():
-                ext = kwargs[&#39;ext&#39;]
+    try:
+        # Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
+        if &#39;hvsr_export_path&#39; in kwargs.keys() or DPD[&#39;hvsr_export_path&#39;] is not None:
+            if kwargs[&#39;hvsr_export_path&#39;] is None:
+                pass
             else:
-                ext = &#39;hvsr&#39;
-            export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs[&#39;hvsr_export_path&#39;], ext=ext, verbose=verbose)
-    if &#39;json_export_path&#39; in kwargs.keys() or DPD[&#39;json_export_path&#39;] is not None:
-        if kwargs[&#39;json_export_path&#39;] is None:
-            pass
+                if &#39;ext&#39; in kwargs.keys():
+                    ext = kwargs[&#39;ext&#39;]
+                else:
+                    ext = &#39;hvsr&#39;
+                export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs[&#39;hvsr_export_path&#39;], ext=ext, verbose=verbose)
+        if &#39;json_export_path&#39; in kwargs.keys() or DPD[&#39;json_export_path&#39;] is not None:
+            if kwargs[&#39;json_export_path&#39;] is None:
+                pass
+            else:
+                export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
+                export_json(hvsr_results=hvsr_results, verbose=verbose, **export_json_kwargs)
+                
+        if &#39;show_plot_report&#39; in get_report_kwargs and not get_report_kwargs[&#39;show_plot_report&#39;]:
+            plt.close()
+        elif &#39;suppress_report_outputs&#39; in get_report_kwargs and get_report_kwargs[&#39;suppress_report_outputs&#39;]:
+            plt.close()
         else:
-            export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
-            export_json(hvsr_results=hvsr_results, verbose=verbose, **export_json_kwargs)
-            
-    if &#39;show_plot_report&#39; in get_report_kwargs and not get_report_kwargs[&#39;show_plot_report&#39;]:
-        plt.close()
-    if &#39;suppress_report_outputs&#39; in get_report_kwargs and get_report_kwargs[&#39;suppress_report_outputs&#39;]:
-        plt.close()
-
+            if &#39;plot_engine&#39; in get_report_kwargs and &#39;y&#39; not in get_report_kwargs[&#39;plot_engine&#39;]:
+                print(&#34;Showing plot&#34;)
+                plt.show()
+    except Exception as e:
+        print(&#34;Error in data export or report generation. Results have been returned.\n&#34;)
+        traceback.print_exception(sys.exc_info()[1])
+        exc_type, exc_obj, tb = sys.exc_info()
+        f = tb.tb_frame
+        lineno = tb.tb_lineno
+        filename = f.f_code.co_filename
+        errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+        error_category = type(e).__name__.title().replace(&#39;error&#39;, &#39;Error&#39;)
+        error_message = f&#34;{e} ({errLineNo})&#34;
+        print(f&#34;{error_category} ({errLineNo}): {error_message}&#34;)
+        print(lineno, filename, f)
+                
     return hvsr_results</code></pre>
 </details>
 <div class="desc"><p>The sprit.run() is the main function
@@ -8719,12 +8734,15 @@ For return_fig, returns it to the 'Plot_Report' attribute of each HVSRData objec
         aDateStr = self.acq_date
         sTimeStr = self.starttime
         eTimeStr = self.endtime
-        if hasattr(self, &#39;stream&#39;) and hasattr(self[&#39;stream&#39;], &#39;stats&#39;):
+        if hasattr(self, &#39;stream&#39;) and isinstance(self[&#39;stream&#39;], (obspy.Stream, obspy.Trace)):
             dataST = self.stream
-            utcSTime = dataST[0].stats.starttime
-            utcETime = dataST[0].stats.endtime
+            dataTr = dataST
+            if isinstance(dataST, obspy.Stream):
+                dataTr = dataST[0]
+            utcSTime = dataTr.stats.starttime
+            utcETime = dataTr.stats.endtime
         else:
-            if &#39;T&#39; in sTimeStr:
+            if &#39;T&#39; in str(sTimeStr):
                 utcSTime = obspy.UTCDateTime(sTimeStr)
                 utcETime = obspy.UTCDateTime(eTimeStr)
             else:
