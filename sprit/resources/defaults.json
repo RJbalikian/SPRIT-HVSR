@@ -1,5 +1,6 @@
 {
     "acq_date": null,
+    "array_processing": true,
     "ax": null,
     "azimuth": null,
     "azimuth_angle": 45,

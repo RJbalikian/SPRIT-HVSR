@@ -20,4 +20,8 @@ sphinx-rtd-theme
 markdown
 pytest
 flake8
+<<<<<<< HEAD
 sprit==3.3
+=======
+sprit==3.4.0
+>>>>>>> main

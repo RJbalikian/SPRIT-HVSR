@@ -6,12 +6,20 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<<<<<<< HEAD
   <title>sprit.sprit_hvsr module &mdash; sprit 3.3 documentation</title>
+=======
+  <title>sprit.sprit_hvsr module &mdash; sprit 3.4.0 documentation</title>
+>>>>>>> main
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
+<<<<<<< HEAD
       <script src="_static/documentation_options.js?v=26f62d79"></script>
+=======
+      <script src="_static/documentation_options.js?v=b0e360d0"></script>
+>>>>>>> main
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -1492,7 +1500,7 @@ It takes a lot of time to process the data, but interpolation for vizualization 
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.process_hvsr">
-<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">process_hvsr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizontal_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_smooth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'konno</span> <span class="pre">ohmachi'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_smooth_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlier_curve_percentile_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#process_hvsr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.process_hvsr" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">process_hvsr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizontal_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_smooth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'konno</span> <span class="pre">ohmachi'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_smooth_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array_processing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlier_curve_percentile_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#process_hvsr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.process_hvsr" title="Link to this definition">¶</a></dt>
 <dd><p>Process the input data and get HVSR data</p>
 <p>This is the main function that uses other (private) functions to do 
 the bulk of processing of the HVSR data and the data quality checks.</p>
@@ -1543,6 +1551,10 @@ If int, the length of the window in the savgoy filter.</p>
 If int, the number of data points to interpolate/resample/smooth the component psd/HV curve data to.</p>
 </dd>
 </dl>
+</dd>
+<dt><strong>array_processing</strong><span class="classifier">bool, default=True</span></dt><dd><p>Whether to use a modified, vectorized version of the original IRIS H/V algorithms.
+False uses original IRIS H/V algorithms, True uses modified, vectorized versions of the same.
+In tests, this reduces processing time by 2x or more, and no differences in results have been recorded.</p>
 </dd>
 <dt><strong>outlier_curve_percentile_threshold</strong><span class="classifier">bool, float, default = False</span></dt><dd><p>If False, outlier curve removal is not carried out here. 
 If True, defaults to 98 (98th percentile). 
@@ -1892,6 +1904,8 @@ See API documentation: [process_hvsr()](<a class="reference external" href="http
 <dt><strong>f_smooth_width: any, default = 40</strong></dt><dd><p>See API documentation at link above or at <cite>help(process_hvsr)</cite> for specifics.</p>
 </dd>
 <dt><strong>resample: any, default = True</strong></dt><dd><p>See API documentation at link above or at <cite>help(process_hvsr)</cite> for specifics.</p>
+</dd>
+<dt><strong>array_processing: any, default = True</strong></dt><dd><p>See API documentation at link above or at <cite>help(process_hvsr)</cite> for specifics.</p>
 </dd>
 <dt><strong>outlier_curve_percentile_threshold: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(process_hvsr)</cite> for specifics.</p>
 </dd>

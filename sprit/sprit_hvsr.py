@@ -706,10 +706,13 @@ class HVSRData:
         aDateStr = self.acq_date
         sTimeStr = self.starttime
         eTimeStr = self.endtime
-        if hasattr(self, 'stream') and hasattr(self['stream'], 'stats'):
+        if hasattr(self, 'stream') and isinstance(self['stream'], (obspy.Stream, obspy.Trace)):
             dataST = self.stream
-            utcSTime = dataST[0].stats.starttime
-            utcETime = dataST[0].stats.endtime
+            dataTr = dataST
+            if isinstance(dataST, obspy.Stream):
+                dataTr = dataST[0]
+            utcSTime = dataTr.stats.starttime
+            utcETime = dataTr.stats.endtime
         else:
             if 'T' in str(sTimeStr):
                 utcSTime = obspy.UTCDateTime(sTimeStr)
@@ -1272,6 +1275,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     orig_args = locals().copy()  # Get the initial arguments
     global do_run
     do_run = True
+    run_starttime = datetime.datetime.now()
 
     # Handle repeat args in DEFAULT PARAMS DICT
     DPD = DEFAULT_PARAMS_DICT.copy()
@@ -1496,7 +1500,6 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     else:
         azimuth_calculation = False
         
-     
     # Remove Noise
     data_noiseRemoved = hvsr_az
     try:
@@ -1709,9 +1712,8 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
                 data_curvesRemoved_interim = data_curvesRemoved_interim[site_name]
         hvsr_results = data_curvesRemoved_interim
         
-
     # Final post-processing/reporting
-    # Check peaks
+    # Check peaks & Get Report
     try:
         check_peaks_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
         updated_cp_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
@@ -1834,27 +1836,50 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         print("H/V data processed, could not check peaks")
         return hvsr_results
 
-    # Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
-    if 'hvsr_export_path' in kwargs.keys() or DPD['hvsr_export_path'] is not None:
-        if kwargs['hvsr_export_path'] is None:
-            pass
-        else:
-            if 'ext' in kwargs.keys():
-                ext = kwargs['ext']
+    # Data export and report display
+    try:
+        # Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
+        if 'hvsr_export_path' in kwargs.keys() or DPD['hvsr_export_path'] is not None:
+            if kwargs['hvsr_export_path'] is None:
+                pass
             else:
-                ext = 'hvsr'
-            export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], ext=ext, verbose=verbose)
-    if 'json_export_path' in kwargs.keys() or DPD['json_export_path'] is not None:
-        if kwargs['json_export_path'] is None:
-            pass
+                if 'ext' in kwargs.keys():
+                    ext = kwargs['ext']
+                else:
+                    ext = 'hvsr'
+                export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], ext=ext, verbose=verbose)
+        if 'json_export_path' in kwargs.keys() or DPD['json_export_path'] is not None:
+            if kwargs['json_export_path'] is None:
+                pass
+            else:
+                export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
+                export_json(hvsr_results=hvsr_results, verbose=verbose, **export_json_kwargs)
+                
+        if 'show_plot_report' in get_report_kwargs and not get_report_kwargs['show_plot_report']:
+            plt.close()
+        elif 'suppress_report_outputs' in get_report_kwargs and get_report_kwargs['suppress_report_outputs']:
+            plt.close()
         else:
-            export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
-            export_json(hvsr_results=hvsr_results, verbose=verbose, **export_json_kwargs)
-            
-    if 'show_plot_report' in get_report_kwargs and not get_report_kwargs['show_plot_report']:
-        plt.close()
-    if 'suppress_report_outputs' in get_report_kwargs and get_report_kwargs['suppress_report_outputs']:
-        plt.close()
+            if 'plot_engine' in get_report_kwargs and 'y' not in get_report_kwargs['plot_engine']:
+                print("Showing plot")
+                plt.show()
+    except Exception as e:
+        print("Error in data export or report generation. Results have been returned.\n")
+        traceback.print_exception(sys.exc_info()[1])
+        exc_type, exc_obj, tb = sys.exc_info()
+        f = tb.tb_frame
+        lineno = tb.tb_lineno
+        filename = f.f_code.co_filename
+        errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+        error_category = type(e).__name__.title().replace('error', 'Error')
+        error_message = f"{e} ({errLineNo})"
+        print(f"{error_category} ({errLineNo}): {error_message}")
+        print(lineno, filename, f)
+
+    if verbose:
+        elapsed = (datetime.datetime.now()-run_starttime)
+        print(f"\nProcessing completed in  {str(elapsed)[:-3]}\n")
+        print("".center(99, '*'))
 
     return hvsr_results
 
@@ -2444,6 +2469,7 @@ def check_peaks(hvsr_data, hvsr_band=DEFAULT_BAND, peak_selection='max', peak_fr
             Object containing previous input data, plus information about peak tests
     """
     orig_args = locals().copy() # Get the initial arguments
+    start_time = datetime.datetime.now()
     
     # Update with processing parameters specified previously in input_params, if applicable
     if 'processing_parameters' in hvsr_data.keys():
@@ -2639,6 +2665,10 @@ def check_peaks(hvsr_data, hvsr_band=DEFAULT_BAND, peak_selection='max', peak_fr
         for key, value in orig_args.items():
             if key not in exclude_params_list:  
                 hvsr_data['processing_parameters']['check_peaks'][key] = value
+    
+    hvsr_data = sprit_utils._check_processing_status(hvsr_data, start_time=start_time, 
+                                                     func_name=inspect.stack()[0][3], verbose=verbose)
+    
     return hvsr_data
 
 
@@ -3693,7 +3723,7 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
     elif isinstance(input_parameters['input_data'], HVSRData):
         rawDataIN = input_parameters['input_data']['stream']
     else:
-        if   source == 'raw':
+        if source == 'raw':
             try:
                 if inst.lower() in trominoNameList:
                     input_parameters['instrument'] = 'Tromino'
@@ -3737,7 +3767,11 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
         elif source == 'file' and str(input_parameters['input_data']).lower() not in SAMPLE_LIST:
             # Read the file specified by input_data
             # Automatically read tromino data
+<<<<<<< HEAD
             if (str(inst).lower() in trominoNameList and 'trc' in pathlib.Path(str(dPath)).suffix) or 'trc' in pathlib.Path(str(dPath)).suffix:
+=======
+            if str(inst).lower() in trominoNameList or 'trc' in dPath.suffix:
+>>>>>>> main
                 input_parameters['instrument'] = 'Tromino'
                 #input_parameters['params']['instrument'] = 'Tromino'
 
@@ -5196,7 +5230,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             verbose_pdf = verbose
 
             # Don't repeat html printing, etc. if already done
-            if 'html' in report_formats:
+            if 'html' in report_formats[:i]:
                 show_html_report = False
             else:
                 show_html_report = show_html_report
@@ -6066,7 +6100,7 @@ def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=
 
 # Main function for processing HVSR Curve
 def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='konno ohmachi', 
-                 f_smooth_width=40, resample=True, 
+                 f_smooth_width=40, resample=True, array_processing=True,
                  outlier_curve_percentile_threshold=False, azimuth=None, verbose=False):
     """Process the input data and get HVSR data
     
@@ -6106,6 +6140,10 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
         bool or int. 
             If True, default to resample H/V data to include 1000 frequency values for the rest of the analysis
             If int, the number of data points to interpolate/resample/smooth the component psd/HV curve data to.
+    array_processing : bool, default=True
+        Whether to use a modified, vectorized version of the original IRIS H/V algorithms.
+        False uses original IRIS H/V algorithms, True uses modified, vectorized versions of the same.
+        In tests, this reduces processing time by 2x or more, and no differences in results have been recorded.
     outlier_curve_percentile_threshold : bool, float, default = False
         If False, outlier curve removal is not carried out here. 
         If True, defaults to 98 (98th percentile). 
@@ -6141,6 +6179,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     freq_smooth = orig_args['freq_smooth']
     f_smooth_width = orig_args['f_smooth_width']
     resample = orig_args['resample']
+    array_processing = orig_args['array_processing']
     outlier_curve_percentile_threshold = orig_args['outlier_curve_percentile_threshold']
     verbose = orig_args['verbose']
 
@@ -6365,7 +6404,11 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
 
     #This gets the main hvsr curve averaged from all time steps
     anyK = list(x_freqs.keys())[0]
-    hvsr_curve, hvsr_az, hvsr_tSteps = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, horizontal_method=methodInt, hvsr_data=hvsr_data, azimuth=azimuth, verbose=verbose)
+    hvsr_curve, hvsr_az, hvsr_tSteps = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, 
+                                                        horizontal_method=methodInt, hvsr_data=hvsr_data, 
+                                                        azimuth=azimuth, array_processing=array_processing,
+                                                        verbose=verbose)
+        
     origPPSD = hvsr_data['ppsds_obspy'].copy()
 
     #print('hvcurv', np.array(hvsr_curve).shape)
@@ -6469,7 +6512,10 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
             tStepDict = {}
             for k in hvsr_out['psd_raw']:
                 tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
-            hvsr_tstep, hvsr_az_tstep, _ = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, horizontal_method=methodInt, hvsr_data=hvsr_out, verbose=verbose)
+            hvsr_tstep, hvsr_az_tstep, _ = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, 
+                                                            horizontal_method=methodInt, hvsr_data=hvsr_out,
+                                                            azimuth=azimuth, array_processing=array_processing,
+                                                            verbose=verbose)
             
             hvsr_tSteps.append(np.float64(hvsr_tstep)) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
             for k, v in hvsr_az_tstep.items():
@@ -6640,6 +6686,7 @@ def read_tromino_files(input_data, struct_format='H', tromino_model=None, diagno
                                    struct_format=struct_format, tromino_model="3G+",diagnose=diagnose,
                                    set_record_duration=set_record_duration, start_byte=start_byte,
                                    return_dict=False, verbose=verbose, **kwargs)
+
 
 # Function to remove noise windows from data
 def remove_noise(hvsr_data, remove_method=None, 
@@ -8099,12 +8146,12 @@ def __read_tromino_data_yellow(input_data, sampling_rate=None,
     eTime = inst_sTime + (((len(compN))/sampling_rate)/60)*60
 
     loc = ''
-    if  station is not None and (type(station) is int or station.isdigit()):
-        loc = str(station)  
-    elif 'GRILLA' in str(input_filepath) and pathlib.Path(input_filepath).exists():
+    if 'GRILLA' in str(input_filepath) and pathlib.Path(input_filepath).exists():
         # Get partition number and make that the location
         loc = pathlib.Path(input_filepath).stem.split(' ')[0].split('GRILLA')[1]
-
+    elif  station is not None and (type(station) is int or station.isdigit()):
+        loc = str(station)  
+    
     sTime = inst_sTime
     if hasattr(input_data, 'starttime') and input_data['starttime'].datetime!=NOWTIME:
         sTime = input_data['starttime']
@@ -10477,7 +10524,7 @@ def __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth):
 
 
 # Get an HVSR curve, given an array of x values (freqs), and a dict with psds for three components
-def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose=False):
+def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, array_processing=True, verbose=False):
     """ Get an HVSR curve from three components over the same time period/frequency intervals
 
     Parameters
@@ -10504,6 +10551,96 @@ def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose
     if horizontal_method==1 or horizontal_method =='dfa' or horizontal_method =='Diffuse Field Assumption':
         hvsr_tSteps = _dfa(x, hvsr_data, verbose)
         hvsr_curve = np.mean(hvsr_tSteps, axis=0)
+    elif array_processing:
+        def az_calc_arr(az, h_arr, compList):
+            if az is None:
+                az = 90
+            if az == 'HV':
+                outArr = np.ones_like(h_arr[0])
+                for arr in h_arr:
+                    outArr *= arr
+                return np.sqrt(outArr)
+            elif 'az' in str(az).lower():
+                return h_arr
+            
+            az_rad = np.deg2rad(az)
+            
+            for i, c in enumerate(compList):
+                if 'e' in str(c).lower():
+                    eAz = h_arr[i] * np.sin(az_rad)
+                elif 'n' in str(c).lower():
+                    nAz = h_arr[i] * np.cos(az_rad)
+                else:
+                    return h_arr[0]
+            return np.add(eAz, nAz)
+
+        
+        # Convert inputs to float64 1D arrays
+        freqArr = np.asarray(x, dtype=np.float64)
+        hList = []
+        compList = []
+        for key, psdArr in psd.items():
+            dataArr = np.asarray(psdArr, dtype=np.float64)
+
+            # Basic sanity checks
+            if freqArr.ndim != 1 or dataArr.ndim != 1:
+                raise ValueError("Frequency and data arrays must be 1D arrays.")
+            if freqArr.size != dataArr.size:
+                raise ValueError("Frequency and data arrays must have the same length.")
+            if freqArr.size < 2:
+                raise ValueError("Arrays must have length >= 2 for adjacent operations.")
+
+            # __remove_db, vectorized
+            dataArr_nodB = np.power(10.0, dataArr / 10.0)
+
+            # Ensure no zeros (may not be the best implementation)
+            dataArr_nodB = np.maximum(dataArr_nodB, 10e-300)
+
+            # __get_power equivalent (mean of adjacent values * freq difference)
+            dataArr_pow = np.multiply(0.5 * (dataArr_nodB[:-1] + dataArr_nodB[1:]), 
+                                      np.abs(np.diff(freqArr)))
+            
+            if key.upper() == "Z":
+                ZArr = np.sqrt(dataArr_pow)
+            elif key.upper() not in ['Z', 'E', 'N']:
+                hvsr_azimuth[key] = az_calc_arr(key, np.sqrt(dataArr_pow), compList)
+            else:
+                hList.append(dataArr_pow)
+                compList.append(key)
+                
+        hArr = np.sqrt(hList)
+
+        if horizontal_method == 2 or str(horizontal_method) == '2':
+            # Arithmetic mean
+            hCombArr = np.nanmean(hArr, axis=0)
+        elif horizontal_method == 3 or str(horizontal_method) == '3':
+            # Geometric mean
+            outArr = np.ones_like(hArr[0])
+            for arr in hArr:
+                outArr *= arr
+            hCombArr = np.sqrt(outArr)            
+        elif horizontal_method == 4 or str(horizontal_method) == '4':
+            # Vector summation
+            hCombArr = np.sqrt(np.sum(hList, axis=0))
+        elif horizontal_method == 5 or str(horizontal_method) == '5':
+            # Quadratic Mean
+            hCombArr = np.sqrt(np.nanmean(hList, axis=0))
+        elif horizontal_method == 6 or str(horizontal_method) == '6':
+            # Max Value
+            hCombArr = np.nanmax(hArr, axis=0)
+        elif horizontal_method == 7 or str(horizontal_method) == '7':
+            # Min value
+            hCombArr = np.nanmin(hArr, axis=0)
+        elif horizontal_method == 8 or str(horizontal_method) == '8':
+            # Azimuth
+            hCombArr = az_calc_arr(azimuth, hArr, compList)
+        elif horizontal_method == 'az' or str(horizontal_method) == 'az':
+            hCombArr = hArr[0]            
+        else:
+            hCombArr = hArr[0]
+            
+        hvsr_curve = np.divide(hCombArr, ZArr)
+        hvsr_tSteps = None # Only used for DFA        
     else:
         for j in range(len(x)-1):
             psd0 = [psd['Z'][j], psd['Z'][j + 1]]
@@ -10528,7 +10665,6 @@ def __get_hvsr_curve(x, psd, horizontal_method, hvsr_data, azimuth=None, verbose
                         hvsr_azimuth[k].append(hvratio_az)
             
         hvsr_tSteps = None # Only used for DFA
-
 
     return np.array(hvsr_curve), hvsr_azimuth, hvsr_tSteps
 
@@ -10575,11 +10711,10 @@ def __get_hvsr(_dbz, _db1, _db2, _x, azimuth=None, use_method=3):
 
         if az == 'HV':
             return math.sqrt(_h1 * _h2)
-        print("AZIN", az)
         az_rad = np.deg2rad(az)
         return np.add(h2 * np.cos(az_rad), h1 * np.sin(az_rad))
 
-    # Previous structure from IRIS module
+    # Previous structure from IRIS module, takes too long
     #_h = {  2: (_h1 + _h2) / 2.0, # Arithmetic mean
     #        3: math.sqrt(_h1 * _h2), # Geometric mean
     #        4: math.sqrt(_p1 + _p2), # Vector summation
@@ -10602,8 +10737,7 @@ def __get_hvsr(_dbz, _db1, _db2, _x, azimuth=None, use_method=3):
         _hCombined = max(_h1, _h2)
     elif use_method == 7 or str(use_method) == '7':
         _hCombined = min(_h1, _h2)
-    elif use_method == 8 or str(use_method) == '8':
-        
+    elif use_method == 8 or str(use_method) == '8':    
         _hCombined = az_calc(azimuth, _h1, _h2)
     elif use_method == 'az' or str(use_method) == 'az':
         _hCombined = _h1
@@ -10934,7 +11068,7 @@ def _generate_table_report(hvsr_results, azimuth='HV', show_table_report=True, v
     outDF = pd.DataFrame(dfList, columns=pdCols)
     outDF.index.name = 'ID'
     
-    if show_table_report or verbose:
+    if show_table_report:
         print('\nTable Report:\n')
         maxColWidth = 13
         print('  ', end='')
@@ -10983,26 +11117,31 @@ def _display_html_report(html_report):
             file_path = tmp_file.name
             file_path = file_path.replace('\\'[0], '/')
             rawfpath = file_path
-            print(rawfpath)
             
-            if autodelete:
-                client = webbrowser
-                if not file_path.startswith(r"file://-"[:-1]):
-                    file_path = f"file://{file_path}"
-                client.open_new(file_path)                
-                # Adding a short sleep so that the file does not get cleaned
-                # up immediately in case the browser takes a while to boot.
-                time.sleep(5)
+            try:
+                from IPython.display import HTML, display
+                display(HTML(html_report))
+            except Exception:
+                if autodelete:
+                    client = webbrowser
+                    if not file_path.startswith(r"file://-"[:-1]):
+                        file_path = f"file://{file_path}"
+                    client.open_new(file_path)
+                    # Adding a short sleep so that the file does not get cleaned
+                    # up immediately in case the browser takes a while to boot.
+                    time.sleep(5)
 
-            if not autodelete:
-                client = webbrowser
-                if not file_path.startswith(r"file://"[:-1]):
-                    file_path = f"file://{file_path}"
-                client.open_new(file_path)
-                
-                time.sleep(3)
-                os.unlink(rawfpath)  # Cleaning up the file in case of Windows
-
+                if not autodelete:
+                    client = webbrowser
+                    if not file_path.startswith(r"file://"[:-1]):
+                        file_path = f"file://{file_path}"
+                    client.open_new(file_path)
+                    
+                    time.sleep(3)
+                    try:
+                        os.unlink(rawfpath)  # Cleaning up the file in case of Windows
+                    except Exception:
+                        pass
 
 # Private function for html report generation
 def _generate_html_report(hvsr_results, azimuth='HV', show_html_report=False, verbose=False):
@@ -11226,13 +11365,13 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
 
         pdf_report_shown = False
 
-        if hasattr(os, 'startfile') and not pdf_report_shown:
-            try:
-                print("\t  Attempting os.startfile")
-                os.startfile(pdf_export_path)
-                pdf_report_shown = True
-            except Exception as e:
-                print(f"\t\tError opening pdf report: {e}")
+        #if hasattr(os, 'startfile') and not pdf_report_shown:
+        #    try:
+        #        print("\t  Attempting os.startfile")
+        #        os.startfile(pdf_export_path)
+        #        pdf_report_shown = True
+        #    except Exception as e:
+        #        print(f"\t\tError opening pdf report: {e}")
         
         #if not pdf_report_shown:
         #    try:
@@ -11241,19 +11380,26 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
         #        pdf_report_shown = True                
         #    except Exception as e:
         #        print(f"\t\tError opening pdf report: {e}")
-
-        try: # This freezes or throws errors in cloud environments sometimes, so try/except
-            webBrowserName = webbrowser.get().name
-            codespaces_check = 'vscode' in webBrowserName
-            print('\t  Attempting to open PDF Report via web browser')
-            if not pdf_report_shown and not codespaces_check:
-                webbrowser.open(pdf_export_path)
-                pdf_report_shown = True
-            else:
-                print('\t\tWeb browser opening not supported')
-        except Exception as e:
-            print(f"\tOpening pdf via webbrowser did not work. Error opening pdf report: {e}")
-        
+        if not pdf_report_shown:
+            try: # This freezes or throws errors in cloud environments sometimes, so try/except
+                webBrowserName = webbrowser.get().name
+                codespaces_check = 'vscode' in webBrowserName
+                if verbose:
+                    print('\t  Attempting to open PDF Report via web browser')
+                if not pdf_report_shown and not codespaces_check:
+                    webbrowser.open(pdf_export_path)
+                    #pdf_report_shown = True
+                if codespaces_check:
+                    if verbose:
+                        print("PDF not working, attempting to open HTML Report")
+                    from IPython.display import display, HTML
+                    HTML(hvsr_results["HTML_Report"])
+                else:
+                    if verbose:
+                        print('\t\tWeb browser opening not supported')
+            except Exception as e:
+                print(f"\tOpening pdf via webbrowser did not work. Error opening pdf report: {e}")
+            
         if not pdf_report_shown:
             print(f"\tSpRIT cannot open your pdf report in this environment, but it has been saved to {pdf_export_path}")
             print('\tAttempting to open HTML version of report')
@@ -11262,7 +11408,6 @@ def _generate_pdf_report(hvsr_results, pdf_report_filepath=None, show_pdf_report
                 _display_html_report(hvsr_results['HTML_Report'])
             except Exception as e:
                 print('\tHTML Report could not be displayed, but has been saved to the .HTML_Report attribute')
-
 
     if return_pdf_path:
         return pdf_export_path
