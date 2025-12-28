@@ -8,9 +8,9 @@ setup(
     author= "Riley Balikian",
     author_email = "balikian@illinois.edu",
 <<<<<<< HEAD
-    version="3.3",
+    version="3.4.2",
 =======
-    version="3.4.0",
+    version="3.4.2",
 >>>>>>> main
     package_data={'sprit': ['resources/*', 'resources/icon/*', 'resources/themes/*', 'resources/themes/forest-dark/*', 
                             'resources/themes/forest-light/*', 'resources/sample_data/*','resources/settings/*']},

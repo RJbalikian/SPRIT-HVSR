@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_calibration &mdash; sprit 2.3.6 documentation</title>
+  <title>sprit.sprit_calibration &mdash; sprit 3.4.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=ac39ba8c"></script>
+      <script src="../../_static/documentation_options.js?v=23636ea3"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -74,6 +74,7 @@
 <span class="sd">to derive a relation between the resonant frequency and the depth to bedrock beneath the subsurface.</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">importlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numbers</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -84,7 +85,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.ticker</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogLocator</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pkg_resources</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">curve_fit</span>
 
 <span class="k">try</span><span class="p">:</span>  <span class="c1"># For distribution</span>
@@ -120,8 +120,8 @@
 <span class="sd">- #Add parameter to sprit.run</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="n">resource_dir</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="s1">&#39;resources/&#39;</span><span class="p">))</span>
-<span class="n">sample_data_dir</span> <span class="o">=</span> <span class="n">resource_dir</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s2">&quot;sample_data&quot;</span><span class="p">)</span>
+<span class="n">RESOURCE_DIR</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">files</span><span class="p">(</span><span class="s1">&#39;sprit&#39;</span><span class="p">)))</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;resources&#39;</span><span class="p">)</span>
+<span class="n">sample_data_dir</span> <span class="o">=</span> <span class="n">RESOURCE_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s2">&quot;sample_data&quot;</span><span class="p">)</span>
 <span class="n">sampleFileName</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;sample_1&#39;</span><span class="p">:</span> <span class="n">sample_data_dir</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s2">&quot;SampleHVSRSite1_2024-06-13_1633-1705.csv&quot;</span><span class="p">)}</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">__get_ip_df_params</span><span class="p">():</span>
@@ -183,7 +183,7 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    freq_input : HVSRData, HVSRBatch, float, or filepath, optional</span>
+<span class="sd">    freq_input : HVSRData, HVSRBatch, float, int, or filepath, optional</span>
 <span class="sd">        Input with frequency information, by default {sprit_hvsr.HVSRData, sprit_hvsr.HVSRBatch, float, os.PathLike}</span>
 <span class="sd">    depth_model : str, tuple, list, or dict, optional</span>
 <span class="sd">        Model describing a relationship between frequency and depth, by default &quot;ISGS_All&quot;</span>
@@ -238,11 +238,12 @@
                 <span class="n">orig_args</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;freq_input&#39;</span><span class="p">)</span>
             <span class="n">calc_depth_kwargs</span> <span class="o">=</span> <span class="n">orig_args</span>
             <span class="n">newBatchList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">calculate_depth</span><span class="p">(</span><span class="n">freq_input</span><span class="o">=</span><span class="n">freq_input</span><span class="p">[</span><span class="n">site</span><span class="p">],</span> <span class="o">**</span><span class="n">calc_depth_kwargs</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">HVSRBatch</span><span class="p">(</span><span class="n">newBatchList</span><span class="p">,</span> <span class="n">df_as_read</span><span class="o">=</span><span class="n">freq_input</span><span class="o">.</span><span class="n">input_df</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">HVSRBatch</span><span class="p">(</span><span class="n">newBatchList</span><span class="p">,</span> <span class="n">df_as_read</span><span class="o">=</span><span class="n">freq_input</span><span class="o">.</span><span class="n">input_df</span><span class="p">)</span>    
     
+    <span class="c1"># initialize values</span>
     <span class="n">a</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">b</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">params</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">depth_model_params</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="c1"># Fetch parameters for frequency-depth model</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">depth_model</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)):</span>
@@ -258,16 +259,16 @@
                     <span class="k">break</span>
 
         <span class="k">elif</span> <span class="n">depth_model</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span> <span class="ow">in</span> <span class="n">swave</span><span class="p">:</span>
-            <span class="n">params</span> <span class="o">=</span> <span class="n">depth_model</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span>
+            <span class="n">depth_model_params</span> <span class="o">=</span> <span class="n">depth_model</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span>
 
         <span class="k">elif</span> <span class="n">depth_model</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
-            <span class="n">params</span> <span class="o">=</span> <span class="n">depth_model</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span>
+            <span class="n">depth_model_params</span> <span class="o">=</span> <span class="n">depth_model</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span>
 
         <span class="k">else</span><span class="p">:</span>   <span class="c1"># parameters a and b could be passed in as a parsable string</span>
-            <span class="n">params</span> <span class="o">=</span> <span class="n">depth_model</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+            <span class="n">depth_model_params</span> <span class="o">=</span> <span class="n">depth_model</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
             <span class="c1"># Work on re update[int(s) for s in re.findall(r&quot;[-+]?(?:\d*\.*\d+)&quot;, </span>
             <span class="c1"># depth_model)]  #figure this out later for floating points; works for integers</span>
-            <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="o">=</span> <span class="n">params</span>
+            <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="o">=</span> <span class="n">depth_model_params</span>
             <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">b</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Parameters cannot be zero, check model inputs&quot;</span><span class="p">)</span>            
 
@@ -374,8 +375,7 @@
                         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Assuming file with .*hvsr* suffix is an HVSR data file created by SpRIT.&#39;</span><span class="p">)</span>
                     <span class="n">freq_input</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">import_data</span><span class="p">(</span><span class="n">freqDataPath</span><span class="p">)</span>
                     <span class="n">tableReport</span> <span class="o">=</span> <span class="n">freq_input</span><span class="o">.</span><span class="n">Table_Report</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">freq_input</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">HVSRData</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">freq_input</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">HVSRData</span><span class="p">):</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">freq_input</span><span class="p">,</span> <span class="s1">&#39;Table_Report&#39;</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
                     <span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Passed HVSRData Object has no attribute Table_Report, attempting to generate one.&quot;</span><span class="p">)</span>
@@ -447,12 +447,12 @@
         
         <span class="c1"># Calculate elevation data</span>
         <span class="k">if</span> <span class="n">calculate_elevation</span> <span class="ow">and</span> <span class="n">surface_elevation_data</span> <span class="ow">in</span> <span class="n">tableReport</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-            <span class="n">tableReport</span><span class="p">[</span><span class="n">bedrock_elevation_column</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">tableReport</span><span class="p">[</span><span class="n">surface_elevation_data</span><span class="p">]</span> <span class="o">-</span> <span class="n">tableReport</span><span class="p">[</span><span class="n">depth_column</span><span class="p">])</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">decimal_places</span><span class="p">)</span>
+            <span class="n">tableReport</span><span class="p">[</span><span class="n">bedrock_elevation_column</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">((</span><span class="nb">float</span><span class="p">(</span><span class="n">tableReport</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">surface_elevation_data</span><span class="p">])</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">tableReport</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">depth_column</span><span class="p">])),</span> <span class="n">decimal_places</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">freq_input</span><span class="p">,</span> <span class="s1">&#39;x_depth_m&#39;</span><span class="p">):</span>
-                <span class="n">freq_input</span><span class="p">[</span><span class="s1">&#39;x_elev_m&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">([</span><span class="n">tableReport</span><span class="p">[</span><span class="n">surface_elevation_data</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">freq_input</span><span class="p">[</span><span class="s2">&quot;x_depth_m&quot;</span><span class="p">][</span><span class="s1">&#39;Z&#39;</span><span class="p">]],</span> <span class="n">decimal_places</span><span class="p">),</span>
-                                          <span class="s1">&#39;E&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">([</span><span class="n">tableReport</span><span class="p">[</span><span class="n">surface_elevation_data</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">freq_input</span><span class="p">[</span><span class="s2">&quot;x_depth_m&quot;</span><span class="p">][</span><span class="s1">&#39;E&#39;</span><span class="p">]],</span> <span class="n">decimal_places</span><span class="p">),</span>
-                                          <span class="s1">&#39;N&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">([</span><span class="n">tableReport</span><span class="p">[</span><span class="n">surface_elevation_data</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">freq_input</span><span class="p">[</span><span class="s2">&quot;x_depth_m&quot;</span><span class="p">][</span><span class="s1">&#39;N&#39;</span><span class="p">]],</span> <span class="n">decimal_places</span><span class="p">)}</span>
-        
+                <span class="n">freq_input</span><span class="p">[</span><span class="s1">&#39;x_elev_m&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">tableReport</span><span class="p">[</span><span class="n">surface_elevation_data</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">freq_input</span><span class="p">[</span><span class="s2">&quot;x_depth_m&quot;</span><span class="p">][</span><span class="s1">&#39;Z&#39;</span><span class="p">]],</span> <span class="n">decimal_places</span><span class="p">),</span>
+                                          <span class="s1">&#39;E&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">tableReport</span><span class="p">[</span><span class="n">surface_elevation_data</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">freq_input</span><span class="p">[</span><span class="s2">&quot;x_depth_m&quot;</span><span class="p">][</span><span class="s1">&#39;E&#39;</span><span class="p">]],</span> <span class="n">decimal_places</span><span class="p">),</span>
+                                          <span class="s1">&#39;N&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">tableReport</span><span class="p">[</span><span class="n">surface_elevation_data</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">freq_input</span><span class="p">[</span><span class="s2">&quot;x_depth_m&quot;</span><span class="p">][</span><span class="s1">&#39;N&#39;</span><span class="p">]],</span> <span class="n">decimal_places</span><span class="p">)}</span>
+
         <span class="k">if</span> <span class="n">calculate_depth_in_feet</span><span class="p">:</span>
             <span class="n">tableReport</span><span class="p">[</span><span class="n">depth_column</span><span class="o">+</span><span class="s1">&#39;_ft&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">(</span><span class="n">calib_data</span><span class="o">*</span><span class="mf">3.281</span><span class="p">,</span>
                                                      <span class="n">decimals</span><span class="o">=</span><span class="n">decimal_places</span><span class="p">)</span>
@@ -464,7 +464,7 @@
                     <span class="n">freq_input</span><span class="p">[</span><span class="s1">&#39;x_depth_ft&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">(</span><span class="n">freq_input</span><span class="p">[</span><span class="s1">&#39;x_depth_m&#39;</span><span class="p">][</span><span class="s1">&#39;Z&#39;</span><span class="p">]</span><span class="o">*</span><span class="mf">3.281</span><span class="p">,</span> <span class="n">decimal_places</span><span class="p">),</span>
                                                 <span class="s1">&#39;E&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">(</span><span class="n">freq_input</span><span class="p">[</span><span class="s1">&#39;x_depth_m&#39;</span><span class="p">][</span><span class="s1">&#39;E&#39;</span><span class="p">]</span><span class="o">*</span><span class="mf">3.281</span><span class="p">,</span> <span class="n">decimal_places</span><span class="p">),</span>
                                                 <span class="s1">&#39;N&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">(</span><span class="n">freq_input</span><span class="p">[</span><span class="s1">&#39;x_depth_m&#39;</span><span class="p">][</span><span class="s1">&#39;N&#39;</span><span class="p">]</span><span class="o">*</span><span class="mf">3.281</span><span class="p">,</span> <span class="n">decimal_places</span><span class="p">)}</span>
-                    
+
         <span class="n">tableReport</span><span class="p">[</span><span class="s2">&quot;DepthModel&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">depthModelList</span>
         <span class="n">tableReport</span><span class="p">[</span><span class="s2">&quot;DepthModelType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">depthModelTypeList</span>
 
@@ -475,12 +475,50 @@
             <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">get_axes</span><span class="p">()</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">ax</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        
-        <span class="n">pdc_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit_plot</span><span class="o">.</span><span class="n">plot_depth_curve</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
-        <span class="n">freq_input</span> <span class="o">=</span> <span class="n">sprit_plot</span><span class="o">.</span><span class="n">plot_depth_curve</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">=</span><span class="n">freq_input</span><span class="p">,</span>
-                                                 <span class="n">show_depth_curve</span><span class="o">=</span><span class="n">show_depth_curve</span><span class="p">,</span>
-                                                 <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="o">**</span><span class="n">pdc_kwargs</span><span class="p">)</span>
-        
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">freq_input</span><span class="p">,</span> <span class="s1">&#39;hvsr_curve&#39;</span><span class="p">):</span>
+            <span class="n">pdc_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit_plot</span><span class="o">.</span><span class="n">plot_depth_curve</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
+            <span class="n">freq_input</span> <span class="o">=</span> <span class="n">sprit_plot</span><span class="o">.</span><span class="n">plot_depth_curve</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">=</span><span class="n">freq_input</span><span class="p">,</span>
+                                                     <span class="n">show_depth_curve</span><span class="o">=</span><span class="n">show_depth_curve</span><span class="p">,</span>
+                                                     <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+                                                     <span class="o">**</span><span class="n">pdc_kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">surfElevVal</span> <span class="o">=</span> <span class="n">tableReport</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">surface_elevation_col</span><span class="p">]</span>
+            <span class="n">brElevVal</span> <span class="o">=</span> <span class="n">tableReport</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">bedrock_elevation_column</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">surfElevVal</span><span class="p">):</span>
+                <span class="n">surfElevVal</span> <span class="o">=</span> <span class="mi">0</span>
+                
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">brElevVal</span><span class="p">):</span>
+                <span class="n">brElevVal</span> <span class="o">=</span> <span class="n">tableReport</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">depth_column</span><span class="p">]</span>
+                <span class="n">yLIMITS</span> <span class="o">=</span> <span class="p">[</span><span class="n">brElevVal</span><span class="o">*</span><span class="mf">1.1</span><span class="p">,</span> <span class="n">brElevVal</span><span class="o">*-</span><span class="mf">0.1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">yLIMITS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">brElevVal</span> <span class="o">-</span> <span class="p">((</span><span class="n">surfElevVal</span><span class="o">-</span><span class="n">brElevVal</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.1</span><span class="p">)]</span>
+
+            <span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">xmin</span><span class="o">=-</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">brElevVal</span><span class="p">],</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;dotted&#39;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+            
+            <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">surfElevVal</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;v&#39;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">brElevVal</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;^&#39;</span><span class="p">)</span>
+            
+            <span class="n">spc</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">brElevVal</span><span class="p">,</span> 
+                    <span class="n">s</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;  Depth: </span><span class="si">{</span><span class="n">brElevVal</span><span class="si">}</span><span class="s2">m </span><span class="si">{</span><span class="n">spc</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">tableReport</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">freq_col</span><span class="p">]</span><span class="si">}</span><span class="s2"> Hz)&quot;</span><span class="p">,</span>
+                    <span class="n">va</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">)</span>
+            
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">yLIMITS</span><span class="p">)</span>
+            
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Depth [m]&#39;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([])</span>
+            <span class="n">titleText</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Calibrated Depth from Input Frequency&#39;</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">titleText</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">depth_model</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+                <span class="n">aText</span> <span class="o">=</span> <span class="n">depth_model</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">bText</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">depth_model</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*-</span><span class="mi">1</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">y</span><span class="o">=</span><span class="n">surfElevVal</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span>
+                        <span class="n">s</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;  Depth Model: $</span><span class="si">{</span><span class="n">aText</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> * f_0 ^</span><span class="se">{{</span><span class="si">{</span><span class="n">bText</span><span class="si">:</span><span class="s2">0.3f</span><span class="se">}}</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span>
+            
         <span class="n">plt</span><span class="o">.</span><span class="n">sca</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">show_depth_curve</span><span class="p">:</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -505,9 +543,11 @@
 
                 <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
                     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Saving data to the path specified&quot;</span><span class="p">)</span>
-            
+        
+        
         <span class="n">freq_input</span><span class="o">.</span><span class="n">Table_Report</span> <span class="o">=</span> <span class="n">tableReport</span>
         <span class="k">return</span> <span class="n">freq_input</span>
+            
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The freq_input parameter is not the correct type:</span><span class="se">\n\t</span><span class="s2">type(freq_input)=</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">freq_input</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
@@ -670,7 +710,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Author.</p>
+    <p>&#169; Copyright 2025, Author.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

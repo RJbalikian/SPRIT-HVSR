@@ -5613,14 +5613,10 @@ If 'processing', saves the processing settings to their respective file. By defa
                 print(&#39;\tThe input_parameters[&#34;input_data&#34;] argument is already an HVSRData obect.&#39;)
                 print(&#34;\tChecking metadata then moving on.&#34;)
     else:
-<<<<<<< HEAD
         try:
             dPath = sprit_utils._checkifpath(input_parameters[&#39;input_data&#39;], sample_list=SAMPLE_LIST)
         except Exception:
             dPath = input_parameters[&#39;input_data&#39;]
-=======
-        dPath = sprit_utils._checkifpath(input_parameters[&#39;input_data&#39;], sample_list=SAMPLE_LIST)
->>>>>>> main
 
     inst = input_parameters[&#39;instrument&#39;]
 
@@ -5735,11 +5731,7 @@ If 'processing', saves the processing settings to their respective file. By defa
         elif source == &#39;file&#39; and str(input_parameters[&#39;input_data&#39;]).lower() not in SAMPLE_LIST:
             # Read the file specified by input_data
             # Automatically read tromino data
-<<<<<<< HEAD
             if (str(inst).lower() in trominoNameList and &#39;trc&#39; in pathlib.Path(str(dPath)).suffix) or &#39;trc&#39; in pathlib.Path(str(dPath)).suffix:
-=======
-            if str(inst).lower() in trominoNameList or &#39;trc&#39; in dPath.suffix:
->>>>>>> main
                 input_parameters[&#39;instrument&#39;] = &#39;Tromino&#39;
                 #input_parameters[&#39;params&#39;][&#39;instrument&#39;] = &#39;Tromino&#39;
 
@@ -5797,15 +5789,9 @@ If 'processing', saves the processing settings to their respective file. By defa
             input_parameters = HVSRBatch(input_parameters, df_as_read=input_parameters.input_df)
             return input_parameters
         elif str(input_parameters[&#39;input_data&#39;]).lower() in SAMPLE_LIST or f&#34;sample{input_parameters[&#39;input_data&#39;].lower()}&#34; in SAMPLE_LIST:
-<<<<<<< HEAD
             if source==&#39;batch&#39; or input_parameters[&#39;input_data&#39;] == &#39;batch&#39;:
                 batch_input = sprit_utils._get_sample_data(&#39;batch&#39;, verbose=verbose)
                 input_parameters = batch_data_read(batch_data=batch_input, batch_type=&#39;sample&#39;, verbose=verbose)
-=======
-            if source==&#39;batch&#39;:
-                input_parameters[&#39;input_data&#39;] = SAMPLE_DATA_DIR.joinpath(&#39;Batch_SampleData.csv&#39;)
-                input_parameters = batch_data_read(batch_data=input_parameters[&#39;input_data&#39;], batch_type=&#39;sample&#39;, verbose=verbose)
->>>>>>> main
                 input_parameters = HVSRBatch(input_parameters, df_as_read=input_parameters.input_df)
                 return input_parameters
             elif source==&#39;dir&#39;:
@@ -5814,7 +5800,6 @@ If 'processing', saves the processing settings to their respective file. By defa
                 input_parameters = HVSRBatch(input_parameters, df_as_read=input_parameters.input_df)
                 return input_parameters
             elif source==&#39;file&#39;:
-<<<<<<< HEAD
                 # Standardize sample input
                 ogSampKey = &#39;1&#39;
                 sampleKey = str(input_parameters[&#39;input_data&#39;]).lower()
@@ -5829,24 +5814,6 @@ If 'processing', saves the processing settings to their respective file. By defa
 
                 input_parameters[&#39;input_data&#39;] = dPath = &#34;SampleData&#34; + str(sampleKey).zfill(2)
                 rawDataIN = sprit_utils._get_sample_data(input_parameters[&#39;input_data&#39;], verbose=verbose)
-=======
-                input_parameters[&#39;input_data&#39;] = str(input_parameters[&#39;input_data&#39;]).lower()
-                
-                if input_parameters[&#39;input_data&#39;].lower() in sampleFileKeyMap.keys():
-                    if input_parameters[&#39;input_data&#39;].lower() == &#39;sample&#39;:
-                        input_parameters[&#39;input_data&#39;] = sampleFileKeyMap
-                        
-                    input_parameters[&#39;input_data&#39;] = sampleFileKeyMap[input_parameters[&#39;input_data&#39;].lower()]
-                else:
-                    input_parameters[&#39;input_data&#39;] = SAMPLE_DATA_DIR.joinpath(&#39;SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED&#39;)
-
-                dPath = input_parameters[&#39;input_data&#39;]
-                rawDataIN = obspy.read(dPath)#, starttime=obspy.core.UTCDateTime(input_parameters[&#39;starttime&#39;]), endttime=obspy.core.UTCDateTime(input_parameters[&#39;endtime&#39;]), nearest_sample =True)
-                #import warnings
-                #with warnings.catch_warnings():
-                #    warnings.simplefilter(action=&#39;ignore&#39;, category=UserWarning)
-                #    rawDataIN.attach_response(inv)
->>>>>>> main
         else:
             # Last try if source cannot be read correctly
             try:
@@ -5878,7 +5845,6 @@ If 'processing', saves the processing settings to their respective file. By defa
             # site
             site_default = inspect.signature(input_params).parameters[&#39;site&#39;].default
             updateMsg = []
-<<<<<<< HEAD
 
             if input_parameters[&#39;site&#39;] == site_default:
                 if input_parameters[&#39;site&#39;] != pathlib.Path(str(dPath)).stem:
@@ -5889,16 +5855,6 @@ If 'processing', saves the processing settings to their respective file. By defa
                     if verbose:
                         updateMsg.append(f&#34;\tSite name updated to {input_parameters[&#39;site&#39;]}&#34;)
                 
-=======
-            if input_parameters[&#39;site&#39;] == site_default and input_parameters[&#39;site&#39;] != dPath.stem:
-                if isinstance(dPath, (list, tuple)):
-                    dPath = dPath[0]
-                input_parameters[&#39;site&#39;] = dPath.stem
-                #input_parameters[&#39;params&#39;][&#39;site&#39;] = dPath.stem
-                if verbose:
-                    updateMsg.append(f&#34;\tSite name updated to {input_parameters[&#39;site&#39;]}&#34;)
-            
->>>>>>> main
             # network
             net_default = inspect.signature(input_params).parameters[&#39;network&#39;].default
             if input_parameters[&#39;net&#39;] == net_default and net_default != dataIN[0].stats.network:
@@ -11654,7 +11610,6 @@ This is minimum number of points a point needs in its neighborhood to not be con
     &#34;&#34;&#34;
     
     if input_data is None or input_data == &#39;&#39; or str(input_data).lower() == &#39;sample&#39;:
-<<<<<<< HEAD
         if str(input_data).lower() == &#39;sample&#39; and str(source).lower() == &#39;batch&#39;:
             pass
         else:
@@ -11668,19 +11623,6 @@ This is minimum number of points a point needs in its neighborhood to not be con
             print(&#34;&#34;.center(99, &#39;*&#39;))
             print()
             input_data = &#39;sample&#39;
-=======
-        
-        print(&#34; PROCESSING SAMPLE DATA &#34;.center(99, &#39;*&#39;))
-        print(&#39;*&#39;+&#34;To read in your own data, use sprit.run(input_data=&#39;/path/to/your/seismic/data.mseed&#39;)&#34;.center(97)+&#39;*&#39;)
-        print(&#39;*&#39;+&#34;Any file format supported by osbpy.read() can be input to sprit_run()&#34;.center(97)+&#39;*&#39;)
-        print(&#39;*&#39;+&#34;Raw data (.trc) files from select Tromino Portable are also supported&#34;.center(97)+&#39;*&#39;)
-        print(&#39;*&#39;+&#34;See SpRIT Wiki or API documentation for more information:&#34;.center(97)+&#39;*&#39;)
-        print(&#39;*&#39;+&#34;Wiki: https://github.com/RJbalikian/SPRIT-HVSR/wiki&#34;.center(97)+&#39;*&#39;)
-        print(&#39;*&#39;+&#34;API Documentation: https://sprit.readthedocs.io/en/latest/#&#34;.center(97)+&#39;*&#39;)
-        print(&#34;&#34;.center(99, &#39;*&#39;))
-        print()
-        input_data = &#39;sample&#39;
->>>>>>> main
     
     orig_args = locals().copy()  # Get the initial arguments
     global do_run
@@ -11699,10 +11641,6 @@ This is minimum number of points a point needs in its neighborhood to not be con
         del DPD[&#39;input_data&#39;]
     if &#39;source&#39; in DPD:
         if DPD[&#39;source&#39;] != source:
-<<<<<<< HEAD
-=======
-            source = DPD[&#39;source&#39;]
->>>>>>> main
             orig_args[&#39;source&#39;] = source
             if verbose:
                 print(f&#34;source parameter has been updated from defaults.json from &#39;file&#39; to &#39;{source}&#39;&#34;)
@@ -11735,11 +11673,7 @@ This is minimum number of points a point needs in its neighborhood to not be con
     # Separate out input_params and fetch_data processes based on whether batch has been specified
     batchlist = [&#39;batch&#39;, &#39;bach&#39;, &#39;bath&#39;, &#39;b&#39;, &#39;dir&#39;, &#39;directory&#39;]
     dirList = [&#39;dir&#39;, &#39;directory&#39;, &#39;d&#39;]
-<<<<<<< HEAD
     if str(source).lower() in batchlist or str(input_data).lower() in batchlist:
-=======
-    if str(source).lower() in batchlist and str(&#39;input_data&#39;).lower() not in SAMPLE_LIST:
->>>>>>> main
         try:
             batch_data_read_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(batch_data_read).parameters.keys())}
             if str(source).lower() in dirList:
@@ -12131,11 +12065,7 @@ This is minimum number of points a point needs in its neighborhood to not be con
         hvsr_results = data_curvesRemoved_interim
         
     # Final post-processing/reporting
-<<<<<<< HEAD
-    # Check peaks
-=======
     # Check peaks &amp; Get Report
->>>>>>> main
     try:
         check_peaks_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
         updated_cp_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(check_peaks).parameters.keys())}
@@ -12258,29 +12188,6 @@ This is minimum number of points a point needs in its neighborhood to not be con
         print(&#34;H/V data processed, could not check peaks&#34;)
         return hvsr_results
 
-<<<<<<< HEAD
-    # Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
-    if &#39;hvsr_export_path&#39; in kwargs.keys() or DPD[&#39;hvsr_export_path&#39;] is not None:
-        if kwargs[&#39;hvsr_export_path&#39;] is None:
-            pass
-        else:
-            if &#39;ext&#39; in kwargs.keys():
-                ext = kwargs[&#39;ext&#39;]
-            else:
-                ext = &#39;hvsr&#39;
-            export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs[&#39;hvsr_export_path&#39;], ext=ext, verbose=verbose)
-    if &#39;json_export_path&#39; in kwargs.keys() or DPD[&#39;json_export_path&#39;] is not None:
-        if kwargs[&#39;json_export_path&#39;] is None:
-            pass
-        else:
-            export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
-            export_json(hvsr_results=hvsr_results, verbose=verbose, **export_json_kwargs)
-            
-    if &#39;show_plot_report&#39; in get_report_kwargs and not get_report_kwargs[&#39;show_plot_report&#39;]:
-        plt.close()
-    if &#39;suppress_report_outputs&#39; in get_report_kwargs and get_report_kwargs[&#39;suppress_report_outputs&#39;]:
-        plt.close()
-=======
     # Data export and report display
     try:
         # Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
@@ -12325,7 +12232,6 @@ This is minimum number of points a point needs in its neighborhood to not be con
         elapsed = (datetime.datetime.now()-run_starttime)
         print(f&#34;\nProcessing completed in  {str(elapsed)[:-3]}\n&#34;)
         print(&#34;&#34;.center(99, &#39;*&#39;))
->>>>>>> main
 
     return hvsr_results</code></pre>
 </details>
@@ -13894,11 +13800,7 @@ For return_fig, returns it to the 'Plot_Report' attribute of each HVSRData objec
         aDateStr = self.acq_date
         sTimeStr = self.starttime
         eTimeStr = self.endtime
-<<<<<<< HEAD
-        if hasattr(self, &#39;stream&#39;) and hasattr(self[&#39;stream&#39;], &#39;stats&#39;):
-=======
         if hasattr(self, &#39;stream&#39;) and isinstance(self[&#39;stream&#39;], (obspy.Stream, obspy.Trace)):
->>>>>>> main
             dataST = self.stream
             dataTr = dataST
             if isinstance(dataST, obspy.Stream):

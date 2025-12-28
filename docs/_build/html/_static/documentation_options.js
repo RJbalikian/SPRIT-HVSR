@@ -1,9 +1,5 @@
 const DOCUMENTATION_OPTIONS = {
-<<<<<<< HEAD
-    VERSION: '3.3',
-=======
-    VERSION: '3.4.0',
->>>>>>> main
+    VERSION: '3.4.2',
     LANGUAGE: 'en',
     COLLAPSE_INDEX: false,
     BUILDER: 'html',

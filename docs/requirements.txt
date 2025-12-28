@@ -21,7 +21,7 @@ markdown
 pytest
 flake8
 <<<<<<< HEAD
-sprit==3.3
+sprit==3.4.2
 =======
-sprit==3.4.0
+sprit==3.4.2
 >>>>>>> main
