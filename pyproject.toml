@@ -47,6 +47,9 @@ PyQt5-sip = "*"
 streamlit = "*"
 sprit = "*"
 
+[tool.setuptools.package-data]
+sprit = ["resources/**"]
+
 [project.urls]
 "Homepage" = "https://github.com/RJbalikian/SPRIT-HVSR"
 "SpRIT Web App" = "https://sprithvsr.streamlit.app"

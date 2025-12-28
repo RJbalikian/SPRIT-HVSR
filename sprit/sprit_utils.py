@@ -2,7 +2,9 @@ import datetime
 import functools
 import importlib
 import inspect
+import io
 import json
+import numbers
 import os
 import pathlib
 import subprocess
@@ -13,6 +15,8 @@ import zoneinfo
 
 import numpy as np
 from obspy.core.utcdatetime import UTCDateTime
+import obspy
+import pandas as pd
 
 try:  # For distribution
     from sprit import sprit_hvsr
@@ -417,6 +421,61 @@ def _get_error_from_exception(exception=None, print_error_message=True, return_e
         if return_error_message:
             return f"{error_category} ({errLineNo}): {error_message}\n\n{lineno} {filename} {f}"
 
+
+# Get sample data from resources
+def _get_sample_data(sample_file='1', verbose=False):
+
+    # Get filenames depending on input
+    sampleMapDict = {'1':'SampleHVSRSite01.MSEED',
+                     '2':'SampleHVSRSite02.MSEED',
+                     '3':'SampleHVSRSite03.MSEED',
+                     '4':'SampleHVSRSite04.MSEED',
+                     '5':'SampleHVSRSite05.MSEED',
+                     '6':'SampleHVSRSite06.MSEED',
+                     '7':'SampleHVSRSite07.MSEED',
+                     '8':'SampleHVSRSite08.MSEED',
+                     '9':'SampleHVSRSite09.MSEED',
+                     '10':'SampleHVSRSite10.MSEED',
+                     'batch':'Batch_SampleData.csv'
+                    }
+    sampleKey = sample_file
+
+    if 'sample' in str(sampleKey).lower():
+        sampleKey = str(sampleKey).lower().split('sample')[1]
+        if sampleKey[0] == '0':
+            sampleKey = str(sampleKey[1:]).lower()
+
+    if isinstance(sampleKey, numbers.Number):
+        sampleKey = str(sampleKey).lower()
+
+    if sampleKey not in sampleMapDict.keys():
+        if verbose:
+            print(f'{sample_file} is not an acceptable sample file. Specify any number 1-10, or use "batch" for input_data')
+
+        print("USING SAMPLE DATASET")
+        sampleKey = '1'
+            
+
+    #sampleListKeys = [str(i) for i in list(range(1,11))]
+
+    # Construct resource filename
+    filename = sampleMapDict[sampleKey]
+    sampleDir = importlib.resources.files('sprit') / "resources" / "sample_data"
+    resource = sampleDir / filename
+
+    if str(sampleKey).lower() == 'batch':
+        text = resource.read_text(encoding="utf-8")
+        return pd.read_csv(io.StringIO(text))
+
+    if not resource.is_file():
+        resource = sample_dir / sampleMapDict['1']
+        try:
+            return obspy.read(io.BytesIO(resource.read_bytes()))
+        except:
+            available = sorted(p.stem for p in sampleDir.iterdir() if p.suffix == ".mseed")
+            raise FileNotFoundError(f"Sample '{name}' not found. Available samples: {available}")
+
+    return obspy.read(io.BytesIO(resource.read_bytes()))
 
 # Check that input strema has Z, E, N channels
 def _has_required_channels(stream):

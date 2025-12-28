@@ -13,6 +13,7 @@ import inspect
 import io
 import json
 import math
+import numbers
 import operator
 import os
 import pathlib
@@ -85,27 +86,27 @@ for s in sampleListNos:
     SAMPLE_LIST.append(f'sample{s}')
     SAMPLE_LIST.append(f'sample_{s}')
 
-sampleFileKeyMap = {'1':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
-                    '2':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
-                    '3':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
-                    '4':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
-                    '5':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
-                    '6':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED'),
-                    '7':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite7_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
-                    '8':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite8_BNE_6_AM.RAC84.00.2023.191_2023-07-10_1806-1825.MSEED'),
-                    '9':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite9_BNE-2_AM.RAC84.00.2023.192_2023-07-11_0000-0011.MSEED'),
-                    '10':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite10_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
+sampleFileKeyMap = {'1':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite01'),
+                    '2':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite02'),
+                    '3':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite03'),
+                    '4':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite04'),
+                    '5':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite05'),
+                    '6':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite06'),
+                    '7':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite07'),
+                    '8':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite08'),
+                    '9':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite09'),
+                    '10':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite10'),
                     
-                    'sample1':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
-                    'sample2':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
-                    'sample3':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
-                    'sample4':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
-                    'sample5':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
-                    'sample6':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED'),
-                    'sample7':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite7_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
-                    'sample8':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite8_BNE_6_AM.RAC84.00.2023.191_2023-07-10_1806-1825.MSEED'),
-                    'sample9':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite9_BNE-2_AM.RAC84.00.2023.192_2023-07-11_0000-0011.MSEED'),
-                    'sample10':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite10_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
+                    'sample1':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite01'),
+                    'sample2':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite02'),
+                    'sample3':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite03'),
+                    'sample4':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite04'),
+                    'sample5':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite05'),
+                    'sample6':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite06'),
+                    'sample7':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite07'),
+                    'sample8':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite08'),
+                    'sample9':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite09'),
+                    'sample10':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite10'),
 
                     'sample_1':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
                     'sample_2':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
@@ -710,7 +711,7 @@ class HVSRData:
             utcSTime = dataST[0].stats.starttime
             utcETime = dataST[0].stats.endtime
         else:
-            if 'T' in sTimeStr:
+            if 'T' in str(sTimeStr):
                 utcSTime = obspy.UTCDateTime(sTimeStr)
                 utcETime = obspy.UTCDateTime(eTimeStr)
             else:
@@ -1254,17 +1255,19 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     """
     
     if input_data is None or input_data == '' or str(input_data).lower() == 'sample':
-        
-        print(" PROCESSING SAMPLE DATA ".center(99, '*'))
-        print('*'+"To read in your own data, use sprit.run(input_data='/path/to/your/seismic/data.mseed')".center(97)+'*')
-        print('*'+"Any file format supported by osbpy.read() can be input to sprit_run()".center(97)+'*')
-        print('*'+"Raw data (.trc) files from select Tromino Portable are also supported".center(97)+'*')
-        print('*'+"See SpRIT Wiki or API documentation for more information:".center(97)+'*')
-        print('*'+"Wiki: https://github.com/RJbalikian/SPRIT-HVSR/wiki".center(97)+'*')
-        print('*'+"API Documentation: https://sprit.readthedocs.io/en/latest/#".center(97)+'*')
-        print("".center(99, '*'))
-        print()
-        input_data = 'sample'
+        if str(input_data).lower() == 'sample' and str(source).lower() == 'batch':
+            pass
+        else:
+            print(" PROCESSING SAMPLE DATA ".center(99, '*'))
+            print('*'+"To read in your own data, use sprit.run(input_data='/path/to/your/seismic/data.mseed')".center(97)+'*')
+            print('*'+"Any file format supported by osbpy.read() can be input to sprit_run()".center(97)+'*')
+            print('*'+"Raw data (.trc) files from select Tromino Portable are also supported".center(97)+'*')
+            print('*'+"See SpRIT Wiki or API documentation for more information:".center(97)+'*')
+            print('*'+"Wiki: https://github.com/RJbalikian/SPRIT-HVSR/wiki".center(97)+'*')
+            print('*'+"API Documentation: https://sprit.readthedocs.io/en/latest/#".center(97)+'*')
+            print("".center(99, '*'))
+            print()
+            input_data = 'sample'
     
     orig_args = locals().copy()  # Get the initial arguments
     global do_run
@@ -1282,7 +1285,6 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         del DPD['input_data']
     if 'source' in DPD:
         if DPD['source'] != source:
-            source = DPD['source']
             orig_args['source'] = source
             if verbose:
                 print(f"source parameter has been updated from defaults.json from 'file' to '{source}'")
@@ -1315,7 +1317,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     # Separate out input_params and fetch_data processes based on whether batch has been specified
     batchlist = ['batch', 'bach', 'bath', 'b', 'dir', 'directory']
     dirList = ['dir', 'directory', 'd']
-    if str(source).lower() in batchlist and str('input_data').lower() not in SAMPLE_LIST:
+    if str(source).lower() in batchlist or str(input_data).lower() in batchlist:
         try:
             batch_data_read_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(batch_data_read).parameters.keys())}
             if str(source).lower() in dirList:
@@ -1363,7 +1365,6 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
                 fetch_data_kwargs['obspy_ppsds'] = kwargs['obspy_ppsds']
             else:
                 fetch_data_kwargs['obspy_ppsds'] = False
-            
             if skip_steps is None or 'fetch_data' not in skip_steps:
                 updated_fd_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(fetch_data).parameters.keys())}
                 updated_fd_defaults.update({k: v for k, v in DPD.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())})
@@ -1952,7 +1953,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
         if sample_data:
             dataReadInfoDF = pd.read_csv(sampleFileKeyMap['sample_batch'])
             for index, row in dataReadInfoDF.iterrows():
-                dataReadInfoDF.loc[index, 'input_data'] = SAMPLE_DATA_DIR.joinpath(row.loc['input_data'])
+                dataReadInfoDF.loc[index, 'input_data'] = index+1
         elif isinstance(batch_data, pd.DataFrame):
             dataReadInfoDF = batch_data
         elif isinstance(batch_data, dict):
@@ -1961,7 +1962,10 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
             pass
         else:  # Read csv
             read_csv_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in inspect.signature(pd.read_csv).parameters}
-            dataReadInfoDF = pd.read_csv(batch_data, **read_csv_kwargs)
+            if 'sample' in str(batch_data):
+                dataReadInfoDF = sprit_utils._get_sample_data('batch', verbose=verbose)
+            else:
+                dataReadInfoDF = pd.read_csv(batch_data, **read_csv_kwargs)
             if 'input_data' in dataReadInfoDF.columns:
                 filelist = list(dataReadInfoDF['input_data'])
 
@@ -2090,7 +2094,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
     hvsr_batchDict = {}
     zfillDigs = len(str(len(param_dict_list)))  # Get number of digits of length of param_dict_list
     i = 0
-    for i, param_dict in enumerate(param_dict_list):       
+    for i, param_dict in enumerate(param_dict_list):
         # Read the data file into a Stream object
         input_params_kwargs = {k: v for k, v in locals()['readcsv_getMeta_fetch_kwargs'].items() if k in inspect.signature(input_params).parameters}
         input_params_kwargs2 = {k: v for k, v in param_dict.items() if k in inspect.signature(input_params).parameters}
@@ -2104,7 +2108,6 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
                 ipverboseString += f"{arg}={value}, "
             ipverboseString = ipverboseString[:-2]
             ipverboseString = (ipverboseString[:96] + '...') if len(ipverboseString) > 99 else ipverboseString
-
             params = input_params(**input_params_kwargs)
         except Exception as e:
             params = input_params_kwargs
@@ -3616,7 +3619,10 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
                 print('\tThe input_parameters["input_data"] argument is already an HVSRData obect.')
                 print("\tChecking metadata then moving on.")
     else:
-        dPath = sprit_utils._checkifpath(input_parameters['input_data'], sample_list=SAMPLE_LIST)
+        try:
+            dPath = sprit_utils._checkifpath(input_parameters['input_data'], sample_list=SAMPLE_LIST)
+        except Exception:
+            dPath = input_parameters['input_data']
 
     inst = input_parameters['instrument']
 
@@ -3731,7 +3737,7 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
         elif source == 'file' and str(input_parameters['input_data']).lower() not in SAMPLE_LIST:
             # Read the file specified by input_data
             # Automatically read tromino data
-            if (str(inst).lower() in trominoNameList and 'trc' in dPath.suffix) or 'trc' in dPath.suffix:
+            if (str(inst).lower() in trominoNameList and 'trc' in pathlib.Path(str(dPath)).suffix) or 'trc' in pathlib.Path(str(dPath)).suffix:
                 input_parameters['instrument'] = 'Tromino'
                 #input_parameters['params']['instrument'] = 'Tromino'
 
@@ -3777,11 +3783,10 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
                             rawDataIN = obspy.Stream(stream) #Just in case
                         else:
                             rawDataIN = rawDataIN + stream #This adds a stream/trace to the current stream object
-                elif str(dPath)[:6].lower() == 'sample':
-                    pass
+                elif str(dPath).lower().startswith('sample'):
+                    rawDataIN = sprit_utils._get_sample_data(dPath)
                 else:
                     rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(input_parameters['starttime']), endttime=obspy.core.UTCDateTime(input_parameters['endtime']), nearest_sample =True)
-
         elif source == 'batch' and str(input_parameters['input_data']).lower() not in SAMPLE_LIST:
             if verbose:
                 print('\nFetching data (fetch_data())')
@@ -3790,9 +3795,9 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
             input_parameters = HVSRBatch(input_parameters, df_as_read=input_parameters.input_df)
             return input_parameters
         elif str(input_parameters['input_data']).lower() in SAMPLE_LIST or f"sample{input_parameters['input_data'].lower()}" in SAMPLE_LIST:
-            if source=='batch':
-                input_parameters['input_data'] = SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv')
-                input_parameters = batch_data_read(batch_data=input_parameters['input_data'], batch_type='sample', verbose=verbose)
+            if source=='batch' or input_parameters['input_data'] == 'batch':
+                batch_input = sprit_utils._get_sample_data('batch', verbose=verbose)
+                input_parameters = batch_data_read(batch_data=batch_input, batch_type='sample', verbose=verbose)
                 input_parameters = HVSRBatch(input_parameters, df_as_read=input_parameters.input_df)
                 return input_parameters
             elif source=='dir':
@@ -3801,22 +3806,20 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
                 input_parameters = HVSRBatch(input_parameters, df_as_read=input_parameters.input_df)
                 return input_parameters
             elif source=='file':
-                input_parameters['input_data'] = str(input_parameters['input_data']).lower()
-                
-                if input_parameters['input_data'].lower() in sampleFileKeyMap.keys():
-                    if input_parameters['input_data'].lower() == 'sample':
-                        input_parameters['input_data'] = sampleFileKeyMap
-                        
-                    input_parameters['input_data'] = sampleFileKeyMap[input_parameters['input_data'].lower()]
-                else:
-                    input_parameters['input_data'] = SAMPLE_DATA_DIR.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED')
+                # Standardize sample input
+                ogSampKey = '1'
+                sampleKey = str(input_parameters['input_data']).lower()
 
-                dPath = input_parameters['input_data']
-                rawDataIN = obspy.read(dPath)#, starttime=obspy.core.UTCDateTime(input_parameters['starttime']), endttime=obspy.core.UTCDateTime(input_parameters['endtime']), nearest_sample =True)
-                #import warnings
-                #with warnings.catch_warnings():
-                #    warnings.simplefilter(action='ignore', category=UserWarning)
-                #    rawDataIN.attach_response(inv)
+                if 'sample' in str(sampleKey).lower():
+                    sampleKey = str(sampleKey).lower().split('sample')[1]
+                    if str(sampleKey).startswith('0'):
+                        sampleKey = str(sampleKey[1:]).lower()
+
+                if isinstance(sampleKey, numbers.Number):
+                    sampleKey = str(sampleKey).lower()
+
+                input_parameters['input_data'] = dPath = "SampleData" + str(sampleKey).zfill(2)
+                rawDataIN = sprit_utils._get_sample_data(input_parameters['input_data'], verbose=verbose)
         else:
             # Last try if source cannot be read correctly
             try:
@@ -3848,14 +3851,16 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
             # site
             site_default = inspect.signature(input_params).parameters['site'].default
             updateMsg = []
-            if input_parameters['site'] == site_default and input_parameters['site'] != dPath.stem:
-                if isinstance(dPath, (list, tuple)):
-                    dPath = dPath[0]
-                input_parameters['site'] = dPath.stem
-                #input_parameters['params']['site'] = dPath.stem
-                if verbose:
-                    updateMsg.append(f"\tSite name updated to {input_parameters['site']}")
-            
+
+            if input_parameters['site'] == site_default:
+                if input_parameters['site'] != pathlib.Path(str(dPath)).stem:
+                    if isinstance(dPath, (list, tuple)):
+                        dPath = dPath[0]
+                    input_parameters['site'] = pathlib.Path(str(dPath)).stem
+                    #input_parameters['params']['site'] = dPath.stem
+                    if verbose:
+                        updateMsg.append(f"\tSite name updated to {input_parameters['site']}")
+                
             # network
             net_default = inspect.signature(input_params).parameters['network'].default
             if input_parameters['net'] == net_default and net_default != dataIN[0].stats.network:
