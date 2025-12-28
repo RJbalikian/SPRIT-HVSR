@@ -9,11 +9,7 @@ import sys
 
 import markdown
 
-<<<<<<< HEAD
 RELEASE_VERSION = "3.4.1"
-=======
-RELEASE_VERSION = "3.4.0"
->>>>>>> main
 
 VERBOSE = True
 
