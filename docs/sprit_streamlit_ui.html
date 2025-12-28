@@ -1328,7 +1328,7 @@ el.replaceWith(d);
     def write_to_info_tab(infoTab):
         with infoTab:
             st.markdown(&#34;# Processing Parameters Used&#34;)
-            hvsrDataList = [&#39;params&#39;, &#39;hvsr_data&#39;, &#39;hvsr_results&#39;]
+            hvsrDataList = [&#39;params&#39;, &#39;input_paramters&#39;, &#39;hvsr_data&#39;, &#39;hvsr_results&#39;]
             for fun, kwargDict in funList:
                 funSig = inspect.signature(fun)
                 # excludeKeys = [&#39;params&#39;, &#39;hvsr_data&#39;, &#39;hvsr_results&#39;]
@@ -1463,6 +1463,44 @@ el.replaceWith(d);
         pass
 
 
+    def get_gmrt_elev():
+        # Only do this if inputs have been defined
+        if &#39;xcoord&#39; not in st.session_state:
+            return
+        
+        elevation_source = GMRT_BASE_URL
+        points_crs = st.session_state.input_crs
+        raster_crs = 4326
+        xcoord = float(st.session_state.xcoord)
+        ycoord = float(st.session_state.ycoord)
+
+        ptCoordTransformerRaster = pyproj.Transformer.from_crs(crs_from=points_crs,
+                                                           crs_to=raster_crs,
+                                                           always_xy=True)
+        xcoord_RAST, ycoord_RAST = ptCoordTransformerRaster.transform(xcoord, ycoord)
+
+        #GMRT_URL = r&#34;https://www.gmrt.org:443/services/GridServer?minlongitude=-88.4&amp;maxlongitude=-88.2%2C%20&amp;minlatitude=40.1&amp;maxlatitude=40.3&amp;format=geotiff&amp;resolution=default&amp;layer=topo&#34;
+        GMRT_URL = GMRT_BASE_URL.replace(&#39;minlongitude&#39;, f&#34;minlongitude={xcoord_RAST-1:0.4f}&#34;)
+        GMRT_URL = GMRT_URL.replace(&#39;maxlongitude&#39;, f&#34;maxlongitude={xcoord_RAST+1:0.4f}&#34;)
+        GMRT_URL = GMRT_URL.replace(&#39;minlatitude&#39;, f&#34;minlatitude={ycoord_RAST-1:0.4f}&#34;)
+        GMRT_URL = GMRT_URL.replace(&#39;maxlatitude&#39;, f&#34;maxlatitude={ycoord_RAST+1:0.4f}&#34;)
+
+        try:
+            import rioxarray as rxr
+        except:
+            st.info(&#34;You must have rioxarray installed (pip install rioxarray) in your python environment to use GMRT elevation data.&#34;)
+            return
+
+        response = requests.get(url=GMRT_URL)
+        with io.BytesIO(response.content) as f:
+            elevData_m = rxr.open_rasterio(f)
+
+        if &#39;band&#39; in elevData_m.dims:
+            elevData_m = elevData_m.isel(band=0)
+
+        elevVal = elevData_m.sel(x=xcoord_RAST, y=ycoord_RAST, method=&#39;nearest&#39;).values
+        st.session_state.elevation = str(f&#34;{elevVal:.02f}&#34;)
+        st.info(f&#39;Elevation updated to {elevVal:.02f}&#39;)
     # Initial setup
     setup_session_state()
 
@@ -1513,9 +1551,14 @@ el.replaceWith(d);
             print(&#39;Done setting up bottom container, session state length: &#39;, len(st.session_state.keys()))
             print_param(PARAM2PRINT)
 
-        st.toggle(label=&#39;Display interactive charts (slower)&#39;, value=False, key=&#39;interactive_display&#39;,
+        interCol, gmrtCol = st.columns([0.6,0.4])
+        interCol.toggle(label=&#39;Display interactive charts (slower)&#39;, value=False, key=&#39;interactive_display&#39;,
                     on_change=do_interactive_display,
                     help=&#34;Whether to display interactive charts for the data, outliers, and results charts. Interactive charts take longer to display, but allow graphical editing of the data.&#34;)
+        gmrtCol.checkbox(label=&#39;Use GMRT for Elevation&#39;, value=False, 
+                         on_change=get_gmrt_elev,
+                         help=&#39;Select this box to use the [Global Multiresolution Topography Synthesis](https://www.gmrt.org/about/index.php) data for elevation.&#39;,
+                         key=&#39;elev_wms_check&#39;)
 
         st.header(&#39;Settings&#39;)
         mainSettings = st.container()
@@ -1533,15 +1576,18 @@ el.replaceWith(d);
                             options=[&#39;Seismometer&#39;, &#39;Raspberry Shake&#39;, &#39;Tromino Yellow&#39;, &#39;Tromino Blue&#39;],
                             help=&#39;Some instruments require special inputs to read in the data correctly. If not one of the instruments listed, or if reading in an obspy-supported file directly, leave as &#34;Seismometer&#34;&#39;)
 
-            xCoordCol, yCoordCol, inCRSCol = st.columns([0.3333, 0.3333, 0.3333])
+            xCoordCol, yCoordCol, zCoordCol = st.columns([0.3, 0.3, 0.4])
+            inCRSCol, outCRSCol, elevUnitCol  = st.columns([0.3, 0.3, 0.3])
             xCoordCol.text_input(&#39;X Coordinate&#39;, help=&#39;i.e., Longitude or Easting&#39;, key=&#39;xcoord&#39;)
             yCoordCol.text_input(&#39;Y Coordinate&#39;, help=&#39;i.e., Latitude or Northing&#39;, key=&#39;ycoord&#39;)
+            ZTB_disabled = st.session_state.elev_wms_check       
+            zCoordCol.text_input(&#39;Z Coordinate&#39;, help=&#39;i.e., Elevation&#39;, key=&#39;elevation&#39;, disabled=ZTB_disabled)
+
+
+     
             inCRSCol.text_input(&#39;CRS&#39;, help=&#39;By default, &#34;EPSG:4326&#34;. Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()&#39;, key=&#39;input_crs&#39;)        
-            
-            zCoordCol, elevUnitCol, outCRSCol = st.columns([0.333, 0.333, 0.333])
-            zCoordCol.text_input(&#39;Z Coordinate&#39;, help=&#39;i.e., Elevation&#39;, key=&#39;elevation&#39;)
-            elevUnitCol.selectbox(&#39;Elev. (Z) Unit&#39;, options=[&#39;meters&#39;, &#39;feet&#39;], key=&#39;elev_unit&#39;, help=&#39;i.e., Elevation unit&#39;)
             outCRSCol.text_input(&#39;CRS for Export&#39;, help=&#39;Can be EPSG code or anything accepted by pyproj.CRS.from_user_input()&#39;, key=&#39;output_crs&#39;)
+            elevUnitCol.selectbox(&#39;Elev. (Z) Unit&#39;, options=[&#39;meters&#39;, &#39;feet&#39;], key=&#39;elev_unit&#39;, help=&#39;i.e., Elevation unit&#39;)
 
             # Date/time settings
             dateCol, sTimeCol, eTimeCol, tzoneCol = st.columns([0.3,0.25,0.25,0.2])

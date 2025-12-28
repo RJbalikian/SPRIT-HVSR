@@ -6,12 +6,12 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit package &mdash; sprit 3.2.3 documentation</title>
+  <title>sprit package &mdash; sprit 3.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="_static/documentation_options.js?v=7895512d"></script>
+      <script src="_static/documentation_options.js?v=26f62d79"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -64,7 +64,6 @@
 <li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRData.get_report"><code class="docutils literal notranslate"><span class="pre">HVSRData.get_report()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRData.items"><code class="docutils literal notranslate"><span class="pre">HVSRData.items()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRData.keys"><code class="docutils literal notranslate"><span class="pre">HVSRData.keys()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRData.params"><code class="docutils literal notranslate"><span class="pre">HVSRData.params</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRData.plot"><code class="docutils literal notranslate"><span class="pre">HVSRData.plot()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRData.ppsds"><code class="docutils literal notranslate"><span class="pre">HVSRData.ppsds</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRData.ppsds_obspy"><code class="docutils literal notranslate"><span class="pre">HVSRData.ppsds_obspy</span></code></a></li>
@@ -81,9 +80,11 @@
 <li class="toctree-l2"><a class="reference internal" href="#sprit.create_jupyter_ui"><code class="docutils literal notranslate"><span class="pre">create_jupyter_ui()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.export_data"><code class="docutils literal notranslate"><span class="pre">export_data()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.export_hvsr"><code class="docutils literal notranslate"><span class="pre">export_hvsr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sprit.export_json"><code class="docutils literal notranslate"><span class="pre">export_json()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.export_report"><code class="docutils literal notranslate"><span class="pre">export_report()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.export_settings"><code class="docutils literal notranslate"><span class="pre">export_settings()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.fetch_data"><code class="docutils literal notranslate"><span class="pre">fetch_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sprit.from_json"><code class="docutils literal notranslate"><span class="pre">from_json()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.get_metadata"><code class="docutils literal notranslate"><span class="pre">get_metadata()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.get_report"><code class="docutils literal notranslate"><span class="pre">get_report()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#sprit.gui"><code class="docutils literal notranslate"><span class="pre">gui()</span></code></a></li>
@@ -363,8 +364,6 @@ It contains all the processed data, input parameters, and reports.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><a class="reference internal" href="#sprit.HVSRData.batch" title="sprit.HVSRData.batch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">batch</span></code></a></dt><dd><p>Whether this HVSRData object is part of an HVSRBatch object.</p>
 </dd>
-<dt><a class="reference internal" href="#sprit.HVSRData.params" title="sprit.HVSRData.params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">params</span></code></a></dt><dd><p>Dictionary containing the parameters used to process the data</p>
-</dd>
 <dt><a class="reference internal" href="#sprit.HVSRData.ppsds" title="sprit.HVSRData.ppsds"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ppsds</span></code></a></dt><dd><p>Dictionary copy of the class object obspy.signal.spectral_estimation.PPSD().</p>
 </dd>
 <dt><a class="reference internal" href="#sprit.HVSRData.ppsds_obspy" title="sprit.HVSRData.ppsds_obspy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ppsds_obspy</span></code></a></dt><dd><p>The original ppsd information from the obspy.signal.spectral_estimation.PPSD(), so as to keep original if copy is manipulated/changed.</p>
@@ -402,8 +401,8 @@ It contains all the processed data, input parameters, and reports.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#sprit.HVSRData.select" title="sprit.HVSRData.select"><code class="xref py py-obj docutils literal notranslate"><span class="pre">select</span></code></a>(**kwargs)</p></td>
 <td><p>Wrapper for obspy select method on 'stream' attribute of HVSRData object</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#sprit.HVSRData.to_json" title="sprit.HVSRData.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_json</span></code></a>([json_filepath, export_json, ...])</p></td>
-<td><p>Not yet supported, will export HVSRData object to json</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#sprit.HVSRData.to_json" title="sprit.HVSRData.to_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_json</span></code></a>([json_export_path, ...])</p></td>
+<td><p>Method to export HVSRData object to JSON file or string.</p></td>
 </tr>
 </tbody>
 </table>
@@ -530,20 +529,6 @@ If True, it will first try to save each file to the same directory as input_data
 </dl>
 </dd></dl>
 
-<dl class="py property">
-<dt class="sig sig-object py" id="sprit.HVSRData.params">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">params</span></span><a class="headerlink" href="#sprit.HVSRData.params" title="Link to this definition">¶</a></dt>
-<dd><p>Dictionary containing the parameters used to process the data</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt>dict</dt><dd><p>Dictionary containing the process parameters</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="sprit.HVSRData.plot">
 <span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRData.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.HVSRData.plot" title="Link to this definition">¶</a></dt>
@@ -604,8 +589,49 @@ If True, it will first try to save each file to the same directory as input_data
 
 <dl class="py method">
 <dt class="sig sig-object py" id="sprit.HVSRData.to_json">
-<span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_filepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_json</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_json</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRData.to_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.HVSRData.to_json" title="Link to this definition">¶</a></dt>
-<dd><p>Not yet supported, will export HVSRData object to json</p>
+<span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_json_string</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_dataframe</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_plots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRData.to_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.HVSRData.to_json" title="Link to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Method to export HVSRData object to JSON file or string.</dt><dd><p>These JSON files or strings can be imported to an HVSRData object again using sprit.from_json().
+Import to <cite>HVSRData</cite> objects is still experimental. 
+This is essentially a method alias of export_json()</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>json_filepath</strong><span class="classifier">{None, pathlike object}, optional</span></dt><dd><p>Filepath at which to save a JSON representation of the HVSRData object, by default None.
+If None, does not export (unless )</p>
+</dd>
+<dt><strong>json_export_path</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to return a string of the JSON representation of the HVSRData Object, by default False.</p>
+</dd>
+<dt><strong>return_dict</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to return a dictionary of the string JSON representation of the HVSRData object, by default False.
+Note that this will be differently formatted than the HVSRData.__dict__ representation of the HVSRData object.
+This first carries out json.dumps() on a formatted version of the HVSRData object, then json.loads() it into a dict.</p>
+</dd>
+<dt><strong>include_dataframe</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to include the <cite>hvsr_windows_df</cite> dataframe in the JSON output, by default False.
+Including this may triple the size of the JSON file.</p>
+</dd>
+<dt><strong>include_plots</strong><span class="classifier">bool, optional</span></dt><dd><p>NOT YET SUPPORTED. If True, will include the plots of the HVSRData object as a bytestring, by default False.
+The main Plot_Report plot is by default exported as a part of the HTML_Report.</p>
+</dd>
+<dt><strong>verbose</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to print information about JSON export to terminal.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>str, dict</dt><dd><p>Returns string if return_json is True. Returns dict if return_dict is True.
+If both are set to True, dict will override string.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#sprit.export_json" title="sprit.export_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">export_json</span></code></a></dt><dd></dd>
+</dl>
+</div>
 </dd></dl>
 
 </dd></dl>
@@ -889,6 +915,46 @@ Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extensi
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="sprit.export_json">
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">export_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">json_export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_json_string</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_dataframe</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_plots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#export_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.export_json" title="Link to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Method to export HVSRData object to JSON file or string.</dt><dd><p>These JSON files or strings can be imported to an HVSRData object again using sprit.from_json().
+Import to <cite>HVSRData</cite> objects is still experimental.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>json_export_path</strong><span class="classifier">{None, pathlike object}, optional</span></dt><dd><p>Filepath at which to save a JSON representation of the HVSRData object, by default None.
+If None, does not export (unless )</p>
+</dd>
+<dt><strong>return_json</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to return a string of the JSON representation of the HVSRData Object, by default False.</p>
+</dd>
+<dt><strong>return_dict</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to return a dictionary of the string JSON representation of the HVSRData object, by default False.
+Note that this will be differently formatted than the HVSRData.__dict__ representation of the HVSRData object.
+This first carries out json.dumps() on a formatted version of the HVSRData object, then json.loads() it into a dict.</p>
+</dd>
+<dt><strong>include_dataframe</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to include the <cite>hvsr_windows_df</cite> dataframe in the JSON output, by default False.
+Including this may triple the size of the JSON file.</p>
+</dd>
+<dt><strong>include_plots</strong><span class="classifier">bool, optional</span></dt><dd><p>NOT YET SUPPORTED. If True, will include the plots of the HVSRData object as a bytestring, by default False.
+The main Plot_Report plot is by default exported as a part of the HTML_Report.</p>
+</dd>
+<dt><strong>verbose</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to print information about the export to terminal.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>str, dict</dt><dd><p>Returns string if return_json is True. Returns dict if return_dict is True.
+If both are set to True, dict will override string.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="sprit.export_report">
 <span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">export_report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_results</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report_export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">report_export_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['pdf']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HV'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">csv_handling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rename'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_report</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#export_report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.export_report" title="Link to this definition">¶</a></dt>
 <dd><dl class="simple">
@@ -963,20 +1029,20 @@ If ‘processing’, saves the processing settings to their respective file. By 
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.fetch_data">
-<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">fetch_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'file'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_export_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mseed'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detrend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'spline'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detrend_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_input_stream</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_engine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'matplotlib'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#fetch_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.fetch_data" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">fetch_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'file'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_export_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mseed'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detrend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'spline'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detrend_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_input_stream</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_engine</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'matplotlib'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#fetch_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.fetch_data" title="Link to this definition">¶</a></dt>
 <dd><p>Fetch ambient seismic data from a source to read into obspy stream.</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl>
-<dt><strong>params</strong><span class="classifier">dict</span></dt><dd><dl class="simple">
-<dt>Dictionary containing all the necessary params to get data.</dt><dd><p>Parameters defined using input_params() function.</p>
+<dt><strong>input_parameters</strong><span class="classifier">dict</span></dt><dd><dl class="simple">
+<dt>Dictionary containing all the necessary information to get data.</dt><dd><p>Parameters defined using input_params() function.</p>
 </dd>
 </dl>
 </dd>
 <dt><strong>source</strong><span class="classifier">str, {‘raw’, ‘dir’, ‘file’, ‘batch’}</span></dt><dd><dl>
 <dt>String indicating where/how data file was created. For example, if raw data, will need to find correct channels.</dt><dd><p>‘raw’ finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
 ‘dir’ is used if the day’s 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
-‘file’ is used if the params[‘input_data’] specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
+‘file’ is used if the ‘input_data’ specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
 ‘batch’ is used to read a list or specified set of seismic files.</p>
 <blockquote>
 <div><p>Most commonly, a csv file can be read in with all the parameters. Each row in the csv is a separate file. Columns can be arranged by parameter.</p>
@@ -1019,7 +1085,33 @@ See here for more information: <a class="reference external" href="https://docs.
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><dl class="simple">
-<dt><strong>params</strong><span class="classifier">HVSRData or HVSRBatch object</span></dt><dd><p>Same as params parameter, but with an additional “stream” attribute with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)</p>
+<dt><strong>hvsrData</strong><span class="classifier">HVSRData or HVSRBatch object</span></dt><dd><p>Same as input_parameters, but with an additional “stream” attribute with an obspy data stream with 3 traces: Z (vertical), N (North-south), and E (East-west)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sprit.from_json">
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">from_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_hvsr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#from_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.from_json" title="Link to this definition">¶</a></dt>
+<dd><p>Read HVSR data from JSON-formatted text or file.
+This can be returned as a string, dict, or converted to a HVSRData object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>json_input</strong><span class="classifier">str or pathlike object</span></dt><dd><p>A JSON string or filepath to .json file.
+This is intended to read in data as exported using the HVSRData.to_json() method.</p>
+</dd>
+<dt><strong>return_hvsr</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to reutn an HVSRData object (will return HVSRData object if True), by default True</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt>HVSRData, dict, or str</dt><dd><p>If return_hvsr is True, will attempt to return HVSRData object.
+If it cannot do that, or return_hvsr=False, will attempt to return dict.
+If it cannot do that, it will attempt to return a string representation of the input object.</p>
 </dd>
 </dl>
 </dd>
@@ -1028,15 +1120,15 @@ See here for more information: <a class="reference external" href="https://docs.
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.get_metadata">
-<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">get_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">read_inventory_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#get_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.get_metadata" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">get_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">read_inventory_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#get_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.get_metadata" title="Link to this definition">¶</a></dt>
 <dd><dl class="simple">
-<dt>Get metadata and calculate or get paz parameter needed for PSD</dt><dd><p>Adds an obspy.Inventory object to the “inv” attribute or key of params</p>
+<dt>Get metadata and calculate or get paz parameter needed for PSD</dt><dd><p>Adds an obspy.Inventory object to the “inv” attribute or key of input_parameters</p>
 </dd>
 </dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>params</strong><span class="classifier">dict</span></dt><dd><dl class="simple">
+<dt><strong>input_parameters</strong><span class="classifier">dict</span></dt><dd><dl class="simple">
 <dt>Dictionary containing all the input and other parameters needed for processing</dt><dd><p>Ouput from input_params() function</p>
 </dd>
 </dl>
@@ -1054,7 +1146,7 @@ See here for more information: <a class="reference external" href="https://docs.
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><dl class="simple">
-<dt><strong>params</strong><span class="classifier">dict</span></dt><dd><p>Modified input dictionary with additional key:value pair containing paz dictionary (key = “paz”)</p>
+<dt><strong>input_parameters</strong><span class="classifier">dict</span></dt><dd><p>Modified input dictionary with additional key:value pair containing paz or inv dictionary (key = “paz”)</p>
 </dd>
 </dl>
 </dd>
@@ -1823,8 +1915,17 @@ divided by the standard deviation calculated for the entire trace. This rolling 
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.run">
 <span class="sig-prename descclassname"><span class="pre">sprit.</span></span><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'file'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth_calculation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_removal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlier_curves_removal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.run" title="Link to this definition">¶</a></dt>
-<dd><p>The sprit.run() is the main function that allows you to do all your HVSR processing in one simple step (sprit.run() is how you would call it in your code, but it may also be called using sprit.sprit_hvsr.run())</p>
-<p>The input_data parameter of sprit.run() is the only required parameter (if nothing entered, it will run sample data). This can be either a single file, a list of files (one for each component, for example), a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance), a Rasp. Shake raw data directory, or sample data.</p>
+<dd><dl class="simple">
+<dt>The sprit.run() is the main function </dt><dd><p>that allows you to do all your HVSR processing in one simple step 
+(sprit.run() is how you would call it in your code, 
+but it may also be called using sprit.sprit_hvsr.run())</p>
+</dd>
+</dl>
+<p>The input_data parameter of sprit.run() is the only required parameter 
+(if nothing entered, it will run sample data). 
+This can be either a single file, a list of files (one for each component, for example), 
+a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance), 
+a Rasp. Shake raw data directory, select Tromino binary (.trc) files, or sample data.</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl>
@@ -1910,7 +2011,7 @@ See API documentation: [input_params()](<a class="reference external" href="http
 <dt><strong>fetch_data</strong><span class="classifier">function name (not an actual parameter)</span></dt><dd><p>Fetch ambient seismic data from a source to read into obspy stream. 
 See API documentation: [fetch_data()](<a class="reference external" href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.fetch_data">https://sprit.readthedocs.io/en/latest/sprit.html#sprit.fetch_data</a>)</p>
 </dd>
-<dt><strong>params: any, default = ‘&lt;output of previous function&gt;’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.fetch_data)</cite> for specifics.</p>
+<dt><strong>input_parameters: any, default = ‘&lt;output of previous function&gt;’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.fetch_data)</cite> for specifics.</p>
 </dd>
 <dt><strong>source: any, default = ‘file’</strong></dt><dd><p>See API documentation at link above or at <cite>help(sprit.fetch_data)</cite> for specifics.</p>
 </dd>
@@ -1926,7 +2027,7 @@ See API documentation: [fetch_data()](<a class="reference external" href="https:
 </dd>
 <dt><strong>filter_options: any, default = {}</strong></dt><dd><p>See API documentation at link above or at <cite>help(fetch_data)</cite> for specifics.</p>
 </dd>
-<dt><strong>update_metadata: any, default = True</strong></dt><dd><p>See API documentation at link above or at <cite>help(fetch_data)</cite> for specifics.</p>
+<dt><strong>update_metadata: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(fetch_data)</cite> for specifics.</p>
 </dd>
 <dt><strong>plot_input_stream: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(fetch_data)</cite> for specifics.</p>
 </dd>
@@ -2017,9 +2118,9 @@ See API documentation: [generate_psds()](<a class="reference external" href="htt
 </dd>
 <dt><strong>azimuthal_psds: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(generate_psds)</cite> for specifics.</p>
 </dd>
-<dt><strong>verbose: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(generate_psds)</cite> for specifics.</p>
-</dd>
 <dt><strong>plot_psds: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(generate_psds)</cite> for specifics.</p>
+</dd>
+<dt><strong>verbose: any, default = False</strong></dt><dd><p>See API documentation at link above or at <cite>help(generate_psds)</cite> for specifics.</p>
 </dd>
 <dt><strong>obspy_ppsd_kwargs: any, default = {}</strong></dt><dd><p>See API documentation at link above or at <cite>help(generate_psds)</cite> for specifics.</p>
 </dd>
@@ -2299,7 +2400,6 @@ If None, uses same directory as resp_file, by default None</p>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRData.get_report"><code class="docutils literal notranslate"><span class="pre">HVSRData.get_report()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRData.items"><code class="docutils literal notranslate"><span class="pre">HVSRData.items()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRData.keys"><code class="docutils literal notranslate"><span class="pre">HVSRData.keys()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRData.params"><code class="docutils literal notranslate"><span class="pre">HVSRData.params</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRData.plot"><code class="docutils literal notranslate"><span class="pre">HVSRData.plot()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRData.ppsds"><code class="docutils literal notranslate"><span class="pre">HVSRData.ppsds</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRData.ppsds_obspy"><code class="docutils literal notranslate"><span class="pre">HVSRData.ppsds_obspy</span></code></a></li>
@@ -2314,9 +2414,11 @@ If None, uses same directory as resp_file, by default None</p>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.check_peaks"><code class="docutils literal notranslate"><span class="pre">check_peaks()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.export_data"><code class="docutils literal notranslate"><span class="pre">export_data()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.export_hvsr"><code class="docutils literal notranslate"><span class="pre">export_hvsr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.export_json"><code class="docutils literal notranslate"><span class="pre">export_json()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.export_report"><code class="docutils literal notranslate"><span class="pre">export_report()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.export_settings"><code class="docutils literal notranslate"><span class="pre">export_settings()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.fetch_data"><code class="docutils literal notranslate"><span class="pre">fetch_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.from_json"><code class="docutils literal notranslate"><span class="pre">from_json()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.generate_ppsds"><code class="docutils literal notranslate"><span class="pre">generate_ppsds()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.get_metadata"><code class="docutils literal notranslate"><span class="pre">get_metadata()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.get_report"><code class="docutils literal notranslate"><span class="pre">get_report()</span></code></a></li>

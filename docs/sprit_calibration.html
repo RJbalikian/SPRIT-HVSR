@@ -137,7 +137,7 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
     # initialize values
     a = 0
     b = 0
-    params = None
+    depth_model_params = None
 
     # Fetch parameters for frequency-depth model
     if isinstance(depth_model, (tuple, list, dict)):
@@ -153,16 +153,16 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
                     break
 
         elif depth_model.casefold() in swave:
-            params = depth_model.casefold()
+            depth_model_params = depth_model.casefold()
 
         elif depth_model.casefold() == &#34;all&#34;:
-            params = depth_model.casefold()
+            depth_model_params = depth_model.casefold()
 
         else:   # parameters a and b could be passed in as a parsable string
-            params = depth_model.split(&#39;,&#39;)
+            depth_model_params = depth_model.split(&#39;,&#39;)
             # Work on re update[int(s) for s in re.findall(r&#34;[-+]?(?:\d*\.*\d+)&#34;, 
             # depth_model)]  #figure this out later for floating points; works for integers
-            (a, b) = params
+            (a, b) = depth_model_params
             if a == 0 or b == 0:
                 raise ValueError(&#34;Parameters cannot be zero, check model inputs&#34;)            
 
