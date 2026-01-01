@@ -2958,6 +2958,7 @@ def export_json(hvsr_results, json_export_path=None,
     if 'indent' in kwargs:
         indent = kwargs['indent']
         del kwargs['indent']
+    indSpcs = ''.join([' ']*indent)
 
     dict_for_json = {}
     dict_str_list = []
