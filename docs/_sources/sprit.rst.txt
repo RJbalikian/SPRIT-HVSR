@@ -18,5 +18,4 @@ Submodules
    sprit.sprit_jupyter_UI
    sprit.sprit_plot
    sprit.sprit_streamlit_ui
-   sprit.sprit_tkinter_ui
    sprit.sprit_utils

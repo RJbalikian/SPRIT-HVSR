@@ -3767,11 +3767,7 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
         elif source == 'file' and str(input_parameters['input_data']).lower() not in SAMPLE_LIST:
             # Read the file specified by input_data
             # Automatically read tromino data
-<<<<<<< HEAD
             if (str(inst).lower() in trominoNameList and 'trc' in pathlib.Path(str(dPath)).suffix) or 'trc' in pathlib.Path(str(dPath)).suffix:
-=======
-            if str(inst).lower() in trominoNameList or 'trc' in dPath.suffix:
->>>>>>> main
                 input_parameters['instrument'] = 'Tromino'
                 #input_parameters['params']['instrument'] = 'Tromino'
 
