@@ -29,7 +29,15 @@ For troubleshooting issues with installation or usage of the sprit package, see 
 # Examples
 An example Jupyter notebook is provided in this main repository directory [here](https://github.com/RJbalikian/SPRIT-HVSR/blob/main/SPRIT_EXAMPLE_NOTEBOOK.ipynb).
 
-Example code cells include basic running of sample data, metadata/parameter specification, data editing, using SpRIT with Tromino data, reports and visualization, user interfaces, export, import, and batch processing.
+Code examples include:
+* basic processing of sample HVSR data
+* Metadata/parameter specification
+* Data editing
+* Reading Tromino data into SpRIT
+* Reports and visualization
+* User interfaces
+* Export and import
+* Batch processing.
 
 # Documentation
 - API Documentation [here](https://rjbalikian.github.io/SPRIT-HVSR/main.html)
@@ -79,5 +87,6 @@ In very brief, the main learnings may be summarized as follows:
 If you use the sprit package in your research, please use the following citation:
 
 `Riley Balikian, Hongyu Xaio, Alexandra Sanchez. SPRIT HVSR: An open-source software package for processing, analyzing, and visualizing ambient seismic vibrations. Proceedings of the Geological Society of America, 2023. Pittsburgh, PA.`
+
 
 
