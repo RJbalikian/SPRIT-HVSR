@@ -108,16 +108,16 @@ sampleFileKeyMap = {'1':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite01'),
                     'sample9':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite09'),
                     'sample10':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite10'),
 
-                    'sample_1':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
-                    'sample_2':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
-                    'sample_3':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
-                    'sample_4':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
-                    'sample_5':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
-                    'sample_6':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED'),
-                    'sample_7':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite7_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
-                    'sample_8':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite8_BNE_6_AM.RAC84.00.2023.191_2023-07-10_1806-1825.MSEED'),
-                    'sample_9':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite9_BNE-2_AM.RAC84.00.2023.192_2023-07-11_0000-0011.MSEED'),
-                    'sample_10': SAMPLE_DATA_DIR.joinpath('SampleHVSRSite10_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
+                    'sample_1':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite01'),
+                    'sample_2':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite02'),
+                    'sample_3':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite03'),
+                    'sample_4':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite04'),
+                    'sample_5':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite05'),
+                    'sample_6':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite06'),
+                    'sample_7':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite07'),
+                    'sample_8':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite08'),
+                    'sample_9':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite09'),
+                    'sample_10': SAMPLE_DATA_DIR.joinpath('SampleHVSRSite10'),
                     
                     'batch': SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv'),
                     'sample_batch': SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv')}
@@ -3767,11 +3767,7 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
         elif source == 'file' and str(input_parameters['input_data']).lower() not in SAMPLE_LIST:
             # Read the file specified by input_data
             # Automatically read tromino data
-<<<<<<< HEAD
             if (str(inst).lower() in trominoNameList and 'trc' in pathlib.Path(str(dPath)).suffix) or 'trc' in pathlib.Path(str(dPath)).suffix:
-=======
-            if str(inst).lower() in trominoNameList or 'trc' in dPath.suffix:
->>>>>>> main
                 input_parameters['instrument'] = 'Tromino'
                 #input_parameters['params']['instrument'] = 'Tromino'
 
