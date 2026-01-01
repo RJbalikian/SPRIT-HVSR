@@ -25,6 +25,12 @@ The sprit package is in active development. Add the `--upgrade` argument (`pip i
 This should be done using command line. It is recommended to do this in a virtual environment. For information on creating virtual environments in python, see [this page](https://docs.python.org/3/library/venv.html). For the creation of anaconda environments, see [here](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html). Note that it is not officially recommended to use pip repositories in anaconda environments, but it often works without any issues.
 
 For troubleshooting issues with installation or usage of the sprit package, see the [Troubleshooting](https://github.com/RJbalikian/SPRIT-HVSR/wiki/Troubleshooting) page of the wiki.
+
+# Examples
+An example Jupyter notebook is provided in this main repository directory [here](https://github.com/RJbalikian/SPRIT-HVSR/blob/main/SPRIT_EXAMPLE_NOTEBOOK.ipynb).
+
+Example code cells include basic running of sample data, metadata/parameter specification, data editing, using SpRIT with Tromino data, reports and visualization, user interfaces, export, import, and batch processing.
+
 # Documentation
 - API Documentation [here](https://rjbalikian.github.io/SPRIT-HVSR/main.html)
 - See Wiki for more tips, tutorials, usage guidelines, troubleshooting, and other information [here](https://github.com/RJbalikian/SPRIT-HVSR/wiki)
@@ -73,4 +79,5 @@ In very brief, the main learnings may be summarized as follows:
 If you use the sprit package in your research, please use the following citation:
 
 `Riley Balikian, Hongyu Xaio, Alexandra Sanchez. SPRIT HVSR: An open-source software package for processing, analyzing, and visualizing ambient seismic vibrations. Proceedings of the Geological Society of America, 2023. Pittsburgh, PA.`
+
 
