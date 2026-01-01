@@ -1317,6 +1317,7 @@ Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extensi
     if &#39;indent&#39; in kwargs:
         indent = kwargs[&#39;indent&#39;]
         del kwargs[&#39;indent&#39;]
+    indSpcs = &#39;&#39;.join([&#39; &#39;]*indent)
 
     dict_for_json = {}
     dict_str_list = []

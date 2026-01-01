@@ -3,7 +3,7 @@
 This module enables analysis of ambient seismic data using the Horizontal to Vertical Spectral Ratio (HVSR) technique.
 """
 
-__version__ = "3.4.3"
+__version__ = "3.4.4"
 
 try:
     import sprit.sprit_utils as sprit_utils
