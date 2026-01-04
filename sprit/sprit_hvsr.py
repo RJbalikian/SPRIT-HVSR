@@ -2977,49 +2977,64 @@ def export_json(hvsr_results, json_export_path=None,
         # Format hvsr_windows_df appropriately for export, if include_dataframe
         if k == 'hvsr_windows_df':
             if not include_dataframe:
-                continue
-            cols = hvsr_results['hvsr_windows_df'].columns
-            hvDF = hvsr_results['hvsr_windows_df']
-            npCols = []
-            for i, (ind, row) in enumerate(hvsr_results['hvsr_windows_df'].iterrows()):
-                for ci, c in enumerate(cols):
-                    if isinstance(row[c], np.ndarray):
-                        npCols.append(c)
-            npCols = list(set(npCols))
 
-            newDF = pd.DataFrame()
-            obspyCols = ['TimesProcessed_Obspy', 'TimesProcessed_ObspyEnd', 'TimesProcessed_End']
-            for c in cols:
-                if c in npCols and 'indices' not in c.lower():
-                    currNPCol = hvDF[c].apply(lambda x: np.round(x, 3).tolist())
-                    newDF[c] = currNPCol
-                elif 'indices' in c.lower() and c in npCols:
-                    newDF[c] = [row.tolist() for row in hvDF[c]]
-                elif c in obspyCols:
-                    obspyCol = hvDF[c].astype(str)
-                    newDF[c] = obspyCol
-                elif 'MPL' in c:
-                    newDF[c] = [float(row) for row in hvDF[c]]
-                elif 'PeakFreqs' in c:
-                    currCol = hvDF[c].apply(lambda x: np.round(x, 3).tolist())
-                    newDF[c] = currCol
-                else:
-                    newDF[c] = hvDF[c]
-            newDF.index = [str(i) for i in hvDF.index]
-            v = newDF.to_dict()
+                
+                def _mapstringtime(dt):
+                    return dt.strftime("%Y-%m-%dT%M:%H:%S.%fZ")
+
+                newInd = list(map(_mapstringtime, hvsr_results.hvsr_windows_df['Use'].index.to_pydatetime()))
+                tfList = hvsr_results.hvsr_windows_df['Use'].values.tolist()
+
+                #v = dict(zip(newInd, tfList))
+                v = {'Use':jdict}
+                
+                # To recover into df
+                #dfInd = pd.to_datetime(list(v['Use'].keys()), format="%Y-%m-%dT%M:%H:%S.%fZ", utc=True)
+                #dfInd.name = "TimesProcessed"
+                #df= pd.DataFrame(v['Use'].values(), index=dfInd, columns=['Use'])
+            else:
+                cols = hvsr_results['hvsr_windows_df'].columns
+                hvDF = hvsr_results['hvsr_windows_df']
+                npCols = []
+                for i, (ind, row) in enumerate(hvsr_results['hvsr_windows_df'].iterrows()):
+                    for ci, c in enumerate(cols):
+                        if isinstance(row[c], np.ndarray):
+                            npCols.append(c)
+                npCols = list(set(npCols))
+
+                newDF = pd.DataFrame()
+                obspyCols = ['TimesProcessed_Obspy', 'TimesProcessed_ObspyEnd', 'TimesProcessed_End']
+                for c in cols:
+                    if c in npCols and 'indices' not in c.lower():
+                        currNPCol = hvDF[c].apply(lambda x: np.round(x, 3).tolist())
+                        newDF[c] = currNPCol
+                    elif 'indices' in c.lower() and c in npCols:
+                        newDF[c] = [row.tolist() for row in hvDF[c]]
+                    elif c in obspyCols:
+                        obspyCol = hvDF[c].astype(str)
+                        newDF[c] = obspyCol
+                    elif 'MPL' in c:
+                        newDF[c] = [float(row) for row in hvDF[c]]
+                    elif 'PeakFreqs' in c:
+                        currCol = hvDF[c].apply(lambda x: np.round(x, 3).tolist())
+                        newDF[c] = currCol
+                    else:
+                        newDF[c] = hvDF[c]
+                newDF.index = [str(i) for i in hvDF.index]
+                v = newDF.to_dict()
 
         try:
             json.dumps({k: v})  # This is just a test to ensure item can be dumped
             dict_for_json[k] = v
         except Exception:
-            dict_for_json[k] = str(v)
+            dict_for_json[k] = ''
 
             if k in stringOK:
                 dict_for_json[k] = str(v)
                 continue
 
             # Special processing for BestPeak dict
-            if k == 'BestPeak':
+            elif k == 'BestPeak':
                 bpStr = indSpcs+f'"{k}": '+'{\n'+indSpcs+indSpcs
                 del dict_for_json[k]
                 for azName, azDict in v.items():
@@ -3046,15 +3061,17 @@ def export_json(hvsr_results, json_export_path=None,
                     bpStr = bpStr[:-1*(3 * len(indSpcs) + 3)] + '\n'+indSpcs+indSpcs
                 bpStr = bpStr + '}\n'+indSpcs+'}'+indSpcs
                 dict_str_list.append(bpStr)
+                continue
 
             # Special processing of hvsr_curve array
-            if k == 'hvsr_curve':
+            elif k == 'hvsr_curve':
                 del dict_for_json[k]
                 hvStr = indSpcs+'"hvsr_curve": '+str(np.round(v, 5).tolist()).replace('\n', ' ')+',\n'
                 dict_str_list.append(hvStr)
+                continue
 
             # Special processing of processing_parameters dict
-            if k == 'processing_parameters':
+            elif k == 'processing_parameters':
                 del dict_for_json[k]
                 ppStr = indSpcs+f'"{k}": '+'{\n'+indSpcs+indSpcs
                 for funKey, funParam in v.items():
@@ -3087,6 +3104,10 @@ def export_json(hvsr_results, json_export_path=None,
                     ppStr = ppStr[:-2]+ '},\n'+indSpcs+indSpcs
                 minInd = -1*(len(indSpcs) * 2 + 3)
                 dict_str_list.append(ppStr[:minInd]+'}\n'+indSpcs+'},\n')
+                continue 
+
+            else:
+                dict_for_json[k] = str(v)
 
             # Get string to add to end of json.dumps output later for dicts with az and channels
             indSpcs = ''.join([' ']*indent)
@@ -3122,6 +3143,7 @@ def export_json(hvsr_results, json_export_path=None,
                         dictString += json.dumps(outDict).replace('{', '').replace("}", '') + ',\n'+indSpcs+indSpcs
                 dict_str_list.append(dictString[:dictString.rfind(',')] + f'\n{indSpcs}'+'},\n')
     
+
     dict_str_list[-1] = dict_str_list[-1][:-2]+'\n'
 
     if json_export_path is not None:
