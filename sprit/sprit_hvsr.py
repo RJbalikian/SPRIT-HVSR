@@ -2978,15 +2978,14 @@ def export_json(hvsr_results, json_export_path=None,
         if k == 'hvsr_windows_df':
             if not include_dataframe:
 
-                
                 def _mapstringtime(dt):
                     return dt.strftime("%Y-%m-%dT%M:%H:%S.%fZ")
 
                 newInd = list(map(_mapstringtime, hvsr_results.hvsr_windows_df['Use'].index.to_pydatetime()))
                 tfList = hvsr_results.hvsr_windows_df['Use'].values.tolist()
 
-                #v = dict(zip(newInd, tfList))
-                v = {'Use':jdict}
+                jdict = dict(zip(newInd, tfList))
+                v = {'Use': jdict}
                 
                 # To recover into df
                 #dfInd = pd.to_datetime(list(v['Use'].keys()), format="%Y-%m-%dT%M:%H:%S.%fZ", utc=True)
@@ -3147,13 +3146,21 @@ def export_json(hvsr_results, json_export_path=None,
     dict_str_list[-1] = dict_str_list[-1][:-2]+'\n'
 
     if json_export_path is not None:
+        if pathlib.Path(json_export_path).is_dir():
+            st = hvsr_results.stream
+            stats = st[0].stats
+            fname = f"{hvsr_results.site}_HVSR-JSON_{stats.starttime.strftime("%Y%m%d")}-{stats.starttime.strftime("%H%M")}-{hvsr_results.station}-{datetime.date.today().strftime("%Y-%m-%d")}.json"
+            json_export_path = pathlib.Path(json_export_path).joinpath(fname)
+        
         with open(json_export_path, 'w') as f:
             # dump the JSON string to the file
+            # Parse out json dump kwargs
+            jsondump_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(json.dump).parameters.keys())}
+            
             json.dump(dict_for_json, 
                       fp=f,
                       sort_keys=sKeys, 
-                      indent=indent,
-                      **kwargs)
+                      indent=indent, **jsondump_kwargs)
 
         with open(json_export_path, 'r') as f:
             readLines = f.readlines()
@@ -12428,6 +12435,7 @@ def __check_freq_stability(_peak, _peakm, _peakp):
         _found_m.append(False)
         _peak[_i]['Report']['P-'] = sprit_utils._x_mark()
         # Iterate through all time windows
+        _j = None
         for _j in range(len(_peakm)):
             if abs(_peakm[_j]['f0'] - _peak[_i]['f0']) < _dx:
                 _index = _j
@@ -12437,7 +12445,7 @@ def __check_freq_stability(_peak, _peakm, _peakp):
                 _found_m[_i] = True
                 break
         
-        if _peak[_i]['Report']['P-'] == sprit_utils._x_mark():
+        if _peak[_i]['Report']['P-'] == sprit_utils._x_mark() and _j is not None:
             _peak[_i]['Report']['P-'] = f"{_peakm[_j]['f0']:0.2f} Hz within ±5% of {_peak[_i]['f0']:0.2f} Hz {sprit_utils._x_mark()}"
 
     # Then Check above
