@@ -1257,7 +1257,9 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     """
     
-    if input_data is None or input_data == '' or str(input_data).lower() == 'sample':
+    if isinstance(input_data, (pd.DataFrame)):
+        pass
+    elif input_data is None or input_data == '' or str(input_data).lower() == 'sample':
         if str(input_data).lower() == 'sample' and str(source).lower() == 'batch':
             pass
         else:
@@ -1961,7 +1963,9 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
             if param_info.default is not inspect._empty:
                 default_dict[param_name] = param_info.default
     
-    if batch_type == 'sample' or batch_data in sampleFileKeyMap.keys():
+    if isinstance(batch_data, pd.DataFrame):
+        sample_data=False
+    elif batch_type == 'sample' or batch_data in sampleFileKeyMap.keys():
         sample_data = True
         batch_type = 'table'
     else:
@@ -4118,9 +4122,9 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
         #input_parameters['params']['input_crs'] = dataIN[0].stats['input_crs']
 
     # Get and update metadata after updating data from source
-    input_parameters = get_metadata(input_parameters, update_metadata=update_metadata, source=source)
-    inv = input_parameters['inv']
-
+    if update_metadata:
+        input_parameters = get_metadata(input_parameters, update_metadata=update_metadata, source=source)
+        inv = input_parameters['inv']
     # Trim and save data as specified
     if data_export_path == 'None':
         data_export_path = None
@@ -4819,7 +4823,7 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
 
 
 # Gets the metadata for Raspberry Shake, specifically for 3D v.7
-def get_metadata(input_parameters, write_path='', update_metadata=True, source=None, verbose=False, **read_inventory_kwargs):
+def get_metadata(input_parameters, write_path='', update_metadata=False, source=None, verbose=False, **read_inventory_kwargs):
     """Get metadata and calculate or get paz parameter needed for PSD
        Adds an obspy.Inventory object to the "inv" attribute or key of input_parameters
     
@@ -5455,13 +5459,16 @@ def input_params(input_data,
     update_msg = []
     
     # Reformat times
-    # Date will come out of this block as a string of datetime.date
+    # Date will come out of this block as a string of datetime.date in the form of "YYYY-mm-dd"
+    date = str(acq_date)
     if acq_date is None:
         date = str(datetime.datetime.now().date())
-    elif type(acq_date) is datetime.datetime:
+    elif isinstance(acq_date, obspy.UTCDateTime):
+        date = str(acq_date.date)
+    elif isinstance(acq_date, datetime.datetime):
         date = str(acq_date.date())
     elif type(acq_date) is datetime.date:
-        date=str(acq_date)
+        date = str(acq_date)
     elif type(acq_date) is str:
         monthStrs = {'jan':1, 'january':1,
                     'feb':2, 'february':2,

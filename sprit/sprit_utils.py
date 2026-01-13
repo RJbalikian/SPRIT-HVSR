@@ -121,7 +121,10 @@ def _checkifpath(filepath, sample_list='', verbose=False, raise_error=False):
         except Exception:
             if verbose:
                 warnings.warn('Filepath cannot be converted to pathlib path: {}'.format(filepath))
-        if not filepath.exists():
+        
+        if filepath is None:
+            pass
+        elif not filepath.exists():
             raise RuntimeError('File does not exist: {}'.format(filepath))
 
     return filepath
