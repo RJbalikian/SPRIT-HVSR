@@ -459,8 +459,6 @@ def _get_sample_data(sample_file='1', verbose=False):
     if sampleKey not in sampleMapDict.keys():
         if verbose:
             print(f'{sample_file} is not an acceptable sample file. Specify any number 1-10, or use "batch" for input_data')
-
-        print("USING SAMPLE DATASET")
         sampleKey = '1'
             
 
