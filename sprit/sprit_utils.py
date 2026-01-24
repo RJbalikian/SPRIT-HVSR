@@ -449,7 +449,7 @@ def _get_sample_data(sample_file='1', verbose=False):
     sampleKey = sample_file
 
     if 'sample' in str(sampleKey).lower():
-        sampleKey = str(sampleKey).lower().split('sample')[1]
+        sampleKey = str(sampleKey).lower().split('sampledata')[1]
         if sampleKey[0] == '0':
             sampleKey = str(sampleKey[1:]).lower()
 
@@ -461,6 +461,15 @@ def _get_sample_data(sample_file='1', verbose=False):
             print(f'{sample_file} is not an acceptable sample file. Specify any number 1-10, or use "batch" for input_data')
         sampleKey = '1'
             
+    print(f" PROCESSING SAMPLE DATASET {sampleKey.zfill(2)} ".center(99, '*'))
+    print('*'+"To read in your own data, use sprit.run(input_data='/path/to/your/seismic/data.mseed')".center(97)+'*')
+    print('*'+"Any file format supported by osbpy.read() can be input to sprit_run()".center(97)+'*')
+    print('*'+"Raw data (.trc) files from select Tromino Portable are also supported".center(97)+'*')
+    print('*'+"See SpRIT Wiki or API documentation for more information:".center(97)+'*')
+    print('*'+"Wiki: https://github.com/RJbalikian/SPRIT-HVSR/wiki".center(97)+'*')
+    print('*'+"API Documentation: https://sprit.readthedocs.io/en/latest/#".center(97)+'*')
+    print("".center(99, '*'))
+    print()
 
     #sampleListKeys = [str(i) for i in list(range(1,11))]
 
