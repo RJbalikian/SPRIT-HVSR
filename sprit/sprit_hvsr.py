@@ -1468,6 +1468,28 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
     azCond3 = azimuth_calculation
     azCond4 = len(azimuth_kwargs.keys()) > 0
 
+    # Correct for shorthand angles
+    angleDict = {'n':0,  'north':0,   'ne':45,  'northeast':45,
+                'e':90,  'east':90,   'se':135, 'southeast':135,
+                's':180, 'south':180, 'sw':225, 'soutwest':225,
+                'w':270, 'west':270,  'nw':315, 'northwest':315}
+
+    if 'azimuth_type' in azimuth_kwargs:
+        if str(azimuth_kwargs['azimuth_type']).lower() in angleDict.keys():
+            azimuth_kwargs['azimuth_unit'] = 'degrees'
+            azimuth_kwargs['azimuth_angle'] = angleDict[azimuth_kwargs['azimuth_type']]
+            azimuth_kwargs['azimuth_type'] = 'single'
+            kwargs['azimuth_type'] = angleDict[kwargs['azimuth_type']]
+            
+
+    if 'azimuth_angle' in azimuth_kwargs:
+        if str(azimuth_kwargs['azimuth_angle']).lower() in angleDict.keys():
+            azimuth_kwargs['azimuth_unit'] = 'degrees'
+            azimuth_kwargs['azimuth_type'] = 'single'
+            azimuth_kwargs['azimuth_angle'] = angleDict[azimuth_kwargs['azimuth_angle']]
+            kwargs['azimuth_angle'] = angleDict[kwargs['azimuth_angle']]
+
+    # Calculate whether to do azimuth calculation
     if (azCond1 or azCond2 or azCond3 or azCond4) and (skip_steps is None or 'calculate_azimuth' not in skip_steps):
         azimuth_calculation = True
         if 'azimuth_type' not in kwargs.keys():
@@ -1649,6 +1671,7 @@ def run(input_data=None, source='file', azimuth_calculation=False, noise_removal
         process_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(process_hvsr).parameters.keys())}
         updated_ph_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(process_hvsr).parameters.keys())}
         process_hvsr_kwargs.update({k: v for k, v in updated_ph_defaults.items() if k not in process_hvsr_kwargs})
+
         if azimuth_calculation:
             if azimuth_kwargs['azimuth_type'] == 'single':
                 process_hvsr_kwargs['azimuth'] = azimuth_kwargs['azimuth_angle']
@@ -2315,6 +2338,7 @@ def calculate_azimuth(hvsr_data, azimuth_angle=45, azimuth_type='multiple', azim
     elif isinstance(hvsr_data, (HVSRData, dict, obspy.Stream)):
 
         # Handle east/north keywords
+        print('AZANGLE', azimuth_angle)
         if str(azimuth_angle).lower() in ['e', 'east'] or str(azimuth_type).lower() in ['e', 'east']:
             azimuth_angle = 90
             azimuth_unit = 'degrees'
@@ -11039,8 +11063,8 @@ def _generate_print_report(hvsr_results, azimuth="HV", show_print_report=True, v
         print(reportStr)
 
     hvsr_results['BestPeak'][azimuth]['Report']['Print_Report'] = reportStr
-    if azimuth=='HV' or azimuth=='R':
-        hvsr_results['Print_Report'] = reportStr
+    #if azimuth=='HV' or azimuth=='R':
+    hvsr_results['Print_Report'] = reportStr
     return hvsr_results
 
 
@@ -11129,8 +11153,8 @@ def _generate_table_report(hvsr_results, azimuth='HV', show_table_report=True, v
             print()
 
     hvsr_results['BestPeak'][azimuth]['Report']['Table_Report'] = outDF
-    if azimuth == 'HV' or azimuth == 'R':
-        hvsr_results['Table_Report'] = outDF
+    #if azimuth == 'HV' or azimuth == 'R':
+    hvsr_results['Table_Report'] = outDF
     return hvsr_results
 
 
@@ -11466,9 +11490,9 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
         xlim = kwargs['xlim']
     
     if 'ylim' not in kwargs.keys():
-        plotymax = max(hvsr_data.hvsrp2['HV']) + (max(hvsr_data.hvsrp2['HV']) - max(hvsr_data.hvsr_curve))
-        if plotymax > hvsr_data.BestPeak['HV']['A0'] * 1.5:
-            plotymax = hvsr_data.BestPeak['HV']['A0'] * 1.5
+        plotymax = max(hvsr_data.hvsrp2[azimuth]) + (max(hvsr_data.hvsrp2[azimuth]) - max(hvsr_data.hvsr_curve))
+        if plotymax > hvsr_data.BestPeak[azimuth]['A0'] * 1.5:
+            plotymax = hvsr_data.BestPeak[azimuth]['A0'] * 1.5
         ylim = [0, plotymax]
     else:
         ylim = kwargs['ylim']
