@@ -1750,6 +1750,7 @@ def run(input_data=None, source='file',
             if 'report_formats' not in get_report_kwargs.keys():
                 get_report_kwargs['report_formats'] = inspect.signature(get_report).parameters['report_formats'].default
             
+            hasAz = False
             # Now, check if plot is specified, then if plot_type is specified, then add 'az' if stream has azimuths
             if 'plot' in get_report_kwargs['report_formats']:
                 plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
@@ -5018,7 +5019,11 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
     sprit.HVSRData
     """
     orig_args = locals().copy() #Get the initial arguments
-    orig_args['report_formats'] = [str(f).lower() for f in orig_args['report_formats']]
+    if not isinstance(report_formats, (list, tuple)):
+        orig_args['report_formats'] = str(orig_args['report_formats']).lower()
+    else:
+        orig_args['report_formats'] = [str(f).lower() for f in orig_args['report_formats']]
+
     update_msg = []
 
     # Update with processing parameters specified previously in input_params, if applicable
