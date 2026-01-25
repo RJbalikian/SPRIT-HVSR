@@ -5,14 +5,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_streamlit_ui &mdash; sprit 3.4.4 documentation</title>
+  <title>sprit.sprit_streamlit_ui &mdash; sprit 3.5 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
 
   
-      <script src="../../_static/documentation_options.js?v=4c927a77"></script>
-      <script src="../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/documentation_options.js?v=490739ad"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -640,6 +640,7 @@
         <span class="n">update_session_log</span><span class="p">(</span><span class="s2">&quot;Processed data displayed&quot;</span><span class="p">)</span>
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">logTab</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">session_log</span><span class="p">)</span>
 
+
     <span class="k">def</span><span class="w"> </span><span class="nf">on_read_data</span><span class="p">():</span>
         <span class="n">update_session_log</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Started data read: </span><span class="si">{</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">input_data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="s1">&#39;read_button&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">read_button</span><span class="p">:</span>
@@ -681,6 +682,7 @@
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">data_ingested</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">update_session_log</span><span class="p">(</span><span class="s2">&quot;Ingested data displayed&quot;</span><span class="p">)</span>
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">logTab</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">session_log</span><span class="p">)</span>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">do_interactive_display</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">interactive_display</span><span class="p">:</span>
