@@ -25,7 +25,6 @@
     "elevation": 225,
     "endtime": null,
     "export_plots": false,
-    "export_type": "gzip",
     "ext": "hvsr",
     "f_smooth_width": 40,
     "fig": null,
@@ -39,6 +38,7 @@
         40
     ],
     "hvsr_export_path": null,
+    "hvsr_export_type": "gzip",
     "include_dataframe": false,
     "include_plots": false,
     "input_crs": "EPSG:4326",

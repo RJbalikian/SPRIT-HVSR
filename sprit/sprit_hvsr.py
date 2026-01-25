@@ -2870,14 +2870,13 @@ def export_data(hvsr_data, data_export_path, data_export_format='mseed', startti
     
 
 # Function to export data to .hvsr file (pickled)
-def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr', export_type='gzip',
-                export_plots=False,
-                verbose=False):
+def export_hvsr(hvsr_data, hvsr_export_path=None, hvsr_export_ext='hvsr', hvsr_export_type='gzip',
+                include_plots=False, verbose=False):
     """Export data into pickle format that can be read back in using import_data().
        Intended so data does not need to be processed each time it needs to be used. 
        By default, first, export_hvsr serializes the HVSRData object(s) using pickle.dumps(). 
        Then, to save space, it writes that to a gzip file.
-       Default extension is .hvsr no matter the format, though this can be set with `ext` parameter.
+       Default extension is .hvsr no matter the format, though this can be set with `hvsr_export_ext` parameter.
 
     Parameters
     ----------
@@ -2885,18 +2884,18 @@ def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr', export_type='gzip'
         Data to be exported
     hvsr_export_path : str or filepath object, default = None
         String or filepath object to be read by pathlib.Path() and/or a with open(hvsr_export_path, 'wb') statement. If None, defaults to input input_data directory, by default None
-    ext : str, default = 'hvsr'
+    hvsr_export_ext : str, default = 'hvsr'
         Filepath extension to use for data file, by default 'hvsr'. 
-        This will be the extension no matter the export_type
-    export_type : str, default = 'gzip'
-        Export type to use. If `export_type` is 'pickle', will just save to disk using pickle.dump.
+        This will be the extension no matter the hvsr_export_type
+    hvsr_export_type : str, default = 'gzip'
+        Export type to use. If `hvsr_export_type` is 'pickle', will just save to disk using pickle.dump.
         Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extension in both cases, by default).
     verbose : bool, default=False
         Whether to print information about export. A confirmation message is printed no matter what.
     """
-    def _hvsr_export(_hvsr_data=hvsr_data, _export_path=hvsr_export_path, _ext=ext):
+    def _hvsr_export(_hvsr_data=hvsr_data, _export_path=hvsr_export_path, _ext=hvsr_export_ext):
         
-        fname = f"{_hvsr_data['site']}_HVSRData_{_hvsr_data['hvsr_id']}_{datetime.date.today()}_pickled.{ext}"
+        fname = f"{_hvsr_data['site']}_HVSRData_{_hvsr_data['hvsr_id']}_{datetime.date.today()}_pickled.{hvsr_export_ext}"
         if _export_path is None or _export_path is True:
             _export_path = _hvsr_data['input_data']
             _export_path = pathlib.Path(_export_path).with_name(fname)
@@ -2907,7 +2906,7 @@ def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr', export_type='gzip'
 
         _export_path = str(_export_path)
 
-        if export_type == 'pickle':
+        if hvsr_export_type == 'pickle':
             with open(_export_path, 'wb') as f:
                 pickle.dump(_hvsr_data, f)
         else:
@@ -2920,16 +2919,16 @@ def export_hvsr(hvsr_data, hvsr_export_path=None, ext='hvsr', export_type='gzip'
 
     hvData = hvsr_data
     hvData = hvsr_data.copy()
-    if export_plots is False:
+    if include_plots is False:
         for pk in PLOT_KEYS:
             if hasattr(hvData, pk):
                 delattr(hvData, pk)
 
     if isinstance(hvData, HVSRBatch):
         for sitename in hvData.keys():
-            _hvsr_export(_hvsr_data=hvData[sitename], _export_path=hvsr_export_path, _ext=ext)
+            _hvsr_export(_hvsr_data=hvData[sitename], _export_path=hvsr_export_path, _ext=hvsr_export_ext)
     elif isinstance(hvData, HVSRData):
-        _hvsr_export(_hvsr_data=hvData, _export_path=hvsr_export_path, _ext=ext)
+        _hvsr_export(_hvsr_data=hvData, _export_path=hvsr_export_path, _ext=hvsr_export_ext)
     else:
         print("Error in data export. Data must be either of type sprit.HVSRData or sprit.HVSRBatch")         
     
@@ -2983,6 +2982,8 @@ def export_json(hvsr_results, json_export_path=None,
                 'hvsrp', 'hvsrm', 'hvsrp2', 'hvsrm2',
                 ]
 
+    plot_attrs = ['Plot_Report', 'HV_Plot', 'Outlier_Plot', 'Input_Plot', 'Depth_Plot', 'Cross_Section_Plot']
+
     # May use this later if plot binary string support added
     # plots = ['Input_Plot', "Plot_Report", "Outlier_Plot"]
 
@@ -3002,7 +3003,30 @@ def export_json(hvsr_results, json_export_path=None,
     for k, v in hvsr_results.__dict__.items():
         if k == '_batch':
             continue
-        
+
+        if k in plot_attrs and include_plots:
+            plotEngine = hvsr_results.processing_parameters['fetch_data']['plot_engine']
+
+            if str(plotEngine).lower() not in ['plotly', 'plty', 'p']:
+                fig = plt.figure(v)
+                fig.set_size_inches(8.5, 6)
+                #fig.set_size_inches(4.25, 3)
+                # Create a byte stream from the image
+                buf = io.BytesIO()
+                fig.savefig(buf, format='png')
+                buf.seek(0)
+
+                # Encode the image to base64
+                v = base64.b64encode(buf.read()).decode('utf-8')
+            else:
+                #htmlstring = plotly.io.to_html(hvsr_results.Plot_Report, include_plotlyjs=False)
+                #print(type(htmlstring))
+
+                img = v.to_image(format='png', engine='kaleido')
+                v = base64.b64encode(img).decode('utf8')
+
+
+
         # Get the Table Report formatted for json export
         if k == 'Table_Report':
             v = v.set_index('Site Name', drop=True)
@@ -11371,6 +11395,7 @@ def _generate_html_report(hvsr_results, azimuth='HV', show_html_report=False, ve
     html = html.replace("Deg_N", yaxisinfo.unit_name)
 
     hvsr_results['HTML_Report'] = html
+
     # View in browser, if indicated to
     if show_html_report:
         try:

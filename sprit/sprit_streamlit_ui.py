@@ -564,6 +564,7 @@ def main():
         update_session_log("Processed data displayed")
         st.session_state.logTab.markdown(st.session_state.session_log)
 
+
     def on_read_data():
         update_session_log(f"Started data read: {st.session_state.input_data}")
         if 'read_button' not in st.session_state.keys() or not st.session_state.read_button:
@@ -605,6 +606,7 @@ def main():
         st.session_state.data_ingested = True
         update_session_log("Ingested data displayed")
         st.session_state.logTab.markdown(st.session_state.session_log)
+
 
     def do_interactive_display():
         if st.session_state.interactive_display:
