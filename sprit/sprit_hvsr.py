@@ -3860,7 +3860,7 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
             # Automatically read tromino data
             tromCond1 = str(inst).lower() in trominoNameList
             tromCond2 = 'trc' in pathlib.Path(str(dPath)).suffix
-            tromCond3 = "GRILLA" in pathlib.Path(str(dPath)).as_posix() and pathlib.Path(str(dPath)).is_dir()                
+            tromCond3 = "GRILLA" in pathlib.Path(str(dPath)).name and pathlib.Path(str(dPath)).is_dir()                
             
             if tromCond1 or tromCond2 or tromCond3:
                 input_parameters['instrument'] = 'Tromino'
