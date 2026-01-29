@@ -3858,13 +3858,15 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
         elif source == 'file' and str(input_parameters['input_data']).lower() not in SAMPLE_LIST:
             # Read the file specified by input_data
             # Automatically read tromino data
-            if (str(inst).lower() in trominoNameList and 'trc' in pathlib.Path(str(dPath)).suffix) or 'trc' in pathlib.Path(str(dPath)).suffix:
+            tromCond1 = str(inst).lower() in trominoNameList
+            tromCond2 = 'trc' in pathlib.Path(str(dPath)).suffix
+            tromCond3 = "GRILLA" in pathlib.Path(str(dPath)).as_posix() and pathlib.Path(str(dPath)).is_dir()                
+            
+            if tromCond1 or tromCond2 or tromCond3:
                 input_parameters['instrument'] = 'Tromino'
-                #input_parameters['params']['instrument'] = 'Tromino'
 
                 if 'blu' in str(inst).lower():
                     input_parameters['instrument'] = 'Tromino Blue'
-                    #input_parameters['params']['instrument'] = 'Tromino Blue'
 
                 try:
                     trominoKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())}
