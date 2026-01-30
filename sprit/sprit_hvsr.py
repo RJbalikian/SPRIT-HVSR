@@ -1879,10 +1879,8 @@ def run(input_data=None, source='file',
                     ext = 'hvsr'
                 export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], ext=ext, verbose=verbose)
         if 'json_export_path' in kwargs.keys() or DPD['json_export_path'] is not None:
-            if kwargs['json_export_path'] is None:
-                pass
-            else:
-                export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
+            export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
+            if len(export_json_kwargs.keys()) > 0:
                 export_json(hvsr_results=hvsr_results, verbose=verbose, **export_json_kwargs)
         
         if generate_reports:
@@ -3203,7 +3201,6 @@ def export_json(hvsr_results, json_export_path=None,
                         dictString += json.dumps(outDict).replace('{', '').replace("}", '') + ',\n'+indSpcs+indSpcs
                 dict_str_list.append(dictString[:dictString.rfind(',')] + f'\n{indSpcs}'+'},\n')
     
-
     dict_str_list[-1] = dict_str_list[-1][:-2]+'\n'
 
     if json_export_path is not None:
@@ -3212,29 +3209,33 @@ def export_json(hvsr_results, json_export_path=None,
             stats = st[0].stats
             fname = f"{hvsr_results.site}_HVSR-JSON_{stats.starttime.strftime("%Y%m%d")}-{stats.starttime.strftime("%H%M")}-{hvsr_results.station}-{datetime.date.today().strftime("%Y-%m-%d")}.json"
             json_export_path = pathlib.Path(json_export_path).joinpath(fname)
+    
+    # First write dict to json
+    with open(json_export_path, 'w') as f:
+        # dump the JSON string to the file
+        # Parse out json dump kwargs
+        jsondump_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(json.dump).parameters.keys())}
         
-        with open(json_export_path, 'w') as f:
-            # dump the JSON string to the file
-            # Parse out json dump kwargs
-            jsondump_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(json.dump).parameters.keys())}
-            
-            json.dump(dict_for_json, 
-                      fp=f,
-                      sort_keys=sKeys, 
-                      indent=indent, **jsondump_kwargs)
+        json.dump(dict_for_json, 
+                    fp=f,
+                    sort_keys=sKeys, 
+                    indent=indent, **jsondump_kwargs)
 
-        with open(json_export_path, 'r') as f:
-            readLines = f.readlines()
-        readLines = readLines[:-1]
-        readLines[-1] = readLines[-1].replace('\n',',\n')
-        readLines.extend(dict_str_list)
-        readLines.append('}')
+    # Then read it back in to add custom parts from dict_str_list
+    with open(json_export_path, 'r') as f:
+        readLines = f.readlines()
+    readLines = readLines[:-1]
+    readLines[-1] = readLines[-1].replace('\n',',\n')
+    readLines.extend(dict_str_list)
+    readLines.append('}')
 
-        with open(json_export_path, encoding='UTF-8', mode='w') as f:
-            f.writelines(readLines)
-        if verbose:
-            print(f'HVSRData object exported in JSON format to {json_export_path}')
-            
+    # Export final version
+    with open(json_export_path, encoding='UTF-8', mode='w') as f:
+        f.writelines(readLines)
+    
+    if verbose:
+        print(f'HVSRData object exported in JSON format to {json_export_path}')
+        
     if return_json_string or return_dict or (json_export_path is None):
         jsonString = json.dumps(dict_for_json,
                                 sort_keys=sKeys, 
