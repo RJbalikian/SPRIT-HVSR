@@ -3023,8 +3023,6 @@ def export_json(hvsr_results, json_export_path=None,
                 img = v.to_image(format='png', engine='kaleido')
                 v = base64.b64encode(img).decode('utf8')
 
-
-
         # Get the Table Report formatted for json export
         if k == 'Table_Report':
             v = v.set_index('Site Name', drop=True)
@@ -3083,12 +3081,15 @@ def export_json(hvsr_results, json_export_path=None,
 
         try:
             json.dumps({k: v})  # This is just a test to ensure item can be dumped
+
+            # This may not be necessary
             if isinstance(v, obspy.Stream):
                 v.merge()
                 vout = ''
                 for tr in v:
                     vout += tr.id + ' | '
                 v = vout
+            
             dict_for_json[k] = v
         except Exception:
             dict_for_json[k] = ''
@@ -3136,6 +3137,7 @@ def export_json(hvsr_results, json_export_path=None,
 
             # Special processing of processing_parameters dict
             elif k == 'processing_parameters':
+
                 del dict_for_json[k]
                 ppStr = indSpcs+f'"{k}": '+'{\n'+indSpcs+indSpcs
                 for funKey, funParam in v.items():
@@ -3147,10 +3149,14 @@ def export_json(hvsr_results, json_export_path=None,
                         try:
                             if isinstance(prmVal, bool):
                                 prmVal = str(prmVal).lower()
-                            if prmVal is None:
+                            elif prmVal is None:
                                 prmVal = 'null'
-                            
-                            if isinstance(prmVal, numbers.Number):
+
+                            if isinstance(prmVal, obspy.Stream) or 'in Stream' in str(prmVal):
+                                prmVal = str(prmVal).replace('\n', '\\n')
+                                ppStr += f'"{prmName}": "{prmVal}", '
+
+                            elif isinstance(prmVal, numbers.Number):
                                 ppStr += f'"{prmName}": {prmVal}, '
                             elif isinstance(prmVal, (list, tuple)):
                                 newStr = f'"{prmName}": ['
