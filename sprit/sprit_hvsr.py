@@ -3083,6 +3083,12 @@ def export_json(hvsr_results, json_export_path=None,
 
         try:
             json.dumps({k: v})  # This is just a test to ensure item can be dumped
+            if isinstance(v, obspy.Stream):
+                v.merge()
+                vout = ''
+                for tr in v:
+                    vout += tr.id + ' | '
+                v = vout
             dict_for_json[k] = v
         except Exception:
             dict_for_json[k] = ''
