@@ -3036,7 +3036,7 @@ def export_json(hvsr_results, json_export_path=None,
             if not include_dataframe:
 
                 def _mapstringtime(dt):
-                    return dt.strftime("%Y-%m-%dT%M:%H:%S.%fZ")
+                    return dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
                 newInd = list(map(_mapstringtime, hvsr_results.hvsr_windows_df['Use'].index.to_pydatetime()))
                 tfList = hvsr_results.hvsr_windows_df['Use'].values.tolist()
@@ -4447,7 +4447,46 @@ def from_json(json_input, return_hvsr=True, **kwargs):
     
     if return_hvsr:
         try:
-            return HVSRData(jsonDictIN)
+            keepListList = ['channels', 'cha', 'x_windows_out', 'hvsr_band', 'hvsr_curve', 'peak_freq_range', 'tsteps_used']
+            channel_dicts = ['x_freqs', 'x_period', 'psd_raw', 'psds', 'psd_values_tavg', 
+                                'ppsd_std', 'ppsd_std_vals_m', 'ppsd_std_vals_p'] 
+            az_dicts_neat = ['ind_hvsr_curves', 'ind_hvsr_stdDev', 'hvsr_log_std','hvsrp', 'hvsrm', 'hvsrp2', 'hvsrm2']
+            # az_dicts_ragged = ['ind_hvsr_peak_indices','hvsr_peak_indices', 'hvsr_peak_freqs']
+            # plot_attrs = ['Plot_Report', 'HV_Plot', 'Outlier_Plot', 'Input_Plot', 'Depth_Plot', 'Cross_Section_Plot']
+            # df_dicts = ['Table_Report', 'hvsr_windows_df']
+
+            hvDict = jsonDict
+            for k, v in jsonDict.items():
+                if isinstance(v, (list, tuple)) and k not in keepListList:
+                    hvDict[k] = np.array(v)
+                elif k in channel_dicts or k in az_dicts_neat:
+                    for comp_az, comp_az_vals in v.items():
+                        hvDict[k][comp_az] = np.array(comp_az_vals)
+                elif k == 'Table_Report':
+                    hvDict[k] = pd.DataFrame(v).T
+                elif k == 'hvsr_windows_df':
+                    dtlist = []
+                    for t, useVal in jsonDict['hvsr_windows_df']['Use'].items():
+                        pddt = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%fZ")
+                        pddt = pddt.replace(tzinfo=zoneinfo.ZoneInfo('UTC'))
+                        dtlist.append(pddt)
+                    dtInd = pd.DatetimeIndex(dtlist)
+                    hvDict['hvsr_windows_df'] = pd.DataFrame(jsonDict['hvsr_windows_df'])
+                    hvDict['hvsr_windows_df'].set_index(dtInd, inplace=True)
+
+
+                    for az, ihc in hvDict['ind_hvsr_curves'].items():
+                        hvList = []
+                        colID = 'HV_Curves'
+                        if az != 'HV':
+                            colID = colID + '_'+az
+
+                        for arr in ihc:
+                            hvList.append(arr)
+
+                        hvDict['hvsr_windows_df'][colID] = hvList
+                    
+            return HVSRData(hvDict)
         except Exception:
             return jsonDictIN
     
