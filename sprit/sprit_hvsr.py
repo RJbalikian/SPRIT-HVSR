@@ -424,7 +424,7 @@ class HVSRBatch:
         add(self, hvsr_data)
         
 
-    def export(self, hvsr_export_path=True, ext='hvsr'):
+    def export_hvsr(self, hvsr_export_path=True, hvsr_export_ext='hvsr'):
         """Method to export HVSRData objects in HVSRBatch container to indivdual .hvsr pickle files.
 
         Parameters
@@ -434,7 +434,7 @@ class HVSRBatch:
         ext : str, optional
             The extension to use for the output, by default 'hvsr'. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.
         """
-        export_hvsr(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
+        export_hvsr(hvsr_data=self, hvsr_export_path=hvsr_export_path, hvsr_export_ext=hvsr_export_ext)
 
 
     def keys(self):
@@ -1873,11 +1873,11 @@ def run(input_data=None, source='file',
             if kwargs['hvsr_export_path'] is None:
                 pass
             else:
-                if 'ext' in kwargs.keys():
-                    ext = kwargs['ext']
+                if 'hvsr_export_ext' in kwargs.keys():
+                    ext = kwargs['hvsr_export_ext']
                 else:
                     ext = 'hvsr'
-                export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], ext=ext, verbose=verbose)
+                export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], hvsr_export_ext=ext, verbose=verbose)
         if 'json_export_path' in kwargs.keys() or DPD['json_export_path'] is not None:
             export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
             if len(export_json_kwargs.keys()) > 0:
