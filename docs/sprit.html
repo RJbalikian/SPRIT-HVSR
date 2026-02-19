@@ -6,12 +6,12 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit package &mdash; sprit 3.5 documentation</title>
+  <title>sprit package &mdash; sprit 3.6 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
-      <script src="_static/documentation_options.js?v=490739ad"></script>
+      <script src="_static/documentation_options.js?v=7effb3c7"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
@@ -47,7 +47,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRBatch.add"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.add()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRBatch.append"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.append()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRBatch.copy"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.copy()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRBatch.export"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.export()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRBatch.export_hvsr"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.export_hvsr()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRBatch.export_settings"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.export_settings()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRBatch.get_report"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.get_report()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sprit.HVSRBatch.items"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.items()</span></code></a></li>
@@ -172,7 +172,7 @@ besides using it determine which sites are contained within it.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#sprit.HVSRBatch.copy" title="sprit.HVSRBatch.copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code></a>([type])</p></td>
 <td><p>Make a copy of the HVSRBatch object.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#sprit.HVSRBatch.export" title="sprit.HVSRBatch.export"><code class="xref py py-obj docutils literal notranslate"><span class="pre">export</span></code></a>([hvsr_export_path, ext])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#sprit.HVSRBatch.export_hvsr" title="sprit.HVSRBatch.export_hvsr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">export_hvsr</span></code></a>([hvsr_export_path, hvsr_export_ext])</p></td>
 <td><p>Method to export HVSRData objects in HVSRBatch container to indivdual .hvsr pickle files.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#sprit.HVSRBatch.export_settings" title="sprit.HVSRBatch.export_settings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">export_settings</span></code></a>([site_name, ...])</p></td>
@@ -222,8 +222,8 @@ besides using it determine which sites are contained within it.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="sprit.HVSRBatch.export">
-<span class="sig-name descname"><span class="pre">export</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hvsr'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRBatch.export"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.HVSRBatch.export" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="sprit.HVSRBatch.export_hvsr">
+<span class="sig-name descname"><span class="pre">export_hvsr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hvsr_export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hvsr_export_ext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hvsr'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#HVSRBatch.export_hvsr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.HVSRBatch.export_hvsr" title="Link to this definition">¶</a></dt>
 <dd><p>Method to export HVSRData objects in HVSRBatch container to indivdual .hvsr pickle files.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -2389,7 +2389,7 @@ If None, uses same directory as resp_file, by default None</p>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRBatch.add"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.add()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRBatch.append"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.append()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRBatch.copy"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.copy()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRBatch.export"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.export()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRBatch.export_hvsr"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.export_hvsr()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRBatch.export_settings"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.export_settings()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRBatch.get_report"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.get_report()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="sprit.sprit_hvsr.html#sprit.sprit_hvsr.HVSRBatch.items"><code class="docutils literal notranslate"><span class="pre">HVSRBatch.items()</span></code></a></li>

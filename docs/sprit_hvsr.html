@@ -1353,7 +1353,10 @@ Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extensi
                 img = v.to_image(format=&#39;png&#39;, engine=&#39;kaleido&#39;)
                 v = base64.b64encode(img).decode(&#39;utf8&#39;)
 
-
+        if k == &#34;PeakReport&#34;:
+            for az in hvsr_results[&#39;PeakReport&#39;]:
+                for i, report in enumerate(hvsr_results[&#39;PeakReport&#39;][az]):
+                    hvsr_results[&#39;PeakReport&#39;][az][i][&#39;Report&#39;][&#39;Table_Report&#39;] = None
 
         # Get the Table Report formatted for json export
         if k == &#39;Table_Report&#39;:
@@ -1368,7 +1371,7 @@ Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extensi
             if not include_dataframe:
 
                 def _mapstringtime(dt):
-                    return dt.strftime(&#34;%Y-%m-%dT%M:%H:%S.%fZ&#34;)
+                    return dt.strftime(&#34;%Y-%m-%dT%H:%M:%S.%fZ&#34;)
 
                 newInd = list(map(_mapstringtime, hvsr_results.hvsr_windows_df[&#39;Use&#39;].index.to_pydatetime()))
                 tfList = hvsr_results.hvsr_windows_df[&#39;Use&#39;].values.tolist()
@@ -1413,6 +1416,15 @@ Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extensi
 
         try:
             json.dumps({k: v})  # This is just a test to ensure item can be dumped
+
+            # This may not be necessary
+            if isinstance(v, obspy.Stream):
+                v.merge()
+                vout = &#39;&#39;
+                for tr in v:
+                    vout += tr.id + &#39; | &#39;
+                v = vout
+            
             dict_for_json[k] = v
         except Exception:
             dict_for_json[k] = &#39;&#39;
@@ -1460,6 +1472,7 @@ Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extensi
 
             # Special processing of processing_parameters dict
             elif k == &#39;processing_parameters&#39;:
+
                 del dict_for_json[k]
                 ppStr = indSpcs+f&#39;&#34;{k}&#34;: &#39;+&#39;{\n&#39;+indSpcs+indSpcs
                 for funKey, funParam in v.items():
@@ -1471,10 +1484,14 @@ Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extensi
                         try:
                             if isinstance(prmVal, bool):
                                 prmVal = str(prmVal).lower()
-                            if prmVal is None:
+                            elif prmVal is None:
                                 prmVal = &#39;null&#39;
-                            
-                            if isinstance(prmVal, numbers.Number):
+
+                            if isinstance(prmVal, obspy.Stream) or &#39;in Stream&#39; in str(prmVal):
+                                prmVal = str(prmVal).replace(&#39;\n&#39;, &#39;\\n&#39;)
+                                ppStr += f&#39;&#34;{prmName}&#34;: &#34;{prmVal}&#34;, &#39;
+
+                            elif isinstance(prmVal, numbers.Number):
                                 ppStr += f&#39;&#34;{prmName}&#34;: {prmVal}, &#39;
                             elif isinstance(prmVal, (list, tuple)):
                                 newStr = f&#39;&#34;{prmName}&#34;: [&#39;
@@ -1531,7 +1548,6 @@ Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extensi
                         dictString += json.dumps(outDict).replace(&#39;{&#39;, &#39;&#39;).replace(&#34;}&#34;, &#39;&#39;) + &#39;,\n&#39;+indSpcs+indSpcs
                 dict_str_list.append(dictString[:dictString.rfind(&#39;,&#39;)] + f&#39;\n{indSpcs}&#39;+&#39;},\n&#39;)
     
-
     dict_str_list[-1] = dict_str_list[-1][:-2]+&#39;\n&#39;
 
     if json_export_path is not None:
@@ -1540,29 +1556,33 @@ Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extensi
             stats = st[0].stats
             fname = f&#34;{hvsr_results.site}_HVSR-JSON_{stats.starttime.strftime(&#34;%Y%m%d&#34;)}-{stats.starttime.strftime(&#34;%H%M&#34;)}-{hvsr_results.station}-{datetime.date.today().strftime(&#34;%Y-%m-%d&#34;)}.json&#34;
             json_export_path = pathlib.Path(json_export_path).joinpath(fname)
+    
+    # First write dict to json
+    with open(json_export_path, &#39;w&#39;) as f:
+        # dump the JSON string to the file
+        # Parse out json dump kwargs
+        jsondump_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(json.dump).parameters.keys())}
         
-        with open(json_export_path, &#39;w&#39;) as f:
-            # dump the JSON string to the file
-            # Parse out json dump kwargs
-            jsondump_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(json.dump).parameters.keys())}
-            
-            json.dump(dict_for_json, 
-                      fp=f,
-                      sort_keys=sKeys, 
-                      indent=indent, **jsondump_kwargs)
+        json.dump(dict_for_json, 
+                    fp=f,
+                    sort_keys=sKeys, 
+                    indent=indent, **jsondump_kwargs)
 
-        with open(json_export_path, &#39;r&#39;) as f:
-            readLines = f.readlines()
-        readLines = readLines[:-1]
-        readLines[-1] = readLines[-1].replace(&#39;\n&#39;,&#39;,\n&#39;)
-        readLines.extend(dict_str_list)
-        readLines.append(&#39;}&#39;)
+    # Then read it back in to add custom parts from dict_str_list
+    with open(json_export_path, &#39;r&#39;) as f:
+        readLines = f.readlines()
+    readLines = readLines[:-1]
+    readLines[-1] = readLines[-1].replace(&#39;\n&#39;,&#39;,\n&#39;)
+    readLines.extend(dict_str_list)
+    readLines.append(&#39;}&#39;)
 
-        with open(json_export_path, encoding=&#39;UTF-8&#39;, mode=&#39;w&#39;) as f:
-            f.writelines(readLines)
-        if verbose:
-            print(f&#39;HVSRData object exported in JSON format to {json_export_path}&#39;)
-            
+    # Export final version
+    with open(json_export_path, encoding=&#39;UTF-8&#39;, mode=&#39;w&#39;) as f:
+        f.writelines(readLines)
+    
+    if verbose:
+        print(f&#39;HVSRData object exported in JSON format to {json_export_path}&#39;)
+        
     if return_json_string or return_dict or (json_export_path is None):
         jsonString = json.dumps(dict_for_json,
                                 sort_keys=sKeys, 
@@ -2287,13 +2307,15 @@ If 'processing', saves the processing settings to their respective file. By defa
         elif source == &#39;file&#39; and str(input_parameters[&#39;input_data&#39;]).lower() not in SAMPLE_LIST:
             # Read the file specified by input_data
             # Automatically read tromino data
-            if (str(inst).lower() in trominoNameList and &#39;trc&#39; in pathlib.Path(str(dPath)).suffix) or &#39;trc&#39; in pathlib.Path(str(dPath)).suffix:
+            tromCond1 = str(inst).lower() in trominoNameList
+            tromCond2 = &#39;trc&#39; in pathlib.Path(str(dPath)).suffix
+            tromCond3 = &#34;GRILLA&#34; in pathlib.Path(str(dPath)).name and pathlib.Path(str(dPath)).is_dir()                
+            
+            if tromCond1 or tromCond2 or tromCond3:
                 input_parameters[&#39;instrument&#39;] = &#39;Tromino&#39;
-                #input_parameters[&#39;params&#39;][&#39;instrument&#39;] = &#39;Tromino&#39;
 
                 if &#39;blu&#39; in str(inst).lower():
                     input_parameters[&#39;instrument&#39;] = &#39;Tromino Blue&#39;
-                    #input_parameters[&#39;params&#39;][&#39;instrument&#39;] = &#39;Tromino Blue&#39;
 
                 try:
                     trominoKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())}
@@ -2920,8 +2942,110 @@ See here for more information: <a href="https://docs.obspy.org/packages/autogen/
     
     if return_hvsr:
         try:
-            return HVSRData(jsonDictIN)
-        except Exception:
+            keepListList = [&#39;channels&#39;, &#39;cha&#39;, &#39;x_windows_out&#39;, &#39;hvsr_band&#39;, &#39;hvsr_curve&#39;, &#39;peak_freq_range&#39;, &#39;tsteps_used&#39;]
+            channel_dicts = [&#39;x_freqs&#39;, &#39;x_period&#39;, &#39;psd_raw&#39;, &#39;psds&#39;, &#39;psd_values_tavg&#39;, 
+                                &#39;ppsd_std&#39;, &#39;ppsd_std_vals_m&#39;, &#39;ppsd_std_vals_p&#39;] 
+            az_dicts_neat = [&#39;ind_hvsr_curves&#39;, &#39;ind_hvsr_stdDev&#39;, &#39;hvsr_log_std&#39;,&#39;hvsrp&#39;, &#39;hvsrm&#39;, &#39;hvsrp2&#39;, &#39;hvsrm2&#39;]
+            # az_dicts_ragged = [&#39;ind_hvsr_peak_indices&#39;,&#39;hvsr_peak_indices&#39;, &#39;hvsr_peak_freqs&#39;]
+            # plot_attrs = [&#39;Plot_Report&#39;, &#39;HV_Plot&#39;, &#39;Outlier_Plot&#39;, &#39;Input_Plot&#39;, &#39;Depth_Plot&#39;, &#39;Cross_Section_Plot&#39;]
+            # df_dicts = [&#39;Table_Report&#39;, &#39;hvsr_windows_df&#39;]
+
+            hvDict = jsonDictIN
+            for k, v in jsonDictIN.items():
+                if isinstance(v, (list, tuple)) and k not in keepListList:
+                    hvDict[k] = np.array(v)
+                elif k in channel_dicts or k in az_dicts_neat:
+                    for comp_az, comp_az_vals in v.items():
+                        hvDict[k][comp_az] = np.array(comp_az_vals)
+                elif k == &#39;Table_Report&#39;:
+                    hvDict[k] = pd.DataFrame(v).T
+                elif k == &#39;hvsr_windows_df&#39;:
+                    dtlist = []
+                    for t, useVal in jsonDictIN[&#39;hvsr_windows_df&#39;][&#39;Use&#39;].items():
+                        pddt = datetime.datetime.strptime(t, &#34;%Y-%m-%dT%H:%M:%S.%fZ&#34;)
+                        pddt = pddt.replace(tzinfo=zoneinfo.ZoneInfo(&#39;UTC&#39;))
+                        dtlist.append(pddt)
+                    dtInd = pd.DatetimeIndex(dtlist)
+                    hvDict[&#39;hvsr_windows_df&#39;] = pd.DataFrame(jsonDictIN[&#39;hvsr_windows_df&#39;])
+                    hvDict[&#39;hvsr_windows_df&#39;].set_index(dtInd, inplace=True)
+
+
+                    # Build up dataframe columns
+                    # Get individual hvsr curves into df
+                    for az, ihc in hvDict[&#39;ind_hvsr_curves&#39;].items():
+                        hvList = []
+                        colID = &#39;HV_Curves&#39;
+                        if az != &#39;HV&#39;:
+                            colID = colID + &#39;_&#39;+az
+
+                        for arr in ihc:
+                            hvList.append(arr)
+
+                        hvDict[&#39;hvsr_windows_df&#39;][colID] = hvList
+                        
+                    # Get individual psd curves into df
+                    for comp, psdvals in hvDict[&#39;psd_raw&#39;].items():
+                        colID = &#39;psd_values_&#39;+comp
+
+                        psdList = []
+                        for arr in psdvals:
+                            psdList.append(arr)
+
+                        hvDict[&#39;hvsr_windows_df&#39;][colID] = psdList
+
+                    # Get obspy starttimes for each window
+                    obspySTimes = []
+                    obspyETimes = []
+                    pdETimes = []
+                    mplSTime = []
+                    mplETime = []
+
+                    for dtind in hvDict[&#39;hvsr_windows_df&#39;].index:
+                        pyDT = dtind.to_pydatetime()
+                        obspyStart = obspy.UTCDateTime(pyDT)
+                        mplStart = mdates.date2num(pyDT)
+
+                        mplSTime.append(mplStart)
+                        obspySTimes.append(obspyStart)
+                        if &#39;processing_parameters&#39; in hvDict:
+                            winLen = hvDict[&#39;processing_parameters&#39;][&#39;generate_psds&#39;][&#39;window_length&#39;]
+
+                            obspyETimes.append(obspyStart + winLen)
+                            pdETimes.append(dtind + pd.Timedelta(seconds=winLen))
+                            mplETime.append(pyDT + datetime.timedelta(seconds=winLen))
+                        else:
+                            obspyETimes.append(None)
+                            pdETimes.append(None)
+                            mplETime.append(None)
+                    hvDict[&#39;hvsr_windows_df&#39;][&#39;TimesProcessed_Obspy&#39;] = obspySTimes
+                    hvDict[&#39;hvsr_windows_df&#39;][&#39;TimesProcessed_ObspyEnd&#39;] = obspyETimes
+
+                    hvDict[&#39;hvsr_windows_df&#39;][&#39;TimesProcessed_End&#39;] = pdETimes
+                    hvDict[&#39;hvsr_windows_df&#39;][&#39;TimesProcessed_MPL&#39;] = mplSTime
+                    hvDict[&#39;hvsr_windows_df&#39;][&#39;TimesProcessed_MPLEnd&#39;] = mplETime
+                    
+                    # Get curve peak indices into df
+                    for az, peakinds in hvDict[&#39;ind_hvsr_peak_indices&#39;].items():
+                        colID = az
+                        peakFreqs = []
+                        for pInd in peakinds:
+                            pfs = []
+                            for pi in pInd:
+                                pfs.append(float(hvDict[&#39;x_freqs&#39;][&#39;Z&#39;][pi]))
+                            peakFreqs.append(pfs)
+                        fColID = colID.replace(&#39;Indices&#39;, &#39;Freqs&#39;)
+
+                        hvDict[&#39;hvsr_windows_df&#39;][fColID] = peakFreqs
+                        hvDict[&#39;hvsr_windows_df&#39;][colID] = peakinds
+                    
+                    # Get log10 values
+                    hvDict[&#39;hvsr_windows_df&#39;][&#39;Log10_&#39;+colID+&#39;_&#39;+az] = np.log10(hvList).tolist()
+
+            return HVSRData(hvDict)
+
+        except Exception as e:
+            print(&#34;ERROR creating HVSRData object, returning dict&#34;)
+            traceback.print_exc()
             return jsonDictIN
     
     return jsonDictIN</code></pre>
@@ -4792,7 +4916,7 @@ This is necessary for Raspberry Shake data in 'raw' format.</dd>
             peakVals = []
             peakThetas = []
             for k in sorted(hvsr_data.hvsr_az.keys()):
-                peakVals.append(hvsr_data.BestPeak[k][&#39;f0&#39;])
+                peakVals.append(float(hvsr_data.BestPeak[k][&#39;f0&#39;]))
                 peakThetas.append(int(k[2:]))
             peakThetas = peakThetas + (180 + np.array(peakThetas)).tolist()
             peakThetas = np.deg2rad(peakThetas).tolist()
@@ -7274,16 +7398,14 @@ This is minimum number of points a point needs in its neighborhood to not be con
             if kwargs[&#39;hvsr_export_path&#39;] is None:
                 pass
             else:
-                if &#39;ext&#39; in kwargs.keys():
-                    ext = kwargs[&#39;ext&#39;]
+                if &#39;hvsr_export_ext&#39; in kwargs.keys():
+                    ext = kwargs[&#39;hvsr_export_ext&#39;]
                 else:
                     ext = &#39;hvsr&#39;
-                export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs[&#39;hvsr_export_path&#39;], ext=ext, verbose=verbose)
+                export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs[&#39;hvsr_export_path&#39;], hvsr_export_ext=ext, verbose=verbose)
         if &#39;json_export_path&#39; in kwargs.keys() or DPD[&#39;json_export_path&#39;] is not None:
-            if kwargs[&#39;json_export_path&#39;] is None:
-                pass
-            else:
-                export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
+            export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
+            if len(export_json_kwargs.keys()) &gt; 0:
                 export_json(hvsr_results=hvsr_results, verbose=verbose, **export_json_kwargs)
         
         if generate_reports:
@@ -8266,7 +8388,7 @@ If None, uses same directory as resp_file, by default None</dd>
         add(self, hvsr_data)
         
 
-    def export(self, hvsr_export_path=True, ext=&#39;hvsr&#39;):
+    def export_hvsr(self, hvsr_export_path=True, hvsr_export_ext=&#39;hvsr&#39;):
         &#34;&#34;&#34;Method to export HVSRData objects in HVSRBatch container to indivdual .hvsr pickle files.
 
         Parameters
@@ -8276,7 +8398,7 @@ If None, uses same directory as resp_file, by default None</dd>
         ext : str, optional
             The extension to use for the output, by default &#39;hvsr&#39;. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.
         &#34;&#34;&#34;
-        export_hvsr(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
+        export_hvsr(hvsr_data=self, hvsr_export_path=hvsr_export_path, hvsr_export_ext=hvsr_export_ext)
 
 
     def keys(self):
@@ -8507,15 +8629,15 @@ besides using it determine which sites are contained within it.</p></div>
 <dd>Based on input, creates either a shallow or deep copy of the HVSRBatch object. Shallow is equivalent of copy.copy(). Input of 'deep' is equivalent of copy.deepcopy() (still experimental). Defaults to shallow.</dd>
 </dl></div>
 </dd>
-<dt id="sprit.sprit_hvsr.HVSRBatch.export"><code class="name flex">
-<span>def <span class="ident">export</span></span>(<span>self, hvsr_export_path=True, ext='hvsr')</span>
+<dt id="sprit.sprit_hvsr.HVSRBatch.export_hvsr"><code class="name flex">
+<span>def <span class="ident">export_hvsr</span></span>(<span>self, hvsr_export_path=True, hvsr_export_ext='hvsr')</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def export(self, hvsr_export_path=True, ext=&#39;hvsr&#39;):
+<pre><code class="python">def export_hvsr(self, hvsr_export_path=True, hvsr_export_ext=&#39;hvsr&#39;):
     &#34;&#34;&#34;Method to export HVSRData objects in HVSRBatch container to indivdual .hvsr pickle files.
 
     Parameters
@@ -8525,7 +8647,7 @@ besides using it determine which sites are contained within it.</p></div>
     ext : str, optional
         The extension to use for the output, by default &#39;hvsr&#39;. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.
     &#34;&#34;&#34;
-    export_hvsr(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)</code></pre>
+    export_hvsr(hvsr_data=self, hvsr_export_path=hvsr_export_path, hvsr_export_ext=hvsr_export_ext)</code></pre>
 </details>
 <div class="desc"><p>Method to export HVSRData objects in HVSRBatch container to indivdual .hvsr pickle files.</p>
 <h2 id="parameters">Parameters</h2>
@@ -9736,7 +9858,7 @@ If both are set to True, dict will override string.</dd>
 <li><code><a title="sprit.sprit_hvsr.HVSRBatch.add" href="#sprit.sprit_hvsr.HVSRBatch.add">add</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.HVSRBatch.append" href="#sprit.sprit_hvsr.HVSRBatch.append">append</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.HVSRBatch.copy" href="#sprit.sprit_hvsr.HVSRBatch.copy">copy</a></code></li>
-<li><code><a title="sprit.sprit_hvsr.HVSRBatch.export" href="#sprit.sprit_hvsr.HVSRBatch.export">export</a></code></li>
+<li><code><a title="sprit.sprit_hvsr.HVSRBatch.export_hvsr" href="#sprit.sprit_hvsr.HVSRBatch.export_hvsr">export_hvsr</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.HVSRBatch.export_settings" href="#sprit.sprit_hvsr.HVSRBatch.export_settings">export_settings</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.HVSRBatch.get_report" href="#sprit.sprit_hvsr.HVSRBatch.get_report">get_report</a></code></li>
 <li><code><a title="sprit.sprit_hvsr.HVSRBatch.items" href="#sprit.sprit_hvsr.HVSRBatch.items">items</a></code></li>
