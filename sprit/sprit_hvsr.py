@@ -3023,6 +3023,11 @@ def export_json(hvsr_results, json_export_path=None,
                 img = v.to_image(format='png', engine='kaleido')
                 v = base64.b64encode(img).decode('utf8')
 
+        if k == "PeakReport":
+            for az in hvsr_results['PeakReport']:
+                for i, report in enumerate(hvsr_results['PeakReport'][az]):
+                    hvsr_results['PeakReport'][az][i]['Report']['Table_Report'] = None
+
         # Get the Table Report formatted for json export
         if k == 'Table_Report':
             v = v.set_index('Site Name', drop=True)
@@ -4455,8 +4460,8 @@ def from_json(json_input, return_hvsr=True, **kwargs):
             # plot_attrs = ['Plot_Report', 'HV_Plot', 'Outlier_Plot', 'Input_Plot', 'Depth_Plot', 'Cross_Section_Plot']
             # df_dicts = ['Table_Report', 'hvsr_windows_df']
 
-            hvDict = jsonDict
-            for k, v in jsonDict.items():
+            hvDict = jsonDictIN
+            for k, v in jsonDictIN.items():
                 if isinstance(v, (list, tuple)) and k not in keepListList:
                     hvDict[k] = np.array(v)
                 elif k in channel_dicts or k in az_dicts_neat:
@@ -4466,15 +4471,17 @@ def from_json(json_input, return_hvsr=True, **kwargs):
                     hvDict[k] = pd.DataFrame(v).T
                 elif k == 'hvsr_windows_df':
                     dtlist = []
-                    for t, useVal in jsonDict['hvsr_windows_df']['Use'].items():
+                    for t, useVal in jsonDictIN['hvsr_windows_df']['Use'].items():
                         pddt = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%fZ")
                         pddt = pddt.replace(tzinfo=zoneinfo.ZoneInfo('UTC'))
                         dtlist.append(pddt)
                     dtInd = pd.DatetimeIndex(dtlist)
-                    hvDict['hvsr_windows_df'] = pd.DataFrame(jsonDict['hvsr_windows_df'])
+                    hvDict['hvsr_windows_df'] = pd.DataFrame(jsonDictIN['hvsr_windows_df'])
                     hvDict['hvsr_windows_df'].set_index(dtInd, inplace=True)
 
 
+                    # Build up dataframe columns
+                    # Get individual hvsr curves into df
                     for az, ihc in hvDict['ind_hvsr_curves'].items():
                         hvList = []
                         colID = 'HV_Curves'
@@ -4485,9 +4492,70 @@ def from_json(json_input, return_hvsr=True, **kwargs):
                             hvList.append(arr)
 
                         hvDict['hvsr_windows_df'][colID] = hvList
+                        
+                    # Get individual psd curves into df
+                    for comp, psdvals in hvDict['psd_raw'].items():
+                        colID = 'psd_values_'+comp
+
+                        psdList = []
+                        for arr in psdvals:
+                            psdList.append(arr)
+
+                        hvDict['hvsr_windows_df'][colID] = psdList
+
+                    # Get obspy starttimes for each window
+                    obspySTimes = []
+                    obspyETimes = []
+                    pdETimes = []
+                    mplSTime = []
+                    mplETime = []
+
+                    for dtind in hvDict['hvsr_windows_df'].index:
+                        pyDT = dtind.to_pydatetime()
+                        obspyStart = obspy.UTCDateTime(pyDT)
+                        mplStart = mdates.date2num(pyDT)
+
+                        mplSTime.append(mplStart)
+                        obspySTimes.append(obspyStart)
+                        if 'processing_parameters' in hvDict:
+                            winLen = hvDict['processing_parameters']['generate_psds']['window_length']
+
+                            obspyETimes.append(obspyStart + winLen)
+                            pdETimes.append(dtind + pd.Timedelta(seconds=winLen))
+                            mplETime.append(pyDT + datetime.timedelta(seconds=winLen))
+                        else:
+                            obspyETimes.append(None)
+                            pdETimes.append(None)
+                            mplETime.append(None)
+                    hvDict['hvsr_windows_df']['TimesProcessed_Obspy'] = obspySTimes
+                    hvDict['hvsr_windows_df']['TimesProcessed_ObspyEnd'] = obspyETimes
+
+                    hvDict['hvsr_windows_df']['TimesProcessed_End'] = pdETimes
+                    hvDict['hvsr_windows_df']['TimesProcessed_MPL'] = mplSTime
+                    hvDict['hvsr_windows_df']['TimesProcessed_MPLEnd'] = mplETime
                     
+                    # Get curve peak indices into df
+                    for az, peakinds in hvDict['ind_hvsr_peak_indices'].items():
+                        colID = az
+                        peakFreqs = []
+                        for pInd in peakinds:
+                            pfs = []
+                            for pi in pInd:
+                                pfs.append(float(hvDict['x_freqs']['Z'][pi]))
+                            peakFreqs.append(pfs)
+                        fColID = colID.replace('Indices', 'Freqs')
+
+                        hvDict['hvsr_windows_df'][fColID] = peakFreqs
+                        hvDict['hvsr_windows_df'][colID] = peakinds
+                    
+                    # Get log10 values
+                    hvDict['hvsr_windows_df']['Log10_'+colID+'_'+az] = np.log10(hvList).tolist()
+
             return HVSRData(hvDict)
-        except Exception:
+
+        except Exception as e:
+            print("ERROR creating HVSRData object, returning dict")
+            traceback.print_exc()
             return jsonDictIN
     
     return jsonDictIN
@@ -5938,7 +6006,7 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
             peakVals = []
             peakThetas = []
             for k in sorted(hvsr_data.hvsr_az.keys()):
-                peakVals.append(hvsr_data.BestPeak[k]['f0'])
+                peakVals.append(float(hvsr_data.BestPeak[k]['f0']))
                 peakThetas.append(int(k[2:]))
             peakThetas = peakThetas + (180 + np.array(peakThetas)).tolist()
             peakThetas = np.deg2rad(peakThetas).tolist()
@@ -11142,7 +11210,7 @@ def _generate_print_report(hvsr_results, azimuth="HV", show_print_report=True, v
                     hvsr_results['BestPeak'][azimuth]['PassList']['LowStDev_Amp'])
         peakPass = peakTestsPassed >= 5
 
-        report_string_list.append('\t{0:.3f} Hz Peak Frequency ± {1:.4f} Hz'.format(hvsr_results['BestPeak'][azimuth]['f0'], float(hvsr_results["BestPeak"][azimuth]['Sf'])))        
+        report_string_list.append('\t{0:.3f} Hz Peak Frequency ± {1:.4f} Hz'.format(float(hvsr_results['BestPeak'][azimuth]['f0']), float(hvsr_results["BestPeak"][azimuth]['Sf'])))        
         if curvePass and peakPass:
             report_string_list.append('\t  {} Peak at {} Hz passed quality checks! :D'.format(sprit_utils._check_mark(), round(hvsr_results['BestPeak'][azimuth]['f0'],3)))
         else:
@@ -11242,7 +11310,7 @@ def _generate_table_report(hvsr_results, azimuth='HV', show_table_report=True, v
     criteriaList.append(hvsr_results['BestPeak'][azimuth]["PeakPasses"])
     for p in hvsr_results['BestPeak'][azimuth]["PassList"]:
         criteriaList.append(hvsr_results['BestPeak'][azimuth]["PassList"][p])
-    dfList = [[d['site'], d['acq_date'], d['xcoord'], d['ycoord'], d['elevation'], round(d['BestPeak'][azimuth]['f0'], 3), round(d['BestPeak'][azimuth]['Sf'], 4)]]
+    dfList = [[d['site'], d['acq_date'], d['xcoord'], d['ycoord'], d['elevation'], round(float(d['BestPeak'][azimuth]['f0']), 3), round(float(d['BestPeak'][azimuth]['Sf']), 4)]]
     dfList[0].extend(criteriaList)
 
     outDF = pd.DataFrame(dfList, columns=pdCols)
@@ -11352,8 +11420,8 @@ def _generate_html_report(hvsr_results, azimuth='HV', show_html_report=False, ve
     html = html.replace("HVSR_ID", hvsr_results['hvsr_id'])
 
     # Update peak freq info
-    html = html.replace("PEAKFREQ", str(round(hvsr_results['BestPeak'][azimuth]['f0'], 3)))
-    html = html.replace("PEAKSTDEV", str(round(hvsr_results['BestPeak'][azimuth]['Sf'], 3)))
+    html = html.replace("PEAKFREQ", str(round(float(hvsr_results['BestPeak'][azimuth]['f0']), 3)))
+    html = html.replace("PEAKSTDEV", str(round(float(hvsr_results['BestPeak'][azimuth]['Sf']), 3)))
 
     if hvsr_results.Table_Report['PeakPasses'][0]:
         html = html.replace("SESAME_TESTS_RESULTS", 'Peak has passed the SESAME validation tests.')
@@ -11616,8 +11684,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     
     if 'ylim' not in kwargs.keys():
         plotymax = max(hvsr_data.hvsrp2[azimuth]) + (max(hvsr_data.hvsrp2[azimuth]) - max(hvsr_data.hvsr_curve))
-        if plotymax > hvsr_data.BestPeak[azimuth]['A0'] * 1.5:
-            plotymax = hvsr_data.BestPeak[azimuth]['A0'] * 1.5
+        if plotymax > float(hvsr_data.BestPeak[azimuth]['A0']) * 1.5:
+            plotymax = float(hvsr_data.BestPeak[azimuth]['A0']) * 1.5
         ylim = [0, plotymax]
     else:
         ylim = kwargs['ylim']
@@ -11682,8 +11750,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
 
     # Get peak parameters (if exist, otherwise, get dummy ones)
     if "BestPeak" in hvsr_data.keys():
-        f0 = hvsr_data['BestPeak'][azimuth]['f0']
-        a0 = hvsr_data['BestPeak'][azimuth]['A0']
+        f0 = float(hvsr_data['BestPeak'][azimuth]['f0'])
+        a0 = float(hvsr_data['BestPeak'][azimuth]['A0'])
     else:
         f0 = hvsr_data['hvsr_band'][0]
         a0 = 0
@@ -12285,7 +12353,7 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, azimuth='HV', save_dir=Non
     ax.tick_params(left=True, right=True, top=True)
 
     if peak_plot:
-        ax.axhline(hvsr_data['BestPeak'][azimuth]['f0'], c='k',  linestyle='dotted', zorder=1000)
+        ax.axhline(float(hvsr_data['BestPeak'][azimuth]['f0']), c='k',  linestyle='dotted', zorder=1000)
 
     if annotate:
         if float(hvsr_data['BestPeak'][azimuth]['f0']) < 1:
