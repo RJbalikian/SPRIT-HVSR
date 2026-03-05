@@ -1259,13 +1259,15 @@ def run(input_data=None, source='file',
         If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     """
     
-    if isinstance(input_data, (pd.DataFrame)):
+    if isinstance(input_data, (pd.DataFrame, obspy.Stream, obspy.Trace)):
         pass
     elif input_data is None or input_data == '' or str(input_data).lower() == 'sample':
         if str(input_data).lower() == 'sample' and str(source).lower() == 'batch':
             pass
         else:
             input_data = 'sample'
+    elif pathlib.Path(input_data).exists() and ():
+        input_data = pathlib.Path(input_data).as_posix()
     
     orig_args = locals().copy()  # Get the initial arguments
     global do_run
@@ -2985,6 +2987,10 @@ def export_json(hvsr_results, json_export_path=None,
     # May use this later if plot binary string support added
     # plots = ['Input_Plot', "Plot_Report", "Outlier_Plot"]
 
+    # A troublesome thing for exporting, importing and not necessary
+    if 'processing_parameters' in hvsr_results['processing_parameters']['input_params']:
+        del hvsr_results['processing_parameters']['input_params']['processing_parameters']
+        
     sKeys = False
     if 'sort_keys' in kwargs:
         sKeys = kwargs['sort_keys']
@@ -3225,8 +3231,11 @@ def export_json(hvsr_results, json_export_path=None,
             st = hvsr_results.stream
             stats = st[0].stats
             fname = f"{hvsr_results.site}_HVSR-JSON_{stats.starttime.strftime("%Y%m%d")}-{stats.starttime.strftime("%H%M")}-{hvsr_results.station}-{datetime.date.today().strftime("%Y-%m-%d")}.json"
+            if not pathlib.Path(json_export_path).exists():
+                print("Creating directory for JSON export at", json_export_path)
+                pathlib.Path(json_export_path).mkdir(exist_ok=True, parents=True)
             json_export_path = pathlib.Path(json_export_path).joinpath(fname)
-    
+
     # First write dict to json
     with open(json_export_path, 'w') as f:
         # dump the JSON string to the file
@@ -3316,6 +3325,9 @@ def export_report(hvsr_results, report_export_path=None, report_export_format=['
 
     if type(report_export_format) is str:
         report_export_format = [report_export_format]
+    
+    if report_export_path is not None and pathlib.Path(report_export_path).exists():
+        report_export_path = pathlib.Path(report_export_path).as_posix()
     
     for ref in report_export_format:
 
@@ -3674,7 +3686,11 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
                 if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
                     update_msg.append(f'\t\t{k} = {v} (previously {orig_args[k]})')
                     orig_args[k] = v
-                    
+
+    if orig_args['data_export_path'] is not None:
+        if pathlib.Path(orig_args['data_export_path']).exists():
+            data_export_path = orig_args['data_export_path'] = pathlib.Path(orig_args['data_export_path']).as_posix()
+         
     # Update local variables, in case of previously-specified parameters
     source = orig_args['source'].lower()
     data_export_path = orig_args['data_export_path']
@@ -4441,6 +4457,8 @@ def from_json(json_input, return_hvsr=True, **kwargs):
                 jsonDictIN = json.load(ji)
         except Exception:
             print(f"Could not read json data in file: {json_input}. Will read in text of file")
+            traceback.print_exc()
+            
             with open(json_input, 'r') as ji:
                 jsonDictIN = ji.read()
     else:
@@ -4469,12 +4487,15 @@ def from_json(json_input, return_hvsr=True, **kwargs):
                         hvDict[k][comp_az] = np.array(comp_az_vals)
                 elif k == 'Table_Report':
                     hvDict[k] = pd.DataFrame(v).T
+                    
                 elif k == 'hvsr_windows_df':
                     dtlist = []
+                    useList = []
                     for t, useVal in jsonDictIN['hvsr_windows_df']['Use'].items():
                         pddt = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%fZ")
                         pddt = pddt.replace(tzinfo=zoneinfo.ZoneInfo('UTC'))
                         dtlist.append(pddt)
+                        useList.append(useVal)
                     dtInd = pd.DatetimeIndex(dtlist)
                     hvDict['hvsr_windows_df'] = pd.DataFrame(jsonDictIN['hvsr_windows_df'])
                     hvDict['hvsr_windows_df'].set_index(dtInd, inplace=True)
@@ -4488,16 +4509,34 @@ def from_json(json_input, return_hvsr=True, **kwargs):
                         if az != 'HV':
                             colID = colID + '_'+az
 
-                        for arr in ihc:
-                            hvList.append(arr)
-
-                        hvDict['hvsr_windows_df'][colID] = hvList
+                        i = 0
+                        arrLength = 1
+                        for useVal in useList:
+                            if useVal:
+                                hvList.append(ihc[i])
+                                arrLength = len(ihc[i])
+                                i += 1
+                            else:
+                                hvList.append(np.nan)
                         
+                        # Get log10 values
+                        newHVList = []
+                        for hvLItem in hvList:
+                            if hvLItem is np.nan:
+                                newHVList.append([np.nan]*arrLength)
+                            else:
+                                newHVList.append(hvLItem)
+                        
+                        hvDict['hvsr_windows_df'][colID] = newHVList
+                        hvDict['hvsr_windows_df']['Log10_'+colID+'_'+az] = np.log10(newHVList).tolist()
+
+                            
                     # Get individual psd curves into df
                     for comp, psdvals in hvDict['psd_raw'].items():
                         colID = 'psd_values_'+comp
 
                         psdList = []
+                        
                         for arr in psdvals:
                             psdList.append(arr)
 
@@ -4547,9 +4586,6 @@ def from_json(json_input, return_hvsr=True, **kwargs):
 
                         hvDict['hvsr_windows_df'][fColID] = peakFreqs
                         hvDict['hvsr_windows_df'][colID] = peakinds
-                    
-                    # Get log10 values
-                    hvDict['hvsr_windows_df']['Log10_'+colID+'_'+az] = np.log10(hvList).tolist()
 
             return HVSRData(hvDict)
 
@@ -5184,6 +5220,9 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                     update_msg.append(f'\t\t{k} = {v} (previously {orig_args[k]})')
                     orig_args[k] = v
 
+    if report_export_path is not None and report_export_path is not True and report_export_path is not False:
+        orig_args['report_export_path'] = report_export_path = pathlib.Path(report_export_path).as_posix()
+
     if str(azimuth).lower() == 'none':
         orig_args['azimuth'] = "HV"
     azimuth = orig_args['azimuth']
@@ -5813,6 +5852,9 @@ def input_params(input_data,
     
     hvsr_id = f"{proj_id}{acq_date.strftime('%Y%m%d')}-{starttime.strftime('%H%M')}-{station}"
     update_msg.append(f"\t\thvsr_id generated from input parameters: {hvsr_id}")
+
+    if pathlib.Path(str(input_data)).exists():
+        input_data = pathlib.Path(input_data).as_posix()
 
     #Add key/values to input parameter dictionary for use throughout the rest of the package
     inputParamDict = {'site':site, 'project':project, 'hvsr_id':hvsr_id, 'network':network, 'station':station,'location':location, 'channels':channels,
@@ -7213,8 +7255,10 @@ def remove_noise(hvsr_data, remove_method=None,
         if 'processing_parameters' not in output.keys():
             output['processing_parameters'] = {}
         output['processing_parameters']['remove_noise'] = {}
+        exclude_params_list = ['hvsr_data']
         for key, value in orig_args.items():
-            output['processing_parameters']['remove_noise'][key] = value
+            if key not in exclude_params_list:
+                output['processing_parameters']['remove_noise'][key] = value
         
         output['processing_status']['remove_noise_status'] = True
         output = sprit_utils._check_processing_status(output, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
