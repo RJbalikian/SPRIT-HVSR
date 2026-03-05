@@ -5,14 +5,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 3.6 documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 3.7 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=7effb3c7"></script>
-      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/documentation_options.js?v=da8737de"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -1404,13 +1404,15 @@
 <span class="sd">        If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">)):</span>
         <span class="k">pass</span>
     <span class="k">elif</span> <span class="n">input_data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">input_data</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;sample&#39;</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;sample&#39;</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;batch&#39;</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">input_data</span> <span class="o">=</span> <span class="s1">&#39;sample&#39;</span>
+    <span class="k">elif</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="p">():</span>
+        <span class="n">input_data</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span>
     
     <span class="n">orig_args</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c1"># Get the initial arguments</span>
     <span class="k">global</span> <span class="n">do_run</span>
@@ -3148,6 +3150,10 @@
     <span class="c1"># May use this later if plot binary string support added</span>
     <span class="c1"># plots = [&#39;Input_Plot&#39;, &quot;Plot_Report&quot;, &quot;Outlier_Plot&quot;]</span>
 
+    <span class="c1"># A troublesome thing for exporting, importing and not necessary</span>
+    <span class="k">if</span> <span class="s1">&#39;processing_parameters&#39;</span> <span class="ow">in</span> <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;input_params&#39;</span><span class="p">]:</span>
+        <span class="k">del</span> <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;input_params&#39;</span><span class="p">][</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">]</span>
+        
     <span class="n">sKeys</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="k">if</span> <span class="s1">&#39;sort_keys&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="n">sKeys</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;sort_keys&#39;</span><span class="p">]</span>
@@ -3388,8 +3394,11 @@
             <span class="n">st</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">stream</span>
             <span class="n">stats</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span>
             <span class="n">fname</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">site</span><span class="si">}</span><span class="s2">_HVSR-JSON_</span><span class="si">{</span><span class="n">stats</span><span class="o">.</span><span class="n">starttime</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">stats</span><span class="o">.</span><span class="n">starttime</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%H%M&quot;</span><span class="p">)</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">station</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span><span class="si">}</span><span class="s2">.json&quot;</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">json_export_path</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Creating directory for JSON export at&quot;</span><span class="p">,</span> <span class="n">json_export_path</span><span class="p">)</span>
+                <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">json_export_path</span><span class="p">)</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">json_export_path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">json_export_path</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
-    
+
     <span class="c1"># First write dict to json</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">json_export_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="c1"># dump the JSON string to the file</span>
@@ -3482,6 +3491,9 @@
 
     <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">report_export_format</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">report_export_format</span> <span class="o">=</span> <span class="p">[</span><span class="n">report_export_format</span><span class="p">]</span>
+    
+    <span class="k">if</span> <span class="n">report_export_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">report_export_path</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">report_export_path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">report_export_path</span><span class="p">)</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span>
     
     <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">report_export_format</span><span class="p">:</span>
 
@@ -3846,7 +3858,11 @@
                 <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">orig_args</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="n">orig_args</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">==</span><span class="n">defaultVDict</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span>
                     <span class="n">update_msg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\t\t</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1"> = </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> (previously </span><span class="si">{</span><span class="n">orig_args</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
                     <span class="n">orig_args</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
-                    
+
+    <span class="k">if</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;data_export_path&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;data_export_path&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">data_export_path</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;data_export_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;data_export_path&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span>
+         
     <span class="c1"># Update local variables, in case of previously-specified parameters</span>
     <span class="n">source</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
     <span class="n">data_export_path</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;data_export_path&#39;</span><span class="p">]</span>
@@ -4616,6 +4632,8 @@
                 <span class="n">jsonDictIN</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">ji</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not read json data in file: </span><span class="si">{</span><span class="n">json_input</span><span class="si">}</span><span class="s2">. Will read in text of file&quot;</span><span class="p">)</span>
+            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
+            
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">json_input</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ji</span><span class="p">:</span>
                 <span class="n">jsonDictIN</span> <span class="o">=</span> <span class="n">ji</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
@@ -4644,12 +4662,15 @@
                         <span class="n">hvDict</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">comp_az</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">comp_az_vals</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;Table_Report&#39;</span><span class="p">:</span>
                     <span class="n">hvDict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+                    
                 <span class="k">elif</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">:</span>
                     <span class="n">dtlist</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">useList</span> <span class="o">=</span> <span class="p">[]</span>
                     <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">useVal</span> <span class="ow">in</span> <span class="n">jsonDictIN</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;Use&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                         <span class="n">pddt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%S.</span><span class="si">%f</span><span class="s2">Z&quot;</span><span class="p">)</span>
                         <span class="n">pddt</span> <span class="o">=</span> <span class="n">pddt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="n">zoneinfo</span><span class="o">.</span><span class="n">ZoneInfo</span><span class="p">(</span><span class="s1">&#39;UTC&#39;</span><span class="p">))</span>
                         <span class="n">dtlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pddt</span><span class="p">)</span>
+                        <span class="n">useList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">useVal</span><span class="p">)</span>
                     <span class="n">dtInd</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">(</span><span class="n">dtlist</span><span class="p">)</span>
                     <span class="n">hvDict</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">jsonDictIN</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">])</span>
                     <span class="n">hvDict</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">dtInd</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -4663,16 +4684,34 @@
                         <span class="k">if</span> <span class="n">az</span> <span class="o">!=</span> <span class="s1">&#39;HV&#39;</span><span class="p">:</span>
                             <span class="n">colID</span> <span class="o">=</span> <span class="n">colID</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">az</span>
 
-                        <span class="k">for</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">ihc</span><span class="p">:</span>
-                            <span class="n">hvList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
-
-                        <span class="n">hvDict</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="n">colID</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvList</span>
+                        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+                        <span class="n">arrLength</span> <span class="o">=</span> <span class="mi">1</span>
+                        <span class="k">for</span> <span class="n">useVal</span> <span class="ow">in</span> <span class="n">useList</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">useVal</span><span class="p">:</span>
+                                <span class="n">hvList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ihc</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                                <span class="n">arrLength</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ihc</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">hvList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
                         
+                        <span class="c1"># Get log10 values</span>
+                        <span class="n">newHVList</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="k">for</span> <span class="n">hvLItem</span> <span class="ow">in</span> <span class="n">hvList</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">hvLItem</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">:</span>
+                                <span class="n">newHVList</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">]</span><span class="o">*</span><span class="n">arrLength</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">newHVList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hvLItem</span><span class="p">)</span>
+                        
+                        <span class="n">hvDict</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="n">colID</span><span class="p">]</span> <span class="o">=</span> <span class="n">newHVList</span>
+                        <span class="n">hvDict</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;Log10_&#39;</span><span class="o">+</span><span class="n">colID</span><span class="o">+</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">az</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">newHVList</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+                            
                     <span class="c1"># Get individual psd curves into df</span>
                     <span class="k">for</span> <span class="n">comp</span><span class="p">,</span> <span class="n">psdvals</span> <span class="ow">in</span> <span class="n">hvDict</span><span class="p">[</span><span class="s1">&#39;psd_raw&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                         <span class="n">colID</span> <span class="o">=</span> <span class="s1">&#39;psd_values_&#39;</span><span class="o">+</span><span class="n">comp</span>
 
                         <span class="n">psdList</span> <span class="o">=</span> <span class="p">[]</span>
+                        
                         <span class="k">for</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">psdvals</span><span class="p">:</span>
                             <span class="n">psdList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
 
@@ -4722,9 +4761,6 @@
 
                         <span class="n">hvDict</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="n">fColID</span><span class="p">]</span> <span class="o">=</span> <span class="n">peakFreqs</span>
                         <span class="n">hvDict</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="n">colID</span><span class="p">]</span> <span class="o">=</span> <span class="n">peakinds</span>
-                    
-                    <span class="c1"># Get log10 values</span>
-                    <span class="n">hvDict</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;Log10_&#39;</span><span class="o">+</span><span class="n">colID</span><span class="o">+</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">az</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">hvList</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
             <span class="k">return</span> <span class="n">HVSRData</span><span class="p">(</span><span class="n">hvDict</span><span class="p">)</span>
 
@@ -5368,6 +5404,9 @@
                     <span class="n">update_msg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\t\t</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1"> = </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> (previously </span><span class="si">{</span><span class="n">orig_args</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
                     <span class="n">orig_args</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
 
+    <span class="k">if</span> <span class="n">report_export_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">report_export_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span> <span class="ow">and</span> <span class="n">report_export_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;report_export_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">report_export_path</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">report_export_path</span><span class="p">)</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span>
+
     <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">azimuth</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
         <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;azimuth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;HV&quot;</span>
     <span class="n">azimuth</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;azimuth&#39;</span><span class="p">]</span>
@@ -6006,6 +6045,9 @@
     
     <span class="n">hvsr_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">proj_id</span><span class="si">}{</span><span class="n">acq_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">starttime</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%H%M&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">station</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="n">update_msg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">hvsr_id generated from input parameters: </span><span class="si">{</span><span class="n">hvsr_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">input_data</span><span class="p">))</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">input_data</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span>
 
     <span class="c1">#Add key/values to input parameter dictionary for use throughout the rest of the package</span>
     <span class="n">inputParamDict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;site&#39;</span><span class="p">:</span><span class="n">site</span><span class="p">,</span> <span class="s1">&#39;project&#39;</span><span class="p">:</span><span class="n">project</span><span class="p">,</span> <span class="s1">&#39;hvsr_id&#39;</span><span class="p">:</span><span class="n">hvsr_id</span><span class="p">,</span> <span class="s1">&#39;network&#39;</span><span class="p">:</span><span class="n">network</span><span class="p">,</span> <span class="s1">&#39;station&#39;</span><span class="p">:</span><span class="n">station</span><span class="p">,</span><span class="s1">&#39;location&#39;</span><span class="p">:</span><span class="n">location</span><span class="p">,</span> <span class="s1">&#39;channels&#39;</span><span class="p">:</span><span class="n">channels</span><span class="p">,</span>
@@ -7421,8 +7463,10 @@
         <span class="k">if</span> <span class="s1">&#39;processing_parameters&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">output</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">output</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">output</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;remove_noise&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">exclude_params_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;hvsr_data&#39;</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">orig_args</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">output</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;remove_noise&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">exclude_params_list</span><span class="p">:</span>
+                <span class="n">output</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">][</span><span class="s1">&#39;remove_noise&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
         
         <span class="n">output</span><span class="p">[</span><span class="s1">&#39;processing_status&#39;</span><span class="p">][</span><span class="s1">&#39;remove_noise_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">output</span> <span class="o">=</span> <span class="n">sprit_utils</span><span class="o">.</span><span class="n">_check_processing_status</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span> <span class="n">func_name</span><span class="o">=</span><span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="mi">3</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>

@@ -1315,6 +1315,10 @@ Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extensi
     # May use this later if plot binary string support added
     # plots = [&#39;Input_Plot&#39;, &#34;Plot_Report&#34;, &#34;Outlier_Plot&#34;]
 
+    # A troublesome thing for exporting, importing and not necessary
+    if &#39;processing_parameters&#39; in hvsr_results[&#39;processing_parameters&#39;][&#39;input_params&#39;]:
+        del hvsr_results[&#39;processing_parameters&#39;][&#39;input_params&#39;][&#39;processing_parameters&#39;]
+        
     sKeys = False
     if &#39;sort_keys&#39; in kwargs:
         sKeys = kwargs[&#39;sort_keys&#39;]
@@ -1555,8 +1559,11 @@ Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extensi
             st = hvsr_results.stream
             stats = st[0].stats
             fname = f&#34;{hvsr_results.site}_HVSR-JSON_{stats.starttime.strftime(&#34;%Y%m%d&#34;)}-{stats.starttime.strftime(&#34;%H%M&#34;)}-{hvsr_results.station}-{datetime.date.today().strftime(&#34;%Y-%m-%d&#34;)}.json&#34;
+            if not pathlib.Path(json_export_path).exists():
+                print(&#34;Creating directory for JSON export at&#34;, json_export_path)
+                pathlib.Path(json_export_path).mkdir(exist_ok=True, parents=True)
             json_export_path = pathlib.Path(json_export_path).joinpath(fname)
-    
+
     # First write dict to json
     with open(json_export_path, &#39;w&#39;) as f:
         # dump the JSON string to the file
@@ -1682,6 +1689,9 @@ If both are set to True, dict will override string.</dd>
 
     if type(report_export_format) is str:
         report_export_format = [report_export_format]
+    
+    if report_export_path is not None and pathlib.Path(report_export_path).exists():
+        report_export_path = pathlib.Path(report_export_path).as_posix()
     
     for ref in report_export_format:
 
@@ -2105,7 +2115,11 @@ If 'processing', saves the processing settings to their respective file. By defa
                 if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
                     update_msg.append(f&#39;\t\t{k} = {v} (previously {orig_args[k]})&#39;)
                     orig_args[k] = v
-                    
+
+    if orig_args[&#39;data_export_path&#39;] is not None:
+        if pathlib.Path(orig_args[&#39;data_export_path&#39;]).exists():
+            data_export_path = orig_args[&#39;data_export_path&#39;] = pathlib.Path(orig_args[&#39;data_export_path&#39;]).as_posix()
+         
     # Update local variables, in case of previously-specified parameters
     source = orig_args[&#39;source&#39;].lower()
     data_export_path = orig_args[&#39;data_export_path&#39;]
@@ -2931,6 +2945,8 @@ See here for more information: <a href="https://docs.obspy.org/packages/autogen/
                 jsonDictIN = json.load(ji)
         except Exception:
             print(f&#34;Could not read json data in file: {json_input}. Will read in text of file&#34;)
+            traceback.print_exc()
+            
             with open(json_input, &#39;r&#39;) as ji:
                 jsonDictIN = ji.read()
     else:
@@ -2959,12 +2975,15 @@ See here for more information: <a href="https://docs.obspy.org/packages/autogen/
                         hvDict[k][comp_az] = np.array(comp_az_vals)
                 elif k == &#39;Table_Report&#39;:
                     hvDict[k] = pd.DataFrame(v).T
+                    
                 elif k == &#39;hvsr_windows_df&#39;:
                     dtlist = []
+                    useList = []
                     for t, useVal in jsonDictIN[&#39;hvsr_windows_df&#39;][&#39;Use&#39;].items():
                         pddt = datetime.datetime.strptime(t, &#34;%Y-%m-%dT%H:%M:%S.%fZ&#34;)
                         pddt = pddt.replace(tzinfo=zoneinfo.ZoneInfo(&#39;UTC&#39;))
                         dtlist.append(pddt)
+                        useList.append(useVal)
                     dtInd = pd.DatetimeIndex(dtlist)
                     hvDict[&#39;hvsr_windows_df&#39;] = pd.DataFrame(jsonDictIN[&#39;hvsr_windows_df&#39;])
                     hvDict[&#39;hvsr_windows_df&#39;].set_index(dtInd, inplace=True)
@@ -2978,16 +2997,34 @@ See here for more information: <a href="https://docs.obspy.org/packages/autogen/
                         if az != &#39;HV&#39;:
                             colID = colID + &#39;_&#39;+az
 
-                        for arr in ihc:
-                            hvList.append(arr)
-
-                        hvDict[&#39;hvsr_windows_df&#39;][colID] = hvList
+                        i = 0
+                        arrLength = 1
+                        for useVal in useList:
+                            if useVal:
+                                hvList.append(ihc[i])
+                                arrLength = len(ihc[i])
+                                i += 1
+                            else:
+                                hvList.append(np.nan)
                         
+                        # Get log10 values
+                        newHVList = []
+                        for hvLItem in hvList:
+                            if hvLItem is np.nan:
+                                newHVList.append([np.nan]*arrLength)
+                            else:
+                                newHVList.append(hvLItem)
+                        
+                        hvDict[&#39;hvsr_windows_df&#39;][colID] = newHVList
+                        hvDict[&#39;hvsr_windows_df&#39;][&#39;Log10_&#39;+colID+&#39;_&#39;+az] = np.log10(newHVList).tolist()
+
+                            
                     # Get individual psd curves into df
                     for comp, psdvals in hvDict[&#39;psd_raw&#39;].items():
                         colID = &#39;psd_values_&#39;+comp
 
                         psdList = []
+                        
                         for arr in psdvals:
                             psdList.append(arr)
 
@@ -3037,9 +3074,6 @@ See here for more information: <a href="https://docs.obspy.org/packages/autogen/
 
                         hvDict[&#39;hvsr_windows_df&#39;][fColID] = peakFreqs
                         hvDict[&#39;hvsr_windows_df&#39;][colID] = peakinds
-                    
-                    # Get log10 values
-                    hvDict[&#39;hvsr_windows_df&#39;][&#39;Log10_&#39;+colID+&#39;_&#39;+az] = np.log10(hvList).tolist()
 
             return HVSRData(hvDict)
 
@@ -3788,6 +3822,9 @@ If not specified, does not write file</dd>
                 if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     update_msg.append(f&#39;\t\t{k} = {v} (previously {orig_args[k]})&#39;)
                     orig_args[k] = v
+
+    if report_export_path is not None and report_export_path is not True and report_export_path is not False:
+        orig_args[&#39;report_export_path&#39;] = report_export_path = pathlib.Path(report_export_path).as_posix()
 
     if str(azimuth).lower() == &#39;none&#39;:
         orig_args[&#39;azimuth&#39;] = &#34;HV&#34;
@@ -4649,6 +4686,9 @@ with key:value pairs for each parameter name:value in that function.</dd>
     
     hvsr_id = f&#34;{proj_id}{acq_date.strftime(&#39;%Y%m%d&#39;)}-{starttime.strftime(&#39;%H%M&#39;)}-{station}&#34;
     update_msg.append(f&#34;\t\thvsr_id generated from input parameters: {hvsr_id}&#34;)
+
+    if pathlib.Path(str(input_data)).exists():
+        input_data = pathlib.Path(input_data).as_posix()
 
     #Add key/values to input parameter dictionary for use throughout the rest of the package
     inputParamDict = {&#39;site&#39;:site, &#39;project&#39;:project, &#39;hvsr_id&#39;:hvsr_id, &#39;network&#39;:network, &#39;station&#39;:station,&#39;location&#39;:location, &#39;channels&#39;:channels,
@@ -6335,8 +6375,10 @@ If None, 128 used, by default None</dd>
         if &#39;processing_parameters&#39; not in output.keys():
             output[&#39;processing_parameters&#39;] = {}
         output[&#39;processing_parameters&#39;][&#39;remove_noise&#39;] = {}
+        exclude_params_list = [&#39;hvsr_data&#39;]
         for key, value in orig_args.items():
-            output[&#39;processing_parameters&#39;][&#39;remove_noise&#39;][key] = value
+            if key not in exclude_params_list:
+                output[&#39;processing_parameters&#39;][&#39;remove_noise&#39;][key] = value
         
         output[&#39;processing_status&#39;][&#39;remove_noise_status&#39;] = True
         output = sprit_utils._check_processing_status(output, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
@@ -6784,13 +6826,15 @@ This is minimum number of points a point needs in its neighborhood to not be con
         If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     &#34;&#34;&#34;
     
-    if isinstance(input_data, (pd.DataFrame)):
+    if isinstance(input_data, (pd.DataFrame, obspy.Stream, obspy.Trace)):
         pass
     elif input_data is None or input_data == &#39;&#39; or str(input_data).lower() == &#39;sample&#39;:
         if str(input_data).lower() == &#39;sample&#39; and str(source).lower() == &#39;batch&#39;:
             pass
         else:
             input_data = &#39;sample&#39;
+    elif pathlib.Path(input_data).exists() and ():
+        input_data = pathlib.Path(input_data).as_posix()
     
     orig_args = locals().copy()  # Get the initial arguments
     global do_run
