@@ -3236,32 +3236,32 @@ def export_json(hvsr_results, json_export_path=None,
                 pathlib.Path(json_export_path).mkdir(exist_ok=True, parents=True)
             json_export_path = pathlib.Path(json_export_path).joinpath(fname)
 
-    # First write dict to json
-    with open(json_export_path, 'w') as f:
-        # dump the JSON string to the file
-        # Parse out json dump kwargs
-        jsondump_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(json.dump).parameters.keys())}
-        
-        json.dump(dict_for_json, 
-                    fp=f,
-                    sort_keys=sKeys, 
-                    indent=indent, **jsondump_kwargs)
+        # First write dict to json
+        with open(json_export_path, mode='w', encoding="UTF-8") as f:
+            # dump the JSON string to the file
+            # Parse out json dump kwargs
+            jsondump_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(json.dump).parameters.keys())}
+            
+            json.dump(dict_for_json, 
+                        fp=f,
+                        sort_keys=sKeys, 
+                        indent=indent, **jsondump_kwargs)
 
-    # Then read it back in to add custom parts from dict_str_list
-    with open(json_export_path, 'r') as f:
-        readLines = f.readlines()
-    readLines = readLines[:-1]
-    readLines[-1] = readLines[-1].replace('\n',',\n')
-    readLines.extend(dict_str_list)
-    readLines.append('}')
+        # Then read it back in to add custom parts from dict_str_list
+        with open(json_export_path, encoding='UTF-8', mode='r') as f:
+            readLines = f.readlines()
+        readLines = readLines[:-1]
+        readLines[-1] = readLines[-1].replace('\n',',\n')
+        readLines.extend(dict_str_list)
+        readLines.append('}')
 
-    # Export final version
-    with open(json_export_path, encoding='UTF-8', mode='w') as f:
-        f.writelines(readLines)
-    
-    if verbose:
-        print(f'HVSRData object exported in JSON format to {json_export_path}')
+        # Export final version
+        with open(json_export_path, encoding='UTF-8', mode='w') as f:
+            f.writelines(readLines)
         
+        if verbose:
+            print(f'HVSRData object exported in JSON format to {json_export_path}')
+            
     if return_json_string or return_dict or (json_export_path is None):
         jsonString = json.dumps(dict_for_json,
                                 sort_keys=sKeys, 
@@ -7967,7 +7967,7 @@ def _update_shake_metadata(filepath, params, write_path='', verbose=False):
                 write_file=write_path
             tree.write(write_file, xml_declaration=True, method='xml',encoding='UTF-8')
             inv = obspy.read_inventory(write_file, format='STATIONXML', level='response')
-        except:
+        except Exception:
             warnings.warn(f'write_path={write_path} is not recognized as a filepath, updated metadata file will not be written')
             write_path=''
     else:
