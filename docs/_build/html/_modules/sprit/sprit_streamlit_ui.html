@@ -5,14 +5,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_streamlit_ui &mdash; sprit 3.7 documentation</title>
+  <title>sprit.sprit_streamlit_ui &mdash; sprit 3.7.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
 
   
-      <script src="../../_static/documentation_options.js?v=da8737de"></script>
-      <script src="../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/documentation_options.js?v=86e43a22"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -809,7 +809,7 @@
     <span class="nd">@st</span><span class="o">.</span><span class="n">fragment</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">display_download_buttons</span><span class="p">():</span>
         <span class="c1">##dlText, dlPDFReport, dlStream, dlTable, dlPlot, dlHVSR = st.session_state.mainContainer.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])</span>
-        <span class="n">dlText</span><span class="p">,</span> <span class="n">dlStream</span><span class="p">,</span> <span class="n">dlHVSR</span><span class="p">,</span> <span class="n">dlPDFReport</span><span class="p">,</span> <span class="n">dlTable</span><span class="p">,</span> <span class="n">dlPlot</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.16</span><span class="p">,</span> <span class="mf">0.16</span><span class="p">,</span> <span class="mf">0.16</span><span class="p">,</span> <span class="mf">0.16</span><span class="p">,</span> <span class="mf">0.16</span><span class="p">])</span>
+        <span class="n">dlText</span><span class="p">,</span> <span class="n">dlStream</span><span class="p">,</span> <span class="n">dlJSON</span><span class="p">,</span> <span class="n">dlHVSR</span><span class="p">,</span> <span class="n">dlPDFReport</span><span class="p">,</span> <span class="n">dlTable</span><span class="p">,</span> <span class="n">dlPlot</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">])</span>
         <span class="n">st</span><span class="o">.</span><span class="n">divider</span><span class="p">()</span>
 
         <span class="c1"># Download Buttons</span>
@@ -900,6 +900,21 @@
             <span class="p">)</span>
 
 
+        <span class="c1"># JSON File</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">_convert_json_for_download</span><span class="p">(</span><span class="n">hv_data</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">hv_data</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span>
+
+        <span class="n">jsonText</span> <span class="o">=</span> <span class="n">_convert_json_for_download</span><span class="p">(</span><span class="n">hvData</span><span class="p">)</span>
+
+        <span class="n">dlJSON</span><span class="o">.</span><span class="n">download_button</span><span class="p">(</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;JSON&quot;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">jsonText</span><span class="p">,</span>
+            <span class="n">file_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hvData</span><span class="o">.</span><span class="n">site</span><span class="si">}</span><span class="s2">_JSON_</span><span class="si">{</span><span class="n">hvID</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">nowTimeStr</span><span class="si">}</span><span class="s2">.json&quot;</span><span class="p">,</span>
+            <span class="n">mime</span><span class="o">=</span><span class="s2">&quot;application/json&quot;</span><span class="p">,</span>
+            <span class="n">icon</span><span class="o">=</span><span class="s2">&quot;:material/data_object:&quot;</span>
+            <span class="p">)</span>
+
+
         <span class="c1"># HVSR File</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1">#@st.cache_data</span>
@@ -918,9 +933,9 @@
 
             <span class="c1">##st.session_state.dlHVSR.download_button(</span>
             <span class="n">dlHVSR</span><span class="o">.</span><span class="n">download_button</span><span class="p">(</span>
-                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Pickled (.hvsr)&quot;</span><span class="p">,</span>
+                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Pickled&quot;</span><span class="p">,</span>
                 <span class="n">data</span><span class="o">=</span><span class="n">hvsrPickle</span><span class="p">,</span>
-                <span class="n">file_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hvData</span><span class="o">.</span><span class="n">site</span><span class="si">}</span><span class="s2">_HVSRData_</span><span class="si">{</span><span class="n">hvID</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">nowTimeStr</span><span class="si">}</span><span class="s2">_pickled_app.hvsr&quot;</span><span class="p">,</span>
+                <span class="n">file_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hvData</span><span class="o">.</span><span class="n">site</span><span class="si">}</span><span class="s2">_HVSRData_</span><span class="si">{</span><span class="n">hvID</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">nowTimeStr</span><span class="si">}</span><span class="s2">_pickled_fromApp.hvsr&quot;</span><span class="p">,</span>
                 <span class="c1">#on_click=display_results,</span>
                 <span class="n">mime</span><span class="o">=</span><span class="s1">&#39;application/octet-stream&#39;</span><span class="p">,</span>
                 <span class="n">icon</span><span class="o">=</span><span class="s2">&quot;:material/database:&quot;</span><span class="p">)</span>
@@ -1583,6 +1598,7 @@
             <span class="kn">import</span><span class="w"> </span><span class="nn">rioxarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">rxr</span>
         <span class="k">except</span><span class="p">:</span>
             <span class="n">st</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;You must have rioxarray installed (pip install rioxarray) in your python environment to use GMRT elevation data.&quot;</span><span class="p">)</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">ZTB_disabled</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">return</span>
 
         <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">GMRT_URL</span><span class="p">)</span>
@@ -1674,8 +1690,8 @@
             <span class="n">inCRSCol</span><span class="p">,</span> <span class="n">outCRSCol</span><span class="p">,</span> <span class="n">elevUnitCol</span>  <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">])</span>
             <span class="n">xCoordCol</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;X Coordinate&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;i.e., Longitude or Easting&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;xcoord&#39;</span><span class="p">)</span>
             <span class="n">yCoordCol</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;Y Coordinate&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;i.e., Latitude or Northing&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;ycoord&#39;</span><span class="p">)</span>
-            <span class="n">ZTB_disabled</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">elev_wms_check</span>       
-            <span class="n">zCoordCol</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;Z Coordinate&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;i.e., Elevation&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;elevation&#39;</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="n">ZTB_disabled</span><span class="p">)</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">ZTB_disabled</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">elev_wms_check</span>       
+            <span class="n">zCoordCol</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s1">&#39;Z Coordinate&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;i.e., Elevation&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;elevation&#39;</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">ZTB_disabled</span><span class="p">)</span>
 
 
      

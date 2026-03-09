@@ -1564,32 +1564,32 @@ Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extensi
                 pathlib.Path(json_export_path).mkdir(exist_ok=True, parents=True)
             json_export_path = pathlib.Path(json_export_path).joinpath(fname)
 
-    # First write dict to json
-    with open(json_export_path, &#39;w&#39;) as f:
-        # dump the JSON string to the file
-        # Parse out json dump kwargs
-        jsondump_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(json.dump).parameters.keys())}
-        
-        json.dump(dict_for_json, 
-                    fp=f,
-                    sort_keys=sKeys, 
-                    indent=indent, **jsondump_kwargs)
+        # First write dict to json
+        with open(json_export_path, mode=&#39;w&#39;, encoding=&#34;UTF-8&#34;) as f:
+            # dump the JSON string to the file
+            # Parse out json dump kwargs
+            jsondump_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(json.dump).parameters.keys())}
+            
+            json.dump(dict_for_json, 
+                        fp=f,
+                        sort_keys=sKeys, 
+                        indent=indent, **jsondump_kwargs)
 
-    # Then read it back in to add custom parts from dict_str_list
-    with open(json_export_path, &#39;r&#39;) as f:
-        readLines = f.readlines()
-    readLines = readLines[:-1]
-    readLines[-1] = readLines[-1].replace(&#39;\n&#39;,&#39;,\n&#39;)
-    readLines.extend(dict_str_list)
-    readLines.append(&#39;}&#39;)
+        # Then read it back in to add custom parts from dict_str_list
+        with open(json_export_path, encoding=&#39;UTF-8&#39;, mode=&#39;r&#39;) as f:
+            readLines = f.readlines()
+        readLines = readLines[:-1]
+        readLines[-1] = readLines[-1].replace(&#39;\n&#39;,&#39;,\n&#39;)
+        readLines.extend(dict_str_list)
+        readLines.append(&#39;}&#39;)
 
-    # Export final version
-    with open(json_export_path, encoding=&#39;UTF-8&#39;, mode=&#39;w&#39;) as f:
-        f.writelines(readLines)
-    
-    if verbose:
-        print(f&#39;HVSRData object exported in JSON format to {json_export_path}&#39;)
+        # Export final version
+        with open(json_export_path, encoding=&#39;UTF-8&#39;, mode=&#39;w&#39;) as f:
+            f.writelines(readLines)
         
+        if verbose:
+            print(f&#39;HVSRData object exported in JSON format to {json_export_path}&#39;)
+            
     if return_json_string or return_dict or (json_export_path is None):
         jsonString = json.dumps(dict_for_json,
                                 sort_keys=sKeys, 
