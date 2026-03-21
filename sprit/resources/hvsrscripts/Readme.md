@@ -94,6 +94,15 @@ Type `Ctrl + s` to save and `ctrl + x` to exit nano and return to your terminal.
 You will need to install the `screen` tool for this to work, at least if you want the HVSR script to continue running after you disconnect your SSH device. 
 Your Shake will need to be connected to the internet to install the `screen` tool.
 
+> TROUBLESHOOTING: "The repository...buster release no longer has a release file."
+> If you get an error about the repository buster release not having a release file, you must update your repository sources to point to archived/legacy repositories.
+> To do this, you will need to update to files:
+> First update apts sources: `sudo nano /etc/apt/sources.list`
+> Replace the file contents with the archived Buster URL: `deb http://archive.raspbian.org/raspbian/ buster main contrib non-free rpi`
+> Then update the raspi sources: `sudo nano /etc/apt/sources.list.d/raspi.list`
+> Replace the file with the legacy buster URL: `deb http://archive.raspberrypi.org/debian/ buster main`
+> Then, run `sudo apt update`
+
 ```bash
 sudo apt update
 sudo apt install screen
