@@ -3,9 +3,9 @@
 
 
 # SPRĪT 
-<img align="left" width="100" height="100" src="https://github.com/RJbalikian/SPRIT-HVSR/blob/main/sprit/resources/icon/SpRITLogo.png?raw=true" alt="SpRIT Logo">
+<img align="left" width="120" height="120" src="https://github.com/RJbalikian/SPRIT-HVSR/blob/main/sprit/resources/icon/SpRITLogo.png?raw=true" alt="SpRIT Logo">
 
-SpRĪT (pronounced "sprite"): Spectral Ratio Investigation Toolset for basic Horizontal Vertical Spectral Ratio (HVSR) processing, using any data format readable by the Obspy python package. SpRIT also supports input from select Tromino sensors. SpRIT allows for rapid and accurate processing of HVSR data using user-friendly interfaces to the [HVSR algorithms](https://github.com/iris-edu/HVSR) created by experts in the field at IRIS/Earthscope. It has been developed and tested by scientists at the Illinois State Geological Survey, part of the Prairie Research Institute at the University of Illinois.
+SpRĪT (pronounced "sprite"): Spectral Ratio Investigation Toolset for basic Horizontal Vertical Spectral Ratio (HVSR) processing, using any data format readable by the Obspy python package. SpRIT also supports input from select Tromino sensors. SpRIT allows for rapid and accurate processing of HVSR data using simple, user-friendly interfaces to the well-established [HVSR algorithms](https://github.com/iris-edu/HVSR). It has been developed and tested by scientists at the Illinois State Geological Survey, part of the Prairie Research Institute at the University of Illinois, and is intended for use in the classroom, by graduate and undergraduate researchers, and professionals alike. Any issues, questions, or feature requests can be submitted [here](https://github.com/RJbalikian/SPRIT-HVSR/issues).
 
 <br>
 
