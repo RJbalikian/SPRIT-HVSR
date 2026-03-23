@@ -1,9 +1,51 @@
-[![DOI](https://zenodo.org/badge/593014510.svg)](https://zenodo.org/doi/10.5281/zenodo.10899401)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18928183.svg)](https://doi.org/10.5281/zenodo.18928183)
+
+
 
 # SPRĪT 
-SpRĪT (HVSR): Spectral Ratio Investigation Toolset for basic Horizontal Vertical Spectral Ratio processing, using any data format readable by the Obspy python package.
+<img align="left" width="100" height="100" src="https://github.com/RJbalikian/SPRIT-HVSR/blob/main/sprit/resources/icon/SpRITLogo.png?raw=true" alt="SpRIT Logo">
 
-# Introduction
+SpRĪT (pronounced "sprite"): Spectral Ratio Investigation Toolset for basic Horizontal Vertical Spectral Ratio (HVSR) processing, using any data format readable by the Obspy python package. SpRIT also supports input from select Tromino sensors. SpRIT allows for rapid and accurate processing of HVSR data using user-friendly interfaces to the [HVSR algorithms](https://github.com/iris-edu/HVSR) created by experts in the field at IRIS/Earthscope. It has been developed and tested by scientists at the Illinois State Geological Survey, part of the Prairie Research Institute at the University of Illinois.
+
+<br>
+
+# Documentation
+- API Documentation [here](https://rjbalikian.github.io/SPRIT-HVSR/main.html)
+- See Wiki for more tips, tutorials, usage guidelines, troubleshooting, and other information [here](https://github.com/RJbalikian/SPRIT-HVSR/wiki)
+- Pypi repository [here](https://pypi.org/project/sprit/)
+
+# Installation
+Sprit may be installed from the [pypi repository](https://pypi.org/project/sprit/) using the pip command:
+
+```bash 
+pip install sprit
+```
+
+The sprit package is in active development. Add the `--upgrade` argument (`pip install sprit --upgrade`) to ensure you have the latest version. If there are prerelease versions newer than the latest stable version that you would like to try out, use the `--pre` flag, i.e., `pip install sprit --pre`.
+
+This should be done using command line. It is recommended to do this in a virtual environment. For information on creating virtual environments in python, see [this page](https://docs.python.org/3/library/venv.html). For the creation of anaconda environments, see [here](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html). Note that it is not officially recommended to use pip repositories in anaconda environments, but we have not encountered any issues in our testing with conda environments.
+
+For troubleshooting issues with installation or usage of the sprit package, see the [Troubleshooting](https://github.com/RJbalikian/SPRIT-HVSR/wiki/Troubleshooting) page of the wiki.
+
+# Examples
+An example Jupyter notebook is provided in this main repository directory [here](https://github.com/RJbalikian/SPRIT-HVSR/blob/main/SPRIT_EXAMPLE_NOTEBOOK.ipynb).
+
+Code examples include:
+* Basic processing of sample HVSR data
+* Metadata/parameter specification
+* Data editing
+* Reading Tromino data into SpRIT
+* Reports and visualization
+* User interfaces
+* Export and import
+* Batch processing
+
+
+# Web App
+An experimental, browser based web app is available for use via Streamlit. you can find this at [sprithvsr.streamlit.app](https://sprithvsr.streamlit.app)
+
+
+# HVSR Background
 
 The Horizontal to Vertical Spectral Ratio (HVSR) technique is a method used to analyze ambient seismic noise to calculate the dominant frequency at a site.
 
@@ -14,38 +56,6 @@ This python package is built in large part off the Incorporated Research Institu
 That version is intended to read data from the IRIS Data Management Center (DMC) MUSTANG online service,<sup>[3](#3)</sup> which is a toolbox that provides processes for enabling data quality analysis services to data archived in the DMC. For example, a simple service query can extract power spectral density estimates, noise spectrograms, H/V plots, etc.
 
 For guidelines on acquisition, processing, and interpration of H/V data, see: <http://sesame.geopsy.org/Papers/HV_User_Guidelines.pdf>. 
-
-# Installation
-Sprit may be installed from the [pypi repository](https://pypi.org/project/sprit/) using the pip command:
-
-`pip install sprit`
-
-The sprit package is in active development. Add the `--upgrade` argument (`pip install sprit --upgrade`) to ensure you have the latest version. If there are prerelease versions newer than the latest stable version that you would like to try out, use the `--pre` flag, i.e., `pip install sprit --pre`.
-
-This should be done using command line. It is recommended to do this in a virtual environment. For information on creating virtual environments in python, see [this page](https://docs.python.org/3/library/venv.html). For the creation of anaconda environments, see [here](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html). Note that it is not officially recommended to use pip repositories in anaconda environments, but it often works without any issues.
-
-For troubleshooting issues with installation or usage of the sprit package, see the [Troubleshooting](https://github.com/RJbalikian/SPRIT-HVSR/wiki/Troubleshooting) page of the wiki.
-
-# Examples
-An example Jupyter notebook is provided in this main repository directory [here](https://github.com/RJbalikian/SPRIT-HVSR/blob/main/SPRIT_EXAMPLE_NOTEBOOK.ipynb).
-
-Code examples include:
-* basic processing of sample HVSR data
-* Metadata/parameter specification
-* Data editing
-* Reading Tromino data into SpRIT
-* Reports and visualization
-* User interfaces
-* Export and import
-* Batch processing.
-
-# Documentation
-- API Documentation [here](https://rjbalikian.github.io/SPRIT-HVSR/main.html)
-- See Wiki for more tips, tutorials, usage guidelines, troubleshooting, and other information [here](https://github.com/RJbalikian/SPRIT-HVSR/wiki)
-- Pypi repository [here](https://pypi.org/project/sprit/)
-
-# Web App
-An experimental, browser based web app is available for use via Streamlit. you can find this at [sprithvsr.streamlit.app](https://sprithvsr.streamlit.app)
 
 # Dependencies 
 Aside from the modules in the python standard library, the following package dependencies must be installed in your environment for this package to work
