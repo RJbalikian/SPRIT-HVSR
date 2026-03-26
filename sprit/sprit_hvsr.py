@@ -3749,10 +3749,12 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
         input_parameters['input_data'] = input_parameters['input_data'].split('}')
 
     # Make sure input_data is pointing to an actual file
-    if isinstance(input_parameters['input_data'], list):
+    if isinstance(input_parameters['input_data'], (tuple, list)):
+        newInputList = []
         for i, d in enumerate(input_parameters['input_data']):
-            input_parameters['input_data'][i] = sprit_utils._checkifpath(str(d).strip(), sample_list=SAMPLE_LIST)
-        dPath = input_parameters['input_data']
+            newInputList.append(sprit_utils._checkifpath(str(d).strip(), sample_list=SAMPLE_LIST))
+            #input_parameters['input_data'][i] = sprit_utils._checkifpath(str(d).strip(), sample_list=SAMPLE_LIST)
+        dPath = input_parameters['input_data'] = newInputList
     elif isinstance(input_parameters['input_data'], (obspy.Stream, obspy.Trace)):
         dPath = pathlib.Path() #input_parameters['input_data']
     elif isinstance(input_parameters['input_data'], HVSRData):
@@ -3999,6 +4001,12 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
             prevComponent = trace.stats.component
         print()
 
+    # We need an obspy stream at this point with at least 2 traces
+    dataNotReadCond1 = not isinstance(rawDataIN, (obspy.Trace, obspy.Stream))
+    dataNotReadCond2 = len(rawDataIN) < 2
+    if dataNotReadCond1 or dataNotReadCond2:
+        raise RuntimeError("Data stream does not contain any data. Please check that your input data is correct: \n", input_parameters['input_data'])
+
     # Get metadata from the data itself, if not reading raw data
     try:
         # If the data already exists (not reading in raw from RS, for example), get the parameters from the data
@@ -4192,7 +4200,6 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
             dataIN = dataIN.split()
             dataIN = dataIN.trim(starttime=input_parameters['starttime'], endtime=input_parameters['endtime'])
             dataIN.merge()
-
     except Exception as e:
         raise RuntimeError(f'Data as read by obspy does not contain the proper metadata. \n{e}.\nCheck your input parameters or the data file.')
 
@@ -6363,7 +6370,7 @@ def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=
 
 
 # Main function for processing HVSR Curve
-def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='konno ohmachi', 
+def process_hvsr(hvsr_data, horizontal_method=None, freq_smooth='konno ohmachi', 
                  f_smooth_width=40, resample=True, array_processing=True,
                  outlier_curve_percentile_threshold=False, azimuth=None, verbose=False):
     """Process the input data and get HVSR data
@@ -6386,10 +6393,6 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
             6) 'Maximum Horizontal Value'   H ≡ max {HN, HE}
             7) 'Minimum Horizontal Valey'   H ≡ min {HN, HE}
             8) 'Single Azimuth'             H = H2·cos(az) + H1·sin(az)
-    smooth  : bool, default=True
-        bool or int may be used. 
-            If True, default to smooth H/V curve to using savgoy filter with window length of 51 (works well with default resample of 1000 pts)
-            If int, the length of the window in the savgoy filter.
     freq_smooth : str {'konno ohmachi', 'constant', 'proportional'}
         Which frequency smoothing method to use. By default, uses the 'konno ohmachi' method.
             - The Konno & Ohmachi method uses the obspy.signal.konnoohmachismoothing.konno_ohmachi_smoothing() function: https://docs.obspy.org/packages/autogen/obspy.signal.konnoohmachismoothing.konno_ohmachi_smoothing.html
@@ -6439,7 +6442,6 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
                     orig_args[k] = v
                                         
     horizontal_method = orig_args['horizontal_method']
-    smooth = orig_args['smooth']
     freq_smooth = orig_args['freq_smooth']
     f_smooth_width = orig_args['f_smooth_width']
     resample = orig_args['resample']
@@ -6509,6 +6511,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     stDevValsP = {}
     stDevValsM = {}
     psdRaw={}
+    hvsr_data['psd_raw'] = {}
     currTimesUsed={}
     hvsr_data['hvsr_windows_df']['Use'] = hvsr_data['hvsr_windows_df']['Use'].astype(bool)
     hvsrDF = hvsr_data['hvsr_windows_df']
@@ -6536,39 +6539,18 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
         # If resampling has been selected...
         if resample is True or type(resample) is int or type(resample) is float:
             if resample is True:
-                resample = 1000 #Default smooth value
+                resample = 1024 #Default smooth value
 
             # Resample period bin values
             x_periods[k] = np.logspace(np.log10(xValMin_per), np.log10(xValMax_per), num=resample)
                 
-            if smooth or isinstance(smooth, (int, float)):
-                if smooth:
-                    smooth = 51 #Default smoothing window
-                    padVal = 25
-                elif smooth % 2==0:
-                    smooth + 1 #Otherwise, needs to be odd
-                    padVal = smooth // 2
-                    if padVal % 2 == 0:
-                        padVal += 1
-
-
             # Resample raw ppsd values
             for i, ppsd_t in enumerate(input_ppsds):
                 if i==0:
                     psdRaw[k] = np.interp(x_periods[k], psds[k]['period_bin_centers'], ppsd_t)
-                    if smooth is not False and smooth is not None:
-                        padRawKPad = np.pad(psdRaw[k], [padVal, padVal], mode='reflect')
-                        #padRawKPadSmooth = scipy.signal.savgol_filter(padRawKPad, smooth, 3)
-                        padRawKPadSmooth = move_avg(padRawKPad, smooth)
-                        psdRaw[k] = padRawKPadSmooth[padVal:-padVal]
 
                 else:
                     psdRaw[k] = np.vstack((psdRaw[k], np.interp(x_periods[k], psds[k]['period_bin_centers'], ppsd_t)))
-                    if smooth is not False:
-                        padRawKiPad = np.pad(psdRaw[k][i], [padVal, padVal], mode='reflect')
-                        #padRawKiPadSmooth = scipy.signal.savgol_filter(padRawKiPad, smooth, 3)
-                        padRawKiPadSmooth = move_avg(padRawKiPad, smooth)
-                        psdRaw[k][i] = padRawKiPadSmooth[padVal:-padVal]
 
             # Resample other values
             for keys in resampleList:
@@ -6593,52 +6575,13 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
             # Clean up edge freq. values
             x_periods[k][0] = 1/hvsr_data['hvsr_band'][1]
             x_periods[k][-1] = 1/hvsr_data['hvsr_band'][0]
-
-            # If simple curve smooothing desired
-            if smooth or isinstance(smooth, (int, float)):
-                if smooth:
-                    smooth = 51 #Default smoothing window
-                    padVal = 25
-                elif smooth % 2==0:
-                    smooth + 1 #Otherwise, needs to be odd
-                    padVal = smooth // 2
-                    if padVal % 2 == 0:
-                        padVal += 1
-
-                for i, ppsd_t in enumerate(input_ppsds):
-                    if i == 0:
-                        psdRaw[k] = ppsd_t
-                        padRawKPad = np.pad(psdRaw[k], [padVal, padVal], mode='reflect')
-                        #padRawKPadSmooth = scipy.signal.savgol_filter(padRawKPad, smooth, 3)
-                        padRawKPadSmooth = move_avg(padRawKPad, smooth)
-                        psdRaw[k] = padRawKPadSmooth[padVal:-padVal]
-                    else:
-                        psdRaw[k] = np.vstack((psdRaw[k], ppsd_t))
-                        padRawKiPad = np.pad(psdRaw[k][i], [padVal, padVal], mode='reflect')
-                        #padRawKiPadSmooth = scipy.signal.savgol_filter(padRawKiPad, smooth, 3)
-                        padRawKiPadSmooth = move_avg(padRawKiPad, smooth)
-                        psdRaw[k][i] = padRawKiPadSmooth[padVal:-padVal]
-            else:
-                # If no simple curve smoothing
-                psdRaw[k] = np.array(input_ppsds)
+            psdRaw[k] = np.array(input_ppsds)
         
         hvsrDF['psd_values_'+k] = list(psdRaw[k])
         use = hvsrDF['Use'].astype(bool)
-
-        #Get average psd value across time for each channel (used to calc main H/V curve)
-        psdValsTAvg[k] = np.nanmedian(np.stack(hvsrDF[use]['psd_values_'+k]), axis=0)
+        hvsr_data['psd_raw'][k] = psdRaw[k]
         x_freqs[k] = np.array([1/p for p in x_periods[k]]) #np.divide(np.ones_like(x_periods[k]), x_periods[k]) 
-        stDev[k] = np.nanstd(np.stack(hvsrDF[use]['psd_values_'+k]), axis=0)
 
-        stDevValsM[k] = np.array(psdValsTAvg[k] - stDev[k])
-        stDevValsP[k] = np.array(psdValsTAvg[k] + stDev[k])
-
-        currTimesUsed[k] = np.stack(hvsrDF[use]['TimesProcessed_Obspy'])
-        #currTimesUsed[k] = psds[k]['current_times_used'] #original one
-    
-    #print('XFREQS', x_freqs[k].shape)
-    #print('XPERs', x_periods[k].shape)
-    #print('PSDRAW', psdRaw[k].shape)
 
     # Get string of horizontal_method type
     # First, define default
@@ -6691,6 +6634,107 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     
     hvsr_data['horizontal_method'] = horizontal_method
 
+    origPPSD = hvsr_data['ppsds_obspy'].copy()
+
+    #This is if manual editing was used (should probably be updated at some point to just use masks)
+    if 'x_windows_out' in hvsr_data.keys():
+        hvsr_data['x_windows_out'] = hvsr_data['x_windows_out']
+    else:
+        hvsr_data['x_windows_out'] = []
+
+    freq_smooth_ko = ['konno ohmachi', 'konno-ohmachi', 'konnoohmachi', 'konnohmachi', 'ko', 'k']
+    freq_smooth_constant = ['constant', 'const', 'c']
+    freq_smooth_proport = ['proportional', 'proportion', 'prop', 'p']
+
+    # Frequency Smoothing
+    if not freq_smooth:
+        if verbose:
+            warnings.warn('No frequency smoothing is being applied. This is not recommended for noisy datasets.')
+    elif freq_smooth is True or (freq_smooth.lower() in freq_smooth_ko and (not not f_smooth_width and not not freq_smooth)):
+        # Carry out Konno Ohmachi smoothing
+        from obspy.signal import konnoohmachismoothing
+        for k in hvsr_data['psd_raw']:
+            colName = f'psd_values_{k}'
+
+            psd_data = np.stack(hvsr_data['hvsr_windows_df'][colName])
+            psd_data = hvsr_data['psd_raw'][k]
+
+
+            freqs = x_freqs[k]
+            padding_length = int(f_smooth_width)
+
+            padding_value_R = np.nanmean(psd_data[:,-1*padding_length:])
+            padding_value_L = np.nanmean(psd_data[:,:padding_length])
+
+            # Pad the data to prevent boundary anamolies
+            padded_psd_data = np.pad(psd_data, ((0, 0), (padding_length, padding_length)), 
+                                        'constant', constant_values=(padding_value_L, padding_value_R))
+
+            # Pad the frequencies
+            ratio = freqs[1] / freqs[0]
+            # Generate new elements on either side and combine
+            left_padding = [freqs[0] / (ratio ** i) for i in range(padding_length, 0, -1)]
+            right_padding = [freqs[-1] * (ratio ** i) for i in range(1, padding_length + 1)]
+            padded_freqs = np.concatenate([left_padding, freqs, right_padding])
+            
+            #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn't really matter about dtypes often
+            with warnings.catch_warnings():
+                #warnings.simplefilter('ignore', category=UserWarning)
+                padded_psd_data = padded_psd_data.astype(padded_freqs.dtype) # Make them the same datatype
+                padded_psd_data = np.round(padded_psd_data, 12) # Prevent overflows
+                padded_freqs = np.round(padded_freqs, 9)
+
+                smoothed_psd_data = konnoohmachismoothing.konno_ohmachi_smoothing(padded_psd_data, padded_freqs, 
+                                                    bandwidth=f_smooth_width, normalize=True)
+            
+            # Only use the original, non-padded data
+            smoothed_psd_data = smoothed_psd_data[:,padding_length:-1*padding_length]
+            hvsr_data['psd_raw'][k] = smoothed_psd_data
+            hvsrDF[colName] = pd.Series(list(smoothed_psd_data), index=hvsr_data['hvsr_windows_df'].index)
+    elif freq_smooth.lower() in freq_smooth_constant:
+        hvsr_data = __freq_smooth_window(hvsr_data, f_smooth_width, kind_freq_smooth='constant')
+    elif freq_smooth.lower() in freq_smooth_proport:
+        hvsr_data = __freq_smooth_window(hvsr_data, f_smooth_width, kind_freq_smooth='proportional')
+    else:
+        if verbose:
+            warnings.warn(f'You indicated no frequency smoothing should be applied (freq_smooth = {freq_smooth}). This is not recommended for noisy datasets.')
+
+    # Get hvsr curve from three components at each time step
+    anyK = list(hvsr_data['psd_raw'].keys())[0]
+    if horizontal_method==1 or horizontal_method =='dfa' or horizontal_method =='Diffuse Field Assumption':
+        hvsr_tSteps_az = {}
+    else:
+        hvsr_tSteps = []
+        hvsr_tSteps_az = {}
+        for tStep in range(len(hvsr_data['psd_raw'][anyK])):
+            tStepDict = {}
+            for k in hvsr_data['psd_raw']:
+                tStepDict[k] = hvsr_data['psd_raw'][k][tStep]
+            hvsr_tstep, hvsr_az_tstep, _ = __get_hvsr_curve(x=x_freqs[anyK], psd=tStepDict, 
+                                                            horizontal_method=methodInt, hvsr_data=hvsr_data,
+                                                            azimuth=azimuth, array_processing=array_processing,
+                                                            verbose=verbose)
+            
+            hvsr_tSteps.append(np.float64(hvsr_tstep)) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
+            for k, v in hvsr_az_tstep.items():
+                if tStep == 0:
+                    hvsr_tSteps_az[k] = [np.float32(v)]
+                else:
+                    hvsr_tSteps_az[k].append(np.float32(v))
+    hvsr_data['hvsr_windows_df']['HV_Curves'] = hvsr_tSteps
+
+    for k in hvsr_data['psd_raw'].keys():
+        #Get average psd value across time for each channel (used to calc main H/V curve)
+        psdValsTAvg[k] = np.nanmedian(np.stack(hvsrDF[use]['psd_values_'+k]), axis=0)
+        stDev[k] = np.nanstd(np.stack(hvsrDF[use]['psd_values_'+k]), axis=0)
+
+        stDevValsM[k] = np.array(psdValsTAvg[k] - stDev[k])
+        stDevValsP[k] = np.array(psdValsTAvg[k] + stDev[k])
+
+        currTimesUsed[k] = np.stack(hvsrDF[use]['TimesProcessed_Obspy'])
+        #currTimesUsed[k] = psds[k]['current_times_used'] #original one
+
+
     #This gets the main hvsr curve averaged from all time steps
     anyK = list(x_freqs.keys())[0]
     hvsr_curve, hvsr_az, hvsr_tSteps = __get_hvsr_curve(x=x_freqs[anyK], psd=psdValsTAvg, 
@@ -6698,11 +6742,6 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
                                                         azimuth=azimuth, array_processing=array_processing,
                                                         verbose=verbose)
     
-    origPPSD = hvsr_data['ppsds_obspy'].copy()
-
-    #print('hvcurv', np.array(hvsr_curve).shape)
-    #print('hvaz', np.array(hvsr_az).shape)
-
     #Add some other variables to our output dictionary
     hvsr_dataUpdate = {
                 'x_freqs':x_freqs,
@@ -6726,94 +6765,6 @@ def process_hvsr(hvsr_data, horizontal_method=None, smooth=True, freq_smooth='ko
     for k, v in hvsr_dataUpdate.items():
         hvsr_out[k] = v
 
-    #hvsr_out = HVSRData(hvsr_dataUpdate)
-
-    #This is if manual editing was used (should probably be updated at some point to just use masks)
-    if 'x_windows_out' in hvsr_data.keys():
-        hvsr_out['x_windows_out'] = hvsr_data['x_windows_out']
-    else:
-        hvsr_out['x_windows_out'] = []
-
-    freq_smooth_ko = ['konno ohmachi', 'konno-ohmachi', 'konnoohmachi', 'konnohmachi', 'ko', 'k']
-    freq_smooth_constant = ['constant', 'const', 'c']
-    freq_smooth_proport = ['proportional', 'proportion', 'prop', 'p']
-
-    #Frequency Smoothing
-    if not freq_smooth:
-        if verbose:
-            warnings.warn('No frequency smoothing is being applied. This is not recommended for noisy datasets.')
-    elif freq_smooth is True or (freq_smooth.lower() in freq_smooth_ko and (not not f_smooth_width and not not freq_smooth)):
-        from obspy.signal import konnoohmachismoothing
-        for k in hvsr_out['psd_raw']:
-            colName = f'psd_values_{k}'
-
-            psd_data = np.stack(hvsr_out['hvsr_windows_df'][colName])
-            psd_data = hvsr_out['psd_raw'][k]
-
-
-            freqs = hvsr_out['x_freqs'][k]
-            padding_length = int(f_smooth_width)
-
-            padding_value_R = np.nanmean(psd_data[:,-1*padding_length:])
-            padding_value_L = np.nanmean(psd_data[:,:padding_length])
-
-            # Pad the data to prevent boundary anamolies
-            padded_ppsd_data = np.pad(psd_data, ((0, 0), (padding_length, padding_length)), 
-                                        'constant', constant_values=(padding_value_L, padding_value_R))
-
-            # Pad the frequencies
-            ratio = freqs[1] / freqs[0]
-            # Generate new elements on either side and combine
-            left_padding = [freqs[0] / (ratio ** i) for i in range(padding_length, 0, -1)]
-            right_padding = [freqs[-1] * (ratio ** i) for i in range(1, padding_length + 1)]
-            padded_freqs = np.concatenate([left_padding, freqs, right_padding])
-            
-            #Filter out UserWarning for just this method, since it throws up a UserWarning that doesn't really matter about dtypes often
-            with warnings.catch_warnings():
-                #warnings.simplefilter('ignore', category=UserWarning)
-                padded_ppsd_data = padded_ppsd_data.astype(padded_freqs.dtype) # Make them the same datatype
-                padded_ppsd_data = np.round(padded_ppsd_data, 12) # Prevent overflows
-                padded_freqs = np.round(padded_freqs, 9)
-
-                smoothed_ppsd_data = konnoohmachismoothing.konno_ohmachi_smoothing(padded_ppsd_data, padded_freqs, 
-                                                    bandwidth=f_smooth_width, normalize=True)
-            
-            # Only use the original, non-padded data
-            smoothed_ppsd_data = smoothed_ppsd_data[:,padding_length:-1*padding_length]
-            hvsr_out['psd_raw'][k] = smoothed_ppsd_data
-            hvsr_out['hvsr_windows_df'][colName] = pd.Series(list(smoothed_ppsd_data), index=hvsr_out['hvsr_windows_df'].index)
-    elif freq_smooth.lower() in freq_smooth_constant:
-        hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth='constant')
-    elif freq_smooth.lower() in freq_smooth_proport:
-        hvsr_out = __freq_smooth_window(hvsr_out, f_smooth_width, kind_freq_smooth='proportional')
-    else:
-        if verbose:
-            warnings.warn(f'You indicated no frequency smoothing should be applied (freq_smooth = {freq_smooth}). This is not recommended for noisy datasets.')
-
-    #Get hvsr curve from three components at each time step
-    anyK = list(hvsr_out['psd_raw'].keys())[0]
-    if horizontal_method==1 or horizontal_method =='dfa' or horizontal_method =='Diffuse Field Assumption':
-        hvsr_tSteps_az = {}
-    else:
-        hvsr_tSteps = []
-        hvsr_tSteps_az = {}
-        for tStep in range(len(hvsr_out['psd_raw'][anyK])):
-            tStepDict = {}
-            for k in hvsr_out['psd_raw']:
-                tStepDict[k] = hvsr_out['psd_raw'][k][tStep]
-            hvsr_tstep, hvsr_az_tstep, _ = __get_hvsr_curve(x=hvsr_out['x_freqs'][anyK], psd=tStepDict, 
-                                                            horizontal_method=methodInt, hvsr_data=hvsr_out,
-                                                            azimuth=azimuth, array_processing=array_processing,
-                                                            verbose=verbose)
-            
-            hvsr_tSteps.append(np.float64(hvsr_tstep)) #Add hvsr curve for each time step to larger list of arrays with hvsr_curves
-            for k, v in hvsr_az_tstep.items():
-                if tStep == 0:
-                    hvsr_tSteps_az[k] = [np.float32(v)]
-                else:
-                    hvsr_tSteps_az[k].append(np.float32(v))
-    hvsr_out['hvsr_windows_df']['HV_Curves'] = hvsr_tSteps
-    
     # Add azimuth HV Curves to hvsr_windows_df, if applicable
     for key, values in hvsr_tSteps_az.items():
         hvsr_out['hvsr_windows_df']['HV_Curves_'+key] = values
