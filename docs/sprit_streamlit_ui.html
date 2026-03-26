@@ -717,7 +717,7 @@ el.replaceWith(d);
     @st.fragment
     def display_download_buttons():
         ##dlText, dlPDFReport, dlStream, dlTable, dlPlot, dlHVSR = st.session_state.mainContainer.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])
-        dlText, dlStream, dlHVSR, dlPDFReport, dlTable, dlPlot = st.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])
+        dlText, dlStream, dlJSON, dlHVSR, dlPDFReport, dlTable, dlPlot = st.columns([0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
         st.divider()
 
         # Download Buttons
@@ -808,6 +808,21 @@ el.replaceWith(d);
             )
 
 
+        # JSON File
+        def _convert_json_for_download(hv_data):
+            return hv_data.to_json()
+
+        jsonText = _convert_json_for_download(hvData)
+
+        dlJSON.download_button(
+            label=&#34;JSON&#34;,
+            data=jsonText,
+            file_name=f&#34;{hvData.site}_JSON_{hvID}_{nowTimeStr}.json&#34;,
+            mime=&#34;application/json&#34;,
+            icon=&#34;:material/data_object:&#34;
+            )
+
+
         # HVSR File
         try:
             #@st.cache_data
@@ -826,9 +841,9 @@ el.replaceWith(d);
 
             ##st.session_state.dlHVSR.download_button(
             dlHVSR.download_button(
-                label=&#34;Pickled (.hvsr)&#34;,
+                label=&#34;Pickled&#34;,
                 data=hvsrPickle,
-                file_name=f&#34;{hvData.site}_HVSRData_{hvID}_{nowTimeStr}_pickled_app.hvsr&#34;,
+                file_name=f&#34;{hvData.site}_HVSRData_{hvID}_{nowTimeStr}_pickled_fromApp.hvsr&#34;,
                 #on_click=display_results,
                 mime=&#39;application/octet-stream&#39;,
                 icon=&#34;:material/database:&#34;)
@@ -1491,6 +1506,7 @@ el.replaceWith(d);
             import rioxarray as rxr
         except:
             st.info(&#34;You must have rioxarray installed (pip install rioxarray) in your python environment to use GMRT elevation data.&#34;)
+            st.session_state.ZTB_disabled = True
             return
 
         response = requests.get(url=GMRT_URL)
@@ -1582,8 +1598,8 @@ el.replaceWith(d);
             inCRSCol, outCRSCol, elevUnitCol  = st.columns([0.3, 0.3, 0.3])
             xCoordCol.text_input(&#39;X Coordinate&#39;, help=&#39;i.e., Longitude or Easting&#39;, key=&#39;xcoord&#39;)
             yCoordCol.text_input(&#39;Y Coordinate&#39;, help=&#39;i.e., Latitude or Northing&#39;, key=&#39;ycoord&#39;)
-            ZTB_disabled = st.session_state.elev_wms_check       
-            zCoordCol.text_input(&#39;Z Coordinate&#39;, help=&#39;i.e., Elevation&#39;, key=&#39;elevation&#39;, disabled=ZTB_disabled)
+            st.session_state.ZTB_disabled = st.session_state.elev_wms_check       
+            zCoordCol.text_input(&#39;Z Coordinate&#39;, help=&#39;i.e., Elevation&#39;, key=&#39;elevation&#39;, disabled=st.session_state.ZTB_disabled)
 
 
      

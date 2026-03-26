@@ -371,7 +371,7 @@ def calculate_depth(freq_input,
         
         # Calculate elevation data
         if calculate_elevation and surface_elevation_data in tableReport.columns:
-            tableReport[bedrock_elevation_column] = np.around((float(tableReport.loc[0, surface_elevation_data]) - float(tableReport.loc[0, depth_column])), decimal_places)
+            tableReport[bedrock_elevation_column] = np.around((np.float32(tableReport.loc[:, surface_elevation_data]) - np.float32(tableReport.loc[:, depth_column])), decimal_places)
             if hasattr(freq_input, 'x_depth_m'):
                 freq_input['x_elev_m'] = {'Z': np.around([float(tableReport[surface_elevation_data].values[0]) - float(f) for f in freq_input["x_depth_m"]['Z']], decimal_places),
                                           'E': np.around([float(tableReport[surface_elevation_data].values[0]) - float(f) for f in freq_input["x_depth_m"]['E']], decimal_places),

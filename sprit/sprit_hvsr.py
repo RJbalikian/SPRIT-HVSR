@@ -424,7 +424,7 @@ class HVSRBatch:
         add(self, hvsr_data)
         
 
-    def export(self, hvsr_export_path=True, ext='hvsr'):
+    def export_hvsr(self, hvsr_export_path=True, hvsr_export_ext='hvsr'):
         """Method to export HVSRData objects in HVSRBatch container to indivdual .hvsr pickle files.
 
         Parameters
@@ -434,7 +434,7 @@ class HVSRBatch:
         ext : str, optional
             The extension to use for the output, by default 'hvsr'. This is still a pickle file that can be read with pickle.load(), but will have .hvsr extension.
         """
-        export_hvsr(hvsr_data=self, hvsr_export_path=hvsr_export_path, ext=ext)
+        export_hvsr(hvsr_data=self, hvsr_export_path=hvsr_export_path, hvsr_export_ext=hvsr_export_ext)
 
 
     def keys(self):
@@ -1259,13 +1259,15 @@ def run(input_data=None, source='file',
         If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     """
     
-    if isinstance(input_data, (pd.DataFrame)):
+    if isinstance(input_data, (pd.DataFrame, obspy.Stream, obspy.Trace)):
         pass
     elif input_data is None or input_data == '' or str(input_data).lower() == 'sample':
         if str(input_data).lower() == 'sample' and str(source).lower() == 'batch':
             pass
         else:
             input_data = 'sample'
+    elif pathlib.Path(input_data).exists() and ():
+        input_data = pathlib.Path(input_data).as_posix()
     
     orig_args = locals().copy()  # Get the initial arguments
     global do_run
@@ -1873,16 +1875,14 @@ def run(input_data=None, source='file',
             if kwargs['hvsr_export_path'] is None:
                 pass
             else:
-                if 'ext' in kwargs.keys():
-                    ext = kwargs['ext']
+                if 'hvsr_export_ext' in kwargs.keys():
+                    ext = kwargs['hvsr_export_ext']
                 else:
                     ext = 'hvsr'
-                export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], ext=ext, verbose=verbose)
+                export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], hvsr_export_ext=ext, verbose=verbose)
         if 'json_export_path' in kwargs.keys() or DPD['json_export_path'] is not None:
-            if kwargs['json_export_path'] is None:
-                pass
-            else:
-                export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
+            export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
+            if len(export_json_kwargs.keys()) > 0:
                 export_json(hvsr_results=hvsr_results, verbose=verbose, **export_json_kwargs)
         
         if generate_reports:
@@ -2987,6 +2987,10 @@ def export_json(hvsr_results, json_export_path=None,
     # May use this later if plot binary string support added
     # plots = ['Input_Plot', "Plot_Report", "Outlier_Plot"]
 
+    # A troublesome thing for exporting, importing and not necessary
+    if 'processing_parameters' in hvsr_results['processing_parameters']['input_params']:
+        del hvsr_results['processing_parameters']['input_params']['processing_parameters']
+        
     sKeys = False
     if 'sort_keys' in kwargs:
         sKeys = kwargs['sort_keys']
@@ -3025,7 +3029,10 @@ def export_json(hvsr_results, json_export_path=None,
                 img = v.to_image(format='png', engine='kaleido')
                 v = base64.b64encode(img).decode('utf8')
 
-
+        if k == "PeakReport":
+            for az in hvsr_results['PeakReport']:
+                for i, report in enumerate(hvsr_results['PeakReport'][az]):
+                    hvsr_results['PeakReport'][az][i]['Report']['Table_Report'] = None
 
         # Get the Table Report formatted for json export
         if k == 'Table_Report':
@@ -3040,7 +3047,7 @@ def export_json(hvsr_results, json_export_path=None,
             if not include_dataframe:
 
                 def _mapstringtime(dt):
-                    return dt.strftime("%Y-%m-%dT%M:%H:%S.%fZ")
+                    return dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
                 newInd = list(map(_mapstringtime, hvsr_results.hvsr_windows_df['Use'].index.to_pydatetime()))
                 tfList = hvsr_results.hvsr_windows_df['Use'].values.tolist()
@@ -3085,6 +3092,15 @@ def export_json(hvsr_results, json_export_path=None,
 
         try:
             json.dumps({k: v})  # This is just a test to ensure item can be dumped
+
+            # This may not be necessary
+            if isinstance(v, obspy.Stream):
+                v.merge()
+                vout = ''
+                for tr in v:
+                    vout += tr.id + ' | '
+                v = vout
+            
             dict_for_json[k] = v
         except Exception:
             dict_for_json[k] = ''
@@ -3132,6 +3148,7 @@ def export_json(hvsr_results, json_export_path=None,
 
             # Special processing of processing_parameters dict
             elif k == 'processing_parameters':
+
                 del dict_for_json[k]
                 ppStr = indSpcs+f'"{k}": '+'{\n'+indSpcs+indSpcs
                 for funKey, funParam in v.items():
@@ -3143,10 +3160,14 @@ def export_json(hvsr_results, json_export_path=None,
                         try:
                             if isinstance(prmVal, bool):
                                 prmVal = str(prmVal).lower()
-                            if prmVal is None:
+                            elif prmVal is None:
                                 prmVal = 'null'
-                            
-                            if isinstance(prmVal, numbers.Number):
+
+                            if isinstance(prmVal, obspy.Stream) or 'in Stream' in str(prmVal):
+                                prmVal = str(prmVal).replace('\n', '\\n')
+                                ppStr += f'"{prmName}": "{prmVal}", '
+
+                            elif isinstance(prmVal, numbers.Number):
                                 ppStr += f'"{prmName}": {prmVal}, '
                             elif isinstance(prmVal, (list, tuple)):
                                 newStr = f'"{prmName}": ['
@@ -3203,7 +3224,6 @@ def export_json(hvsr_results, json_export_path=None,
                         dictString += json.dumps(outDict).replace('{', '').replace("}", '') + ',\n'+indSpcs+indSpcs
                 dict_str_list.append(dictString[:dictString.rfind(',')] + f'\n{indSpcs}'+'},\n')
     
-
     dict_str_list[-1] = dict_str_list[-1][:-2]+'\n'
 
     if json_export_path is not None:
@@ -3211,27 +3231,34 @@ def export_json(hvsr_results, json_export_path=None,
             st = hvsr_results.stream
             stats = st[0].stats
             fname = f"{hvsr_results.site}_HVSR-JSON_{stats.starttime.strftime("%Y%m%d")}-{stats.starttime.strftime("%H%M")}-{hvsr_results.station}-{datetime.date.today().strftime("%Y-%m-%d")}.json"
+            if not pathlib.Path(json_export_path).exists():
+                print("Creating directory for JSON export at", json_export_path)
+                pathlib.Path(json_export_path).mkdir(exist_ok=True, parents=True)
             json_export_path = pathlib.Path(json_export_path).joinpath(fname)
-        
-        with open(json_export_path, 'w') as f:
+
+        # First write dict to json
+        with open(json_export_path, mode='w', encoding="UTF-8") as f:
             # dump the JSON string to the file
             # Parse out json dump kwargs
             jsondump_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(json.dump).parameters.keys())}
             
             json.dump(dict_for_json, 
-                      fp=f,
-                      sort_keys=sKeys, 
-                      indent=indent, **jsondump_kwargs)
+                        fp=f,
+                        sort_keys=sKeys, 
+                        indent=indent, **jsondump_kwargs)
 
-        with open(json_export_path, 'r') as f:
+        # Then read it back in to add custom parts from dict_str_list
+        with open(json_export_path, encoding='UTF-8', mode='r') as f:
             readLines = f.readlines()
         readLines = readLines[:-1]
         readLines[-1] = readLines[-1].replace('\n',',\n')
         readLines.extend(dict_str_list)
         readLines.append('}')
 
+        # Export final version
         with open(json_export_path, encoding='UTF-8', mode='w') as f:
             f.writelines(readLines)
+        
         if verbose:
             print(f'HVSRData object exported in JSON format to {json_export_path}')
             
@@ -3298,6 +3325,9 @@ def export_report(hvsr_results, report_export_path=None, report_export_format=['
 
     if type(report_export_format) is str:
         report_export_format = [report_export_format]
+    
+    if report_export_path is not None and pathlib.Path(report_export_path).exists():
+        report_export_path = pathlib.Path(report_export_path).as_posix()
     
     for ref in report_export_format:
 
@@ -3656,7 +3686,11 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
                 if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
                     update_msg.append(f'\t\t{k} = {v} (previously {orig_args[k]})')
                     orig_args[k] = v
-                    
+
+    if orig_args['data_export_path'] is not None:
+        if pathlib.Path(orig_args['data_export_path']).exists():
+            data_export_path = orig_args['data_export_path'] = pathlib.Path(orig_args['data_export_path']).as_posix()
+         
     # Update local variables, in case of previously-specified parameters
     source = orig_args['source'].lower()
     data_export_path = orig_args['data_export_path']
@@ -3858,13 +3892,15 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
         elif source == 'file' and str(input_parameters['input_data']).lower() not in SAMPLE_LIST:
             # Read the file specified by input_data
             # Automatically read tromino data
-            if (str(inst).lower() in trominoNameList and 'trc' in pathlib.Path(str(dPath)).suffix) or 'trc' in pathlib.Path(str(dPath)).suffix:
+            tromCond1 = str(inst).lower() in trominoNameList
+            tromCond2 = 'trc' in pathlib.Path(str(dPath)).suffix
+            tromCond3 = "GRILLA" in pathlib.Path(str(dPath)).name and pathlib.Path(str(dPath)).is_dir()                
+            
+            if tromCond1 or tromCond2 or tromCond3:
                 input_parameters['instrument'] = 'Tromino'
-                #input_parameters['params']['instrument'] = 'Tromino'
 
                 if 'blu' in str(inst).lower():
                     input_parameters['instrument'] = 'Tromino Blue'
-                    #input_parameters['params']['instrument'] = 'Tromino Blue'
 
                 try:
                     trominoKwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())}
@@ -4421,6 +4457,8 @@ def from_json(json_input, return_hvsr=True, **kwargs):
                 jsonDictIN = json.load(ji)
         except Exception:
             print(f"Could not read json data in file: {json_input}. Will read in text of file")
+            traceback.print_exc()
+            
             with open(json_input, 'r') as ji:
                 jsonDictIN = ji.read()
     else:
@@ -4432,8 +4470,128 @@ def from_json(json_input, return_hvsr=True, **kwargs):
     
     if return_hvsr:
         try:
-            return HVSRData(jsonDictIN)
-        except Exception:
+            keepListList = ['channels', 'cha', 'x_windows_out', 'hvsr_band', 'hvsr_curve', 'peak_freq_range', 'tsteps_used']
+            channel_dicts = ['x_freqs', 'x_period', 'psd_raw', 'psds', 'psd_values_tavg', 
+                                'ppsd_std', 'ppsd_std_vals_m', 'ppsd_std_vals_p'] 
+            az_dicts_neat = ['ind_hvsr_curves', 'ind_hvsr_stdDev', 'hvsr_log_std','hvsrp', 'hvsrm', 'hvsrp2', 'hvsrm2']
+            # az_dicts_ragged = ['ind_hvsr_peak_indices','hvsr_peak_indices', 'hvsr_peak_freqs']
+            # plot_attrs = ['Plot_Report', 'HV_Plot', 'Outlier_Plot', 'Input_Plot', 'Depth_Plot', 'Cross_Section_Plot']
+            # df_dicts = ['Table_Report', 'hvsr_windows_df']
+
+            hvDict = jsonDictIN
+            for k, v in jsonDictIN.items():
+                if isinstance(v, (list, tuple)) and k not in keepListList:
+                    hvDict[k] = np.array(v)
+                elif k in channel_dicts or k in az_dicts_neat:
+                    for comp_az, comp_az_vals in v.items():
+                        hvDict[k][comp_az] = np.array(comp_az_vals)
+                elif k == 'Table_Report':
+                    hvDict[k] = pd.DataFrame(v).T
+                    
+                elif k == 'hvsr_windows_df':
+                    dtlist = []
+                    useList = []
+                    for t, useVal in jsonDictIN['hvsr_windows_df']['Use'].items():
+                        pddt = datetime.datetime.strptime(t, "%Y-%m-%dT%H:%M:%S.%fZ")
+                        pddt = pddt.replace(tzinfo=zoneinfo.ZoneInfo('UTC'))
+                        dtlist.append(pddt)
+                        useList.append(useVal)
+                    dtInd = pd.DatetimeIndex(dtlist)
+                    hvDict['hvsr_windows_df'] = pd.DataFrame(jsonDictIN['hvsr_windows_df'])
+                    hvDict['hvsr_windows_df'].set_index(dtInd, inplace=True)
+
+
+                    # Build up dataframe columns
+                    # Get individual hvsr curves into df
+                    for az, ihc in hvDict['ind_hvsr_curves'].items():
+                        hvList = []
+                        colID = 'HV_Curves'
+                        if az != 'HV':
+                            colID = colID + '_'+az
+
+                        i = 0
+                        arrLength = 1
+                        for useVal in useList:
+                            if useVal:
+                                hvList.append(ihc[i])
+                                arrLength = len(ihc[i])
+                                i += 1
+                            else:
+                                hvList.append(np.nan)
+                        
+                        # Get log10 values
+                        newHVList = []
+                        for hvLItem in hvList:
+                            if hvLItem is np.nan:
+                                newHVList.append([np.nan]*arrLength)
+                            else:
+                                newHVList.append(hvLItem)
+                        
+                        hvDict['hvsr_windows_df'][colID] = newHVList
+                        hvDict['hvsr_windows_df']['Log10_'+colID+'_'+az] = np.log10(newHVList).tolist()
+
+                            
+                    # Get individual psd curves into df
+                    for comp, psdvals in hvDict['psd_raw'].items():
+                        colID = 'psd_values_'+comp
+
+                        psdList = []
+                        
+                        for arr in psdvals:
+                            psdList.append(arr)
+
+                        hvDict['hvsr_windows_df'][colID] = psdList
+
+                    # Get obspy starttimes for each window
+                    obspySTimes = []
+                    obspyETimes = []
+                    pdETimes = []
+                    mplSTime = []
+                    mplETime = []
+
+                    for dtind in hvDict['hvsr_windows_df'].index:
+                        pyDT = dtind.to_pydatetime()
+                        obspyStart = obspy.UTCDateTime(pyDT)
+                        mplStart = mdates.date2num(pyDT)
+
+                        mplSTime.append(mplStart)
+                        obspySTimes.append(obspyStart)
+                        if 'processing_parameters' in hvDict:
+                            winLen = hvDict['processing_parameters']['generate_psds']['window_length']
+
+                            obspyETimes.append(obspyStart + winLen)
+                            pdETimes.append(dtind + pd.Timedelta(seconds=winLen))
+                            mplETime.append(pyDT + datetime.timedelta(seconds=winLen))
+                        else:
+                            obspyETimes.append(None)
+                            pdETimes.append(None)
+                            mplETime.append(None)
+                    hvDict['hvsr_windows_df']['TimesProcessed_Obspy'] = obspySTimes
+                    hvDict['hvsr_windows_df']['TimesProcessed_ObspyEnd'] = obspyETimes
+
+                    hvDict['hvsr_windows_df']['TimesProcessed_End'] = pdETimes
+                    hvDict['hvsr_windows_df']['TimesProcessed_MPL'] = mplSTime
+                    hvDict['hvsr_windows_df']['TimesProcessed_MPLEnd'] = mplETime
+                    
+                    # Get curve peak indices into df
+                    for az, peakinds in hvDict['ind_hvsr_peak_indices'].items():
+                        colID = az
+                        peakFreqs = []
+                        for pInd in peakinds:
+                            pfs = []
+                            for pi in pInd:
+                                pfs.append(float(hvDict['x_freqs']['Z'][pi]))
+                            peakFreqs.append(pfs)
+                        fColID = colID.replace('Indices', 'Freqs')
+
+                        hvDict['hvsr_windows_df'][fColID] = peakFreqs
+                        hvDict['hvsr_windows_df'][colID] = peakinds
+
+            return HVSRData(hvDict)
+
+        except Exception as e:
+            print("ERROR creating HVSRData object, returning dict")
+            traceback.print_exc()
             return jsonDictIN
     
     return jsonDictIN
@@ -5061,6 +5219,9 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
                 if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
                     update_msg.append(f'\t\t{k} = {v} (previously {orig_args[k]})')
                     orig_args[k] = v
+
+    if report_export_path is not None and report_export_path is not True and report_export_path is not False:
+        orig_args['report_export_path'] = report_export_path = pathlib.Path(report_export_path).as_posix()
 
     if str(azimuth).lower() == 'none':
         orig_args['azimuth'] = "HV"
@@ -5695,6 +5856,9 @@ def input_params(input_data,
     hvsr_id = f"{proj_id}{acq_date.strftime('%Y%m%d')}-{starttime.strftime('%H%M')}-{station}"
     update_msg.append(f"\t\thvsr_id generated from input parameters: {hvsr_id}")
 
+    if pathlib.Path(str(input_data)).exists():
+        input_data = pathlib.Path(input_data).as_posix()
+
     #Add key/values to input parameter dictionary for use throughout the rest of the package
     inputParamDict = {'site':site, 'project':project, 'hvsr_id':hvsr_id, 'network':network, 'station':station,'location':location, 'channels':channels,
                       'net':network,'sta':station, 'loc':location, 'cha':channels, 'instrument':instrument,
@@ -5887,7 +6051,7 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
             peakVals = []
             peakThetas = []
             for k in sorted(hvsr_data.hvsr_az.keys()):
-                peakVals.append(hvsr_data.BestPeak[k]['f0'])
+                peakVals.append(float(hvsr_data.BestPeak[k]['f0']))
                 peakThetas.append(int(k[2:]))
             peakThetas = peakThetas + (180 + np.array(peakThetas)).tolist()
             peakThetas = np.deg2rad(peakThetas).tolist()
@@ -7095,8 +7259,10 @@ def remove_noise(hvsr_data, remove_method=None,
         if 'processing_parameters' not in output.keys():
             output['processing_parameters'] = {}
         output['processing_parameters']['remove_noise'] = {}
+        exclude_params_list = ['hvsr_data']
         for key, value in orig_args.items():
-            output['processing_parameters']['remove_noise'][key] = value
+            if key not in exclude_params_list:
+                output['processing_parameters']['remove_noise'][key] = value
         
         output['processing_status']['remove_noise_status'] = True
         output = sprit_utils._check_processing_status(output, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
@@ -7805,7 +7971,7 @@ def _update_shake_metadata(filepath, params, write_path='', verbose=False):
                 write_file=write_path
             tree.write(write_file, xml_declaration=True, method='xml',encoding='UTF-8')
             inv = obspy.read_inventory(write_file, format='STATIONXML', level='response')
-        except:
+        except Exception:
             warnings.warn(f'write_path={write_path} is not recognized as a filepath, updated metadata file will not be written')
             write_path=''
     else:
@@ -11092,7 +11258,7 @@ def _generate_print_report(hvsr_results, azimuth="HV", show_print_report=True, v
                     hvsr_results['BestPeak'][azimuth]['PassList']['LowStDev_Amp'])
         peakPass = peakTestsPassed >= 5
 
-        report_string_list.append('\t{0:.3f} Hz Peak Frequency ± {1:.4f} Hz'.format(hvsr_results['BestPeak'][azimuth]['f0'], float(hvsr_results["BestPeak"][azimuth]['Sf'])))        
+        report_string_list.append('\t{0:.3f} Hz Peak Frequency ± {1:.4f} Hz'.format(float(hvsr_results['BestPeak'][azimuth]['f0']), float(hvsr_results["BestPeak"][azimuth]['Sf'])))        
         if curvePass and peakPass:
             report_string_list.append('\t  {} Peak at {} Hz passed quality checks! :D'.format(sprit_utils._check_mark(), round(hvsr_results['BestPeak'][azimuth]['f0'],3)))
         else:
@@ -11192,7 +11358,7 @@ def _generate_table_report(hvsr_results, azimuth='HV', show_table_report=True, v
     criteriaList.append(hvsr_results['BestPeak'][azimuth]["PeakPasses"])
     for p in hvsr_results['BestPeak'][azimuth]["PassList"]:
         criteriaList.append(hvsr_results['BestPeak'][azimuth]["PassList"][p])
-    dfList = [[d['site'], d['acq_date'], d['xcoord'], d['ycoord'], d['elevation'], round(d['BestPeak'][azimuth]['f0'], 3), round(d['BestPeak'][azimuth]['Sf'], 4)]]
+    dfList = [[d['site'], d['acq_date'], d['xcoord'], d['ycoord'], d['elevation'], round(float(d['BestPeak'][azimuth]['f0']), 3), round(float(d['BestPeak'][azimuth]['Sf']), 4)]]
     dfList[0].extend(criteriaList)
 
     outDF = pd.DataFrame(dfList, columns=pdCols)
@@ -11302,8 +11468,8 @@ def _generate_html_report(hvsr_results, azimuth='HV', show_html_report=False, ve
     html = html.replace("HVSR_ID", hvsr_results['hvsr_id'])
 
     # Update peak freq info
-    html = html.replace("PEAKFREQ", str(round(hvsr_results['BestPeak'][azimuth]['f0'], 3)))
-    html = html.replace("PEAKSTDEV", str(round(hvsr_results['BestPeak'][azimuth]['Sf'], 3)))
+    html = html.replace("PEAKFREQ", str(round(float(hvsr_results['BestPeak'][azimuth]['f0']), 3)))
+    html = html.replace("PEAKSTDEV", str(round(float(hvsr_results['BestPeak'][azimuth]['Sf']), 3)))
 
     if hvsr_results.Table_Report['PeakPasses'][0]:
         html = html.replace("SESAME_TESTS_RESULTS", 'Peak has passed the SESAME validation tests.')
@@ -11566,8 +11732,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     
     if 'ylim' not in kwargs.keys():
         plotymax = max(hvsr_data.hvsrp2[azimuth]) + (max(hvsr_data.hvsrp2[azimuth]) - max(hvsr_data.hvsr_curve))
-        if plotymax > hvsr_data.BestPeak[azimuth]['A0'] * 1.5:
-            plotymax = hvsr_data.BestPeak[azimuth]['A0'] * 1.5
+        if plotymax > float(hvsr_data.BestPeak[azimuth]['A0']) * 1.5:
+            plotymax = float(hvsr_data.BestPeak[azimuth]['A0']) * 1.5
         ylim = [0, plotymax]
     else:
         ylim = kwargs['ylim']
@@ -11632,8 +11798,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
 
     # Get peak parameters (if exist, otherwise, get dummy ones)
     if "BestPeak" in hvsr_data.keys():
-        f0 = hvsr_data['BestPeak'][azimuth]['f0']
-        a0 = hvsr_data['BestPeak'][azimuth]['A0']
+        f0 = float(hvsr_data['BestPeak'][azimuth]['f0'])
+        a0 = float(hvsr_data['BestPeak'][azimuth]['A0'])
     else:
         f0 = hvsr_data['hvsr_band'][0]
         a0 = 0
@@ -12236,7 +12402,7 @@ def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, azimuth='HV', save_dir=Non
     ax.tick_params(left=True, right=True, top=True)
 
     if peak_plot:
-        ax.axhline(hvsr_data['BestPeak'][azimuth]['f0'], c='k',  linestyle='dotted', zorder=1000)
+        ax.axhline(float(hvsr_data['BestPeak'][azimuth]['f0']), c='k',  linestyle='dotted', zorder=1000)
 
     if annotate:
         if float(hvsr_data['BestPeak'][azimuth]['f0']) < 1:
