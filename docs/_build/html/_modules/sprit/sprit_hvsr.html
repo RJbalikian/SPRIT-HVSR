@@ -5,14 +5,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 3.7.1 documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 3.8 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=86e43a22"></script>
-      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/documentation_options.js?v=329d941c"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -3921,10 +3921,12 @@
         <span class="n">input_parameters</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_parameters</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;}&#39;</span><span class="p">)</span>
 
     <span class="c1"># Make sure input_data is pointing to an actual file</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_parameters</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_parameters</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+        <span class="n">newInputList</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">input_parameters</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]):</span>
-            <span class="n">input_parameters</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">sprit_utils</span><span class="o">.</span><span class="n">_checkifpath</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">sample_list</span><span class="o">=</span><span class="n">SAMPLE_LIST</span><span class="p">)</span>
-        <span class="n">dPath</span> <span class="o">=</span> <span class="n">input_parameters</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span>
+            <span class="n">newInputList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sprit_utils</span><span class="o">.</span><span class="n">_checkifpath</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">sample_list</span><span class="o">=</span><span class="n">SAMPLE_LIST</span><span class="p">))</span>
+            <span class="c1">#input_parameters[&#39;input_data&#39;][i] = sprit_utils._checkifpath(str(d).strip(), sample_list=SAMPLE_LIST)</span>
+        <span class="n">dPath</span> <span class="o">=</span> <span class="n">input_parameters</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">newInputList</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_parameters</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> <span class="p">(</span><span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">)):</span>
         <span class="n">dPath</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">()</span> <span class="c1">#input_parameters[&#39;input_data&#39;]</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_parameters</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">],</span> <span class="n">HVSRData</span><span class="p">):</span>
@@ -4171,6 +4173,12 @@
             <span class="n">prevComponent</span> <span class="o">=</span> <span class="n">trace</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">component</span>
         <span class="nb">print</span><span class="p">()</span>
 
+    <span class="c1"># We need an obspy stream at this point with at least 2 traces</span>
+    <span class="n">dataNotReadCond1</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rawDataIN</span><span class="p">,</span> <span class="p">(</span><span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">))</span>
+    <span class="n">dataNotReadCond2</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">rawDataIN</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span>
+    <span class="k">if</span> <span class="n">dataNotReadCond1</span> <span class="ow">or</span> <span class="n">dataNotReadCond2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Data stream does not contain any data. Please check that your input data is correct: </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">input_parameters</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">])</span>
+
     <span class="c1"># Get metadata from the data itself, if not reading raw data</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># If the data already exists (not reading in raw from RS, for example), get the parameters from the data</span>
@@ -4364,7 +4372,6 @@
             <span class="n">dataIN</span> <span class="o">=</span> <span class="n">dataIN</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
             <span class="n">dataIN</span> <span class="o">=</span> <span class="n">dataIN</span><span class="o">.</span><span class="n">trim</span><span class="p">(</span><span class="n">starttime</span><span class="o">=</span><span class="n">input_parameters</span><span class="p">[</span><span class="s1">&#39;starttime&#39;</span><span class="p">],</span> <span class="n">endtime</span><span class="o">=</span><span class="n">input_parameters</span><span class="p">[</span><span class="s1">&#39;endtime&#39;</span><span class="p">])</span>
             <span class="n">dataIN</span><span class="o">.</span><span class="n">merge</span><span class="p">()</span>
-
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Data as read by obspy does not contain the proper metadata. </span><span class="se">\n</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">.</span><span class="se">\n</span><span class="s1">Check your input parameters or the data file.&#39;</span><span class="p">)</span>
 
@@ -5516,10 +5523,13 @@
         <span class="n">peakPass</span> <span class="o">=</span> <span class="n">peakTestsPassed</span> <span class="o">&gt;=</span> <span class="mi">5</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="n">errMsg</span><span class="o">=</span> <span class="s1">&#39;No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_psds(). Otherwise, data may not be usable for HVSR.&#39;</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">errMsg</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-        <span class="n">plotString_noBestPeak</span> <span class="o">=</span> <span class="s1">&#39;HVSR t all C+ t SPEC&#39;</span>
-        <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;Plot_Report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">plot_hvsr</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="n">plotString_noBestPeak</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="n">azimuth</span><span class="p">,</span> <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">plotString_noBestPeak</span> <span class="o">=</span> <span class="s1">&#39;HVSR t C+ t&#39;</span>
+            <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;Plot_Report&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">plot_hvsr</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">plot_type</span><span class="o">=</span><span class="n">plotString_noBestPeak</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="n">azimuth</span><span class="p">,</span> 
+                                                    <span class="n">return_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_plot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e2</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;E2 MESSAGE&quot;</span><span class="p">,</span> <span class="n">e2</span><span class="p">)</span>
+            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">hvsr_results</span>
         <span class="c1">#raise RuntimeError(&#39;No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_psds(). Otherwise, data may not be usable for HVSR.&#39;)</span>
 
@@ -6549,7 +6559,8 @@
         <span class="c1">#if use_subplots:</span>
         <span class="c1">#    fig.subplots_adjust()#.set(h_pad=0.075, hspace=-5)</span>
         <span class="k">if</span> <span class="n">show_plot</span><span class="p">:</span>
-            <span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+            <span class="c1">#fig.canvas.draw()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
             
         <span class="k">if</span> <span class="n">return_fig</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">fig</span>
@@ -6561,7 +6572,7 @@
 <span class="c1"># Main function for processing HVSR Curve</span>
 <div class="viewcode-block" id="process_hvsr">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.process_hvsr">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">process_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">horizontal_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">smooth</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">freq_smooth</span><span class="o">=</span><span class="s1">&#39;konno ohmachi&#39;</span><span class="p">,</span> 
+<span class="k">def</span><span class="w"> </span><span class="nf">process_hvsr</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">horizontal_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">freq_smooth</span><span class="o">=</span><span class="s1">&#39;konno ohmachi&#39;</span><span class="p">,</span> 
                  <span class="n">f_smooth_width</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">resample</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">array_processing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                  <span class="n">outlier_curve_percentile_threshold</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">azimuth</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Process the input data and get HVSR data</span>
@@ -6584,10 +6595,6 @@
 <span class="sd">            6) &#39;Maximum Horizontal Value&#39;   H ≡ max {HN, HE}</span>
 <span class="sd">            7) &#39;Minimum Horizontal Valey&#39;   H ≡ min {HN, HE}</span>
 <span class="sd">            8) &#39;Single Azimuth&#39;             H = H2·cos(az) + H1·sin(az)</span>
-<span class="sd">    smooth  : bool, default=True</span>
-<span class="sd">        bool or int may be used. </span>
-<span class="sd">            If True, default to smooth H/V curve to using savgoy filter with window length of 51 (works well with default resample of 1000 pts)</span>
-<span class="sd">            If int, the length of the window in the savgoy filter.</span>
 <span class="sd">    freq_smooth : str {&#39;konno ohmachi&#39;, &#39;constant&#39;, &#39;proportional&#39;}</span>
 <span class="sd">        Which frequency smoothing method to use. By default, uses the &#39;konno ohmachi&#39; method.</span>
 <span class="sd">            - The Konno &amp; Ohmachi method uses the obspy.signal.konnoohmachismoothing.konno_ohmachi_smoothing() function: https://docs.obspy.org/packages/autogen/obspy.signal.konnoohmachismoothing.konno_ohmachi_smoothing.html</span>
@@ -6637,7 +6644,6 @@
                     <span class="n">orig_args</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
                                         
     <span class="n">horizontal_method</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;horizontal_method&#39;</span><span class="p">]</span>
-    <span class="n">smooth</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;smooth&#39;</span><span class="p">]</span>
     <span class="n">freq_smooth</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;freq_smooth&#39;</span><span class="p">]</span>
     <span class="n">f_smooth_width</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;f_smooth_width&#39;</span><span class="p">]</span>
     <span class="n">resample</span> <span class="o">=</span> <span class="n">orig_args</span><span class="p">[</span><span class="s1">&#39;resample&#39;</span><span class="p">]</span>
@@ -6707,6 +6713,7 @@
     <span class="n">stDevValsP</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">stDevValsM</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">psdRaw</span><span class="o">=</span><span class="p">{}</span>
+    <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;psd_raw&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">currTimesUsed</span><span class="o">=</span><span class="p">{}</span>
     <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;Use&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;Use&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
     <span class="n">hvsrDF</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span>
@@ -6734,39 +6741,18 @@
         <span class="c1"># If resampling has been selected...</span>
         <span class="k">if</span> <span class="n">resample</span> <span class="ow">is</span> <span class="kc">True</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">resample</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">resample</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">float</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">resample</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
-                <span class="n">resample</span> <span class="o">=</span> <span class="mi">1000</span> <span class="c1">#Default smooth value</span>
+                <span class="n">resample</span> <span class="o">=</span> <span class="mi">1024</span> <span class="c1">#Default smooth value</span>
 
             <span class="c1"># Resample period bin values</span>
             <span class="n">x_periods</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">xValMin_per</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">xValMax_per</span><span class="p">),</span> <span class="n">num</span><span class="o">=</span><span class="n">resample</span><span class="p">)</span>
                 
-            <span class="k">if</span> <span class="n">smooth</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">smooth</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
-                <span class="k">if</span> <span class="n">smooth</span><span class="p">:</span>
-                    <span class="n">smooth</span> <span class="o">=</span> <span class="mi">51</span> <span class="c1">#Default smoothing window</span>
-                    <span class="n">padVal</span> <span class="o">=</span> <span class="mi">25</span>
-                <span class="k">elif</span> <span class="n">smooth</span> <span class="o">%</span> <span class="mi">2</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
-                    <span class="n">smooth</span> <span class="o">+</span> <span class="mi">1</span> <span class="c1">#Otherwise, needs to be odd</span>
-                    <span class="n">padVal</span> <span class="o">=</span> <span class="n">smooth</span> <span class="o">//</span> <span class="mi">2</span>
-                    <span class="k">if</span> <span class="n">padVal</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="n">padVal</span> <span class="o">+=</span> <span class="mi">1</span>
-
-
             <span class="c1"># Resample raw ppsd values</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ppsd_t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">input_ppsds</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
                     <span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">x_periods</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">psds</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">],</span> <span class="n">ppsd_t</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">smooth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span> <span class="ow">and</span> <span class="n">smooth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="n">padRawKPad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="p">[</span><span class="n">padVal</span><span class="p">,</span> <span class="n">padVal</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;reflect&#39;</span><span class="p">)</span>
-                        <span class="c1">#padRawKPadSmooth = scipy.signal.savgol_filter(padRawKPad, smooth, 3)</span>
-                        <span class="n">padRawKPadSmooth</span> <span class="o">=</span> <span class="n">move_avg</span><span class="p">(</span><span class="n">padRawKPad</span><span class="p">,</span> <span class="n">smooth</span><span class="p">)</span>
-                        <span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">padRawKPadSmooth</span><span class="p">[</span><span class="n">padVal</span><span class="p">:</span><span class="o">-</span><span class="n">padVal</span><span class="p">]</span>
 
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">x_periods</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">psds</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="s1">&#39;period_bin_centers&#39;</span><span class="p">],</span> <span class="n">ppsd_t</span><span class="p">)))</span>
-                    <span class="k">if</span> <span class="n">smooth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
-                        <span class="n">padRawKiPad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="p">[</span><span class="n">padVal</span><span class="p">,</span> <span class="n">padVal</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;reflect&#39;</span><span class="p">)</span>
-                        <span class="c1">#padRawKiPadSmooth = scipy.signal.savgol_filter(padRawKiPad, smooth, 3)</span>
-                        <span class="n">padRawKiPadSmooth</span> <span class="o">=</span> <span class="n">move_avg</span><span class="p">(</span><span class="n">padRawKiPad</span><span class="p">,</span> <span class="n">smooth</span><span class="p">)</span>
-                        <span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">padRawKiPadSmooth</span><span class="p">[</span><span class="n">padVal</span><span class="p">:</span><span class="o">-</span><span class="n">padVal</span><span class="p">]</span>
 
             <span class="c1"># Resample other values</span>
             <span class="k">for</span> <span class="n">keys</span> <span class="ow">in</span> <span class="n">resampleList</span><span class="p">:</span>
@@ -6791,52 +6777,13 @@
             <span class="c1"># Clean up edge freq. values</span>
             <span class="n">x_periods</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">x_periods</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-
-            <span class="c1"># If simple curve smooothing desired</span>
-            <span class="k">if</span> <span class="n">smooth</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">smooth</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
-                <span class="k">if</span> <span class="n">smooth</span><span class="p">:</span>
-                    <span class="n">smooth</span> <span class="o">=</span> <span class="mi">51</span> <span class="c1">#Default smoothing window</span>
-                    <span class="n">padVal</span> <span class="o">=</span> <span class="mi">25</span>
-                <span class="k">elif</span> <span class="n">smooth</span> <span class="o">%</span> <span class="mi">2</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
-                    <span class="n">smooth</span> <span class="o">+</span> <span class="mi">1</span> <span class="c1">#Otherwise, needs to be odd</span>
-                    <span class="n">padVal</span> <span class="o">=</span> <span class="n">smooth</span> <span class="o">//</span> <span class="mi">2</span>
-                    <span class="k">if</span> <span class="n">padVal</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="n">padVal</span> <span class="o">+=</span> <span class="mi">1</span>
-
-                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ppsd_t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">input_ppsds</span><span class="p">):</span>
-                    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">ppsd_t</span>
-                        <span class="n">padRawKPad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="p">[</span><span class="n">padVal</span><span class="p">,</span> <span class="n">padVal</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;reflect&#39;</span><span class="p">)</span>
-                        <span class="c1">#padRawKPadSmooth = scipy.signal.savgol_filter(padRawKPad, smooth, 3)</span>
-                        <span class="n">padRawKPadSmooth</span> <span class="o">=</span> <span class="n">move_avg</span><span class="p">(</span><span class="n">padRawKPad</span><span class="p">,</span> <span class="n">smooth</span><span class="p">)</span>
-                        <span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">padRawKPadSmooth</span><span class="p">[</span><span class="n">padVal</span><span class="p">:</span><span class="o">-</span><span class="n">padVal</span><span class="p">]</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">ppsd_t</span><span class="p">))</span>
-                        <span class="n">padRawKiPad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="p">[</span><span class="n">padVal</span><span class="p">,</span> <span class="n">padVal</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;reflect&#39;</span><span class="p">)</span>
-                        <span class="c1">#padRawKiPadSmooth = scipy.signal.savgol_filter(padRawKiPad, smooth, 3)</span>
-                        <span class="n">padRawKiPadSmooth</span> <span class="o">=</span> <span class="n">move_avg</span><span class="p">(</span><span class="n">padRawKiPad</span><span class="p">,</span> <span class="n">smooth</span><span class="p">)</span>
-                        <span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">padRawKiPadSmooth</span><span class="p">[</span><span class="n">padVal</span><span class="p">:</span><span class="o">-</span><span class="n">padVal</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># If no simple curve smoothing</span>
-                <span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">input_ppsds</span><span class="p">)</span>
+            <span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">input_ppsds</span><span class="p">)</span>
         
         <span class="n">hvsrDF</span><span class="p">[</span><span class="s1">&#39;psd_values_&#39;</span><span class="o">+</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
         <span class="n">use</span> <span class="o">=</span> <span class="n">hvsrDF</span><span class="p">[</span><span class="s1">&#39;Use&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
-
-        <span class="c1">#Get average psd value across time for each channel (used to calc main H/V curve)</span>
-        <span class="n">psdValsTAvg</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsrDF</span><span class="p">[</span><span class="n">use</span><span class="p">][</span><span class="s1">&#39;psd_values_&#39;</span><span class="o">+</span><span class="n">k</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;psd_raw&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">psdRaw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
         <span class="n">x_freqs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="o">/</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">x_periods</span><span class="p">[</span><span class="n">k</span><span class="p">]])</span> <span class="c1">#np.divide(np.ones_like(x_periods[k]), x_periods[k]) </span>
-        <span class="n">stDev</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsrDF</span><span class="p">[</span><span class="n">use</span><span class="p">][</span><span class="s1">&#39;psd_values_&#39;</span><span class="o">+</span><span class="n">k</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-        <span class="n">stDevValsM</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">psdValsTAvg</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">-</span> <span class="n">stDev</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
-        <span class="n">stDevValsP</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">psdValsTAvg</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="n">stDev</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
-
-        <span class="n">currTimesUsed</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsrDF</span><span class="p">[</span><span class="n">use</span><span class="p">][</span><span class="s1">&#39;TimesProcessed_Obspy&#39;</span><span class="p">])</span>
-        <span class="c1">#currTimesUsed[k] = psds[k][&#39;current_times_used&#39;] #original one</span>
-    
-    <span class="c1">#print(&#39;XFREQS&#39;, x_freqs[k].shape)</span>
-    <span class="c1">#print(&#39;XPERs&#39;, x_periods[k].shape)</span>
-    <span class="c1">#print(&#39;PSDRAW&#39;, psdRaw[k].shape)</span>
 
     <span class="c1"># Get string of horizontal_method type</span>
     <span class="c1"># First, define default</span>
@@ -6889,6 +6836,107 @@
     
     <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;horizontal_method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">horizontal_method</span>
 
+    <span class="n">origPPSD</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;ppsds_obspy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1">#This is if manual editing was used (should probably be updated at some point to just use masks)</span>
+    <span class="k">if</span> <span class="s1">&#39;x_windows_out&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;x_windows_out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;x_windows_out&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;x_windows_out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">freq_smooth_ko</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;konno ohmachi&#39;</span><span class="p">,</span> <span class="s1">&#39;konno-ohmachi&#39;</span><span class="p">,</span> <span class="s1">&#39;konnoohmachi&#39;</span><span class="p">,</span> <span class="s1">&#39;konnohmachi&#39;</span><span class="p">,</span> <span class="s1">&#39;ko&#39;</span><span class="p">,</span> <span class="s1">&#39;k&#39;</span><span class="p">]</span>
+    <span class="n">freq_smooth_constant</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span> <span class="s1">&#39;const&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">]</span>
+    <span class="n">freq_smooth_proport</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;proportional&#39;</span><span class="p">,</span> <span class="s1">&#39;proportion&#39;</span><span class="p">,</span> <span class="s1">&#39;prop&#39;</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Frequency Smoothing</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">freq_smooth</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;No frequency smoothing is being applied. This is not recommended for noisy datasets.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">freq_smooth</span> <span class="ow">is</span> <span class="kc">True</span> <span class="ow">or</span> <span class="p">(</span><span class="n">freq_smooth</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">freq_smooth_ko</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="ow">not</span> <span class="n">f_smooth_width</span> <span class="ow">and</span> <span class="ow">not</span> <span class="ow">not</span> <span class="n">freq_smooth</span><span class="p">)):</span>
+        <span class="c1"># Carry out Konno Ohmachi smoothing</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">obspy.signal</span><span class="w"> </span><span class="kn">import</span> <span class="n">konnoohmachismoothing</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;psd_raw&#39;</span><span class="p">]:</span>
+            <span class="n">colName</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;psd_values_</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">&#39;</span>
+
+            <span class="n">psd_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="n">colName</span><span class="p">])</span>
+            <span class="n">psd_data</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;psd_raw&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span>
+
+
+            <span class="n">freqs</span> <span class="o">=</span> <span class="n">x_freqs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="n">padding_length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">f_smooth_width</span><span class="p">)</span>
+
+            <span class="n">padding_value_R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">psd_data</span><span class="p">[:,</span><span class="o">-</span><span class="mi">1</span><span class="o">*</span><span class="n">padding_length</span><span class="p">:])</span>
+            <span class="n">padding_value_L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">psd_data</span><span class="p">[:,:</span><span class="n">padding_length</span><span class="p">])</span>
+
+            <span class="c1"># Pad the data to prevent boundary anamolies</span>
+            <span class="n">padded_psd_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">psd_data</span><span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="n">padding_length</span><span class="p">,</span> <span class="n">padding_length</span><span class="p">)),</span> 
+                                        <span class="s1">&#39;constant&#39;</span><span class="p">,</span> <span class="n">constant_values</span><span class="o">=</span><span class="p">(</span><span class="n">padding_value_L</span><span class="p">,</span> <span class="n">padding_value_R</span><span class="p">))</span>
+
+            <span class="c1"># Pad the frequencies</span>
+            <span class="n">ratio</span> <span class="o">=</span> <span class="n">freqs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">freqs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># Generate new elements on either side and combine</span>
+            <span class="n">left_padding</span> <span class="o">=</span> <span class="p">[</span><span class="n">freqs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">ratio</span> <span class="o">**</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">padding_length</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
+            <span class="n">right_padding</span> <span class="o">=</span> <span class="p">[</span><span class="n">freqs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">ratio</span> <span class="o">**</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding_length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+            <span class="n">padded_freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">left_padding</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">right_padding</span><span class="p">])</span>
+            
+            <span class="c1">#Filter out UserWarning for just this method, since it throws up a UserWarning that doesn&#39;t really matter about dtypes often</span>
+            <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+                <span class="c1">#warnings.simplefilter(&#39;ignore&#39;, category=UserWarning)</span>
+                <span class="n">padded_psd_data</span> <span class="o">=</span> <span class="n">padded_psd_data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">padded_freqs</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="c1"># Make them the same datatype</span>
+                <span class="n">padded_psd_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">padded_psd_data</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span> <span class="c1"># Prevent overflows</span>
+                <span class="n">padded_freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">padded_freqs</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span>
+
+                <span class="n">smoothed_psd_data</span> <span class="o">=</span> <span class="n">konnoohmachismoothing</span><span class="o">.</span><span class="n">konno_ohmachi_smoothing</span><span class="p">(</span><span class="n">padded_psd_data</span><span class="p">,</span> <span class="n">padded_freqs</span><span class="p">,</span> 
+                                                    <span class="n">bandwidth</span><span class="o">=</span><span class="n">f_smooth_width</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            
+            <span class="c1"># Only use the original, non-padded data</span>
+            <span class="n">smoothed_psd_data</span> <span class="o">=</span> <span class="n">smoothed_psd_data</span><span class="p">[:,</span><span class="n">padding_length</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="o">*</span><span class="n">padding_length</span><span class="p">]</span>
+            <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;psd_raw&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">smoothed_psd_data</span>
+            <span class="n">hvsrDF</span><span class="p">[</span><span class="n">colName</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">smoothed_psd_data</span><span class="p">),</span> <span class="n">index</span><span class="o">=</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">freq_smooth</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">freq_smooth_constant</span><span class="p">:</span>
+        <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">__freq_smooth_window</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">f_smooth_width</span><span class="p">,</span> <span class="n">kind_freq_smooth</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">freq_smooth</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">freq_smooth_proport</span><span class="p">:</span>
+        <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">__freq_smooth_window</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">f_smooth_width</span><span class="p">,</span> <span class="n">kind_freq_smooth</span><span class="o">=</span><span class="s1">&#39;proportional&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;You indicated no frequency smoothing should be applied (freq_smooth = </span><span class="si">{</span><span class="n">freq_smooth</span><span class="si">}</span><span class="s1">). This is not recommended for noisy datasets.&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Get hvsr curve from three components at each time step</span>
+    <span class="n">anyK</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;psd_raw&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">horizontal_method</span><span class="o">==</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">horizontal_method</span> <span class="o">==</span><span class="s1">&#39;dfa&#39;</span> <span class="ow">or</span> <span class="n">horizontal_method</span> <span class="o">==</span><span class="s1">&#39;Diffuse Field Assumption&#39;</span><span class="p">:</span>
+        <span class="n">hvsr_tSteps_az</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">hvsr_tSteps</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">hvsr_tSteps_az</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">tStep</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;psd_raw&#39;</span><span class="p">][</span><span class="n">anyK</span><span class="p">])):</span>
+            <span class="n">tStepDict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;psd_raw&#39;</span><span class="p">]:</span>
+                <span class="n">tStepDict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;psd_raw&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">][</span><span class="n">tStep</span><span class="p">]</span>
+            <span class="n">hvsr_tstep</span><span class="p">,</span> <span class="n">hvsr_az_tstep</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">__get_hvsr_curve</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x_freqs</span><span class="p">[</span><span class="n">anyK</span><span class="p">],</span> <span class="n">psd</span><span class="o">=</span><span class="n">tStepDict</span><span class="p">,</span> 
+                                                            <span class="n">horizontal_method</span><span class="o">=</span><span class="n">methodInt</span><span class="p">,</span> <span class="n">hvsr_data</span><span class="o">=</span><span class="n">hvsr_data</span><span class="p">,</span>
+                                                            <span class="n">azimuth</span><span class="o">=</span><span class="n">azimuth</span><span class="p">,</span> <span class="n">array_processing</span><span class="o">=</span><span class="n">array_processing</span><span class="p">,</span>
+                                                            <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+            
+            <span class="n">hvsr_tSteps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">hvsr_tstep</span><span class="p">))</span> <span class="c1">#Add hvsr curve for each time step to larger list of arrays with hvsr_curves</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">hvsr_az_tstep</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">tStep</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">hvsr_tSteps_az</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">v</span><span class="p">)]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">hvsr_tSteps_az</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+    <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;HV_Curves&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_tSteps</span>
+
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;psd_raw&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="c1">#Get average psd value across time for each channel (used to calc main H/V curve)</span>
+        <span class="n">psdValsTAvg</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsrDF</span><span class="p">[</span><span class="n">use</span><span class="p">][</span><span class="s1">&#39;psd_values_&#39;</span><span class="o">+</span><span class="n">k</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">stDev</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanstd</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsrDF</span><span class="p">[</span><span class="n">use</span><span class="p">][</span><span class="s1">&#39;psd_values_&#39;</span><span class="o">+</span><span class="n">k</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">stDevValsM</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">psdValsTAvg</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">-</span> <span class="n">stDev</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+        <span class="n">stDevValsP</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">psdValsTAvg</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="n">stDev</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+
+        <span class="n">currTimesUsed</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsrDF</span><span class="p">[</span><span class="n">use</span><span class="p">][</span><span class="s1">&#39;TimesProcessed_Obspy&#39;</span><span class="p">])</span>
+        <span class="c1">#currTimesUsed[k] = psds[k][&#39;current_times_used&#39;] #original one</span>
+
+
     <span class="c1">#This gets the main hvsr curve averaged from all time steps</span>
     <span class="n">anyK</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">x_freqs</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">hvsr_curve</span><span class="p">,</span> <span class="n">hvsr_az</span><span class="p">,</span> <span class="n">hvsr_tSteps</span> <span class="o">=</span> <span class="n">__get_hvsr_curve</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x_freqs</span><span class="p">[</span><span class="n">anyK</span><span class="p">],</span> <span class="n">psd</span><span class="o">=</span><span class="n">psdValsTAvg</span><span class="p">,</span> 
@@ -6896,11 +6944,6 @@
                                                         <span class="n">azimuth</span><span class="o">=</span><span class="n">azimuth</span><span class="p">,</span> <span class="n">array_processing</span><span class="o">=</span><span class="n">array_processing</span><span class="p">,</span>
                                                         <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
     
-    <span class="n">origPPSD</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;ppsds_obspy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-
-    <span class="c1">#print(&#39;hvcurv&#39;, np.array(hvsr_curve).shape)</span>
-    <span class="c1">#print(&#39;hvaz&#39;, np.array(hvsr_az).shape)</span>
-
     <span class="c1">#Add some other variables to our output dictionary</span>
     <span class="n">hvsr_dataUpdate</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s1">&#39;x_freqs&#39;</span><span class="p">:</span><span class="n">x_freqs</span><span class="p">,</span>
@@ -6924,94 +6967,6 @@
     <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">hvsr_dataUpdate</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">hvsr_out</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
 
-    <span class="c1">#hvsr_out = HVSRData(hvsr_dataUpdate)</span>
-
-    <span class="c1">#This is if manual editing was used (should probably be updated at some point to just use masks)</span>
-    <span class="k">if</span> <span class="s1">&#39;x_windows_out&#39;</span> <span class="ow">in</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-        <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;x_windows_out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;x_windows_out&#39;</span><span class="p">]</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;x_windows_out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-
-    <span class="n">freq_smooth_ko</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;konno ohmachi&#39;</span><span class="p">,</span> <span class="s1">&#39;konno-ohmachi&#39;</span><span class="p">,</span> <span class="s1">&#39;konnoohmachi&#39;</span><span class="p">,</span> <span class="s1">&#39;konnohmachi&#39;</span><span class="p">,</span> <span class="s1">&#39;ko&#39;</span><span class="p">,</span> <span class="s1">&#39;k&#39;</span><span class="p">]</span>
-    <span class="n">freq_smooth_constant</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span> <span class="s1">&#39;const&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">]</span>
-    <span class="n">freq_smooth_proport</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;proportional&#39;</span><span class="p">,</span> <span class="s1">&#39;proportion&#39;</span><span class="p">,</span> <span class="s1">&#39;prop&#39;</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">]</span>
-
-    <span class="c1">#Frequency Smoothing</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">freq_smooth</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;No frequency smoothing is being applied. This is not recommended for noisy datasets.&#39;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">freq_smooth</span> <span class="ow">is</span> <span class="kc">True</span> <span class="ow">or</span> <span class="p">(</span><span class="n">freq_smooth</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">freq_smooth_ko</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="ow">not</span> <span class="n">f_smooth_width</span> <span class="ow">and</span> <span class="ow">not</span> <span class="ow">not</span> <span class="n">freq_smooth</span><span class="p">)):</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">obspy.signal</span><span class="w"> </span><span class="kn">import</span> <span class="n">konnoohmachismoothing</span>
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;psd_raw&#39;</span><span class="p">]:</span>
-            <span class="n">colName</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;psd_values_</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">&#39;</span>
-
-            <span class="n">psd_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="n">colName</span><span class="p">])</span>
-            <span class="n">psd_data</span> <span class="o">=</span> <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;psd_raw&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span>
-
-
-            <span class="n">freqs</span> <span class="o">=</span> <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;x_freqs&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span>
-            <span class="n">padding_length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">f_smooth_width</span><span class="p">)</span>
-
-            <span class="n">padding_value_R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">psd_data</span><span class="p">[:,</span><span class="o">-</span><span class="mi">1</span><span class="o">*</span><span class="n">padding_length</span><span class="p">:])</span>
-            <span class="n">padding_value_L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">psd_data</span><span class="p">[:,:</span><span class="n">padding_length</span><span class="p">])</span>
-
-            <span class="c1"># Pad the data to prevent boundary anamolies</span>
-            <span class="n">padded_ppsd_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">psd_data</span><span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="n">padding_length</span><span class="p">,</span> <span class="n">padding_length</span><span class="p">)),</span> 
-                                        <span class="s1">&#39;constant&#39;</span><span class="p">,</span> <span class="n">constant_values</span><span class="o">=</span><span class="p">(</span><span class="n">padding_value_L</span><span class="p">,</span> <span class="n">padding_value_R</span><span class="p">))</span>
-
-            <span class="c1"># Pad the frequencies</span>
-            <span class="n">ratio</span> <span class="o">=</span> <span class="n">freqs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">freqs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="c1"># Generate new elements on either side and combine</span>
-            <span class="n">left_padding</span> <span class="o">=</span> <span class="p">[</span><span class="n">freqs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">ratio</span> <span class="o">**</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">padding_length</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
-            <span class="n">right_padding</span> <span class="o">=</span> <span class="p">[</span><span class="n">freqs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">ratio</span> <span class="o">**</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding_length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
-            <span class="n">padded_freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">left_padding</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">right_padding</span><span class="p">])</span>
-            
-            <span class="c1">#Filter out UserWarning for just this method, since it throws up a UserWarning that doesn&#39;t really matter about dtypes often</span>
-            <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
-                <span class="c1">#warnings.simplefilter(&#39;ignore&#39;, category=UserWarning)</span>
-                <span class="n">padded_ppsd_data</span> <span class="o">=</span> <span class="n">padded_ppsd_data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">padded_freqs</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="c1"># Make them the same datatype</span>
-                <span class="n">padded_ppsd_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">padded_ppsd_data</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span> <span class="c1"># Prevent overflows</span>
-                <span class="n">padded_freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">padded_freqs</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span>
-
-                <span class="n">smoothed_ppsd_data</span> <span class="o">=</span> <span class="n">konnoohmachismoothing</span><span class="o">.</span><span class="n">konno_ohmachi_smoothing</span><span class="p">(</span><span class="n">padded_ppsd_data</span><span class="p">,</span> <span class="n">padded_freqs</span><span class="p">,</span> 
-                                                    <span class="n">bandwidth</span><span class="o">=</span><span class="n">f_smooth_width</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            
-            <span class="c1"># Only use the original, non-padded data</span>
-            <span class="n">smoothed_ppsd_data</span> <span class="o">=</span> <span class="n">smoothed_ppsd_data</span><span class="p">[:,</span><span class="n">padding_length</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="o">*</span><span class="n">padding_length</span><span class="p">]</span>
-            <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;psd_raw&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">smoothed_ppsd_data</span>
-            <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="n">colName</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">smoothed_ppsd_data</span><span class="p">),</span> <span class="n">index</span><span class="o">=</span><span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">freq_smooth</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">freq_smooth_constant</span><span class="p">:</span>
-        <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">__freq_smooth_window</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">,</span> <span class="n">f_smooth_width</span><span class="p">,</span> <span class="n">kind_freq_smooth</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">freq_smooth</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">freq_smooth_proport</span><span class="p">:</span>
-        <span class="n">hvsr_out</span> <span class="o">=</span> <span class="n">__freq_smooth_window</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">,</span> <span class="n">f_smooth_width</span><span class="p">,</span> <span class="n">kind_freq_smooth</span><span class="o">=</span><span class="s1">&#39;proportional&#39;</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;You indicated no frequency smoothing should be applied (freq_smooth = </span><span class="si">{</span><span class="n">freq_smooth</span><span class="si">}</span><span class="s1">). This is not recommended for noisy datasets.&#39;</span><span class="p">)</span>
-
-    <span class="c1">#Get hvsr curve from three components at each time step</span>
-    <span class="n">anyK</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;psd_raw&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">horizontal_method</span><span class="o">==</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">horizontal_method</span> <span class="o">==</span><span class="s1">&#39;dfa&#39;</span> <span class="ow">or</span> <span class="n">horizontal_method</span> <span class="o">==</span><span class="s1">&#39;Diffuse Field Assumption&#39;</span><span class="p">:</span>
-        <span class="n">hvsr_tSteps_az</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">hvsr_tSteps</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">hvsr_tSteps_az</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">tStep</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;psd_raw&#39;</span><span class="p">][</span><span class="n">anyK</span><span class="p">])):</span>
-            <span class="n">tStepDict</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;psd_raw&#39;</span><span class="p">]:</span>
-                <span class="n">tStepDict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;psd_raw&#39;</span><span class="p">][</span><span class="n">k</span><span class="p">][</span><span class="n">tStep</span><span class="p">]</span>
-            <span class="n">hvsr_tstep</span><span class="p">,</span> <span class="n">hvsr_az_tstep</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">__get_hvsr_curve</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;x_freqs&#39;</span><span class="p">][</span><span class="n">anyK</span><span class="p">],</span> <span class="n">psd</span><span class="o">=</span><span class="n">tStepDict</span><span class="p">,</span> 
-                                                            <span class="n">horizontal_method</span><span class="o">=</span><span class="n">methodInt</span><span class="p">,</span> <span class="n">hvsr_data</span><span class="o">=</span><span class="n">hvsr_out</span><span class="p">,</span>
-                                                            <span class="n">azimuth</span><span class="o">=</span><span class="n">azimuth</span><span class="p">,</span> <span class="n">array_processing</span><span class="o">=</span><span class="n">array_processing</span><span class="p">,</span>
-                                                            <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
-            
-            <span class="n">hvsr_tSteps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">hvsr_tstep</span><span class="p">))</span> <span class="c1">#Add hvsr curve for each time step to larger list of arrays with hvsr_curves</span>
-            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">hvsr_az_tstep</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">tStep</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">hvsr_tSteps_az</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">v</span><span class="p">)]</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">hvsr_tSteps_az</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
-    <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;HV_Curves&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hvsr_tSteps</span>
-    
     <span class="c1"># Add azimuth HV Curves to hvsr_windows_df, if applicable</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">hvsr_tSteps_az</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">hvsr_out</span><span class="p">[</span><span class="s1">&#39;hvsr_windows_df&#39;</span><span class="p">][</span><span class="s1">&#39;HV_Curves_&#39;</span><span class="o">+</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span>
@@ -12343,7 +12298,8 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># This section is for if they are plotted on different plots</span>
                 <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="c1">#Remove title</span>
-                <span class="n">ax</span><span class="o">.</span><span class="n">sharex</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;axes&#39;</span><span class="p">][</span><span class="s1">&#39;hvsr&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;axes&#39;</span><span class="p">],</span> <span class="s1">&#39;hvsr&#39;</span><span class="p">):</span>
+                    <span class="n">ax</span><span class="o">.</span><span class="n">sharex</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;axes&#39;</span><span class="p">][</span><span class="s1">&#39;hvsr&#39;</span><span class="p">])</span>
                 <span class="n">compAxis</span> <span class="o">=</span> <span class="n">ax</span>
                 <span class="n">legendLoc2</span> <span class="o">=</span> <span class="s1">&#39;upper right&#39;</span>
                 <span class="n">compAxis</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">compLabel</span><span class="p">)</span>

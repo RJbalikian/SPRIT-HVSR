@@ -1,37 +1,41 @@
-<p><a href="https://zenodo.org/doi/10.5281/zenodo.10899401"><img alt="DOI" src="https://zenodo.org/badge/593014510.svg" /></a></p>
+<p><a href="https://doi.org/10.5281/zenodo.18928183"><img alt="DOI" src="https://zenodo.org/badge/DOI/10.5281/zenodo.18928183.svg" /></a></p>
 <h1>SPRĪT</h1>
-<p>SpRĪT (HVSR): Spectral Ratio Investigation Toolset for basic Horizontal Vertical Spectral Ratio processing, using any data format readable by the Obspy python package.</p>
-<h1>Introduction</h1>
-<p>The Horizontal to Vertical Spectral Ratio (HVSR) technique is a method used to analyze ambient seismic noise to calculate the dominant frequency at a site.</p>
-<p>This package will allow ambient seismic data to be read in the most common seismic data formats, and will perform Horizontal Vertical Spectral Ratio (HVSR) analysis on the data. H/V analysis was standardized and popularized by the Site EffectS assessment using AMbient Excitations (SESAME) project, with a comprehensive final report issued in 2003.<sup><a href="#1">1</a></sup> This SESAME project and its J-SESAME pacakge were crucial in the developing of the HVSR technique, and the outputs aided in the development of this software package.</p>
-<p>This python package is built in large part off the Incorporated Research Institutions in Seismology (IRIS) Horizontal to Vertical Spectral Ratio (HVSR) processing package.<sup><a href="#2">2</a></sup> Specifically, the computeHVSR.py tools that enable the ability to rank HVSR peaks, calculate data quality and peak quality, and the combining of the horizontal components was adapted directly from that package. Because the SpRĪT package is intended to be used to analyze data from rapid field data acquisitions (less than an hour per site), much of the IRIS package was adapted from daily to HV curve calculations to sub-hourly and even sub-minute HV calculations. Because there is limited data, there is no baseline to compare to, so that element is excluded from this package.</p>
-<p>That version is intended to read data from the IRIS Data Management Center (DMC) MUSTANG online service,<sup><a href="#3">3</a></sup> which is a toolbox that provides processes for enabling data quality analysis services to data archived in the DMC. For example, a simple service query can extract power spectral density estimates, noise spectrograms, H/V plots, etc.</p>
-<p>For guidelines on acquisition, processing, and interpration of H/V data, see: <a href="http://sesame.geopsy.org/Papers/HV_User_Guidelines.pdf">http://sesame.geopsy.org/Papers/HV_User_Guidelines.pdf</a>. </p>
-<h1>Installation</h1>
-<p>Sprit may be installed from the <a href="https://pypi.org/project/sprit/">pypi repository</a> using the pip command:</p>
-<p><code>pip install sprit</code></p>
-<p>The sprit package is in active development. Add the <code>--upgrade</code> argument (<code>pip install sprit --upgrade</code>) to ensure you have the latest version. If there are prerelease versions newer than the latest stable version that you would like to try out, use the <code>--pre</code> flag, i.e., <code>pip install sprit --pre</code>.</p>
-<p>This should be done using command line. It is recommended to do this in a virtual environment. For information on creating virtual environments in python, see <a href="https://docs.python.org/3/library/venv.html">this page</a>. For the creation of anaconda environments, see <a href="https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html">here</a>. Note that it is not officially recommended to use pip repositories in anaconda environments, but it often works without any issues.</p>
-<p>For troubleshooting issues with installation or usage of the sprit package, see the <a href="https://github.com/RJbalikian/SPRIT-HVSR/wiki/Troubleshooting">Troubleshooting</a> page of the wiki.</p>
-<h1>Examples</h1>
-<p>An example Jupyter notebook is provided in this main repository directory <a href="https://github.com/RJbalikian/SPRIT-HVSR/blob/main/SPRIT_EXAMPLE_NOTEBOOK.ipynb">here</a>.</p>
-<p>Code examples include:
-* basic processing of sample HVSR data
-* Metadata/parameter specification
-* Data editing
-* Reading Tromino data into SpRIT
-* Reports and visualization
-* User interfaces
-* Export and import
-* Batch processing.</p>
+<p><img align="left" width="120" height="120" src="https://github.com/RJbalikian/SPRIT-HVSR/blob/main/sprit/resources/icon/SpRITLogo.png?raw=true" alt="SpRIT Logo"></p>
+<p>SpRĪT (pronounced "sprite"): Spectral Ratio Investigation Toolset for basic Horizontal Vertical Spectral Ratio (HVSR) processing, using any data format readable by the Obspy python package. SpRIT also supports input from select Tromino sensors. SpRIT allows for rapid and accurate processing of HVSR data using simple, user-friendly interfaces to the well-established <a href="https://github.com/iris-edu/HVSR">HVSR algorithms</a>. It has been developed and tested by scientists at the Illinois State Geological Survey, part of the Prairie Research Institute at the University of Illinois, and is intended for use in the classroom, by graduate and undergraduate researchers, and professionals alike. Any issues, questions, or feature requests can be submitted <a href="https://github.com/RJbalikian/SPRIT-HVSR/issues">here</a>.</p>
+<p><br></p>
 <h1>Documentation</h1>
 <ul>
 <li>API Documentation <a href="https://rjbalikian.github.io/SPRIT-HVSR/main.html">here</a></li>
 <li>See Wiki for more tips, tutorials, usage guidelines, troubleshooting, and other information <a href="https://github.com/RJbalikian/SPRIT-HVSR/wiki">here</a></li>
 <li>Pypi repository <a href="https://pypi.org/project/sprit/">here</a></li>
 </ul>
+<h1>Installation</h1>
+<p>Sprit may be installed from the <a href="https://pypi.org/project/sprit/">pypi repository</a> using the pip command:</p>
+<p><code>bash 
+pip install sprit</code></p>
+<p>The sprit package is in active development. Add the <code>--upgrade</code> argument (<code>pip install sprit --upgrade</code>) to ensure you have the latest version. If there are prerelease versions newer than the latest stable version that you would l
+ike to try out, use the <code>--pre</code> flag, i.e., <code>pip install sprit --pre</code>.</p>
+<p>This should be done using command line. It is recommended to do this in a virtual environment. For information on creating virtual environments in python, see <a href="https://docs.python.org/3/library/venv.html">this page</a>. For the creation of anaconda environments, see <a href="https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html">here</a>. Note that it is not officially recommended to use pip repositories in anaconda environments, but we have not encountered any issues in our testing with conda environments.</p>
+<p>For troubleshooting issues with installation or usage of the sprit package, see the <a href="https://github.com/RJbalikian/SPRIT-HVSR/wiki/Troubleshooting">Troubleshooting</a> page of the wiki.</p>
+<h1>Examples</h1>
+<p>An example Jupyter notebook is provided in this main repository directory <a href="https://github.com/RJbalikian/SPRIT-HVSR/blob/main/SPRIT_EXAMPLE_NOTEBOOK.ipynb">here</a>.</p>
+<p>Code examples include:
+* Basic processing of sample HVSR data
+* Metadata/parameter specification
+* Data editing
+* Reading Tromino data into SpRIT
+* Reports and visualization
+* User interfaces
+* Export and import
+* Batch processing</p>
 <h1>Web App</h1>
 <p>An experimental, browser based web app is available for use via Streamlit. you can find this at <a href="https://sprithvsr.streamlit.app">sprithvsr.streamlit.app</a></p>
+<h1>HVSR Background</h1>
+<p>The Horizontal to Vertical Spectral Ratio (HVSR) technique is a method used to analyze ambient seismic noise to calculate the dominant frequency at a site.</p>
+<p>This package will allow ambient seismic data to be read in the most common seismic data formats, and will perform Horizontal Vertical Spectral Ratio (HVSR) analysis on the data. H/V analysis was standardized and popularized by the Site EffectS assessment using AMbient Excitations (SESAME) project, with a comprehensive final report issued in 2003.<sup><a href="#1">1</a></sup> This SESAME project and its J-SESAME pacakge were crucial in the developing of the HVSR technique, and the outputs aided in the development of this software package.</p>
+<p>This python package is built in large part off the Incorporated Research Institutions in Seismology (IRIS) Horizontal to Vertical Spectral Ratio (HVSR) processing package.<sup><a href="#2">2</a></sup> Specifically, the computeHVSR.py tools that enable the ability to rank HVSR peaks, calculate data quality and peak quality, and the combining of the horizontal components was adapted directly from that package. Because the SpRĪT package is intended to be used to analyze data from rapid field data acquisitions (less than an hour per site), much of the IRIS package was adapted from daily to HV curve calculations to sub-hourly and even sub-minute HV calculations. Because there is limited data, there is no baseline to compare to, so that element is excluded from this package.</p>
+<p>That version is intended to read data from the IRIS Data Management Center (DMC) MUSTANG online service,<sup><a href="#3">3</a></sup> which is a toolbox that provides processes for enabling data quality analysis services to data archived in the DMC. For example, a simple service query can extract power spectral density estimates, noise spectrograms, H/V plots, etc.</p>
+<p>For guidelines on acquisition, processing, and interpration of H/V data, see: <a href="http://sesame.geopsy.org/Papers/HV_User_Guidelines.pdf">http://sesame.geopsy.org/Papers/HV_User_Guidelines.pdf</a>. </p>
 <h1>Dependencies</h1>
 <p>Aside from the modules in the python standard library, the following package dependencies must be installed in your environment for this package to work</p>
 <ul>
