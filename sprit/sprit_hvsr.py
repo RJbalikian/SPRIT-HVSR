@@ -4682,8 +4682,7 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
 
     obspy_ppsd_kwargs_sprit_defaults = obspy_ppsd_kwargs.copy()
     # Set defaults here that are different than obspy defaults
-    if 'ppsd_length' not in obspy_ppsd_kwargs.keys():
-        obspy_ppsd_kwargs_sprit_defaults['ppsd_length'] = 30.0      
+    obspy_ppsd_kwargs_sprit_defaults['ppsd_length'] = window_length
     if 'period_step_octaves' not in obspy_ppsd_kwargs.keys():
         obspy_ppsd_kwargs_sprit_defaults['period_step_octaves'] = 0.03125
     if 'period_limits' not in obspy_ppsd_kwargs.keys():
@@ -4898,6 +4897,8 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
 
     if obspy_ppsds:
         hvsr_data, dfList, colList, common_times = _get_obspy_ppsds(hvsr_data, **obspy_ppsd_kwargs)
+        hvsrDF = pd.DataFrame(dfList, columns=colList)
+
     else:
         psdDict, times_bool = __single_psd_from_raw_data(hvsr_data, window_length=window_length, window_length_method=window_length_method, window_type=window_type,
                                                            num_freq_bins=num_freq_bins,
@@ -4956,17 +4957,14 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
             
         hvsr_data['ppsds_obspy'] = {}
         dfList = []
-        for i, w in enumerate(common_times):
-            ws = str(w)
-            dfList.append([use_times[i], psdDictUpdate['Z'][i], psdDictUpdate['E'][i], psdDictUpdate['N'][i]])
-        colList = ["Use", "psd_values_Z", "psd_values_E", "psd_values_N"]
-        # dfList: list of np.arrays, fitting the above column
-        # common_times: times in common between all, should be length of 1 psd dimension above
-        # hvsr_data['psds']['Z']['times_gaps']: list of two-item lists with UTCDatetimes for gaps
-        
-        # #Maybe not needed hvsr_data['psds']['Z']['current_times_used']
 
-    hvsrDF = pd.DataFrame(dfList, columns=colList)
+        # #Maybe not needed hvsr_data['psds']['Z']['current_times_used']
+        hvsrDF = pd.DataFrame(use_times, columns=["Use"])
+        #hvsrDF['Use'] = use_times
+        hvsrDF['psd_values_Z'] = psdDictUpdate['Z'].tolist()
+        hvsrDF['psd_values_E'] = psdDictUpdate['E'].tolist()
+        hvsrDF['psd_values_N'] = psdDictUpdate['N'].tolist()
+
     if verbose:
         print(f"\t\t{hvsrDF.shape[0]} processing windows generated and psd values stored in hvsr_windows_df with columns: {', '.join(hvsrDF.columns)}")
     hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
@@ -4976,7 +4974,7 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
             hvsrDF['psd_values_'+k] = hvsr_data['psds'][k]['psd_values'].tolist()
 
     hvsrDF['TimesProcessed_Obspy'] = common_times
-    hvsrDF['TimesProcessed_ObspyEnd'] = hvsrDF['TimesProcessed_Obspy'] + obspy_ppsd_kwargs['ppsd_length']
+    hvsrDF['TimesProcessed_ObspyEnd'] = hvsrDF['TimesProcessed_Obspy'] + window_length
     #    colList.append('TimesProcessed_Obspy')
     #    currTStepList.append(common_times[i])            
     # Add other times (for start times)
@@ -4986,13 +4984,16 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
         return obspyUTCDateTime.datetime.replace(tzinfo=datetime.timezone.utc)
     def convert_to_mpl_dates(obspyUTCDateTime):
         return obspyUTCDateTime.matplotlib_date
+    def convert_to_mplEnd(mpltimeStart):
+        return mpltimeStart + (window_length/86400)
+    def convert_to_dtend(dtStart):
+        return dtStart + datetime.timedelta(seconds=window_length)
 
     hvsrDF['TimesProcessed'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_datetime)
-    
-    hvsrDF['TimesProcessed_End'] = hvsrDF['TimesProcessed'] + datetime.timedelta(days=0, seconds=obspy_ppsd_kwargs['ppsd_length'])
+    hvsrDF['TimesProcessed_End'] = hvsrDF['TimesProcessed'].apply(convert_to_dtend)
     hvsrDF['TimesProcessed_MPL'] = hvsrDF['TimesProcessed_Obspy'].apply(convert_to_mpl_dates)
-    hvsrDF['TimesProcessed_MPLEnd'] = hvsrDF['TimesProcessed_MPL'] + (obspy_ppsd_kwargs['ppsd_length']/86400)
-    
+    hvsrDF['TimesProcessed_MPLEnd'] = hvsrDF['TimesProcessed_MPL'].apply(convert_to_mplEnd)
+
     # Take care of existing time gaps, in case not taken care of previously
     if obspy_ppsds:
         for gap in hvsr_data['psds']['Z']['times_gaps']:
@@ -5012,13 +5013,13 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
         #    hvsrDF['Use'] = (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].lt(window[0]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].lt(window[0]) )| \
         #            (hvsrDF['TimesProcessed_MPL'][hvsrDF['Use']].gt(window[1]) & hvsrDF['TimesProcessed_MPLEnd'][hvsrDF['Use']].gt(window[1])).astype(bool)
         #hvsrDF['Use'] = hvsrDF['Use'].astype(bool)
-        
+
     # Create dict entry to keep track of how many outlier hvsr curves are removed 
     # This is a (2-item list with [0]=current number, [1]=original number of curves)
     hvsr_data['tsteps_used'] = [int(hvsrDF['Use'].sum()), hvsrDF['Use'].shape[0]]
     #hvsr_data['tsteps_used'] = [hvsr_data['psds']['Z']['times_processed'].shape[0], hvsr_data['psds']['Z']['times_processed'].shape[0]]
     #hvsr_data['tsteps_used'][0] = hvsr_data['psds']['Z']['current_times_used'].shape[0]
-    
+
     hvsr_data = sprit_utils._make_it_classy(hvsr_data)
 
     if 'processing_parameters' not in hvsr_data.keys():
@@ -12482,7 +12483,7 @@ def __check_curve_reliability(hvsr_data, _peak, col_id='HV'):
     anyKey = list(hvsr_data['psds'].keys())[0]#Doesn't matter which channel we use as key
 
     delta = hvsr_data['psds'][anyKey]['delta']
-    window_len = hvsr_data['psds'][anyKey]['ppsd_length'] #Window length in seconds
+    window_len = hvsr_data['psds'][anyKey]['psd_length'] #Window length in seconds
     window_num = np.array(hvsr_data['psd_raw'][anyKey]).shape[0]
 
     for _i in range(len(_peak)):
