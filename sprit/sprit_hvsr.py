@@ -5171,10 +5171,13 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
         peakPass = peakTestsPassed >= 5
     except Exception as e:
         errMsg= 'No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_psds(). Otherwise, data may not be usable for HVSR.'
-        print(errMsg)
-        print(e)
-        plotString_noBestPeak = 'HVSR t all C+ t SPEC'
-        hvsr_results['Plot_Report'] = plot_hvsr(hvsr_results, plot_type=plotString_noBestPeak, azimuth=azimuth, return_fig=True)
+        try:
+            plotString_noBestPeak = 'HVSR t C+ t'
+            hvsr_results['Plot_Report'] = plot_hvsr(hvsr_results, plot_type=plotString_noBestPeak, azimuth=azimuth, 
+                                                    return_fig=True, show_plot=True, verbose=True)
+        except Exception as e2:
+            print("E2 MESSAGE", e2)
+            traceback.print_exc()
         return hvsr_results
         #raise RuntimeError('No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_psds(). Otherwise, data may not be usable for HVSR.')
 
@@ -6186,7 +6189,8 @@ def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=
         #if use_subplots:
         #    fig.subplots_adjust()#.set(h_pad=0.075, hspace=-5)
         if show_plot:
-            fig.canvas.draw()
+            #fig.canvas.draw()
+            plt.show()
             
         if return_fig:
             return fig
@@ -11959,7 +11963,8 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
             else:
                 # This section is for if they are plotted on different plots
                 ax.set_title('') #Remove title
-                ax.sharex(kwargs['axes']['hvsr'])
+                if hasattr(kwargs['axes'], 'hvsr'):
+                    ax.sharex(kwargs['axes']['hvsr'])
                 compAxis = ax
                 legendLoc2 = 'upper right'
                 compAxis.set_ylabel(compLabel)
