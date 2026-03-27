@@ -1819,7 +1819,7 @@ def create_jupyter_ui():
                                         secondary_y=use_secondary,
                                         row=compRow, col=1)
                 
-                results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.ppsd_std_vals_m[comp],
+                results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.psd_std_vals_m[comp],
                                         line={'color':compColor_semi_light[comp], 'width':0.1},marker=None,
                                         fill='tonexty', fillcolor=compColor_semi_light[comp],
                                         name=f'St.Dev. [{comp}]', hoverinfo='none', showlegend=False, 

@@ -1677,7 +1677,7 @@ def _parse_comp_plot_list(hv_data, comp_plot_list, plot_with_hv=False, results_f
                                     secondary_y=use_secondary,
                                     row=compRow, col=1)
             
-            results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.ppsd_std_vals_m[comp],
+            results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.psd_std_vals_m[comp],
                                     line={'color':compColor_semi_light[comp], 'width':0.1},marker=None,
                                     fill='tonexty', fillcolor=compColor_semi_light[comp],
                                     name=f'St.Dev. [{comp}]', hoverinfo='none', showlegend=False, 
@@ -1710,7 +1710,7 @@ def _parse_comp_plot_list(hv_data, comp_plot_list, plot_with_hv=False, results_f
     if 'ann' in comp_plot_list:
         minVal = 1e6 # A high number to compare against (comparer should always be lower)
         for comp in components:
-            currPPSDCurve = hvsr_data['ppsd_std_vals_m'][comp]
+            currPPSDCurve = hvsr_data['psd_std_vals_m'][comp]
             if np.nanmin(currPPSDCurve) < minVal:
                 minVal = np.nanmin(currPPSDCurve)
         results_fig.add_annotation(x=np.log10(hvsr_data['BestPeak'][azimuth]['f0']),

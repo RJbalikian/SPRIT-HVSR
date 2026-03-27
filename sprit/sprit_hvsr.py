@@ -64,7 +64,6 @@ OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX',
 PLOT_KEYS = ["Input_Plot", "Outlier_Plot", "Plot_Report", "Depth_Plot", "Plot_Report"]
 RESOURCE_DIR = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources')
 
-
 with open(RESOURCE_DIR.joinpath('defaults.json'), 'r') as fp:
     DEFAULT_PARAMS_DICT = json.load(fp)
 DEFAULT_BAND = DEFAULT_PARAMS_DICT['hvsr_band']
@@ -1776,6 +1775,10 @@ def run(input_data=None, source='file',
                         break
                 get_report_kwargs['plot_type'] = ' '.join(get_report_kwargs['plot_type'])
 
+                if 'remove_response' in kwargs:
+                    if kwargs['remove_response']:
+                        get_report_kwargs['plot_type'] = get_report_kwargs['plot_type'].replace('+', '+ nm')
+
                 # Get HVSRBatch and HVSRData in same format
                 if isinstance(hvsr_results, HVSRData):
                     hvsr_results_interim = {hvsr_results['site']: hvsr_results}
@@ -2975,7 +2978,7 @@ def export_json(hvsr_results, json_export_path=None,
                 'input_stream', 'stream', 'stream_edited', 'current_times_used']
 
     channel_dicts = ['x_freqs', 'x_period', 'psd_raw', 'psds', 'psd_values_tavg', 
-                        'ppsd_std', 'ppsd_std_vals_m', 'ppsd_std_vals_p'] 
+                        'ppsd_std', 'psd_std_vals_m', 'ppsd_std_vals_p'] 
 
     az_dicts = ['ind_hvsr_curves', 'ind_hvsr_stdDev', 'ind_hvsr_peak_indices',
                 'hvsr_peak_indices', 'hvsr_peak_freqs', 'hvsr_log_std',
@@ -4479,7 +4482,7 @@ def from_json(json_input, return_hvsr=True, **kwargs):
         try:
             keepListList = ['channels', 'cha', 'x_windows_out', 'hvsr_band', 'hvsr_curve', 'peak_freq_range', 'tsteps_used']
             channel_dicts = ['x_freqs', 'x_period', 'psd_raw', 'psds', 'psd_values_tavg', 
-                                'ppsd_std', 'ppsd_std_vals_m', 'ppsd_std_vals_p'] 
+                                'ppsd_std', 'psd_std_vals_m', 'ppsd_std_vals_p'] 
             az_dicts_neat = ['ind_hvsr_curves', 'ind_hvsr_stdDev', 'hvsr_log_std','hvsrp', 'hvsrm', 'hvsrp2', 'hvsrm2']
             # az_dicts_ragged = ['ind_hvsr_peak_indices','hvsr_peak_indices', 'hvsr_peak_freqs']
             # plot_attrs = ['Plot_Report', 'HV_Plot', 'Outlier_Plot', 'Input_Plot', 'Depth_Plot', 'Cross_Section_Plot']
@@ -4621,7 +4624,7 @@ def generate_ppsds(hvsr_data, **gen_psds_kwargs):
 # Generate PSDs for each channel
 def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='hann', window_length_method='length', 
                   remove_response=False, skip_on_gaps=True, num_freq_bins=512, hvsr_band=DEFAULT_BAND,
-                  obspy_ppsds=False, azimuthal_psds=False, plot_psds=False, verbose=False, **obspy_ppsd_kwargs):
+                  obspy_ppsds=False, azimuthal_psds=False, show_psd_plot=False, verbose=False, **obspy_ppsd_kwargs):
     
     """Calculate Power Spectral Density (PSD) curves for each channel.
         Uses the [scipy.signal.welch()](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html) function 
@@ -4655,7 +4658,7 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
             Whether to generate PPSDs for azimuthal data
         verbose : bool, default=True
             Whether to print inputs and results to terminal
-        plot_psds : bool, default=False
+        show_psd_plot : bool, default=False
             Whether to show a plot of the psds here.
         **obspy_ppsd_kwargs : dict
             Dictionary with keyword arguments that are passed directly to obspy.signal.PPSD.
@@ -4900,9 +4903,10 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
         hvsrDF = pd.DataFrame(dfList, columns=colList)
 
     else:
+
         psdDict, times_bool = __single_psd_from_raw_data(hvsr_data, window_length=window_length, window_length_method=window_length_method, window_type=window_type,
-                                                           num_freq_bins=num_freq_bins,
-                                                           overlap=overlap_pct, remove_response=remove_response, do_azimuths=azimuthal_psds, show_psd_plot=False)
+                                                           num_freq_bins=num_freq_bins, verbose=verbose,
+                                                           overlap=overlap_pct, remove_response=remove_response, do_azimuths=azimuthal_psds)
         common_times = [ct[0] for ct in times_bool]
         use_times = [ut[1] for ut in times_bool]
 
@@ -5035,11 +5039,12 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
     
     #for ind, row in hvsrDF.iterrows():
     #    print(row['psd_values_Z'].shape)
-    if plot_psds:
+    if show_psd_plot:
+        fig, ax = plt.subplots(3, figsize=(10,10))
         for i, r in hvsrDF.iterrows():
-            plt.plot(r['psd_values_Z'], c='k', linewidth=0.5)
-            plt.plot(r['psd_values_E'], c='b', linewidth=0.5)
-            plt.plot(r['psd_values_N'], c='r', linewidth=0.5)
+            ax[0].plot(r['psd_values_Z'], c='k', linewidth=0.2, alpha=0.5)
+            ax[1].plot(r['psd_values_E'], c='b', linewidth=0.2, alpha=0.5)
+            ax[2].plot(r['psd_values_N'], c='r', linewidth=0.2, alpha=0.5)
         plt.show()
 
     return hvsr_data
@@ -6328,14 +6333,22 @@ def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=
                 minY = 99999 # Start high
                 maxY = -99999 # Start low
                 
-                for key in hvsr_data.psd_raw.keys():
-                    if min(hvsr_data.ppsd_std_vals_m[key]) < minY:
-                        minY = min(hvsr_data.ppsd_std_vals_m[key])
-                    if max(hvsr_data.ppsd_std_vals_m[key]) > maxY:
-                        maxY = max(hvsr_data.ppsd_std_vals_m[key])
-                yRange = maxY - minY
-                compYlim = [float(minY - (yRange*0.05)), float(maxY + (yRange * 0.05))]
-                compYlim.reverse()
+                if 'nm' not in plot_type:
+                    for key in hvsr_data.psd_raw.keys():
+                        if min(hvsr_data.psd_std_vals_m[key]) < minY:
+                            minY = min(hvsr_data.psd_std_vals_m[key])
+                        if max(hvsr_data.psd_std_vals_m[key]) > maxY:
+                            maxY = max(hvsr_data.psd_std_vals_m[key])
+                    yRange = maxY - minY
+                    compYlim = [float(minY - (yRange*0.05)), float(maxY + (yRange * 0.05))]
+                    compYlim.reverse()
+                else:
+                    nmdict = sprit_utils._get_noise_models()
+                    maxY = max(nmdict['NHNM'])
+                    minY = min(nmdict['NLNM'])
+                    
+                    compYlim = [minY-abs(minY)*0.05, maxY+abs(maxY)*0.05]
+
                 compKwargs = {'ylim':compYlim}
                 compKwargs.update(kwargs)
                 fig, ax[p] = _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype='x_freqs', show_legend=show_legend, axes=ax, **kwargs)
@@ -6753,7 +6766,7 @@ def process_hvsr(hvsr_data, horizontal_method=None, freq_smooth='konno ohmachi',
                 'current_times_used': currTimesUsed,
                 'psd_values_tavg':psdValsTAvg,
                 'ppsd_std':stDev,
-                'ppsd_std_vals_m':stDevValsM,
+                'psd_std_vals_m':stDevValsM,
                 'ppsd_std_vals_p':stDevValsP,
                 'horizontal_method':horizontal_method,
                 'psds':psds,
@@ -10226,7 +10239,7 @@ def __prototype_outlier_detect(hvsr_data, use_hv_curves=False,
 # Generate psds from raw data (no response removed)
 def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_method='length', window_type='hann',
                                overlap=0.5, num_freq_bins=512,
-                               show_psd_plot=False, remove_response=False, do_azimuths=False, verbose=False):
+                               remove_response=False, do_azimuths=False, verbose=False):
     """Helper function to get psds from raw trace streams (no response information is needed in this case)
 
     Parameters
@@ -10267,13 +10280,21 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_meth
             dataDict[keyName] = azimuthTrace
         
     if remove_response:
+        pf1 = hvsr_data['hvsr_band'][0]/2
+        pf2 = hvsr_data['hvsr_band'][0]
+        pf3 = hvsr_data['hvsr_band'][1]
+        pf4 = hvsr_data['hvsr_band'][1]*2
+
         for key, compStream in dataDict.items():
             compStream = compStream.split()
+
+            trList = []
             
             for trace in compStream:
-                trace.remove_response(hvsr_data['inv'])
-            
-            compStream.merge()
+                trList.append(trace.remove_response(hvsr_data['inv'], 
+                                                    pre_filt=[pf1, pf2, pf3, pf4]))
+            dataDict[key] = obspy.Stream(trList).merge()
+            #compStream.merge()
 
         if verbose:
             print("\n\tInstrument Response Removed from Traces\n")
@@ -10405,11 +10426,6 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_meth
                     print(f"\tWindow starting at {stime} not used ({len(window_trace)} samples long)")
         #psds = np.mean(np.array(final_psds), axis=0)
         #psdDict[key][str(stime)] = np.array(final_psds)
-
-        if show_psd_plot:
-            plt.plot(x_freqs, psds, linewidth=0.5, c='k')
-            plt.semilogx()
-            plt.semilogy()
 
     return psdDict, np.array(windows_out)
 
@@ -11735,7 +11751,6 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
     
     # Plot parameters
     ax.semilogx()
-    ax.set_ylim(ylim)
     ax.set_xlim(xlim)
     ax.set_ylabel('H/V Ratio'+'\n['+hvsr_data['horizontal_method']+']', fontsize='small',)
     ax.tick_params(axis='x', labelsize=8)
@@ -11805,7 +11820,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                 plotSuff=plotSuff+'ann_'
 
         # Show primary peak amplitude (and annotate if indicated)
-        if k=='pa':
+        elif k=='pa':
             ax.hlines([a0], ax.get_xlim()[0], f0, linestyles='dashed')
             ax.scatter([f0], [a0], marker="o", facecolor='none', edgecolor='k')
             peakPoint = True
@@ -11817,7 +11832,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                 peakAmpAnn = True                
 
         # Show the curves and/or peaks at each time window
-        if 't' in k and 'test' not in k:
+        elif 't' in k and 'test' not in k:
             plotSuff = plotSuff+'allTWinCurves_'
 
             # If this is a component subplot
@@ -11862,7 +11877,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                             ax.plot(x, t, color='orangered', alpha=0.666, linewidth=0.8, linestyle=':', zorder=0)
 
         # Plot SESAME test results and thresholds on HVSR plot
-        if 'test' in k and kwargs['subplot'] == 'hvsr':
+        elif 'test' in k and kwargs['subplot'] == 'hvsr':
             if k=='tests' or 'all' in k or ':' in k:
                 # Change k to pass all test plot conditions
                 k='test123456c'
@@ -12053,7 +12068,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                     peakPoint = True
         
         # Plot frequency search range bars
-        if 'fr' in k:
+        elif 'fr' in k:
             lowPeakSearchThresh = hvsr_data.peak_freq_range[0]
             hiPeakSearchThresh = hvsr_data.peak_freq_range[1]
             
@@ -12062,8 +12077,27 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
             ax.fill_betweenx(ylim, [xlim[0], xlim[0]],[lowPeakSearchThresh,lowPeakSearchThresh], **frStyleDict)          
             ax.fill_betweenx(ylim, [hiPeakSearchThresh, hiPeakSearchThresh],[xlim[1],xlim[1]], **frStyleDict)          
 
+        elif 'nm' in k:
+            nmdict = sprit_utils._get_noise_models()
+            NHNMVals = np.interp(nmdict['NLNM_periods'], nmdict['NHNM_periods'], nmdict['NHNM'])
+            ax.fill_between(nmdict['NLNM_freqs'], nmdict['NLNM'], NHNMVals, 
+                            facecolor="#00000016", 
+                            #edgecolor='k', 
+                            #linewidth=1, 
+                            #linestyle='dashed',
+                            zorder=-1000000,
+                            label='NLNM/NHNM')
+            ax.plot(nmdict['NLNM_freqs'], nmdict['NLNM'],c='k',
+                    linewidth=1, linestyle='dashed', alpha=1)
+            ax.plot(nmdict['NLNM_freqs'],NHNMVals,c='k',
+                    linewidth=1, linestyle='dashed', alpha=1)
+            ax.legend(loc=legendLoc, ncols = len(psdKeys)+1, 
+                    borderaxespad=0.1, columnspacing=1, markerfirst=False, reverse=True, borderpad=0.2)
+        elif 'ann' in k:
+            pass
+
         # Plot individual components
-        if 'c' in k and 'test' not in k: #Spectrogram uses a different function, so c is unique to the component plot flag
+        elif 'c' in k and 'test' not in k: #Spectrogram uses a different function, so c is unique to the component plot flag
             plotSuff = plotSuff+'IndComponents_'
             
             if 'c' not in plot_type[0]:
@@ -12087,26 +12121,39 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
                 legendLoc2 = 'upper right'
                 compAxis.set_ylabel(compLabel)
                 
-            minY = []
-            maxY = []
+            minYs = []
+            maxYs = []
             keyList = ['Z', 'E', 'N']
             for az in hvsr_data.hvsr_az.keys():
                 keyList.append(az)
             keyList.sort()
             hvsrDF = hvsr_data.hvsr_windows_df
-            for key in keyList:
-                #hvsr_data['psds'][key]['psd_values']                
-                minY.append(hvsr_data['ppsd_std_vals_m'][key].min())
-                maxY.append(hvsr_data['ppsd_std_vals_p'][key].max())
-                #minY.append(np.min(np.stack(hvsrDF['psd_values_'+key][hvsrDF['Use']])))
-                #maxY.append(np.max(np.stack(hvsrDF['psd_values_'+key][hvsrDF['Use']])))
-            minY = min(minY)
-            maxY = max(maxY)
+            if 'nm' in plot_type:
+                nmdict = sprit_utils._get_noise_models()
+                minY = min(nmdict['NLNM'])
+                maxY = max(nmdict['NHNM'][:-2])
+
+                for key in keyList:
+                    minYs.append(hvsr_data['psd_std_vals_m'][key].min())
+                    maxYs.append(hvsr_data['ppsd_std_vals_p'][key].max())
+                minYs.append(minY)
+                maxYs.append(maxY)
+
+            else:
+                for key in keyList:
+                    #hvsr_data['psds'][key]['psd_values']                
+                    minYs.append(hvsr_data['psd_std_vals_m'][key].min())
+                    maxYs.append(hvsr_data['ppsd_std_vals_p'][key].max())
+                    #minY.append(np.min(np.stack(hvsrDF['psd_values_'+key][hvsrDF['Use']])))
+                    #maxY.append(np.max(np.stack(hvsrDF['psd_values_'+key][hvsrDF['Use']])))
+            
+            minY = min(minYs)
+            maxY = max(maxYs)
             #if maxY > 20:
             #    maxY = max(hvsr_data['hvsr_curve']) * 1.15
             rng = maxY-minY
             pad = abs(rng * 0.15)
-            ylim = [float(minY-pad), float(maxY+pad+pad)]
+            ylim = [float(minY-pad), float(maxY+pad)]
 
             compAxis.set_ylim(ylim)
             yLoc = min(ylim) - abs(ylim[1]-ylim[0]) * 0.05
@@ -12154,20 +12201,21 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
 
                         compAxis.plot(x, y[key], c=pltColor, label=leglabel, alpha=linalpha)
                         if '-s' not in plot_type:
-                            compAxis.fill_between(x, hvsr_data['ppsd_std_vals_m'][key][:-1], hvsr_data['ppsd_std_vals_p'][key][:-1], color=pltColor, alpha=stdalpha)
+                            compAxis.fill_between(x, hvsr_data['psd_std_vals_m'][key][:-1], hvsr_data['ppsd_std_vals_p'][key][:-1], color=pltColor, alpha=stdalpha)
 
                 if 'c' not in plot_type[0].lower():
                     if not kwargs['show_legend'] == False:
                         compAxis.legend(loc=legendLoc2)
-            else:
-                ax.legend(loc=legendLoc, ncols = len(psdKeys), 
-                        borderaxespad=0.1, columnspacing=1,markerfirst=False, reverse=True, borderpad=0.2)
+                else:
+                    ax.legend(loc=legendLoc, ncols = len(psdKeys), 
+                            borderaxespad=0.1, columnspacing=1,markerfirst=False, reverse=True, borderpad=0.2)
         else:
             yLoc = min(ylim) - abs(ylim[1]-ylim[0]) * 0.05
             ax.text(x=xlim[0], y=yLoc, s=xlabel, 
                 fontsize='x-small', horizontalalignment='right', verticalalignment='top', 
                 bbox=dict(facecolor='w', edgecolor='none', alpha=0.8, pad=0.1))
-    
+    ax.set_ylim(ylim)
+
     bbox = ax.get_window_extent()
     bboxStart = bbox.__str__().find('Bbox(',0,50)+5
     bboxStr = bbox.__str__()[bboxStart:].split(',')[:4]

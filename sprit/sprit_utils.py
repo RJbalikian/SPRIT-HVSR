@@ -27,6 +27,8 @@ RESOURCE_DIR = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('r
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
 
+with open(RESOURCE_DIR.joinpath('defaults.json'), 'r') as fp:
+    DEFAULT_PARAMS_DICT = json.load(fp)
 
 def _assert_check(var, cond=None, var_type=None, error_message='Output not valid', verbose=False):
     if var_type is not None:
@@ -428,6 +430,52 @@ def _get_error_from_exception(exception=None, print_error_message=True, return_e
         
         if return_error_message:
             return f"{error_category} ({errLineNo}): {error_message}\n\n{lineno} {filename} {f}"
+
+
+# Get noise models
+def _get_noise_models(model_type='vel'):
+    """This returns curve values based on Peterson 1993 Noise models.
+        Values from: https://pubs.usgs.gov/of/1993/0322/ofr93-322.pdf
+    Returns
+    -------
+    dict
+        Dictionary of various noise models
+    """
+    DEFAULT_BAND = DEFAULT_PARAMS_DICT['hvsr_band']
+    DEFAULT_RESAMPLING = 1024
+
+    nlnm_periods = np.array([0.1,0.17,0.4,0.8,1.24,2.4,4.3,5,6,10,12,15.6,21.9,31.6,45,70,101,154,328,600,10000])
+    nlnm_freqs = 1/np.array(nlnm_periods)
+    nlnmA = np.array([-162.36,-166.7,-170.,-166.4,-168.6,-159.98,-141.1,-71.36,
+             -97.26,-132.18,-205.27,-37.65,-114.37,-160.58,-187.5,-216.47,-185.00,
+             -168.34,-217.43,-258.28,-346.88])
+    nlnmB = np.array([5.64,0,-8.3,28.9,52.48,29.81,0,-99.7,-66.49,-31.57,36.16,-104.33,-47.1,
+             -16.28,0,15.7,0,-7.61,11.9,26.6,48.75])
+    
+    nhnm_periods = np.array([0.1,0.22,0.32,0.8,3.8,4.6,6.3,7.9,15.4,20,354.8])
+    nhnm_freqs = 1/np.array(nhnm_periods)
+    nhnmA = np.array([-108.73,-150.34,-122.31,-116.85,-108.48,-74.66,0.66,-93.37,73.54,-151.52,-206.66])
+    nhnmB = np.array([-17.23,-80.5,-23.87,32.51,18.08,-32.95,-127.18,-22.42,-162.98,10.01,31.63])
+    
+    nlnmAcc = nlnmA + nlnmB * np.log10(nlnm_periods)
+    nhnmAcc = nhnmA + nhnmB * np.log10(nhnm_periods)
+    if 'vel' in str(model_type).lower():
+        nlnmOUT = nlnmAcc + 20 * np.log10(nlnm_periods/2*np.pi)
+        nhnmOUT = nhnmAcc + 20 * np.log10(nhnm_periods/2*np.pi)
+    elif 'disp' in str(model_type).lower():
+        nlnmOUT = nlnmAcc + 20 * np.log10(nlnm_periods**2/4*np.pi**2)
+        nhnmOUT = nhnmAcc + 20 * np.log10(nhnm_periods**2/4*np.pi**2)
+    else:
+        nlnmOUT = nlnmAcc
+        nhnmOUT = nhnmAcc
+    
+    nnmDict = {'NLNM_periods':nlnm_periods,
+               'NLNM_freqs':nlnm_freqs,
+               'NHNM_periods':nhnm_periods,
+               'NHNM_freqs':nhnm_freqs,
+               'NLNM':nlnmOUT,
+               'NHNM':nhnmOUT}
+    return nnmDict
 
 
 # Get sample data from resources

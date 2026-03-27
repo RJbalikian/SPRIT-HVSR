@@ -35,7 +35,7 @@
     "horizontal_method": null,
     "hvsr_band": [
         0.5,
-        40
+        32
     ],
     "hvsr_export_path": null,
     "hvsr_export_type": "gzip",
