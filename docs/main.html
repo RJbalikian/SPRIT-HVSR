@@ -1325,7 +1325,7 @@ Not currently supported.</dd>
 </dl></div>
 </dd>
 <dt id="sprit.check_peaks"><code class="name flex">
-<span>def <span class="ident">check_peaks</span></span>(<span>hvsr_data,<br>hvsr_band=[0.5, 40],<br>peak_selection='max',<br>peak_freq_range=[0.5, 40],<br>azimuth='HV',<br>verbose=False)</span>
+<span>def <span class="ident">check_peaks</span></span>(<span>hvsr_data,<br>hvsr_band=[0.5, 32],<br>peak_selection='max',<br>peak_freq_range=[0.5, 32],<br>azimuth='HV',<br>verbose=False)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -3357,7 +3357,7 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
                                         secondary_y=use_secondary,
                                         row=compRow, col=1)
                 
-                results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.ppsd_std_vals_m[comp],
+                results_fig.add_trace(go.Scatter(x=x_data, y=hvsr_data.psd_std_vals_m[comp],
                                         line={&#39;color&#39;:compColor_semi_light[comp], &#39;width&#39;:0.1},marker=None,
                                         fill=&#39;tonexty&#39;, fillcolor=compColor_semi_light[comp],
                                         name=f&#39;St.Dev. [{comp}]&#39;, hoverinfo=&#39;none&#39;, showlegend=False, 
@@ -4807,7 +4807,7 @@ Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extensi
                 &#39;input_stream&#39;, &#39;stream&#39;, &#39;stream_edited&#39;, &#39;current_times_used&#39;]
 
     channel_dicts = [&#39;x_freqs&#39;, &#39;x_period&#39;, &#39;psd_raw&#39;, &#39;psds&#39;, &#39;psd_values_tavg&#39;, 
-                        &#39;ppsd_std&#39;, &#39;ppsd_std_vals_m&#39;, &#39;ppsd_std_vals_p&#39;] 
+                        &#39;ppsd_std&#39;, &#39;psd_std_vals_m&#39;, &#39;ppsd_std_vals_p&#39;] 
 
     az_dicts = [&#39;ind_hvsr_curves&#39;, &#39;ind_hvsr_stdDev&#39;, &#39;ind_hvsr_peak_indices&#39;,
                 &#39;hvsr_peak_indices&#39;, &#39;hvsr_peak_freqs&#39;, &#39;hvsr_log_std&#39;,
@@ -6471,7 +6471,7 @@ See here for more information: <a href="https://docs.obspy.org/packages/autogen/
         try:
             keepListList = [&#39;channels&#39;, &#39;cha&#39;, &#39;x_windows_out&#39;, &#39;hvsr_band&#39;, &#39;hvsr_curve&#39;, &#39;peak_freq_range&#39;, &#39;tsteps_used&#39;]
             channel_dicts = [&#39;x_freqs&#39;, &#39;x_period&#39;, &#39;psd_raw&#39;, &#39;psds&#39;, &#39;psd_values_tavg&#39;, 
-                                &#39;ppsd_std&#39;, &#39;ppsd_std_vals_m&#39;, &#39;ppsd_std_vals_p&#39;] 
+                                &#39;ppsd_std&#39;, &#39;psd_std_vals_m&#39;, &#39;ppsd_std_vals_p&#39;] 
             az_dicts_neat = [&#39;ind_hvsr_curves&#39;, &#39;ind_hvsr_stdDev&#39;, &#39;hvsr_log_std&#39;,&#39;hvsrp&#39;, &#39;hvsrm&#39;, &#39;hvsrp2&#39;, &#39;hvsrm2&#39;]
             # az_dicts_ragged = [&#39;ind_hvsr_peak_indices&#39;,&#39;hvsr_peak_indices&#39;, &#39;hvsr_peak_freqs&#39;]
             # plot_attrs = [&#39;Plot_Report&#39;, &#39;HV_Plot&#39;, &#39;Outlier_Plot&#39;, &#39;Input_Plot&#39;, &#39;Depth_Plot&#39;, &#39;Cross_Section_Plot&#39;]
@@ -6614,7 +6614,7 @@ If it cannot do that, it will attempt to return a string representation of the i
 </dl></div>
 </dd>
 <dt id="sprit.generate_psds"><code class="name flex">
-<span>def <span class="ident">generate_psds</span></span>(<span>hvsr_data,<br>window_length=30.0,<br>overlap_pct=0.5,<br>window_type='hann',<br>window_length_method='length',<br>remove_response=False,<br>skip_on_gaps=True,<br>num_freq_bins=512,<br>hvsr_band=[0.5, 40],<br>obspy_ppsds=False,<br>azimuthal_psds=False,<br>plot_psds=False,<br>verbose=False,<br>**obspy_ppsd_kwargs)</span>
+<span>def <span class="ident">generate_psds</span></span>(<span>hvsr_data,<br>window_length=30.0,<br>overlap_pct=0.5,<br>window_type='hann',<br>window_length_method='length',<br>remove_response=False,<br>skip_on_gaps=True,<br>num_freq_bins=512,<br>hvsr_band=[0.5, 32],<br>obspy_ppsds=False,<br>azimuthal_psds=False,<br>show_psd_plot=False,<br>verbose=False,<br>**obspy_ppsd_kwargs)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -6623,7 +6623,7 @@ If it cannot do that, it will attempt to return a string representation of the i
 </summary>
 <pre><code class="python">def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type=&#39;hann&#39;, window_length_method=&#39;length&#39;, 
                   remove_response=False, skip_on_gaps=True, num_freq_bins=512, hvsr_band=DEFAULT_BAND,
-                  obspy_ppsds=False, azimuthal_psds=False, plot_psds=False, verbose=False, **obspy_ppsd_kwargs):
+                  obspy_ppsds=False, azimuthal_psds=False, show_psd_plot=False, verbose=False, **obspy_ppsd_kwargs):
     
     &#34;&#34;&#34;Calculate Power Spectral Density (PSD) curves for each channel.
         Uses the [scipy.signal.welch()](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html) function 
@@ -6657,7 +6657,7 @@ If it cannot do that, it will attempt to return a string representation of the i
             Whether to generate PPSDs for azimuthal data
         verbose : bool, default=True
             Whether to print inputs and results to terminal
-        plot_psds : bool, default=False
+        show_psd_plot : bool, default=False
             Whether to show a plot of the psds here.
         **obspy_ppsd_kwargs : dict
             Dictionary with keyword arguments that are passed directly to obspy.signal.PPSD.
@@ -6684,8 +6684,7 @@ If it cannot do that, it will attempt to return a string representation of the i
 
     obspy_ppsd_kwargs_sprit_defaults = obspy_ppsd_kwargs.copy()
     # Set defaults here that are different than obspy defaults
-    if &#39;ppsd_length&#39; not in obspy_ppsd_kwargs.keys():
-        obspy_ppsd_kwargs_sprit_defaults[&#39;ppsd_length&#39;] = 30.0      
+    obspy_ppsd_kwargs_sprit_defaults[&#39;ppsd_length&#39;] = window_length
     if &#39;period_step_octaves&#39; not in obspy_ppsd_kwargs.keys():
         obspy_ppsd_kwargs_sprit_defaults[&#39;period_step_octaves&#39;] = 0.03125
     if &#39;period_limits&#39; not in obspy_ppsd_kwargs.keys():
@@ -6900,10 +6899,13 @@ If it cannot do that, it will attempt to return a string representation of the i
 
     if obspy_ppsds:
         hvsr_data, dfList, colList, common_times = _get_obspy_ppsds(hvsr_data, **obspy_ppsd_kwargs)
+        hvsrDF = pd.DataFrame(dfList, columns=colList)
+
     else:
+
         psdDict, times_bool = __single_psd_from_raw_data(hvsr_data, window_length=window_length, window_length_method=window_length_method, window_type=window_type,
-                                                           num_freq_bins=num_freq_bins,
-                                                           overlap=overlap_pct, remove_response=remove_response, do_azimuths=azimuthal_psds, show_psd_plot=False)
+                                                           num_freq_bins=num_freq_bins, verbose=verbose,
+                                                           overlap=overlap_pct, remove_response=remove_response, do_azimuths=azimuthal_psds)
         common_times = [ct[0] for ct in times_bool]
         use_times = [ut[1] for ut in times_bool]
 
@@ -6958,17 +6960,14 @@ If it cannot do that, it will attempt to return a string representation of the i
             
         hvsr_data[&#39;ppsds_obspy&#39;] = {}
         dfList = []
-        for i, w in enumerate(common_times):
-            ws = str(w)
-            dfList.append([use_times[i], psdDictUpdate[&#39;Z&#39;][i], psdDictUpdate[&#39;E&#39;][i], psdDictUpdate[&#39;N&#39;][i]])
-        colList = [&#34;Use&#34;, &#34;psd_values_Z&#34;, &#34;psd_values_E&#34;, &#34;psd_values_N&#34;]
-        # dfList: list of np.arrays, fitting the above column
-        # common_times: times in common between all, should be length of 1 psd dimension above
-        # hvsr_data[&#39;psds&#39;][&#39;Z&#39;][&#39;times_gaps&#39;]: list of two-item lists with UTCDatetimes for gaps
-        
-        # #Maybe not needed hvsr_data[&#39;psds&#39;][&#39;Z&#39;][&#39;current_times_used&#39;]
 
-    hvsrDF = pd.DataFrame(dfList, columns=colList)
+        # #Maybe not needed hvsr_data[&#39;psds&#39;][&#39;Z&#39;][&#39;current_times_used&#39;]
+        hvsrDF = pd.DataFrame(use_times, columns=[&#34;Use&#34;])
+        #hvsrDF[&#39;Use&#39;] = use_times
+        hvsrDF[&#39;psd_values_Z&#39;] = psdDictUpdate[&#39;Z&#39;].tolist()
+        hvsrDF[&#39;psd_values_E&#39;] = psdDictUpdate[&#39;E&#39;].tolist()
+        hvsrDF[&#39;psd_values_N&#39;] = psdDictUpdate[&#39;N&#39;].tolist()
+
     if verbose:
         print(f&#34;\t\t{hvsrDF.shape[0]} processing windows generated and psd values stored in hvsr_windows_df with columns: {&#39;, &#39;.join(hvsrDF.columns)}&#34;)
     hvsrDF[&#39;Use&#39;] = hvsrDF[&#39;Use&#39;].astype(bool)
@@ -6978,7 +6977,7 @@ If it cannot do that, it will attempt to return a string representation of the i
             hvsrDF[&#39;psd_values_&#39;+k] = hvsr_data[&#39;psds&#39;][k][&#39;psd_values&#39;].tolist()
 
     hvsrDF[&#39;TimesProcessed_Obspy&#39;] = common_times
-    hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;] = hvsrDF[&#39;TimesProcessed_Obspy&#39;] + obspy_ppsd_kwargs[&#39;ppsd_length&#39;]
+    hvsrDF[&#39;TimesProcessed_ObspyEnd&#39;] = hvsrDF[&#39;TimesProcessed_Obspy&#39;] + window_length
     #    colList.append(&#39;TimesProcessed_Obspy&#39;)
     #    currTStepList.append(common_times[i])            
     # Add other times (for start times)
@@ -6988,13 +6987,16 @@ If it cannot do that, it will attempt to return a string representation of the i
         return obspyUTCDateTime.datetime.replace(tzinfo=datetime.timezone.utc)
     def convert_to_mpl_dates(obspyUTCDateTime):
         return obspyUTCDateTime.matplotlib_date
+    def convert_to_mplEnd(mpltimeStart):
+        return mpltimeStart + (window_length/86400)
+    def convert_to_dtend(dtStart):
+        return dtStart + datetime.timedelta(seconds=window_length)
 
     hvsrDF[&#39;TimesProcessed&#39;] = hvsrDF[&#39;TimesProcessed_Obspy&#39;].apply(convert_to_datetime)
-    
-    hvsrDF[&#39;TimesProcessed_End&#39;] = hvsrDF[&#39;TimesProcessed&#39;] + datetime.timedelta(days=0, seconds=obspy_ppsd_kwargs[&#39;ppsd_length&#39;])
+    hvsrDF[&#39;TimesProcessed_End&#39;] = hvsrDF[&#39;TimesProcessed&#39;].apply(convert_to_dtend)
     hvsrDF[&#39;TimesProcessed_MPL&#39;] = hvsrDF[&#39;TimesProcessed_Obspy&#39;].apply(convert_to_mpl_dates)
-    hvsrDF[&#39;TimesProcessed_MPLEnd&#39;] = hvsrDF[&#39;TimesProcessed_MPL&#39;] + (obspy_ppsd_kwargs[&#39;ppsd_length&#39;]/86400)
-    
+    hvsrDF[&#39;TimesProcessed_MPLEnd&#39;] = hvsrDF[&#39;TimesProcessed_MPL&#39;].apply(convert_to_mplEnd)
+
     # Take care of existing time gaps, in case not taken care of previously
     if obspy_ppsds:
         for gap in hvsr_data[&#39;psds&#39;][&#39;Z&#39;][&#39;times_gaps&#39;]:
@@ -7014,13 +7016,13 @@ If it cannot do that, it will attempt to return a string representation of the i
         #    hvsrDF[&#39;Use&#39;] = (hvsrDF[&#39;TimesProcessed_MPL&#39;][hvsrDF[&#39;Use&#39;]].lt(window[0]) &amp; hvsrDF[&#39;TimesProcessed_MPLEnd&#39;][hvsrDF[&#39;Use&#39;]].lt(window[0]) )| \
         #            (hvsrDF[&#39;TimesProcessed_MPL&#39;][hvsrDF[&#39;Use&#39;]].gt(window[1]) &amp; hvsrDF[&#39;TimesProcessed_MPLEnd&#39;][hvsrDF[&#39;Use&#39;]].gt(window[1])).astype(bool)
         #hvsrDF[&#39;Use&#39;] = hvsrDF[&#39;Use&#39;].astype(bool)
-        
+
     # Create dict entry to keep track of how many outlier hvsr curves are removed 
     # This is a (2-item list with [0]=current number, [1]=original number of curves)
     hvsr_data[&#39;tsteps_used&#39;] = [int(hvsrDF[&#39;Use&#39;].sum()), hvsrDF[&#39;Use&#39;].shape[0]]
     #hvsr_data[&#39;tsteps_used&#39;] = [hvsr_data[&#39;psds&#39;][&#39;Z&#39;][&#39;times_processed&#39;].shape[0], hvsr_data[&#39;psds&#39;][&#39;Z&#39;][&#39;times_processed&#39;].shape[0]]
     #hvsr_data[&#39;tsteps_used&#39;][0] = hvsr_data[&#39;psds&#39;][&#39;Z&#39;][&#39;current_times_used&#39;].shape[0]
-    
+
     hvsr_data = sprit_utils._make_it_classy(hvsr_data)
 
     if &#39;processing_parameters&#39; not in hvsr_data.keys():
@@ -7036,11 +7038,12 @@ If it cannot do that, it will attempt to return a string representation of the i
     
     #for ind, row in hvsrDF.iterrows():
     #    print(row[&#39;psd_values_Z&#39;].shape)
-    if plot_psds:
+    if show_psd_plot:
+        fig, ax = plt.subplots(3, figsize=(10,10))
         for i, r in hvsrDF.iterrows():
-            plt.plot(r[&#39;psd_values_Z&#39;], c=&#39;k&#39;, linewidth=0.5)
-            plt.plot(r[&#39;psd_values_E&#39;], c=&#39;b&#39;, linewidth=0.5)
-            plt.plot(r[&#39;psd_values_N&#39;], c=&#39;r&#39;, linewidth=0.5)
+            ax[0].plot(r[&#39;psd_values_Z&#39;], c=&#39;k&#39;, linewidth=0.2, alpha=0.5)
+            ax[1].plot(r[&#39;psd_values_E&#39;], c=&#39;b&#39;, linewidth=0.2, alpha=0.5)
+            ax[2].plot(r[&#39;psd_values_N&#39;], c=&#39;r&#39;, linewidth=0.2, alpha=0.5)
         plt.show()
 
     return hvsr_data</code></pre>
@@ -7076,7 +7079,7 @@ This is passed to the skip_on_gaps parameter of the Obspy PPSD class.</dd>
 <dd>Whether to generate PPSDs for azimuthal data</dd>
 <dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, default=<code>True</code></dt>
 <dd>Whether to print inputs and results to terminal</dd>
-<dt><strong><code>plot_psds</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
+<dt><strong><code>show_psd_plot</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
 <dd>Whether to show a plot of the psds here.</dd>
 <dt><strong><code>**obspy_ppsd_kwargs</code></strong> :&ensp;<code>dict</code></dt>
 <dd>Dictionary with keyword arguments that are passed directly to obspy.signal.PPSD.
@@ -7901,7 +7904,7 @@ with key:value pairs for each parameter name:value in that function.</dd>
 </dl></div>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>input_data,<br>site='HVSRSite',<br>project=None,<br>network='AM',<br>station='NONE',<br>location='00',<br>channels=['EHZ', 'EHN', 'EHE'],<br>acq_date=None,<br>starttime=None,<br>endtime=None,<br>tzone='UTC',<br>xcoord=-88.229,<br>ycoord=40.101,<br>elevation=225,<br>input_crs='EPSG:4326',<br>output_crs=None,<br>elev_unit='meters',<br>depth=0,<br>instrument='Seismometer',<br>metadata=None,<br>hvsr_band=[0.5, 40],<br>peak_freq_range=[0.5, 40],<br>processing_parameters={},<br>verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>input_data,<br>site='HVSRSite',<br>project=None,<br>network='AM',<br>station='NONE',<br>location='00',<br>channels=['EHZ', 'EHN', 'EHE'],<br>acq_date=None,<br>starttime=None,<br>endtime=None,<br>tzone='UTC',<br>xcoord=-88.229,<br>ycoord=40.101,<br>elevation=225,<br>input_crs='EPSG:4326',<br>output_crs=None,<br>elev_unit='meters',<br>depth=0,<br>instrument='Seismometer',<br>metadata=None,<br>hvsr_band=[0.5, 32],<br>peak_freq_range=[0.5, 32],<br>processing_parameters={},<br>verbose=False)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -9629,14 +9632,22 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
                 minY = 99999 # Start high
                 maxY = -99999 # Start low
                 
-                for key in hvsr_data.psd_raw.keys():
-                    if min(hvsr_data.ppsd_std_vals_m[key]) &lt; minY:
-                        minY = min(hvsr_data.ppsd_std_vals_m[key])
-                    if max(hvsr_data.ppsd_std_vals_m[key]) &gt; maxY:
-                        maxY = max(hvsr_data.ppsd_std_vals_m[key])
-                yRange = maxY - minY
-                compYlim = [float(minY - (yRange*0.05)), float(maxY + (yRange * 0.05))]
-                compYlim.reverse()
+                if &#39;nm&#39; not in plot_type:
+                    for key in hvsr_data.psd_raw.keys():
+                        if min(hvsr_data.psd_std_vals_m[key]) &lt; minY:
+                            minY = min(hvsr_data.psd_std_vals_m[key])
+                        if max(hvsr_data.psd_std_vals_m[key]) &gt; maxY:
+                            maxY = max(hvsr_data.psd_std_vals_m[key])
+                    yRange = maxY - minY
+                    compYlim = [float(minY - (yRange*0.05)), float(maxY + (yRange * 0.05))]
+                    compYlim.reverse()
+                else:
+                    nmdict = sprit_utils._get_noise_models()
+                    maxY = max(nmdict[&#39;NHNM&#39;])
+                    minY = min(nmdict[&#39;NLNM&#39;])
+                    
+                    compYlim = [minY-abs(minY)*0.05, maxY+abs(maxY)*0.05]
+
                 compKwargs = {&#39;ylim&#39;:compYlim}
                 compKwargs.update(kwargs)
                 fig, ax[p] = _plot_hvsr(hvsr_data, fig=fig, ax=axis, plot_type=plotComponents, azimuth=azimuth, xtype=&#39;x_freqs&#39;, show_legend=show_legend, axes=ax, **kwargs)
@@ -10835,7 +10846,7 @@ This is the default, so usually 'i' is not needed.
                 &#39;current_times_used&#39;: currTimesUsed,
                 &#39;psd_values_tavg&#39;:psdValsTAvg,
                 &#39;ppsd_std&#39;:stDev,
-                &#39;ppsd_std_vals_m&#39;:stDevValsM,
+                &#39;psd_std_vals_m&#39;:stDevValsM,
                 &#39;ppsd_std_vals_p&#39;:stDevValsP,
                 &#39;horizontal_method&#39;:horizontal_method,
                 &#39;psds&#39;:psds,
@@ -12367,6 +12378,10 @@ This is minimum number of points a point needs in its neighborhood to not be con
                         break
                 get_report_kwargs[&#39;plot_type&#39;] = &#39; &#39;.join(get_report_kwargs[&#39;plot_type&#39;])
 
+                if &#39;remove_response&#39; in kwargs:
+                    if kwargs[&#39;remove_response&#39;]:
+                        get_report_kwargs[&#39;plot_type&#39;] = get_report_kwargs[&#39;plot_type&#39;].replace(&#39;+&#39;, &#39;+ nm&#39;)
+
                 # Get HVSRBatch and HVSRData in same format
                 if isinstance(hvsr_results, HVSRData):
                     hvsr_results_interim = {hvsr_results[&#39;site&#39;]: hvsr_results}
@@ -12595,9 +12610,9 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 <dd>See API documentation at link above or at <code>help(<a title="sprit.input_params" href="#sprit.input_params">input_params()</a>)</code> for specifics.</dd>
 <dt><strong><code>metadata</code></strong> :&ensp;<code>any</code>, default <code>= None</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.input_params" href="#sprit.input_params">input_params()</a>)</code> for specifics.</dd>
-<dt><strong><code>hvsr_band</code></strong> :&ensp;<code>any</code>, default <code>= [0.5, 40]</code></dt>
+<dt><strong><code>hvsr_band</code></strong> :&ensp;<code>any</code>, default <code>= [0.5, 32]</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.input_params" href="#sprit.input_params">input_params()</a>)</code> for specifics.</dd>
-<dt><strong><code>peak_freq_range</code></strong> :&ensp;<code>any</code>, default <code>= [0.5, 40]</code></dt>
+<dt><strong><code>peak_freq_range</code></strong> :&ensp;<code>any</code>, default <code>= [0.5, 32]</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.input_params" href="#sprit.input_params">input_params()</a>)</code> for specifics.</dd>
 <dt><strong><code>processing_parameters</code></strong> :&ensp;<code>any</code>, default <code>= {}</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.input_params" href="#sprit.input_params">input_params()</a>)</code> for specifics.</dd>
@@ -12707,13 +12722,13 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 <dd>See API documentation at link above or at <code>help(<a title="sprit.generate_psds" href="#sprit.generate_psds">generate_psds()</a>)</code> for specifics.</dd>
 <dt><strong><code>num_freq_bins</code></strong> :&ensp;<code>any</code>, default <code>= 512</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.generate_psds" href="#sprit.generate_psds">generate_psds()</a>)</code> for specifics.</dd>
-<dt><strong><code>hvsr_band</code></strong> :&ensp;<code>any</code>, default <code>= [0.5, 40]</code></dt>
+<dt><strong><code>hvsr_band</code></strong> :&ensp;<code>any</code>, default <code>= [0.5, 32]</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.generate_psds" href="#sprit.generate_psds">generate_psds()</a>)</code> for specifics.</dd>
 <dt><strong><code>obspy_ppsds</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.generate_psds" href="#sprit.generate_psds">generate_psds()</a>)</code> for specifics.</dd>
 <dt><strong><code>azimuthal_psds</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.generate_psds" href="#sprit.generate_psds">generate_psds()</a>)</code> for specifics.</dd>
-<dt><strong><code>plot_psds</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
+<dt><strong><code>show_psd_plot</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.generate_psds" href="#sprit.generate_psds">generate_psds()</a>)</code> for specifics.</dd>
 <dt><strong><code>verbose</code></strong> :&ensp;<code>any</code>, default <code>= False</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.generate_psds" href="#sprit.generate_psds">generate_psds()</a>)</code> for specifics.</dd>
@@ -12770,11 +12785,11 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.html#sprit.check_peaks">check_peaks()</a></dd>
 <dt><strong><code>hvsr_data</code></strong> :&ensp;<code>any</code>, default <code>= '&lt;output</code> of <code>previous function&gt;'</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.check_peaks" href="#sprit.check_peaks">check_peaks()</a>)</code> for specifics.</dd>
-<dt><strong><code>hvsr_band</code></strong> :&ensp;<code>any</code>, default <code>= [0.5, 40]</code></dt>
+<dt><strong><code>hvsr_band</code></strong> :&ensp;<code>any</code>, default <code>= [0.5, 32]</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.check_peaks" href="#sprit.check_peaks">check_peaks()</a>)</code> for specifics.</dd>
 <dt><strong><code>peak_selection</code></strong> :&ensp;<code>any</code>, default <code>= 'max'</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.check_peaks" href="#sprit.check_peaks">check_peaks()</a>)</code> for specifics.</dd>
-<dt><strong><code>peak_freq_range</code></strong> :&ensp;<code>any</code>, default <code>= [0.5, 40]</code></dt>
+<dt><strong><code>peak_freq_range</code></strong> :&ensp;<code>any</code>, default <code>= [0.5, 32]</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.check_peaks" href="#sprit.check_peaks">check_peaks()</a>)</code> for specifics.</dd>
 <dt><strong><code>azimuth</code></strong> :&ensp;<code>any</code>, default <code>= 'HV'</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.check_peaks" href="#sprit.check_peaks">check_peaks()</a>)</code> for specifics.</dd>
