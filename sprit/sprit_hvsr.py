@@ -766,9 +766,9 @@ class HVSRData:
             peakInfoStr += "-"*(len(peakInfoStr) - 3) + '\n'
             peakInfoStr += '{0:.3f} Hz ± {1:.4f} Hz'.format(float(self['BestPeak'][azimuth]['f0']), float(self["BestPeak"][azimuth]['Sf']))
             if curvePass and peakPass:
-                peakInfoStr += f'\n\t  {sprit_utils._check_mark()} Peak at {float(self['BestPeak'][azimuth]['f0']):.3f} Hz passed SESAME quality tests! :D'
+                peakInfoStr += f"\n\t  {sprit_utils._check_mark()} Peak at {float(self['BestPeak'][azimuth]['f0']):.3f} Hz passed SESAME quality tests! :D"
             else:
-                peakInfoStr += f'\n\t  {sprit_utils._x_mark()} Peak at {float(self['BestPeak'][azimuth]['f0']):.3f} Hz did NOT pass SESAME quality tests :('
+                peakInfoStr += f"\n\t  {sprit_utils._x_mark()} Peak at {float(self['BestPeak'][azimuth]['f0']):.3f} Hz did NOT pass SESAME quality tests :("
         else:
             peakInfoStr = 'F₀ not Calculated'
 
@@ -3233,7 +3233,7 @@ def export_json(hvsr_results, json_export_path=None,
         if pathlib.Path(json_export_path).is_dir():
             st = hvsr_results.stream
             stats = st[0].stats
-            fname = f"{hvsr_results.site}_HVSR-JSON_{stats.starttime.strftime("%Y%m%d")}-{stats.starttime.strftime("%H%M")}-{hvsr_results.station}-{datetime.date.today().strftime("%Y-%m-%d")}.json"
+            fname = f'{hvsr_results.site}_HVSR-JSON_{stats.starttime.strftime("%Y%m%d")}-{stats.starttime.strftime("%H%M")}-{hvsr_results.station}-{datetime.date.today().strftime("%Y-%m-%d")}.json'
             if not pathlib.Path(json_export_path).exists():
                 print("Creating directory for JSON export at", json_export_path)
                 pathlib.Path(json_export_path).mkdir(exist_ok=True, parents=True)
@@ -3687,7 +3687,7 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
             for k, v in input_parameters['processing_parameters']['fetch_data'].items():
                 # Manual input to function overrides the imported parameter values
                 if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
-                    update_msg.append(f'\t\t{k} = {v} (previously {orig_args[k]})')
+                    update_msg.append(f"\t\t{k} = {v} (previously {orig_args[k]})")
                     orig_args[k] = v
 
     if orig_args['data_export_path'] is not None:

@@ -10,9 +10,9 @@ The input_data parameter of input_params() is the only required argument, though
 import argparse
 import inspect
 try:
-    import sprit  # When distributed
+    from sprit import sprit_hvsr
 except Exception:
-    import sprit_hvsr as sprit #When testing
+    import sprit_hvsr
 
 def get_param_docstring(func, param_name):
     function_docstring = func.__doc__
@@ -35,28 +35,28 @@ def get_param_docstring(func, param_name):
 def main():
     parser = argparse.ArgumentParser(description='CLI for SPRIT HVSR package (specifically the sprit.run() function)')
     
-    hvsrFunctions = [sprit.run,
-                    sprit.input_params,
-                     sprit.fetch_data,
-                     sprit.calculate_azimuth,
-                     sprit.remove_noise,
-                     sprit.generate_psds,
-                     sprit.process_hvsr,
-                     sprit.remove_outlier_curves,
-                     sprit.check_peaks,
-                     sprit.get_report]#,
-                     #sprit.plot_hvsr]
+    hvsrFunctions = [sprit_hvsr.run,
+                    sprit_hvsr.input_params,
+                     sprit_hvsr.fetch_data,
+                     sprit_hvsr.calculate_azimuth,
+                     sprit_hvsr.remove_noise,
+                     sprit_hvsr.generate_psds,
+                     sprit_hvsr.process_hvsr,
+                     sprit_hvsr.remove_outlier_curves,
+                     sprit_hvsr.check_peaks,
+                     sprit_hvsr.get_report]#,
+                     #sprit_hvsr.plot_hvsr]
 
-    hvsrFunDict = {sprit.run: inspect.signature(sprit.run).parameters,
-                    sprit.input_params: inspect.signature(sprit.input_params).parameters,
-                     sprit.fetch_data: inspect.signature(sprit.fetch_data).parameters,
-                     sprit.calculate_azimuth: inspect.signature(sprit.calculate_azimuth).parameters,
-                     sprit.remove_noise: inspect.signature(sprit.remove_noise).parameters,
-                     sprit.generate_psds: inspect.signature(sprit.generate_psds).parameters,
-                     sprit.process_hvsr: inspect.signature(sprit.process_hvsr).parameters,
-                     sprit.remove_outlier_curves: inspect.signature(sprit.remove_outlier_curves).parameters,
-                     sprit.check_peaks: inspect.signature(sprit.check_peaks).parameters,
-                     sprit.get_report: inspect.signature(sprit.get_report).parameters     
+    hvsrFunDict = {sprit_hvsr.run: inspect.signature(sprit_hvsr.run).parameters,
+                    sprit_hvsr.input_params: inspect.signature(sprit_hvsr.input_params).parameters,
+                     sprit_hvsr.fetch_data: inspect.signature(sprit_hvsr.fetch_data).parameters,
+                     sprit_hvsr.calculate_azimuth: inspect.signature(sprit_hvsr.calculate_azimuth).parameters,
+                     sprit_hvsr.remove_noise: inspect.signature(sprit_hvsr.remove_noise).parameters,
+                     sprit_hvsr.generate_psds: inspect.signature(sprit_hvsr.generate_psds).parameters,
+                     sprit_hvsr.process_hvsr: inspect.signature(sprit_hvsr.process_hvsr).parameters,
+                     sprit_hvsr.remove_outlier_curves: inspect.signature(sprit_hvsr.remove_outlier_curves).parameters,
+                     sprit_hvsr.check_peaks: inspect.signature(sprit_hvsr.check_peaks).parameters,
+                     sprit_hvsr.get_report: inspect.signature(sprit_hvsr.get_report).parameters     
                     }
 
     # Get default parameters from main functions
@@ -121,7 +121,7 @@ def main():
     # Call the sprit.run function with the generated kwargs
     kwargs['input_data'] = kwargs['input_data'].replace("'", "")  # Remove single quotes to reduce errors
     if str(kwargs['input_data']).lower() == 'gui':
-        sprit.gui()
+        sprit_hvsr.gui()
     else:
         #Print a summary if not verbose
         if 'verbose' not in kwargs or not kwargs['verbose']:
@@ -142,7 +142,7 @@ def main():
         [print(f"\t\t {k} = {v}") for k, v in kwargs.items()]
         print()
         
-        sprit.run(**kwargs)
+        sprit_hvsr.run(**kwargs)
             
 if __name__ == '__main__':
     main()
