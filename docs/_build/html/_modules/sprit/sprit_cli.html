@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_cli &mdash; sprit 3.9 documentation</title>
+  <title>sprit.sprit_cli &mdash; sprit 3.10 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=96e51005"></script>
+      <script src="../../_static/documentation_options.js?v=9b5ed760"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -81,9 +81,9 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit</span>  <span class="c1"># When distributed</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sprit</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_hvsr</span>
 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit_hvsr</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sprit</span> <span class="c1">#When testing</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit_hvsr</span>
 
 <div class="viewcode-block" id="get_param_docstring">
 <a class="viewcode-back" href="../../sprit.sprit_cli.html#sprit.sprit_cli.get_param_docstring">[docs]</a>
@@ -111,28 +111,28 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;CLI for SPRIT HVSR package (specifically the sprit.run() function)&#39;</span><span class="p">)</span>
     
-    <span class="n">hvsrFunctions</span> <span class="o">=</span> <span class="p">[</span><span class="n">sprit</span><span class="o">.</span><span class="n">run</span><span class="p">,</span>
-                    <span class="n">sprit</span><span class="o">.</span><span class="n">input_params</span><span class="p">,</span>
-                     <span class="n">sprit</span><span class="o">.</span><span class="n">fetch_data</span><span class="p">,</span>
-                     <span class="n">sprit</span><span class="o">.</span><span class="n">calculate_azimuth</span><span class="p">,</span>
-                     <span class="n">sprit</span><span class="o">.</span><span class="n">remove_noise</span><span class="p">,</span>
-                     <span class="n">sprit</span><span class="o">.</span><span class="n">generate_psds</span><span class="p">,</span>
-                     <span class="n">sprit</span><span class="o">.</span><span class="n">process_hvsr</span><span class="p">,</span>
-                     <span class="n">sprit</span><span class="o">.</span><span class="n">remove_outlier_curves</span><span class="p">,</span>
-                     <span class="n">sprit</span><span class="o">.</span><span class="n">check_peaks</span><span class="p">,</span>
-                     <span class="n">sprit</span><span class="o">.</span><span class="n">get_report</span><span class="p">]</span><span class="c1">#,</span>
-                     <span class="c1">#sprit.plot_hvsr]</span>
+    <span class="n">hvsrFunctions</span> <span class="o">=</span> <span class="p">[</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">run</span><span class="p">,</span>
+                    <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">input_params</span><span class="p">,</span>
+                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">fetch_data</span><span class="p">,</span>
+                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">calculate_azimuth</span><span class="p">,</span>
+                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_noise</span><span class="p">,</span>
+                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">generate_psds</span><span class="p">,</span>
+                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">process_hvsr</span><span class="p">,</span>
+                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_outlier_curves</span><span class="p">,</span>
+                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">check_peaks</span><span class="p">,</span>
+                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">get_report</span><span class="p">]</span><span class="c1">#,</span>
+                     <span class="c1">#sprit_hvsr.plot_hvsr]</span>
 
-    <span class="n">hvsrFunDict</span> <span class="o">=</span> <span class="p">{</span><span class="n">sprit</span><span class="o">.</span><span class="n">run</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit</span><span class="o">.</span><span class="n">run</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
-                    <span class="n">sprit</span><span class="o">.</span><span class="n">input_params</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit</span><span class="o">.</span><span class="n">input_params</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
-                     <span class="n">sprit</span><span class="o">.</span><span class="n">fetch_data</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit</span><span class="o">.</span><span class="n">fetch_data</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
-                     <span class="n">sprit</span><span class="o">.</span><span class="n">calculate_azimuth</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit</span><span class="o">.</span><span class="n">calculate_azimuth</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
-                     <span class="n">sprit</span><span class="o">.</span><span class="n">remove_noise</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit</span><span class="o">.</span><span class="n">remove_noise</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
-                     <span class="n">sprit</span><span class="o">.</span><span class="n">generate_psds</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit</span><span class="o">.</span><span class="n">generate_psds</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
-                     <span class="n">sprit</span><span class="o">.</span><span class="n">process_hvsr</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit</span><span class="o">.</span><span class="n">process_hvsr</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
-                     <span class="n">sprit</span><span class="o">.</span><span class="n">remove_outlier_curves</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit</span><span class="o">.</span><span class="n">remove_outlier_curves</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
-                     <span class="n">sprit</span><span class="o">.</span><span class="n">check_peaks</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit</span><span class="o">.</span><span class="n">check_peaks</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
-                     <span class="n">sprit</span><span class="o">.</span><span class="n">get_report</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit</span><span class="o">.</span><span class="n">get_report</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span>     
+    <span class="n">hvsrFunDict</span> <span class="o">=</span> <span class="p">{</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">run</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">run</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
+                    <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">input_params</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">input_params</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
+                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">fetch_data</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">fetch_data</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
+                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">calculate_azimuth</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">calculate_azimuth</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
+                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_noise</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_noise</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
+                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">generate_psds</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">generate_psds</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
+                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">process_hvsr</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">process_hvsr</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
+                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_outlier_curves</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">remove_outlier_curves</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
+                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">check_peaks</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">check_peaks</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
+                     <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">get_report</span><span class="p">:</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">get_report</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span>     
                     <span class="p">}</span>
 
     <span class="c1"># Get default parameters from main functions</span>
@@ -197,7 +197,7 @@
     <span class="c1"># Call the sprit.run function with the generated kwargs</span>
     <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>  <span class="c1"># Remove single quotes to reduce errors</span>
     <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;gui&#39;</span><span class="p">:</span>
-        <span class="n">sprit</span><span class="o">.</span><span class="n">gui</span><span class="p">()</span>
+        <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">gui</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1">#Print a summary if not verbose</span>
         <span class="k">if</span> <span class="s1">&#39;verbose&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;verbose&#39;</span><span class="p">]:</span>
@@ -218,7 +218,7 @@
         <span class="p">[</span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
         <span class="nb">print</span><span class="p">()</span>
         
-        <span class="n">sprit</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+        <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
             
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>

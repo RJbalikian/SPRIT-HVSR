@@ -87,28 +87,28 @@ el.replaceWith(d);
 <pre><code class="python">def main():
     parser = argparse.ArgumentParser(description=&#39;CLI for SPRIT HVSR package (specifically the sprit.run() function)&#39;)
     
-    hvsrFunctions = [sprit.run,
-                    sprit.input_params,
-                     sprit.fetch_data,
-                     sprit.calculate_azimuth,
-                     sprit.remove_noise,
-                     sprit.generate_psds,
-                     sprit.process_hvsr,
-                     sprit.remove_outlier_curves,
-                     sprit.check_peaks,
-                     sprit.get_report]#,
-                     #sprit.plot_hvsr]
+    hvsrFunctions = [sprit_hvsr.run,
+                    sprit_hvsr.input_params,
+                     sprit_hvsr.fetch_data,
+                     sprit_hvsr.calculate_azimuth,
+                     sprit_hvsr.remove_noise,
+                     sprit_hvsr.generate_psds,
+                     sprit_hvsr.process_hvsr,
+                     sprit_hvsr.remove_outlier_curves,
+                     sprit_hvsr.check_peaks,
+                     sprit_hvsr.get_report]#,
+                     #sprit_hvsr.plot_hvsr]
 
-    hvsrFunDict = {sprit.run: inspect.signature(sprit.run).parameters,
-                    sprit.input_params: inspect.signature(sprit.input_params).parameters,
-                     sprit.fetch_data: inspect.signature(sprit.fetch_data).parameters,
-                     sprit.calculate_azimuth: inspect.signature(sprit.calculate_azimuth).parameters,
-                     sprit.remove_noise: inspect.signature(sprit.remove_noise).parameters,
-                     sprit.generate_psds: inspect.signature(sprit.generate_psds).parameters,
-                     sprit.process_hvsr: inspect.signature(sprit.process_hvsr).parameters,
-                     sprit.remove_outlier_curves: inspect.signature(sprit.remove_outlier_curves).parameters,
-                     sprit.check_peaks: inspect.signature(sprit.check_peaks).parameters,
-                     sprit.get_report: inspect.signature(sprit.get_report).parameters     
+    hvsrFunDict = {sprit_hvsr.run: inspect.signature(sprit_hvsr.run).parameters,
+                    sprit_hvsr.input_params: inspect.signature(sprit_hvsr.input_params).parameters,
+                     sprit_hvsr.fetch_data: inspect.signature(sprit_hvsr.fetch_data).parameters,
+                     sprit_hvsr.calculate_azimuth: inspect.signature(sprit_hvsr.calculate_azimuth).parameters,
+                     sprit_hvsr.remove_noise: inspect.signature(sprit_hvsr.remove_noise).parameters,
+                     sprit_hvsr.generate_psds: inspect.signature(sprit_hvsr.generate_psds).parameters,
+                     sprit_hvsr.process_hvsr: inspect.signature(sprit_hvsr.process_hvsr).parameters,
+                     sprit_hvsr.remove_outlier_curves: inspect.signature(sprit_hvsr.remove_outlier_curves).parameters,
+                     sprit_hvsr.check_peaks: inspect.signature(sprit_hvsr.check_peaks).parameters,
+                     sprit_hvsr.get_report: inspect.signature(sprit_hvsr.get_report).parameters     
                     }
 
     # Get default parameters from main functions
@@ -173,7 +173,7 @@ el.replaceWith(d);
     # Call the sprit.run function with the generated kwargs
     kwargs[&#39;input_data&#39;] = kwargs[&#39;input_data&#39;].replace(&#34;&#39;&#34;, &#34;&#34;)  # Remove single quotes to reduce errors
     if str(kwargs[&#39;input_data&#39;]).lower() == &#39;gui&#39;:
-        sprit.gui()
+        sprit_hvsr.gui()
     else:
         #Print a summary if not verbose
         if &#39;verbose&#39; not in kwargs or not kwargs[&#39;verbose&#39;]:
@@ -194,7 +194,7 @@ el.replaceWith(d);
         [print(f&#34;\t\t {k} = {v}&#34;) for k, v in kwargs.items()]
         print()
         
-        sprit.run(**kwargs)</code></pre>
+        sprit_hvsr.run(**kwargs)</code></pre>
 </details>
 <div class="desc"></div>
 </dd>

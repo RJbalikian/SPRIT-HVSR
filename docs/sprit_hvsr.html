@@ -1558,7 +1558,7 @@ Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extensi
         if pathlib.Path(json_export_path).is_dir():
             st = hvsr_results.stream
             stats = st[0].stats
-            fname = f&#34;{hvsr_results.site}_HVSR-JSON_{stats.starttime.strftime(&#34;%Y%m%d&#34;)}-{stats.starttime.strftime(&#34;%H%M&#34;)}-{hvsr_results.station}-{datetime.date.today().strftime(&#34;%Y-%m-%d&#34;)}.json&#34;
+            fname = f&#39;{hvsr_results.site}_HVSR-JSON_{stats.starttime.strftime(&#34;%Y%m%d&#34;)}-{stats.starttime.strftime(&#34;%H%M&#34;)}-{hvsr_results.station}-{datetime.date.today().strftime(&#34;%Y-%m-%d&#34;)}.json&#39;
             if not pathlib.Path(json_export_path).exists():
                 print(&#34;Creating directory for JSON export at&#34;, json_export_path)
                 pathlib.Path(json_export_path).mkdir(exist_ok=True, parents=True)
@@ -2113,7 +2113,7 @@ If 'processing', saves the processing settings to their respective file. By defa
             for k, v in input_parameters[&#39;processing_parameters&#39;][&#39;fetch_data&#39;].items():
                 # Manual input to function overrides the imported parameter values
                 if k in orig_args.keys() and orig_args[k]==defaultVDict[k]:
-                    update_msg.append(f&#39;\t\t{k} = {v} (previously {orig_args[k]})&#39;)
+                    update_msg.append(f&#34;\t\t{k} = {v} (previously {orig_args[k]})&#34;)
                     orig_args[k] = v
 
     if orig_args[&#39;data_export_path&#39;] is not None:
@@ -9064,30 +9064,43 @@ For return_fig, returns it to the 'Plot_Report' attribute of each HVSRData objec
         # PEAK INFORMATION (IF CALCULATED)
         peakInfoStr = &#39;&#39;
         azimuth=&#39;HV&#39;
-        if &#39;BestPeak&#39; in self.keys():
-            curvTestsPassed = (self[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;WinLen&#39;] +
-                                self[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;SigCycles&#39;]+
-                                self[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;LowCurveStD&#39;])
-            curvePass = curvTestsPassed &gt; 2
-            
-            #Peak Pass?
-            peakTestsPassed = ( self[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;ProminenceLow&#39;] +
-                        self[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;ProminenceHi&#39;]+
-                        self[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;AmpClarity&#39;]+
-                        self[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;FreqStability&#39;]+
-                        self[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;LowStDev_Freq&#39;]+
-                        self[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;LowStDev_Amp&#39;])
-            peakPass = peakTestsPassed &gt;= 5
+        try:
+            if &#39;BestPeak&#39; in self.keys():
+                curvTestsPassed = (self[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;WinLen&#39;] +
+                                    self[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;SigCycles&#39;]+
+                                    self[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;LowCurveStD&#39;])
+                curvePass = curvTestsPassed &gt; 2
+                
+                #Peak Pass?
+                peakTestsPassed = ( self[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;ProminenceLow&#39;] +
+                            self[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;ProminenceHi&#39;]+
+                            self[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;AmpClarity&#39;]+
+                            self[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;FreqStability&#39;]+
+                            self[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;LowStDev_Freq&#39;]+
+                            self[&#39;BestPeak&#39;][azimuth][&#39;PassList&#39;][&#39;LowStDev_Amp&#39;])
+                peakPass = peakTestsPassed &gt;= 5
 
-            peakInfoStr = &#34;\nCALCULATED F₀\n&#34;
-            peakInfoStr += &#34;-&#34;*(len(peakInfoStr) - 3) + &#39;\n&#39;
-            peakInfoStr += &#39;{0:.3f} Hz ± {1:.4f} Hz&#39;.format(float(self[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;]), float(self[&#34;BestPeak&#34;][azimuth][&#39;Sf&#39;]))
-            if curvePass and peakPass:
-                peakInfoStr += f&#39;\n\t  {sprit_utils._check_mark()} Peak at {float(self[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;]):.3f} Hz passed SESAME quality tests! :D&#39;
+                peakInfoStr = &#34;\nCALCULATED F₀\n&#34;
+                peakInfoStr += &#34;-&#34;*(len(peakInfoStr) - 3) + &#39;\n&#39;
+                peakInfoStr += &#39;{0:.3f} Hz ± {1:.4f} Hz&#39;.format(float(self[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;]), float(self[&#34;BestPeak&#34;][azimuth][&#39;Sf&#39;]))
+                if curvePass and peakPass:
+                    peakInfoStr += f&#34;\n\t  {sprit_utils._check_mark()} Peak at {float(self[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;]):.3f} Hz passed SESAME quality tests! :D&#34;
+                else:
+                    peakInfoStr += f&#34;\n\t  {sprit_utils._x_mark()} Peak at {float(self[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;]):.3f} Hz did NOT pass SESAME quality tests :(&#34;
             else:
-                peakInfoStr += f&#39;\n\t  {sprit_utils._x_mark()} Peak at {float(self[&#39;BestPeak&#39;][azimuth][&#39;f0&#39;]):.3f} Hz did NOT pass SESAME quality tests :(&#39;
-        else:
-            peakInfoStr = &#39;F₀ not Calculated&#39;
+                peakInfoStr = &#39;F₀ not Calculated&#39;
+        except Exception as e:
+            print(&#39;F₀ could not Calculated.&#39;)
+            traceback.print_exception(sys.exc_info()[1])
+            exc_type, exc_obj, tb = sys.exc_info()
+            f = tb.tb_frame
+            lineno = tb.tb_lineno
+            filename = f.f_code.co_filename
+            errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+            error_category = type(e).__name__.title().replace(&#39;error&#39;, &#39;Error&#39;)
+            error_message = f&#34;{e} ({errLineNo})&#34;
+            print(f&#34;{error_category} ({errLineNo}): {error_message}&#34;)
+            print(lineno, filename, f)
 
         printList = [
                     titleInfoStr,
