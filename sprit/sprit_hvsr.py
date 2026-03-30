@@ -747,30 +747,43 @@ class HVSRData:
         # PEAK INFORMATION (IF CALCULATED)
         peakInfoStr = ''
         azimuth='HV'
-        if 'BestPeak' in self.keys():
-            curvTestsPassed = (self['BestPeak'][azimuth]['PassList']['WinLen'] +
-                                self['BestPeak'][azimuth]['PassList']['SigCycles']+
-                                self['BestPeak'][azimuth]['PassList']['LowCurveStD'])
-            curvePass = curvTestsPassed > 2
-            
-            #Peak Pass?
-            peakTestsPassed = ( self['BestPeak'][azimuth]['PassList']['ProminenceLow'] +
-                        self['BestPeak'][azimuth]['PassList']['ProminenceHi']+
-                        self['BestPeak'][azimuth]['PassList']['AmpClarity']+
-                        self['BestPeak'][azimuth]['PassList']['FreqStability']+
-                        self['BestPeak'][azimuth]['PassList']['LowStDev_Freq']+
-                        self['BestPeak'][azimuth]['PassList']['LowStDev_Amp'])
-            peakPass = peakTestsPassed >= 5
+        try:
+            if 'BestPeak' in self.keys():
+                curvTestsPassed = (self['BestPeak'][azimuth]['PassList']['WinLen'] +
+                                    self['BestPeak'][azimuth]['PassList']['SigCycles']+
+                                    self['BestPeak'][azimuth]['PassList']['LowCurveStD'])
+                curvePass = curvTestsPassed > 2
+                
+                #Peak Pass?
+                peakTestsPassed = ( self['BestPeak'][azimuth]['PassList']['ProminenceLow'] +
+                            self['BestPeak'][azimuth]['PassList']['ProminenceHi']+
+                            self['BestPeak'][azimuth]['PassList']['AmpClarity']+
+                            self['BestPeak'][azimuth]['PassList']['FreqStability']+
+                            self['BestPeak'][azimuth]['PassList']['LowStDev_Freq']+
+                            self['BestPeak'][azimuth]['PassList']['LowStDev_Amp'])
+                peakPass = peakTestsPassed >= 5
 
-            peakInfoStr = "\nCALCULATED F₀\n"
-            peakInfoStr += "-"*(len(peakInfoStr) - 3) + '\n'
-            peakInfoStr += '{0:.3f} Hz ± {1:.4f} Hz'.format(float(self['BestPeak'][azimuth]['f0']), float(self["BestPeak"][azimuth]['Sf']))
-            if curvePass and peakPass:
-                peakInfoStr += f"\n\t  {sprit_utils._check_mark()} Peak at {float(self['BestPeak'][azimuth]['f0']):.3f} Hz passed SESAME quality tests! :D"
+                peakInfoStr = "\nCALCULATED F₀\n"
+                peakInfoStr += "-"*(len(peakInfoStr) - 3) + '\n'
+                peakInfoStr += '{0:.3f} Hz ± {1:.4f} Hz'.format(float(self['BestPeak'][azimuth]['f0']), float(self["BestPeak"][azimuth]['Sf']))
+                if curvePass and peakPass:
+                    peakInfoStr += f"\n\t  {sprit_utils._check_mark()} Peak at {float(self['BestPeak'][azimuth]['f0']):.3f} Hz passed SESAME quality tests! :D"
+                else:
+                    peakInfoStr += f"\n\t  {sprit_utils._x_mark()} Peak at {float(self['BestPeak'][azimuth]['f0']):.3f} Hz did NOT pass SESAME quality tests :("
             else:
-                peakInfoStr += f"\n\t  {sprit_utils._x_mark()} Peak at {float(self['BestPeak'][azimuth]['f0']):.3f} Hz did NOT pass SESAME quality tests :("
-        else:
-            peakInfoStr = 'F₀ not Calculated'
+                peakInfoStr = 'F₀ not Calculated'
+        except Exception as e:
+            print('F₀ could not Calculated.')
+            traceback.print_exception(sys.exc_info()[1])
+            exc_type, exc_obj, tb = sys.exc_info()
+            f = tb.tb_frame
+            lineno = tb.tb_lineno
+            filename = f.f_code.co_filename
+            errLineNo = str(traceback.extract_tb(sys.exc_info()[2])[-1].lineno)
+            error_category = type(e).__name__.title().replace('error', 'Error')
+            error_message = f"{e} ({errLineNo})"
+            print(f"{error_category} ({errLineNo}): {error_message}")
+            print(lineno, filename, f)
 
         printList = [
                     titleInfoStr,
