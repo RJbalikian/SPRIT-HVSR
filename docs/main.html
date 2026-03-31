@@ -7689,7 +7689,7 @@ The extension/suffix defaults to png for report_formats="plot", csv for 'table',
         def run_streamlit_app(path_dir):
             temp_dir = tempfile.TemporaryDirectory()
             # create a temporary directory
-            fpathList = [&#39;sprit_hvsr.py&#39;, &#39;sprit_tkinter_ui.py&#39;, &#39;sprit_jupyter_ui.py&#39;, &#39;sprit_utils.py&#39;, &#39;sprit_plot.py&#39;, &#39;__init__.py&#39;, &#39;sprit_streamlit_ui.py&#39;]
+            fpathList = [&#39;sprit_hvsr.py&#39;, &#39;sprit_jupyter_ui.py&#39;, &#39;sprit_utils.py&#39;, &#39;sprit_plot.py&#39;, &#39;__init__.py&#39;, &#39;sprit_streamlit_ui.py&#39;]
             currDir = os.path.dirname(os.path.abspath(__file__))
             for fpath in fpathList:
                 temp_file_path = os.path.join(temp_dir.name, fpath)

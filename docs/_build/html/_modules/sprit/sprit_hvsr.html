@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 3.11.0 documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 3.11.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=8905d4f5"></script>
+      <script src="../../_static/documentation_options.js?v=2d7d50ec"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -1250,7 +1250,7 @@
         <span class="k">def</span><span class="w"> </span><span class="nf">run_streamlit_app</span><span class="p">(</span><span class="n">path_dir</span><span class="p">):</span>
             <span class="n">temp_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span>
             <span class="c1"># create a temporary directory</span>
-            <span class="n">fpathList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;sprit_hvsr.py&#39;</span><span class="p">,</span> <span class="s1">&#39;sprit_tkinter_ui.py&#39;</span><span class="p">,</span> <span class="s1">&#39;sprit_jupyter_ui.py&#39;</span><span class="p">,</span> <span class="s1">&#39;sprit_utils.py&#39;</span><span class="p">,</span> <span class="s1">&#39;sprit_plot.py&#39;</span><span class="p">,</span> <span class="s1">&#39;__init__.py&#39;</span><span class="p">,</span> <span class="s1">&#39;sprit_streamlit_ui.py&#39;</span><span class="p">]</span>
+            <span class="n">fpathList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;sprit_hvsr.py&#39;</span><span class="p">,</span> <span class="s1">&#39;sprit_jupyter_ui.py&#39;</span><span class="p">,</span> <span class="s1">&#39;sprit_utils.py&#39;</span><span class="p">,</span> <span class="s1">&#39;sprit_plot.py&#39;</span><span class="p">,</span> <span class="s1">&#39;__init__.py&#39;</span><span class="p">,</span> <span class="s1">&#39;sprit_streamlit_ui.py&#39;</span><span class="p">]</span>
             <span class="n">currDir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
             <span class="k">for</span> <span class="n">fpath</span> <span class="ow">in</span> <span class="n">fpathList</span><span class="p">:</span>
                 <span class="n">temp_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">fpath</span><span class="p">)</span>
@@ -11702,12 +11702,14 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="c1">#htmlstring = plotly.io.to_html(hvsr_results.Plot_Report, include_plotlyjs=False)</span>
         <span class="c1">#print(type(htmlstring))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">Plot_Report</span><span class="o">.</span><span class="n">to_image</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s1">&#39;png&#39;</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;kaleido&#39;</span><span class="p">)</span>
+            <span class="n">hvplot_base64</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">img</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf8&#39;</span><span class="p">)</span>
 
-        <span class="n">img</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">Plot_Report</span><span class="o">.</span><span class="n">to_image</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s1">&#39;png&#39;</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;kaleido&#39;</span><span class="p">)</span>
-        <span class="n">hvplot_base64</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">img</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf8&#39;</span><span class="p">)</span>
-
-        <span class="n">html</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;./output.png&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;data:image/png;base64,</span><span class="si">{</span><span class="n">hvplot_base64</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-
+            <span class="n">html</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;./output.png&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;data:image/png;base64,</span><span class="si">{</span><span class="n">hvplot_base64</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">html</span> <span class="o">=</span> <span class="n">html</span>
+            
     <span class="c1"># Update formatting for print report for html</span>
     <span class="n">html_print_report</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">Print_Report</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;br&gt;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s2">&quot;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&quot;</span><span class="p">)</span>
     <span class="n">html_print_report</span> <span class="o">=</span> <span class="n">html_print_report</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;&lt;br&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="c1">#Remove the first two breaks</span>

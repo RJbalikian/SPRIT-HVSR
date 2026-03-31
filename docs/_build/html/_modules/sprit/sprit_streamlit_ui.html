@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_streamlit_ui &mdash; sprit 3.11.0 documentation</title>
+  <title>sprit.sprit_streamlit_ui &mdash; sprit 3.11.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=8905d4f5"></script>
+      <script src="../../_static/documentation_options.js?v=2d7d50ec"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -101,22 +101,23 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">signal</span>
 
 
-<span class="c1">#try:</span>
-<span class="c1">#    import sprit</span>
-<span class="c1">#    from sprit import sprit_hvsr</span>
-<span class="c1">#    from sprit import sprit_plot</span>
+<span class="n">parent_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">parent_dir</span><span class="p">)</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">parent_dir</span><span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_hvsr</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_plot</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sprit</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_hvsr</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sprit</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_plot</span>
 <span class="c1">#except Exception:</span>
 <span class="c1">#    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))</span>
 <span class="c1">#    sys.path.insert(0, parent_dir)</span>
     <span class="c1">#import sprit</span>
 <span class="c1">#    from sprit import sprit_hvsr</span>
 <span class="c1">#    from sprit import sprit_plot</span>
-
-<span class="c1">#parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))</span>
-<span class="c1">#sys.path.insert(0, parent_dir)</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_hvsr</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_plot</span>
 
 <span class="n">VERBOSE</span> <span class="o">=</span> <span class="kc">False</span>
 
@@ -200,7 +201,7 @@
     <span class="n">bandVals</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.06</span><span class="p">,</span> <span class="mf">0.07</span><span class="p">,</span> <span class="mf">0.08</span><span class="p">,</span> <span class="mf">0.09</span><span class="p">,</span>
                 <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span>
                 <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span>
-                <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">70</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">100</span><span class="p">]</span>
+                <span class="mi">10</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">70</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">100</span><span class="p">]</span>
 
     <span class="c1"># SETUP KWARGS</span>
     <span class="k">if</span> <span class="n">VERBOSE</span><span class="p">:</span>
@@ -517,12 +518,7 @@
             <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">run_kws</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">default_params</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
                     <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">str</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">default_params</span><span class="p">[</span><span class="n">key</span><span class="p">]):</span>
-                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
-                            <span class="k">if</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">default_params</span><span class="p">[</span><span class="n">key</span><span class="p">]):</span>
-                                <span class="n">srun</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-                                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ADDED&quot;</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="n">srun</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>                           
+                        <span class="n">srun</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
             
             <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;plot_engine&#39;</span><span class="p">:</span>
                 <span class="n">srun</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
@@ -552,25 +548,30 @@
             <span class="n">spinnerText</span> <span class="o">=</span> <span class="s1">&#39;## Data is processing with default parameters.&#39;</span>
             <span class="n">excludedKeys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;plot_engine&#39;</span><span class="p">,</span> <span class="s1">&#39;plot_input_stream&#39;</span><span class="p">,</span> <span class="s1">&#39;show_plot&#39;</span><span class="p">,</span> <span class="s1">&#39;verbose&#39;</span><span class="p">,</span> <span class="s1">&#39;show_outlier_plot&#39;</span><span class="p">]</span>
             <span class="n">NOWTIME</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
-            <span class="n">secondaryDefaults</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;acq_date&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="n">NOWTIME</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">NOWTIME</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">NOWTIME</span><span class="o">.</span><span class="n">day</span><span class="p">),</span>
-                                 <span class="s1">&#39;hvsr_band&#39;</span><span class="p">:</span><span class="nb">tuple</span><span class="p">(</span><span class="n">DEFAULT_BAND_LIST</span><span class="p">),</span> <span class="s1">&#39;use_hv_curves&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
-                                 <span class="s1">&#39;starttime&#39;</span><span class="p">:</span><span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span>
-                                 <span class="s1">&#39;endtime&#39;</span><span class="p">:</span><span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="mi">23</span><span class="p">,</span> <span class="mi">59</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-                                 <span class="s1">&#39;peak_freq_range&#39;</span><span class="p">:</span><span class="nb">tuple</span><span class="p">(</span><span class="n">DEFAULT_BAND_LIST</span><span class="p">),</span>
-                                 <span class="s1">&#39;stalta_thresh&#39;</span><span class="p">:(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span>
-                                 <span class="s1">&#39;period_limits&#39;</span><span class="p">:(</span><span class="mi">1</span><span class="o">/</span><span class="n">DEFAULT_BAND_LIST</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="o">/</span><span class="n">DEFAULT_BAND_LIST</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
-                                 <span class="s1">&#39;remove_method&#39;</span><span class="p">:[</span><span class="s1">&#39;None&#39;</span><span class="p">],</span>
-                                 <span class="s1">&#39;report_export_format&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">,</span>
-                                 <span class="s1">&#39;report_formats&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="s1">&#39;print&#39;</span><span class="p">,</span> <span class="s1">&#39;table&#39;</span><span class="p">,</span> <span class="s1">&#39;plot&#39;</span><span class="p">,</span> <span class="s1">&#39;html&#39;</span><span class="p">,</span> <span class="s1">&#39;pdf&#39;</span><span class="p">]</span> <span class="p">,</span>
-                                 <span class="s1">&#39;show_pdf_report&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
-                                 <span class="s1">&#39;show_print_report&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
-                                 <span class="s1">&#39;show_plot_report&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
-                                 <span class="s1">&#39;elev_unit&#39;</span><span class="p">:</span><span class="s1">&#39;m&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;plot_type&#39;</span><span class="p">:</span><span class="s1">&#39;HVSR p ann C+ p ann Spec p&#39;</span><span class="p">,</span>
-                                 <span class="s1">&#39;suppress_report_outputs&#39;</span><span class="p">:</span><span class="kc">True</span>
+            <span class="n">secondaryDefaults</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;acq_date&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="n">NOWTIME</span><span class="o">.</span><span class="n">year</span><span class="p">,</span>
+                                                           <span class="n">NOWTIME</span><span class="o">.</span><span class="n">month</span><span class="p">,</span>
+                                                           <span class="n">NOWTIME</span><span class="o">.</span><span class="n">day</span><span class="p">),</span>
+                                 <span class="s1">&#39;hvsr_band&#39;</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">DEFAULT_BAND_LIST</span><span class="p">),</span>
+                                 <span class="s1">&#39;use_hv_curves&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                 <span class="s1">&#39;starttime&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                                 <span class="s1">&#39;endtime&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="mi">23</span><span class="p">,</span> <span class="mi">59</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                                 <span class="s1">&#39;peak_freq_range&#39;</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">DEFAULT_BAND_LIST</span><span class="p">),</span>
+                                 <span class="s1">&#39;stalta_thresh&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span>
+                                 <span class="s1">&#39;period_limits&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">DEFAULT_BAND_LIST</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                                                   <span class="mi">1</span><span class="o">/</span><span class="n">DEFAULT_BAND_LIST</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                                 <span class="s1">&#39;remove_method&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;None&#39;</span><span class="p">],</span>
+                                 <span class="s1">&#39;report_export_format&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;report_formats&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="s1">&#39;print&#39;</span><span class="p">,</span> <span class="s1">&#39;table&#39;</span><span class="p">,</span> <span class="s1">&#39;plot&#39;</span><span class="p">,</span>
+                                                     <span class="s1">&#39;html&#39;</span><span class="p">,</span> <span class="s1">&#39;pdf&#39;</span><span class="p">],</span>
+                                 <span class="s1">&#39;show_pdf_report&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                 <span class="s1">&#39;show_print_report&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                 <span class="s1">&#39;show_plot_report&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                                 <span class="s1">&#39;elev_unit&#39;</span><span class="p">:</span> <span class="s1">&#39;m&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;plot_type&#39;</span><span class="p">:</span> <span class="s1">&#39;HVSR p ann C+ p ann Spec p&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;suppress_report_outputs&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                                 <span class="s1">&#39;resample&#39;</span><span class="p">:</span> <span class="mi">1000</span>
+                                 <span class="p">}</span>
 
-                                  <span class="p">}</span>
-            
             <span class="n">nonDefaultParams</span> <span class="o">=</span> <span class="kc">False</span>
 
             <span class="n">srun</span><span class="p">[</span><span class="s1">&#39;report_formats&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;print&#39;</span><span class="p">,</span> <span class="s1">&#39;table&#39;</span><span class="p">,</span> <span class="s1">&#39;plot&#39;</span><span class="p">,</span> <span class="s1">&#39;html&#39;</span><span class="p">,</span> <span class="s1">&#39;pdf&#39;</span><span class="p">]</span>
@@ -814,12 +815,10 @@
 
     <span class="nd">@st</span><span class="o">.</span><span class="n">fragment</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">display_download_buttons</span><span class="p">():</span>
-        <span class="c1">##dlText, dlPDFReport, dlStream, dlTable, dlPlot, dlHVSR = st.session_state.mainContainer.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])</span>
-        <span class="n">dlText</span><span class="p">,</span> <span class="n">dlStream</span><span class="p">,</span> <span class="n">dlJSON</span><span class="p">,</span> <span class="n">dlHVSR</span><span class="p">,</span> <span class="n">dlPDFReport</span><span class="p">,</span> <span class="n">dlTable</span><span class="p">,</span> <span class="n">dlPlot</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">])</span>
+        <span class="n">dlText</span><span class="p">,</span> <span class="n">dlStream</span><span class="p">,</span> <span class="n">dlJSON</span><span class="p">,</span> <span class="n">dlPDFReport</span><span class="p">,</span> <span class="n">dlHVSR</span><span class="p">,</span> <span class="n">dlTable</span><span class="p">,</span> <span class="n">dlPlot</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">])</span>
         <span class="n">st</span><span class="o">.</span><span class="n">divider</span><span class="p">()</span>
 
         <span class="c1"># Download Buttons</span>
-        <span class="c1">##st.session_state.dlText.text(&quot;Download Results: &quot;)</span>
         <span class="n">dlText</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="s2">&quot;Download Results: &quot;</span><span class="p">)</span>
 
         <span class="c1"># Set up variables for download section</span>
@@ -842,13 +841,11 @@
 
         <span class="n">dlPDFReport</span><span class="o">.</span><span class="n">download_button</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;Report (.pdf)&quot;</span><span class="p">,</span>
                     <span class="n">data</span><span class="o">=</span><span class="n">pdf_byte</span><span class="p">,</span>
-                    <span class="c1">#on_click=display_results,</span>
                     <span class="n">file_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hvData</span><span class="o">.</span><span class="n">site</span><span class="si">}</span><span class="s2">_Report_</span><span class="si">{</span><span class="n">hvID</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">nowTimeStr</span><span class="si">}</span><span class="s2">.pdf&quot;</span><span class="p">,</span>
                     <span class="n">mime</span><span class="o">=</span><span class="s1">&#39;application/octet-stream&#39;</span><span class="p">,</span>
                     <span class="n">icon</span><span class="o">=</span><span class="s2">&quot;:material/summarize:&quot;</span><span class="p">)</span>
 
         <span class="c1"># Data Stream</span>
-        <span class="c1">#@st.cache_data</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">_convert_stream_for_download</span><span class="p">(</span><span class="n">_stream</span><span class="p">):</span>
             <span class="n">strm</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">()</span>
             <span class="n">_stream</span> <span class="o">=</span> <span class="n">_stream</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
@@ -856,7 +853,6 @@
             <span class="k">return</span> <span class="n">strm</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
         <span class="n">streamBytes</span> <span class="o">=</span> <span class="n">_convert_stream_for_download</span><span class="p">(</span><span class="n">hvData</span><span class="o">.</span><span class="n">stream</span><span class="p">)</span>
 
-        <span class="c1">##st.session_state.dlStream.download_button(</span>
         <span class="n">dlStream</span><span class="o">.</span><span class="n">download_button</span><span class="p">(</span>
             <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Data (.mseed)&#39;</span><span class="p">,</span>
             <span class="n">data</span><span class="o">=</span><span class="n">streamBytes</span><span class="p">,</span>
@@ -866,13 +862,11 @@
         <span class="p">)</span>
 
         <span class="c1"># Table download</span>
-        <span class="c1">#@st.cache_data</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">_convert_table_for_download</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
 
         <span class="n">csv</span> <span class="o">=</span> <span class="n">_convert_table_for_download</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;Table_Report&#39;</span><span class="p">])</span>
 
-        <span class="c1">##st.session_state.dlTable.download_button(</span>
         <span class="n">dlTable</span><span class="o">.</span><span class="n">download_button</span><span class="p">(</span>
             <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Table (.csv)&quot;</span><span class="p">,</span>
             <span class="n">data</span><span class="o">=</span><span class="n">csv</span><span class="p">,</span>
@@ -883,28 +877,31 @@
         <span class="p">)</span>
 
         <span class="c1"># Plot</span>
-        <span class="c1">#@st.cache_data</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">_convert_plot_for_download</span><span class="p">(</span><span class="n">_HV_Plot</span><span class="p">):</span>            
             <span class="n">_img</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">plot_engine</span> <span class="o">==</span> <span class="s1">&#39;Matplotlib&#39;</span><span class="p">:</span>
                 <span class="n">_HV_Plot</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">_img</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;png&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">_img</span> <span class="o">=</span> <span class="n">_HV_Plot</span><span class="o">.</span><span class="n">to_image</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s1">&#39;png&#39;</span><span class="p">)</span>
-            
+
             <span class="k">return</span> <span class="n">_img</span>
-
-        <span class="n">img</span> <span class="o">=</span> <span class="n">_convert_plot_for_download</span><span class="p">(</span><span class="n">hvData</span><span class="p">[</span><span class="s1">&#39;Plot_Report&#39;</span><span class="p">])</span>
-
-        <span class="c1">##st.session_state.dlPlot.download_button(</span>
-        <span class="n">dlPlot</span><span class="o">.</span><span class="n">download_button</span><span class="p">(</span>
-            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Plot (.png)&quot;</span><span class="p">,</span>
-            <span class="n">data</span><span class="o">=</span><span class="n">img</span><span class="p">,</span>
-            <span class="n">file_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hvData</span><span class="o">.</span><span class="n">site</span><span class="si">}</span><span class="s2">_HV-Plot_</span><span class="si">{</span><span class="n">hvID</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">nowTimeStr</span><span class="si">}</span><span class="s2">.png&quot;</span><span class="p">,</span>
-            <span class="n">mime</span><span class="o">=</span><span class="s2">&quot;image/png&quot;</span><span class="p">,</span>
-            <span class="c1">#on_click=display_results,</span>
-            <span class="n">icon</span><span class="o">=</span><span class="s2">&quot;:material/analytics:&quot;</span>
-            <span class="p">)</span>
-
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="n">_convert_plot_for_download</span><span class="p">(</span><span class="n">hvData</span><span class="p">[</span><span class="s1">&#39;Plot_Report&#39;</span><span class="p">])</span>
+            <span class="c1">##st.session_state.dlPlot.download_button(</span>
+            <span class="n">dlPlot</span><span class="o">.</span><span class="n">download_button</span><span class="p">(</span>
+                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Plot (.png)&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">img</span><span class="p">,</span>
+                <span class="n">file_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hvData</span><span class="o">.</span><span class="n">site</span><span class="si">}</span><span class="s2">_HV-Plot_</span><span class="si">{</span><span class="n">hvID</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">nowTimeStr</span><span class="si">}</span><span class="s2">.png&quot;</span><span class="p">,</span>
+                <span class="n">mime</span><span class="o">=</span><span class="s2">&quot;image/png&quot;</span><span class="p">,</span>
+                <span class="n">icon</span><span class="o">=</span><span class="s2">&quot;:material/analytics:&quot;</span>
+                <span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">dlPlot</span><span class="o">.</span><span class="n">download_button</span><span class="p">(</span>
+                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Plot not available&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="s1">&#39;Plot&#39;</span><span class="p">,</span>
+                <span class="n">disabled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">icon</span><span class="o">=</span><span class="s2">&quot;:material/analytics:&quot;</span><span class="p">)</span>
 
         <span class="c1"># JSON File</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">_convert_json_for_download</span><span class="p">(</span><span class="n">hv_data</span><span class="p">):</span>
@@ -1968,7 +1965,7 @@
                 <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s1">&#39;PPSD Window overlap (%, 0-1)&#39;</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;overlap&#39;</span><span class="p">)</span>
                 <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s1">&#39;Period Smoothing Width (octaves)&#39;</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;period_smoothing_width_octaves&#39;</span><span class="p">)</span>
                 <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s1">&#39;Period Step (octaves)&#39;</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">0.005</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%.5f</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;period_step_octaves&#39;</span><span class="p">)</span>
-                <span class="n">periodVals</span><span class="o">=</span><span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">x</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">bandVals</span><span class="p">]</span>
+                <span class="n">periodVals</span><span class="o">=</span><span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">x</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">bandVals</span><span class="p">]</span>
                 <span class="n">periodVals</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
 
                 <span class="n">st</span><span class="o">.</span><span class="n">select_slider</span><span class="p">(</span><span class="s1">&#39;Period Limits (s)&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">periodVals</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">period_limits</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;period_limits&#39;</span><span class="p">)</span>
