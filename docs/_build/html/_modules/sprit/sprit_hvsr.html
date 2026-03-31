@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 3.10 documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 3.11.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=9b5ed760"></script>
+      <script src="../../_static/documentation_options.js?v=8905d4f5"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -115,14 +115,18 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.spatial.distance</span><span class="w"> </span><span class="kn">import</span> <span class="n">squareform</span><span class="p">,</span> <span class="n">pdist</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">xhtml2pdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">pisa</span>
 
-<span class="k">try</span><span class="p">:</span>  <span class="c1"># For distribution</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">sprit</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_utils</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">sprit</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_jupyter_UI</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">sprit</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_plot</span>
-<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># For testing</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit_utils</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit_jupyter_UI</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit_plot</span>
+<span class="c1">#try:  # For distribution</span>
+<span class="c1">#    from sprit import sprit_utils</span>
+<span class="c1">#    from sprit import sprit_jupyter_UI</span>
+<span class="c1">#    from sprit import sprit_plot</span>
+<span class="c1">#except Exception:  # For testing</span>
+<span class="c1">#    import sprit_utils</span>
+<span class="c1">#    import sprit_jupyter_UI</span>
+<span class="c1">#    import sprit_plot</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_utils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_jupyter_UI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_plot</span>
 
 <span class="c1"># Constants, etc</span>
 <span class="n">NOWTIME</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
@@ -147,7 +151,7 @@
 
 <span class="c1"># Predefined variables</span>
 <span class="n">max_rank</span> <span class="o">=</span> <span class="mi">0</span>
-<span class="k">global</span> <span class="n">do_run</span> 
+<span class="k">global</span> <span class="n">do_run</span>
 <span class="n">do_run</span> <span class="o">=</span> <span class="kc">False</span>
 
 <span class="n">sampleListNos</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="s1">&#39;4&#39;</span><span class="p">,</span> <span class="s1">&#39;5&#39;</span><span class="p">,</span> <span class="s1">&#39;6&#39;</span><span class="p">,</span> <span class="s1">&#39;7&#39;</span><span class="p">,</span> <span class="s1">&#39;8&#39;</span><span class="p">,</span> <span class="s1">&#39;9&#39;</span><span class="p">,</span> <span class="s1">&#39;10&#39;</span><span class="p">]</span>

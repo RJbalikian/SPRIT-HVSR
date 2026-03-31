@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_calibration &mdash; sprit 3.10 documentation</title>
+  <title>sprit.sprit_calibration &mdash; sprit 3.11.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=9b5ed760"></script>
+      <script src="../../_static/documentation_options.js?v=8905d4f5"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -87,12 +87,15 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">curve_fit</span>
 
-<span class="k">try</span><span class="p">:</span>  <span class="c1"># For distribution</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">sprit</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_hvsr</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">sprit</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_plot</span>
-<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># For testing</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit_hvsr</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit_plot</span>
+<span class="c1">#try:  # For distribution</span>
+<span class="c1">#    from sprit import sprit_hvsr</span>
+<span class="c1">#    from sprit import sprit_plot</span>
+<span class="c1">#except Exception as e:  # For testing</span>
+<span class="c1">#    import sprit_hvsr</span>
+<span class="c1">#    import sprit_plot</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_hvsr</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_plot</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Attempt 1: Regression equations: </span>
