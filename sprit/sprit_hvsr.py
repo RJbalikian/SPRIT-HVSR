@@ -44,14 +44,18 @@ import scipy
 from scipy.spatial.distance import squareform, pdist
 from xhtml2pdf import pisa
 
-try:  # For distribution
-    from sprit import sprit_utils
-    from sprit import sprit_jupyter_UI
-    from sprit import sprit_plot
-except Exception:  # For testing
-    import sprit_utils
-    import sprit_jupyter_UI
-    import sprit_plot
+#try:  # For distribution
+#    from sprit import sprit_utils
+#    from sprit import sprit_jupyter_UI
+#    from sprit import sprit_plot
+#except Exception:  # For testing
+#    import sprit_utils
+#    import sprit_jupyter_UI
+#    import sprit_plot
+
+from . import sprit_utils
+from . import sprit_jupyter_UI
+from . import sprit_plot
 
 # Constants, etc
 NOWTIME = datetime.datetime.now()
@@ -76,7 +80,7 @@ global spritApp
 
 # Predefined variables
 max_rank = 0
-global do_run 
+global do_run
 do_run = False
 
 sampleListNos = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']

@@ -9,10 +9,12 @@ The input_data parameter of input_params() is the only required argument, though
 
 import argparse
 import inspect
-try:
-    from sprit import sprit_hvsr
-except Exception:
-    import sprit_hvsr
+#try:
+#    from sprit import sprit_hvsr
+#except Exception:
+#    import sprit_hvsr
+
+from . import sprit_hvsr
 
 def get_param_docstring(func, param_name):
     function_docstring = func.__doc__
@@ -27,7 +29,7 @@ def get_param_docstring(func, param_name):
             param_end = function_docstring.find('\n', param_end_line1 + 1)
             if param_end != -1:
                 param_docstring = function_docstring[param_start:param_end].strip()
-    
+
     if param_docstring is None:
         param_docstring = ''
     return param_docstring
@@ -63,9 +65,7 @@ def main():
     parameters = []
     for f in hvsrFunctions:
         parameters.append(inspect.signature(f).parameters)
-    #for f, p in hvsrFunDict.items():
-        
-    
+
     # Add argument and options to the parser
     intermediate_params_list = ['params', 'input_parameters', 'input', 'hvsr_data', 'hvsr_results']
     paramNamesList = []
@@ -78,7 +78,9 @@ def main():
                 if name == 'input_data':
                     parser.add_argument(name, help=f'{curr_doc_str}')
                 elif name == 'verbose':
-                    parser.add_argument('-v', '--verbose',  action='store_true', help='Print status and results to terminal.', default=parameter.default)
+                    parser.add_argument('-v', '--verbose',  action='store_true',
+                                        help='Print status and results to terminal.',
+                                        default=parameter.default)
                 else:
                     helpStr = f'Keyword argument {name} in function sprit.{hvsrFunctions[i].__name__}(). default={parameter.default}.\n\t{curr_doc_str}'
                     parser.add_argument(F'--{name}', help=helpStr, default=parameter.default)
@@ -88,7 +90,7 @@ def main():
 
     # Map command-line arguments/options to kwargs
     kwargs = {}
-    for arg_name, arg_value in vars(args).items():      
+    for arg_name, arg_value in vars(args).items():
         if isinstance(arg_value, str):
             if "=" in arg_value:
                 arg_value = {arg_value.split('=')[0]: arg_value.split('=')[1]}
@@ -104,26 +106,26 @@ def main():
                 arg_value = arg_value.split(',')
             elif "," in arg_value:
                 arg_value = arg_value.split(',')
-        
-        is_default = False    
+
+        is_default = False
         for k, v in hvsrFunDict.items():
             for param in v:
-                if param == arg_name and arg_value == v[arg_name].default:
+                if param == arg_name and (arg_value == v[arg_name].default or str(arg_value).lower() == str(v[arg_name].default).lower()):
                     is_default = True
                     continue
-                    
+
             if is_default:
                 continue
-            
+
         if not is_default:
             kwargs[arg_name] = arg_value
-        
+
     # Call the sprit.run function with the generated kwargs
     kwargs['input_data'] = kwargs['input_data'].replace("'", "")  # Remove single quotes to reduce errors
     if str(kwargs['input_data']).lower() == 'gui':
         sprit_hvsr.gui()
     else:
-        #Print a summary if not verbose
+        # Print a summary if not verbose
         if 'verbose' not in kwargs or not kwargs['verbose']:
             print("\nRunning sprit.run() with the following arguments (use --verbose for more information):\n")
             print("\tsprit.run(", end='')
@@ -141,8 +143,9 @@ def main():
         print('\tNon-default kwargs:')
         [print(f"\t\t {k} = {v}") for k, v in kwargs.items()]
         print()
-        
+
         sprit_hvsr.run(**kwargs)
-            
+
+
 if __name__ == '__main__':
     main()

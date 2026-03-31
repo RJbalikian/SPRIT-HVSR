@@ -19,14 +19,18 @@ import plotly.graph_objs as go
 import plotly.subplots as subplots
 from scipy import signal
 
-try: #For distribution
-    from sprit import sprit_utils
-    from sprit import sprit_hvsr
-    from sprit import sprit_plot
-except Exception: #For local testing
-    import sprit_hvsr 
-    import sprit_utils
-    import sprit_plot
+#try: #For distribution
+#    from sprit import sprit_utils
+#    from sprit import sprit_hvsr
+#    from sprit import sprit_plot
+#except Exception: #For local testing
+#    import sprit_hvsr 
+#    import sprit_utils
+#    import sprit_plot
+
+from . import sprit_utils
+from . import sprit_hvsr
+from . import sprit_plot
 
 global hvsr_data
     

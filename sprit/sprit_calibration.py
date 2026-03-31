@@ -16,12 +16,15 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit
 
-try:  # For distribution
-    from sprit import sprit_hvsr
-    from sprit import sprit_plot
-except Exception as e:  # For testing
-    import sprit_hvsr
-    import sprit_plot
+#try:  # For distribution
+#    from sprit import sprit_hvsr
+#    from sprit import sprit_plot
+#except Exception as e:  # For testing
+#    import sprit_hvsr
+#    import sprit_plot
+
+from . import sprit_hvsr
+from . import sprit_plot
 
 """
 Attempt 1: Regression equations: 

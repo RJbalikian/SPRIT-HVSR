@@ -6,6 +6,7 @@ import json
 import numbers
 import os
 import pathlib
+import requests
 import sys
 import traceback
 import warnings
@@ -16,19 +17,19 @@ from obspy.core.utcdatetime import UTCDateTime
 import obspy
 import pandas as pd
 
-try:  # For distribution
-    from sprit import sprit_hvsr
-except Exception: #For testing
-    import sprit_hvsr
-    pass
+#try:  # For distribution
+#    from sprit import sprit_hvsr
+#except Exception: #For testing
+#    import sprit_hvsr
 
-RESOURCE_DIR = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources')
+from . import sprit_hvsr
+
+RESOURCE_DIR = importlib.resources.files('sprit') / 'resources'
+with (RESOURCE_DIR / 'defaults.json').open('r', encoding='utf-8') as fp:
+    DEFAULT_PARAMS_DICT = json.load(fp)
 
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
-
-with open(RESOURCE_DIR.joinpath('defaults.json'), 'r') as fp:
-    DEFAULT_PARAMS_DICT = json.load(fp)
 
 def _assert_check(var, cond=None, var_type=None, error_message='Output not valid', verbose=False):
     if var_type is not None:
@@ -510,6 +511,8 @@ def _get_sample_data(sample_file='1', verbose=False):
         sampleKey = '1'
             
     print(f" PROCESSING SAMPLE DATASET {sampleKey.zfill(2)} ".center(99, '*'))
+    if sampleKey in ['3', '4', '5', '6', '7', '8', '9', '10']:
+        print('*'+"**Attempting to access online sample data. For local sample data, use dataset 1 or 2**".center(97)+'*')    
     print('*'+"To read in your own data, use sprit.run(input_data='/path/to/your/seismic/data.mseed')".center(97)+'*')
     print('*'+"Any file format supported by osbpy.read() can be input to sprit_run()".center(97)+'*')
     print('*'+"Raw data (.trc) files from select Tromino Portable are also supported".center(97)+'*')
@@ -519,26 +522,37 @@ def _get_sample_data(sample_file='1', verbose=False):
     print("".center(99, '*'))
     print()
 
-    #sampleListKeys = [str(i) for i in list(range(1,11))]
-
-    # Construct resource filename
-    filename = sampleMapDict[sampleKey]
     sampleDir = importlib.resources.files('sprit') / "resources" / "sample_data"
-    resource = sampleDir / filename
+    if sampleKey in ['1', '2']:
+        # Construct resource filename
+        filename = sampleMapDict[sampleKey]
+        resource = sampleDir / filename
 
-    if str(sampleKey).lower() == 'batch':
-        text = resource.read_text(encoding="utf-8")
-        return pd.read_csv(io.StringIO(text))
+        if str(sampleKey).lower() == 'batch':
+            text = resource.read_text(encoding="utf-8")
+            return pd.read_csv(io.StringIO(text))
 
-    if not resource.is_file():
-        resource = sample_dir / sampleMapDict['1']
+        if not resource.is_file():
+            resource = sampleDir / sampleMapDict['1']
+            try:
+                return obspy.read(io.BytesIO(resource.read_bytes()))
+            except:
+                available = sorted(p.stem for p in sampleDir.iterdir() if p.suffix == ".mseed")
+                raise FileNotFoundError(f"Sample '{sampleKey}' not found. Available samples: {available}")
+
+        return obspy.read(io.BytesIO(resource.read_bytes()))
+    else:
+        BASE_URL = "https://raw.githubusercontent.com/RJbalikian/SPRIT-HVSR/main/sprit/extra_sample_data"
+        sampleDataURL = f"{BASE_URL}/{sampleMapDict[sampleKey]}"
         try:
+            resp = requests.get(sampleDataURL, timeout=30)
+            resp.raise_for_status() 
+            return obspy.read(io.BytesIO(resp.content))
+        except Exception:
+            print("Error reading online sample data, using local dataset")
+            resource = sampleDir / sampleMapDict['1']
             return obspy.read(io.BytesIO(resource.read_bytes()))
-        except:
-            available = sorted(p.stem for p in sampleDir.iterdir() if p.suffix == ".mseed")
-            raise FileNotFoundError(f"Sample '{name}' not found. Available samples: {available}")
 
-    return obspy.read(io.BytesIO(resource.read_bytes()))
 
 # Check that input strema has Z, E, N channels
 def _has_required_channels(stream):

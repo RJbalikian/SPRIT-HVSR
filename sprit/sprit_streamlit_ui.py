@@ -30,17 +30,23 @@ from obspy.signal.spectral_estimation import PPSD
 from scipy import signal
 
 
-try:
-    import sprit
-    from sprit import sprit_hvsr
-    from sprit import sprit_plot
-except Exception:
-    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    sys.path.insert(0, parent_dir)
-    import sprit
-    from sprit import sprit_hvsr
-    from sprit import sprit_plot
-    
+#try:
+#    import sprit
+#    from sprit import sprit_hvsr
+#    from sprit import sprit_plot
+#except Exception:
+#    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+#    sys.path.insert(0, parent_dir)
+    #import sprit
+#    from sprit import sprit_hvsr
+#    from sprit import sprit_plot
+
+#parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+#sys.path.insert(0, parent_dir)
+
+from . import sprit_hvsr
+from . import sprit_plot
+
 VERBOSE = False
 
 RESOURCE_DIR = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources')
@@ -78,7 +84,7 @@ def main():
         icon = spritLogoPath
     else:
         icon = ":material/electric_bolt:"
-        
+
     if 'sprit' in sys.modules and hasattr(sprit, '__version__'):
         spritversion = sprit.__version__
     else:

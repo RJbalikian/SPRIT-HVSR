@@ -1,65 +1,106 @@
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core>=1.5.0"]
+build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "sprit"
-authors = [{name="Riley Balikian"}]
-dynamic = ["readme"]
-license = {file = "LICENSE"}
-version="3.10"
+version = "3.10"
 description = "A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data"
-keywords = ["HVSR", "seismic", "horizontal to vertical spectral ratio", "obspy", 'geology', 'geophysics', 'geotechnical']
-requires-python = ">=3.9"
-dependencies =  ["anywidget", 'ipython', 'ipywidgets', 'kaleido', "matplotlib", 'nbformat', "numpy", "obspy", "pandas", 'plotly', "pyproj", 'PyQt5-sip', "scipy", "shapely", 'streamlit', 'xhtml2pdf']
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name="Riley Balikian", email="balikian@illinois.edu"}
+]
+keywords = ["HVSR", "seismic", "geology", "geophysics", "geotechnical"]
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+    "Operating System :: OS Independent"
 ]
 
-#[tool.setuptools.dynamic]
-#readme = {file = ["README.md"]}
+# Runtime dependencies
+dependencies = [
+    "anywidget",
+    "ipython",
+    "ipywidgets",
+    "kaleido",
+    "matplotlib",
+    "nbformat",
+    "numpy",
+    "obspy",
+    "pandas",
+    "plotly",
+    "pyproj",
+    "PyQt5-sip",
+    "scipy",
+    "shapely",
+    "streamlit",
+    "xhtml2pdf"
+]
 
-[tool.poetry]
-name='SpRIT Streamlit'
-version="3.10"
-description = "A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data"
-authors = ["Riley Balikian <balikian@illinois.edu>"]
-license = "MIT"
-readme = "README.md"
+# Development dependencies
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black"
+]
 
-[tool.poetry.dependencies]
-python = ">=3.10"
-obspy = "*"
-scipy = "*"
-matplotlib = "*"
-pandas = "*"
-numpy = "*"
-pyproj = "*"
-shapely = "*"
-ipython = "*"
-ipywidgets = "*"
-plotly = "*"
-nbformat = "*"
-PyQt5-sip = "*"
-streamlit = "*"
-sprit = "*"
-
-[tool.setuptools.package-data]
-sprit = ["resources/**"]
-
-[project.urls]
-"Homepage" = "https://github.com/RJbalikian/SPRIT-HVSR"
-"SpRIT Web App" = "https://sprithvsr.streamlit.app"
-"ReadtheDocs API Docs" = "https://sprit.readthedocs.io/en/latest/sprit.html"
-"SpRIT App (streamlit) Docs" = "https://github.com/RJbalikian/sprit-streamlit/wiki"
-"Github Pages API Docs" = "https://rjbalikian.github.io/SPRIT-HVSR/main.html"
-"Tutorials & Wiki" = "https://github.com/RJbalikian/SPRIT-HVSR/wiki"
-
+# CLI and GUI entry points
 [project.scripts]
 sprit = "sprit.sprit_cli:main"
 
 [project.gui-scripts]
 sprit-gui = "sprit.sprit_streamlit_ui:main"
+
+# Include additional URLs for the PyPI sidebar
+[project.urls]
+Homepage = "https://github.com/RJbalikian/SPRIT-HVSR"
+SpRIT_Web_App = "https://sprithvsr.streamlit.app"
+ReadtheDocs_API_Docs = "https://sprit.readthedocs.io/en/latest/sprit.html"
+SpRIT_App_Streamlit_Docs = "https://github.com/RJbalikian/sprit-streamlit/wiki"
+Github_Pages_API_Docs = "https://rjbalikian.github.io/SPRIT-HVSR/main.html"
+Tutorials_and_Wiki = "https://github.com/RJbalikian/SPRIT-HVSR/wiki"
+
+# Include package data (resources folder)
+
+[tool.poetry]
+packages = [
+    { include = "sprit" }
+]
+include = [
+    "sprit/resources/**"
+]
+
+
+#[build-system]
+#requires = ["setuptools>=61.0"]
+#build-backend = "setuptools.build_meta"
+
+#[project]
+#name = "sprit"
+#authors = [{name="Riley Balikian"}]
+#dynamic = ["readme"]
+#license = {file = "LICENSE"}
+#version="3.10"
+#description = "A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data"
+#keywords = ["HVSR", "seismic", "horizontal to vertical spectral ratio", "obspy", 'geology', 'geophysics', 'geotechnical']
+#requires-python = ">=3.10"
+#dependencies =  ["anywidget", 'ipython', 'ipywidgets', 'kaleido', "matplotlib", 'nbformat', "numpy", "obspy", "pandas", 'plotly', "pyproj", 'PyQt5-sip', "scipy", "shapely", 'streamlit', 'xhtml2pdf']
+#classifiers = [
+#    "Programming Language :: Python :: 3",
+#    "Intended Audience :: Science/Research",
+#    "License :: OSI Approved :: MIT License",
+#    "Operating System :: OS Independent",
+#]
+
+#[tool.setuptools.dynamic]
+#readme = {file = ["README.md"]}
+
+
+#[project.gui-scripts]
+#sprit-gui = "sprit.sprit_streamlit_ui:main"
+
+#[tool.setuptools.package-data]
+#sprit = ["resources/**"]
