@@ -1108,7 +1108,7 @@ def gui(kind: str = 'browser'):
         def run_streamlit_app(path_dir):
             temp_dir = tempfile.TemporaryDirectory()
             # create a temporary directory
-            fpathList = ['sprit_hvsr.py', 'sprit_tkinter_ui.py', 'sprit_jupyter_ui.py', 'sprit_utils.py', 'sprit_plot.py', '__init__.py', 'sprit_streamlit_ui.py']
+            fpathList = ['sprit_hvsr.py', 'sprit_jupyter_ui.py', 'sprit_utils.py', 'sprit_plot.py', '__init__.py', 'sprit_streamlit_ui.py']
             currDir = os.path.dirname(os.path.abspath(__file__))
             for fpath in fpathList:
                 temp_file_path = os.path.join(temp_dir.name, fpath)
@@ -11484,12 +11484,14 @@ def _generate_html_report(hvsr_results, azimuth='HV', show_html_report=False, ve
     else:
         #htmlstring = plotly.io.to_html(hvsr_results.Plot_Report, include_plotlyjs=False)
         #print(type(htmlstring))
+        try:
+            img = hvsr_results.Plot_Report.to_image(format='png', engine='kaleido')
+            hvplot_base64 = base64.b64encode(img).decode('utf8')
 
-        img = hvsr_results.Plot_Report.to_image(format='png', engine='kaleido')
-        hvplot_base64 = base64.b64encode(img).decode('utf8')
-
-        html = html.replace("./output.png", f'data:image/png;base64,{hvplot_base64}')
-
+            html = html.replace("./output.png", f'data:image/png;base64,{hvplot_base64}')
+        except Exception:
+            html = html
+            
     # Update formatting for print report for html
     html_print_report = hvsr_results.Print_Report.replace('\n', '<br>').replace('\t', "&nbsp;&nbsp;&nbsp;&nbsp;")
     html_print_report = html_print_report.replace('<br>', '', 2) #Remove the first two breaks

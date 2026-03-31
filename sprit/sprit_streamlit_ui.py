@@ -30,22 +30,23 @@ from obspy.signal.spectral_estimation import PPSD
 from scipy import signal
 
 
-#try:
-#    import sprit
-#    from sprit import sprit_hvsr
-#    from sprit import sprit_plot
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+print(parent_dir)
+sys.path.insert(0, parent_dir)
+
+try:
+    from . import sprit_hvsr
+    from . import sprit_plot
+except Exception:
+    import sprit
+    from sprit import sprit_hvsr
+    from sprit import sprit_plot
 #except Exception:
 #    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #    sys.path.insert(0, parent_dir)
     #import sprit
 #    from sprit import sprit_hvsr
 #    from sprit import sprit_plot
-
-#parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-#sys.path.insert(0, parent_dir)
-
-from . import sprit_hvsr
-from . import sprit_plot
 
 VERBOSE = False
 
@@ -124,7 +125,7 @@ def main():
     bandVals = [0.05, 0.06, 0.07, 0.08, 0.09,
                 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
                 1, 2, 3, 4, 5, 6, 7, 8, 9,
-                10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+                10, 16, 20, 30, 32, 40, 50, 60, 64, 70, 80, 90, 100]
 
     # SETUP KWARGS
     if VERBOSE:
@@ -441,12 +442,7 @@ def main():
             if key in st.session_state.run_kws:
                 if value != st.session_state.default_params[key]:
                     if str(value) != str(st.session_state.default_params[key]):
-                        if isinstance(value, (tuple, list)):
-                            if tuple(value) != tuple(st.session_state.default_params[key]):
-                                srun[key] = value
-                                print("ADDED", key, value)
-                        else:
-                            srun[key] = value                           
+                        srun[key] = value
             
             if key == 'plot_engine':
                 srun[key] = value
@@ -476,25 +472,30 @@ def main():
             spinnerText = '## Data is processing with default parameters.'
             excludedKeys = ['plot_engine', 'plot_input_stream', 'show_plot', 'verbose', 'show_outlier_plot']
             NOWTIME = datetime.datetime.now()
-            secondaryDefaults = {'acq_date': datetime.date(NOWTIME.year, NOWTIME.month, NOWTIME.day),
-                                 'hvsr_band':tuple(DEFAULT_BAND_LIST), 'use_hv_curves':True,
-                                 'starttime':datetime.time(0,0,0),
-                                 'endtime':datetime.time(23, 59, 0),
-                                 'peak_freq_range':tuple(DEFAULT_BAND_LIST),
-                                 'stalta_thresh':(8, 16),
-                                 'period_limits':(1/DEFAULT_BAND_LIST[1], 1/DEFAULT_BAND_LIST[0]),
-                                 'remove_method':['None'],
-                                 'report_export_format':None,
-                                 'report_formats':  ['print', 'table', 'plot', 'html', 'pdf'] ,
-                                 'show_pdf_report':False,
-                                 'show_print_report':True,
-                                 'show_plot_report':False,
-                                 'elev_unit':'m',
-                                 'plot_type':'HVSR p ann C+ p ann Spec p',
-                                 'suppress_report_outputs':True
+            secondaryDefaults = {'acq_date': datetime.date(NOWTIME.year,
+                                                           NOWTIME.month,
+                                                           NOWTIME.day),
+                                 'hvsr_band': tuple(DEFAULT_BAND_LIST),
+                                 'use_hv_curves': True,
+                                 'starttime': datetime.time(0, 0, 0),
+                                 'endtime': datetime.time(23, 59, 0),
+                                 'peak_freq_range': tuple(DEFAULT_BAND_LIST),
+                                 'stalta_thresh': (8, 16),
+                                 'period_limits': (1/DEFAULT_BAND_LIST[1],
+                                                   1/DEFAULT_BAND_LIST[0]),
+                                 'remove_method': ['None'],
+                                 'report_export_format': None,
+                                 'report_formats':  ['print', 'table', 'plot',
+                                                     'html', 'pdf'],
+                                 'show_pdf_report': False,
+                                 'show_print_report': True,
+                                 'show_plot_report': False,
+                                 'elev_unit': 'm',
+                                 'plot_type': 'HVSR p ann C+ p ann Spec p',
+                                 'suppress_report_outputs': True,
+                                 'resample': 1000
+                                 }
 
-                                  }
-            
             nonDefaultParams = False
 
             srun['report_formats'] = ['print', 'table', 'plot', 'html', 'pdf']
@@ -738,12 +739,10 @@ def main():
 
     @st.fragment
     def display_download_buttons():
-        ##dlText, dlPDFReport, dlStream, dlTable, dlPlot, dlHVSR = st.session_state.mainContainer.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])
-        dlText, dlStream, dlJSON, dlHVSR, dlPDFReport, dlTable, dlPlot = st.columns([0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
+        dlText, dlStream, dlJSON, dlPDFReport, dlHVSR, dlTable, dlPlot = st.columns([0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
         st.divider()
 
         # Download Buttons
-        ##st.session_state.dlText.text("Download Results: ")
         dlText.text("Download Results: ")
 
         # Set up variables for download section
@@ -766,13 +765,11 @@ def main():
 
         dlPDFReport.download_button(label="Report (.pdf)",
                     data=pdf_byte,
-                    #on_click=display_results,
                     file_name=f"{hvData.site}_Report_{hvID}_{nowTimeStr}.pdf",
                     mime='application/octet-stream',
                     icon=":material/summarize:")
 
         # Data Stream
-        #@st.cache_data
         def _convert_stream_for_download(_stream):
             strm = io.BytesIO()
             _stream = _stream.split()
@@ -780,7 +777,6 @@ def main():
             return strm.getvalue()
         streamBytes = _convert_stream_for_download(hvData.stream)
 
-        ##st.session_state.dlStream.download_button(
         dlStream.download_button(
             label='Data (.mseed)',
             data=streamBytes,
@@ -790,13 +786,11 @@ def main():
         )
 
         # Table download
-        #@st.cache_data
         def _convert_table_for_download(df):
             return df.to_csv().encode("utf-8")
 
         csv = _convert_table_for_download(st.session_state.hvsr_data['Table_Report'])
 
-        ##st.session_state.dlTable.download_button(
         dlTable.download_button(
             label="Table (.csv)",
             data=csv,
@@ -807,28 +801,31 @@ def main():
         )
 
         # Plot
-        #@st.cache_data
         def _convert_plot_for_download(_HV_Plot):            
             _img = io.BytesIO()
             if st.session_state.plot_engine == 'Matplotlib':
                 _HV_Plot.savefig(_img, format='png')
             else:
                 _img = _HV_Plot.to_image(format='png')
-            
+
             return _img
-
-        img = _convert_plot_for_download(hvData['Plot_Report'])
-
-        ##st.session_state.dlPlot.download_button(
-        dlPlot.download_button(
-            label="Plot (.png)",
-            data=img,
-            file_name=f"{hvData.site}_HV-Plot_{hvID}_{nowTimeStr}.png",
-            mime="image/png",
-            #on_click=display_results,
-            icon=":material/analytics:"
-            )
-
+        
+        try:
+            img = _convert_plot_for_download(hvData['Plot_Report'])
+            ##st.session_state.dlPlot.download_button(
+            dlPlot.download_button(
+                label="Plot (.png)",
+                data=img,
+                file_name=f"{hvData.site}_HV-Plot_{hvID}_{nowTimeStr}.png",
+                mime="image/png",
+                icon=":material/analytics:"
+                )
+        except:
+            dlPlot.download_button(
+                label="Plot not available",
+                data='Plot',
+                disabled=True,
+                icon=":material/analytics:")
 
         # JSON File
         def _convert_json_for_download(hv_data):
@@ -1892,7 +1889,7 @@ def main():
                 st.number_input('PPSD Window overlap (%, 0-1)', step=0.01, min_value=0.0, max_value=1.0, key='overlap')
                 st.number_input('Period Smoothing Width (octaves)', step=0.1, key='period_smoothing_width_octaves')
                 st.number_input('Period Step (octaves)', step=0.005, format="%.5f", key='period_step_octaves')
-                periodVals=[round(1/x,3) for x in bandVals]
+                periodVals=[round(1/x,5) for x in bandVals]
                 periodVals.sort()
 
                 st.select_slider('Period Limits (s)', options=periodVals, value=st.session_state.period_limits, key='period_limits')
