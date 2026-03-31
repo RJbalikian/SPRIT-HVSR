@@ -46,20 +46,29 @@ def main():
                      sprit_hvsr.process_hvsr,
                      sprit_hvsr.remove_outlier_curves,
                      sprit_hvsr.check_peaks,
-                     sprit_hvsr.get_report]#,
-                     #sprit_hvsr.plot_hvsr]
+                     sprit_hvsr.get_report,
+                     sprit_hvsr.export_json,
+                     sprit_hvsr.export_data,
+                     sprit_hvsr.export_hvsr,
+                     sprit_hvsr.export_report,
+                     sprit_hvsr.plot_hvsr]
 
     hvsrFunDict = {sprit_hvsr.run: inspect.signature(sprit_hvsr.run).parameters,
-                    sprit_hvsr.input_params: inspect.signature(sprit_hvsr.input_params).parameters,
-                     sprit_hvsr.fetch_data: inspect.signature(sprit_hvsr.fetch_data).parameters,
-                     sprit_hvsr.calculate_azimuth: inspect.signature(sprit_hvsr.calculate_azimuth).parameters,
-                     sprit_hvsr.remove_noise: inspect.signature(sprit_hvsr.remove_noise).parameters,
-                     sprit_hvsr.generate_psds: inspect.signature(sprit_hvsr.generate_psds).parameters,
-                     sprit_hvsr.process_hvsr: inspect.signature(sprit_hvsr.process_hvsr).parameters,
-                     sprit_hvsr.remove_outlier_curves: inspect.signature(sprit_hvsr.remove_outlier_curves).parameters,
-                     sprit_hvsr.check_peaks: inspect.signature(sprit_hvsr.check_peaks).parameters,
-                     sprit_hvsr.get_report: inspect.signature(sprit_hvsr.get_report).parameters     
-                    }
+                   sprit_hvsr.input_params: inspect.signature(sprit_hvsr.input_params).parameters,
+                   sprit_hvsr.fetch_data: inspect.signature(sprit_hvsr.fetch_data).parameters,
+                   sprit_hvsr.calculate_azimuth: inspect.signature(sprit_hvsr.calculate_azimuth).parameters,
+                   sprit_hvsr.remove_noise: inspect.signature(sprit_hvsr.remove_noise).parameters,
+                   sprit_hvsr.generate_psds: inspect.signature(sprit_hvsr.generate_psds).parameters,
+                   sprit_hvsr.process_hvsr: inspect.signature(sprit_hvsr.process_hvsr).parameters,
+                   sprit_hvsr.remove_outlier_curves: inspect.signature(sprit_hvsr.remove_outlier_curves).parameters,
+                   sprit_hvsr.check_peaks: inspect.signature(sprit_hvsr.check_peaks).parameters,
+                   sprit_hvsr.get_report: inspect.signature(sprit_hvsr.get_report).parameters,
+                   sprit_hvsr.export_json: inspect.signature(sprit_hvsr.export_json).parameters,
+                   sprit_hvsr.export_data: inspect.signature(sprit_hvsr.export_data).parameters,
+                   sprit_hvsr.export_hvsr: inspect.signature(sprit_hvsr.export_hvsr).parameters,
+                   sprit_hvsr.export_report: inspect.signature(sprit_hvsr.export_report).parameters,
+                   sprit_hvsr.plot_hvsr: inspect.signature(sprit_hvsr.plot_hvsr).parameters,
+                   }
 
     # Get default parameters from main functions
     parameters = []
@@ -145,7 +154,6 @@ def main():
         print()
 
         sprit_hvsr.run(**kwargs)
-
 
 if __name__ == '__main__':
     main()

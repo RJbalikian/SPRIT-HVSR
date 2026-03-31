@@ -1329,6 +1329,10 @@ def run(input_data=None, source='file',
         kwargs['peak_freq_range'] = inspect.signature(input_params).parameters['peak_freq_range'].default
     if 'processing_parameters' not in kwargs.keys():
         kwargs['processing_parameters'] = {}
+    
+    # This helps with inputs from CLI especially
+    wargs['peak_freq_range'] = [float(f) for f in kwargs['peak_freq_range']]
+    kwargs['hvsr_band'] = [float(f) for f in kwargs['hvsr_band']]
 
     # START PROCESSING
     # Separate out input_params and fetch_data processes based on whether batch has been specified
@@ -2607,6 +2611,7 @@ def check_peaks(hvsr_data, hvsr_band=DEFAULT_BAND, peak_selection='max', peak_fr
             
             scorelist = ['score', 'scored', 'best', 's']
             maxlist = ['maximum', 'max', 'highest', 'm']
+            
             # Convert peak_selection to numeric, get index of nearest value as list item for __init_peaks()
             try:
                 peak_val = float(peak_selection)
@@ -5889,6 +5894,8 @@ def input_params(input_data,
     if pathlib.Path(str(input_data)).exists():
         input_data = pathlib.Path(input_data).as_posix()
 
+    peak_freq_range = [float(f) for f in peak_freq_range]
+    print("PFFFFFR", peak_freq_range)
     #Add key/values to input parameter dictionary for use throughout the rest of the package
     inputParamDict = {'site':site, 'project':project, 'hvsr_id':hvsr_id, 'network':network, 'station':station,'location':location, 'channels':channels,
                       'net':network,'sta':station, 'loc':location, 'cha':channels, 'instrument':instrument,
