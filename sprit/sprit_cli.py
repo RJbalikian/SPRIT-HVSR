@@ -36,7 +36,7 @@ def get_param_docstring(func, param_name):
 
 def main():
     parser = argparse.ArgumentParser(description='CLI for SPRIT HVSR package (specifically the sprit.run() function)')
-    
+
     hvsrFunctions = [sprit_hvsr.run,
                     sprit_hvsr.input_params,
                      sprit_hvsr.fetch_data,
@@ -77,6 +77,11 @@ def main():
 
     # Add argument and options to the parser
     intermediate_params_list = ['params', 'input_parameters', 'input', 'hvsr_data', 'hvsr_results']
+    storeTrueList = ['noise_removal', 'outlier_curves_removal',
+                     'show_pdf_report', 'show_plot_report', 'plot_input_stream', 'remove_response',
+                      'show_outlier_plot', 'suppress_report_outputs', 'show_report_outputs',
+                        'return_json_string', 'include_dataframe', 'include_plots', 'export_edited_stream','use_subplots',
+                         'return_fig', 'show_legend', 'close_figs' ]
     paramNamesList = []
     for i, param in enumerate(parameters):
         for name, parameter in param.items():
@@ -85,14 +90,18 @@ def main():
                 paramNamesList.append(name)
                 curr_doc_str = get_param_docstring(func=hvsrFunctions[i], param_name=name)
                 if name == 'input_data':
-                    parser.add_argument(name, help=f'{curr_doc_str}')
-                elif name == 'verbose':
+                    parser.add_argument("-i", "--input_data", default='sample', help=f'{curr_doc_str}')
+                elif name  == 'verbose':
                     parser.add_argument('-v', '--verbose',  action='store_true',
                                         help='Print status and results to terminal.',
+                                       default=parameter.default)
+                elif name in storeTrueList:
+                    parser.add_argument(f'--{name}', action='store_true',
+                                        help=helpStr,
                                         default=parameter.default)
                 else:
                     helpStr = f'Keyword argument {name} in function sprit.{hvsrFunctions[i].__name__}(). default={parameter.default}.\n\t{curr_doc_str}'
-                    parser.add_argument(F'--{name}', help=helpStr, default=parameter.default)
+                    parser.add_argument(f'--{name}', help=helpStr, default=parameter.default)
 
     # Add more arguments/options as needed
     args = parser.parse_args()

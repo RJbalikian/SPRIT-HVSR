@@ -1331,7 +1331,7 @@ def run(input_data=None, source='file',
         kwargs['processing_parameters'] = {}
     
     # This helps with inputs from CLI especially
-    wargs['peak_freq_range'] = [float(f) for f in kwargs['peak_freq_range']]
+    kwargs['peak_freq_range'] = [float(f) for f in kwargs['peak_freq_range']]
     kwargs['hvsr_band'] = [float(f) for f in kwargs['hvsr_band']]
 
     # START PROCESSING
@@ -5895,7 +5895,6 @@ def input_params(input_data,
         input_data = pathlib.Path(input_data).as_posix()
 
     peak_freq_range = [float(f) for f in peak_freq_range]
-    print("PFFFFFR", peak_freq_range)
     #Add key/values to input parameter dictionary for use throughout the rest of the package
     inputParamDict = {'site':site, 'project':project, 'hvsr_id':hvsr_id, 'network':network, 'station':station,'location':location, 'channels':channels,
                       'net':network,'sta':station, 'loc':location, 'cha':channels, 'instrument':instrument,
