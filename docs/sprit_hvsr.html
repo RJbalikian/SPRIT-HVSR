@@ -817,6 +817,7 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
             
             scorelist = [&#39;score&#39;, &#39;scored&#39;, &#39;best&#39;, &#39;s&#39;]
             maxlist = [&#39;maximum&#39;, &#39;max&#39;, &#39;highest&#39;, &#39;m&#39;]
+            
             # Convert peak_selection to numeric, get index of nearest value as list item for __init_peaks()
             try:
                 peak_val = float(peak_selection)
@@ -4703,6 +4704,7 @@ with key:value pairs for each parameter name:value in that function.</dd>
     if pathlib.Path(str(input_data)).exists():
         input_data = pathlib.Path(input_data).as_posix()
 
+    peak_freq_range = [float(f) for f in peak_freq_range]
     #Add key/values to input parameter dictionary for use throughout the rest of the package
     inputParamDict = {&#39;site&#39;:site, &#39;project&#39;:project, &#39;hvsr_id&#39;:hvsr_id, &#39;network&#39;:network, &#39;station&#39;:station,&#39;location&#39;:location, &#39;channels&#39;:channels,
                       &#39;net&#39;:network,&#39;sta&#39;:station, &#39;loc&#39;:location, &#39;cha&#39;:channels, &#39;instrument&#39;:instrument,
@@ -6841,6 +6843,10 @@ This is minimum number of points a point needs in its neighborhood to not be con
         kwargs[&#39;peak_freq_range&#39;] = inspect.signature(input_params).parameters[&#39;peak_freq_range&#39;].default
     if &#39;processing_parameters&#39; not in kwargs.keys():
         kwargs[&#39;processing_parameters&#39;] = {}
+    
+    # This helps with inputs from CLI especially
+    kwargs[&#39;peak_freq_range&#39;] = [float(f) for f in kwargs[&#39;peak_freq_range&#39;]]
+    kwargs[&#39;hvsr_band&#39;] = [float(f) for f in kwargs[&#39;hvsr_band&#39;]]
 
     # START PROCESSING
     # Separate out input_params and fetch_data processes based on whether batch has been specified

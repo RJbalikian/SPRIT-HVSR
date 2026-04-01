@@ -86,7 +86,7 @@ el.replaceWith(d);
 </summary>
 <pre><code class="python">def main():
     parser = argparse.ArgumentParser(description=&#39;CLI for SPRIT HVSR package (specifically the sprit.run() function)&#39;)
-    
+
     hvsrFunctions = [sprit_hvsr.run,
                     sprit_hvsr.input_params,
                      sprit_hvsr.fetch_data,
@@ -96,20 +96,29 @@ el.replaceWith(d);
                      sprit_hvsr.process_hvsr,
                      sprit_hvsr.remove_outlier_curves,
                      sprit_hvsr.check_peaks,
-                     sprit_hvsr.get_report]#,
-                     #sprit_hvsr.plot_hvsr]
+                     sprit_hvsr.get_report,
+                     sprit_hvsr.export_json,
+                     sprit_hvsr.export_data,
+                     sprit_hvsr.export_hvsr,
+                     sprit_hvsr.export_report,
+                     sprit_hvsr.plot_hvsr]
 
     hvsrFunDict = {sprit_hvsr.run: inspect.signature(sprit_hvsr.run).parameters,
-                    sprit_hvsr.input_params: inspect.signature(sprit_hvsr.input_params).parameters,
-                     sprit_hvsr.fetch_data: inspect.signature(sprit_hvsr.fetch_data).parameters,
-                     sprit_hvsr.calculate_azimuth: inspect.signature(sprit_hvsr.calculate_azimuth).parameters,
-                     sprit_hvsr.remove_noise: inspect.signature(sprit_hvsr.remove_noise).parameters,
-                     sprit_hvsr.generate_psds: inspect.signature(sprit_hvsr.generate_psds).parameters,
-                     sprit_hvsr.process_hvsr: inspect.signature(sprit_hvsr.process_hvsr).parameters,
-                     sprit_hvsr.remove_outlier_curves: inspect.signature(sprit_hvsr.remove_outlier_curves).parameters,
-                     sprit_hvsr.check_peaks: inspect.signature(sprit_hvsr.check_peaks).parameters,
-                     sprit_hvsr.get_report: inspect.signature(sprit_hvsr.get_report).parameters     
-                    }
+                   sprit_hvsr.input_params: inspect.signature(sprit_hvsr.input_params).parameters,
+                   sprit_hvsr.fetch_data: inspect.signature(sprit_hvsr.fetch_data).parameters,
+                   sprit_hvsr.calculate_azimuth: inspect.signature(sprit_hvsr.calculate_azimuth).parameters,
+                   sprit_hvsr.remove_noise: inspect.signature(sprit_hvsr.remove_noise).parameters,
+                   sprit_hvsr.generate_psds: inspect.signature(sprit_hvsr.generate_psds).parameters,
+                   sprit_hvsr.process_hvsr: inspect.signature(sprit_hvsr.process_hvsr).parameters,
+                   sprit_hvsr.remove_outlier_curves: inspect.signature(sprit_hvsr.remove_outlier_curves).parameters,
+                   sprit_hvsr.check_peaks: inspect.signature(sprit_hvsr.check_peaks).parameters,
+                   sprit_hvsr.get_report: inspect.signature(sprit_hvsr.get_report).parameters,
+                   sprit_hvsr.export_json: inspect.signature(sprit_hvsr.export_json).parameters,
+                   sprit_hvsr.export_data: inspect.signature(sprit_hvsr.export_data).parameters,
+                   sprit_hvsr.export_hvsr: inspect.signature(sprit_hvsr.export_hvsr).parameters,
+                   sprit_hvsr.export_report: inspect.signature(sprit_hvsr.export_report).parameters,
+                   sprit_hvsr.plot_hvsr: inspect.signature(sprit_hvsr.plot_hvsr).parameters,
+                   }
 
     # Get default parameters from main functions
     parameters = []
@@ -118,6 +127,11 @@ el.replaceWith(d);
 
     # Add argument and options to the parser
     intermediate_params_list = [&#39;params&#39;, &#39;input_parameters&#39;, &#39;input&#39;, &#39;hvsr_data&#39;, &#39;hvsr_results&#39;]
+    storeTrueList = [&#39;noise_removal&#39;, &#39;outlier_curves_removal&#39;,
+                     &#39;show_pdf_report&#39;, &#39;show_plot_report&#39;, &#39;plot_input_stream&#39;, &#39;remove_response&#39;,
+                      &#39;show_outlier_plot&#39;, &#39;suppress_report_outputs&#39;, &#39;show_report_outputs&#39;,
+                        &#39;return_json_string&#39;, &#39;include_dataframe&#39;, &#39;include_plots&#39;, &#39;export_edited_stream&#39;,&#39;use_subplots&#39;,
+                         &#39;return_fig&#39;, &#39;show_legend&#39;, &#39;close_figs&#39; ]
     paramNamesList = []
     for i, param in enumerate(parameters):
         for name, parameter in param.items():
@@ -126,14 +140,18 @@ el.replaceWith(d);
                 paramNamesList.append(name)
                 curr_doc_str = get_param_docstring(func=hvsrFunctions[i], param_name=name)
                 if name == &#39;input_data&#39;:
-                    parser.add_argument(name, help=f&#39;{curr_doc_str}&#39;)
-                elif name == &#39;verbose&#39;:
+                    parser.add_argument(&#34;-i&#34;, &#34;--input_data&#34;, default=&#39;sample&#39;, help=f&#39;{curr_doc_str}&#39;)
+                elif name  == &#39;verbose&#39;:
                     parser.add_argument(&#39;-v&#39;, &#39;--verbose&#39;,  action=&#39;store_true&#39;,
                                         help=&#39;Print status and results to terminal.&#39;,
+                                       default=parameter.default)
+                elif name in storeTrueList:
+                    parser.add_argument(f&#39;--{name}&#39;, action=&#39;store_true&#39;,
+                                        help=helpStr,
                                         default=parameter.default)
                 else:
                     helpStr = f&#39;Keyword argument {name} in function sprit.{hvsrFunctions[i].__name__}(). default={parameter.default}.\n\t{curr_doc_str}&#39;
-                    parser.add_argument(F&#39;--{name}&#39;, help=helpStr, default=parameter.default)
+                    parser.add_argument(f&#39;--{name}&#39;, help=helpStr, default=parameter.default)
 
     # Add more arguments/options as needed
     args = parser.parse_args()
