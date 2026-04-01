@@ -17,6 +17,8 @@
   "postCreateCommand": [
     "pip3 install --upgrade pip",
     "pip3 install uv",
-    "uv pip install sprit ipykernel --upgrade --system"    
+    "uv venv .venv",
+    "source .venv/bin/activate",
+    "uv pip install sprit ipykernel --upgrade"
   ]
 }
