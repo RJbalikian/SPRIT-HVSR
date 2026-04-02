@@ -133,6 +133,9 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
     plt.sca(ax)
 
     if verbose:
+        print("Sorting and Orienting data")
+
+    if verbose:
         print("Getting data batch for cross section plot")
     batchExt = None
     if isinstance(hvsr_data, (str, os.PathLike, pathlib.Path)):
@@ -140,11 +143,9 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
             batchExt = 'hvsr'
     hvDataBatch = sprit_hvsr.HVSRBatch(hvsr_data, batch_ext=batchExt)
 
-    if verbose:
-        print("Sorting and Orienting data")
-
     # Get likely orientation if not specified
     if orientation is None:
+        
         orientation = 'EW'
         xCoordList = []
         yCoordList = []
@@ -154,8 +155,8 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
 
         minX = min(xCoordList)
         minY = min(yCoordList)
-        maxX = min(xCoordList)
-        maxY = min(yCoordList)
+        maxX = max(xCoordList)
+        maxY = max(yCoordList)
 
         xRange = abs(maxX - minX)
         yRange = abs(maxY - minY)

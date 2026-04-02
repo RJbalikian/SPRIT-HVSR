@@ -1278,7 +1278,6 @@ def run(input_data=None, source='file',
     RuntimeError
         If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     """
-    
     if isinstance(input_data, (pd.DataFrame, obspy.Stream, obspy.Trace)):
         pass
     elif input_data is None or input_data == '' or str(input_data).lower().startswith('sample') or isinstance(input_data, numbers.Number):
@@ -1491,11 +1490,6 @@ def run(input_data=None, source='file',
     azimuth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(calculate_azimuth).parameters.keys())}
     azList = ['azimuth', 'single azimuth', 'single']
     
-    azCond1 = 'horizontal_method' in kwargs.keys() and str(kwargs['horizontal_method']) == '8'
-    azCond2 = 'horizontal_method' in kwargs.keys() and str(kwargs['horizontal_method']).lower() in azList
-    azCond3 = azimuth_calculation
-    azCond4 = len(azimuth_kwargs.keys()) > 0
-
     # Correct for shorthand angles
     angleDict = {'n':0,  'north':0,   'ne':45,  'northeast':45,
                 'e':90,  'east':90,   'se':135, 'southeast':135,
@@ -1503,6 +1497,8 @@ def run(input_data=None, source='file',
                 'w':270, 'west':270,  'nw':315, 'northwest':315}
 
     if 'azimuth_type' in azimuth_kwargs:
+        if str(azimuth_kwargs['azimuth_type']).lower() == 'none':
+            del azimuth_kwargs['azimuth_type']        
         if str(azimuth_kwargs['azimuth_type']).lower() in angleDict.keys():
             azimuth_kwargs['azimuth_unit'] = 'degrees'
             azimuth_kwargs['azimuth_angle'] = angleDict[azimuth_kwargs['azimuth_type']]
@@ -1513,13 +1509,20 @@ def run(input_data=None, source='file',
                 kwargs['plot_type'] = 'HVSR p ann COMP+ p ann SPEC p ann AZ p'
 
     if 'azimuth_angle' in azimuth_kwargs:
+        if str(azimuth_kwargs['azimuth_angle']).lower() == 'none':
+            del azimuth_kwargs['azimuth_angle']
         if str(azimuth_kwargs['azimuth_angle']).lower() in angleDict.keys():
             azimuth_kwargs['azimuth_unit'] = 'degrees'
             azimuth_kwargs['azimuth_type'] = 'single'
             azimuth_kwargs['azimuth_angle'] = angleDict[azimuth_kwargs['azimuth_angle']]
             kwargs['azimuth_angle'] = angleDict[kwargs['azimuth_angle']]
-
+        
     # Calculate whether to do azimuth calculation
+    azCond1 = 'horizontal_method' in kwargs.keys() and str(kwargs['horizontal_method']) == '8'
+    azCond2 = 'horizontal_method' in kwargs.keys() and str(kwargs['horizontal_method']).lower() in azList
+    azCond3 = azimuth_calculation
+    azCond4 = len(azimuth_kwargs.keys()) > 0
+
     if (azCond1 or azCond2 or azCond3 or azCond4) and (skip_steps is None or 'calculate_azimuth' not in skip_steps):
         azimuth_calculation = True
         if 'azimuth_type' not in kwargs.keys():
@@ -2123,7 +2126,10 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
                         if col in inspect.signature(fun).parameters:
                             currParam = dataReadInfoDF.loc[row_ind, col]
                             if pd.isna(currParam) or currParam == 'nan':
-                                if col in default_dict.keys():
+                                keepBlankList = ['azimuth_angle', 'azimuth_type']
+                                if col in keepBlankList:
+                                    pass
+                                elif col in default_dict.keys():
                                     param_dict[col] = default_dict[col]  # Get default value
                                     if verbose:
                                         if type(default_dict[col]) is str:

@@ -557,7 +557,6 @@ def _get_sample_data(sample_file='1', verbose=False):
     else:
         BASE_URL = "https://raw.githubusercontent.com/RJbalikian/SPRIT-HVSR/main/sprit/extra_sample_data"
         sampleDataURL = f"{BASE_URL}/{sampleMapDict[sampleKey]}"
-        print("SURL", sampleDataURL)
         try:
             resp = requests.get(sampleDataURL, timeout=30)
             resp.raise_for_status()
