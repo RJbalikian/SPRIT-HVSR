@@ -137,7 +137,7 @@ el.replaceWith(d);
 </dl></div>
 </dd>
 <dt id="sprit.sprit_plot.plot_cross_section"><code class="name flex">
-<span>def <span class="ident">plot_cross_section</span></span>(<span>hvsr_data,<br>title=None,<br>fig=None,<br>ax=None,<br>use_elevation=True,<br>show_feet=False,<br>primary_unit='m',<br>show_curves=True,<br>annotate_curves=False,<br>curve_alignment='peak',<br>grid_size='auto',<br>orientation='WE',<br>do_interpolation=True,<br>interpolation_type='cloughtocher',<br>interpolate_log_values=True,<br>surface_elevations=None,<br>show_peak_points=True,<br>smooth_bedrock_surface=False,<br>depth_limit=150,<br>minimum_elevation=None,<br>show_bedrock_surface=True,<br>return_data_batch=True,<br>return_df=False,<br>show_cross_section=True,<br>verbose=False,<br>**kwargs)</span>
+<span>def <span class="ident">plot_cross_section</span></span>(<span>hvsr_data,<br>title=None,<br>fig=None,<br>ax=None,<br>use_elevation=True,<br>show_feet=False,<br>primary_unit='m',<br>show_curves=True,<br>annotate_curves=False,<br>curve_alignment='peak',<br>grid_size='auto',<br>orientation=None,<br>do_interpolation=True,<br>interpolation_type='cloughtocher',<br>interpolate_log_values=True,<br>surface_elevations=None,<br>show_peak_points=True,<br>smooth_bedrock_surface=False,<br>depth_limit=150,<br>minimum_elevation=None,<br>show_bedrock_surface=True,<br>return_data_batch=True,<br>return_df=False,<br>show_cross_section=True,<br>verbose=False,<br>**kwargs)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -146,7 +146,7 @@ el.replaceWith(d);
 </summary>
 <pre><code class="python">def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=True, show_feet=False, primary_unit=&#39;m&#39;, 
                        show_curves=True, annotate_curves=False, curve_alignment=&#39;peak&#39;,
-                       grid_size=&#39;auto&#39;, orientation=&#39;WE&#39;,  do_interpolation=True,
+                       grid_size=&#39;auto&#39;, orientation=None,  do_interpolation=True,
                        interpolation_type=&#39;cloughtocher&#39;, interpolate_log_values=True,
                        surface_elevations=None, show_peak_points=True, smooth_bedrock_surface=False,
                        depth_limit=150, minimum_elevation=None, show_bedrock_surface=True,
@@ -248,11 +248,33 @@ el.replaceWith(d);
 
     if verbose:
         print(&#34;Sorting and Orienting data&#34;)
+
+    # Get likely orientation if not specified
+    if orientation is None:
+        orientation = &#39;EW&#39;
+        xCoordList = []
+        yCoordList = []
+        for sitename, sitedata in hvDataBatch.items():
+            xCoordList.append(sitedata.xcoord)
+            yCoordList.append(sitedata.ycoord)
+
+        minX = min(xCoordList)
+        minY = min(yCoordList)
+        maxX = min(xCoordList)
+        maxY = min(yCoordList)
+
+        xRange = abs(maxX - minX)
+        yRange = abs(maxY - minY)
+
+        if yRange &gt; xRange:
+            orientation = &#39;SN&#39;
+
     # Get orientation/order of data
     nsList = [&#39;ns&#39;, &#34;north-south&#34;, &#39;northsouth&#39;, &#39;south&#39;, &#39;s&#39;]
     snList = [&#39;sn&#39;, &#34;south-north&#34;, &#39;southnorth&#39;, &#39;north&#39;, &#39;n&#39;]
     weList = [&#39;we&#39;, &#34;west-east&#34;, &#39;westeast&#39;, &#39;east&#39;, &#39;e&#39;]
     ewList = [&#39;ew&#39;, &#34;east-west&#34;, &#39;eastwest&#39;, &#39;west&#39;, &#39;w&#39;]
+
 
     if str(orientation).lower() in nsList:
         ordercoord = &#39;latitude&#39;
@@ -577,7 +599,7 @@ el.replaceWith(d);
         profileEnd = &#39;N&#39;
     elif profile_angle &lt; -11.25 + 22.5 * 2:
         profileEnd = &#39;NNE&#39;
-        profileStart = &#39;SSW&#39;        
+        profileStart = &#39;SSW&#39;
     elif profile_angle &lt; -11.25 + 22.5 * 3:
         profileEnd = &#39;NE&#39;
         profileStart = &#39;SW&#39;
@@ -716,7 +738,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 </dl></div>
 </dd>
 <dt id="sprit.sprit_plot.plot_depth_curve"><code class="name flex">
-<span>def <span class="ident">plot_depth_curve</span></span>(<span>hvsr_results,<br>use_elevation=True,<br>show_feet=False,<br>normalize_curve=True,<br>depth_limit=250,<br>depth_model=None,<br>annotate=True,<br>depth_plot_export_path=None,<br>fig=None,<br>ax=None,<br>show_depth_curve=True)</span>
+<span>def <span class="ident">plot_depth_curve</span></span>(<span>hvsr_results,<br>use_elevation=True,<br>show_feet=False,<br>normalize_curve=True,<br>depth_limit=500,<br>depth_model=None,<br>annotate=True,<br>depth_plot_export_path=None,<br>fig=None,<br>ax=None,<br>show_depth_curve=True)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -724,7 +746,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normalize_curve=True, 
-                     depth_limit=250, depth_model=None,
+                     depth_limit=500, depth_model=None,
                      annotate=True, depth_plot_export_path=None,
                      fig=None, ax=None, show_depth_curve=True):
     &#34;&#34;&#34;Function to plot depth curves, given hvsr_results with depth_model specified.
@@ -790,8 +812,8 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
             xLims = [xBase-(0.15*curveRange), xCap+(0.15*curveRange)]
     
         if use_elevation:
-            yLims = [hvsr_results.x_elev_m[&#39;Z&#39;][0] - depth_limit,
-                hvsr_results.x_elev_m[&#39;Z&#39;][0]]
+            xtop = max(hvsr_results.x_elev_m[&#39;Z&#39;][0] - depth_limit, hvsr_results.x_elev_m[&#39;Z&#39;][-1])
+            yLims = [xtop, hvsr_results.x_elev_m[&#39;Z&#39;][0]]
             yVals = hvsr_results.x_elev_m[&#39;Z&#39;][:-1]
             ax.set_ylabel(&#39;Elevation [m]&#39;)
             bedrockVal = bedrockElev

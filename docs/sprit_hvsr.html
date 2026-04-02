@@ -133,7 +133,7 @@ el.replaceWith(d);
     
     if isinstance(batch_data, pd.DataFrame):
         sample_data=False
-    elif batch_type == &#39;sample&#39; or batch_data in sampleFileKeyMap.keys():
+    elif batch_type == &#39;sample&#39; or batch_data in sampleFileKeyMap.keys() or str(batch_data).startswith(&#39;sample&#39;):
         sample_data = True
         batch_type = &#39;table&#39;
     else:
@@ -145,7 +145,7 @@ el.replaceWith(d);
     data_dict = {}
     verboseStatement = []
 
-    if batch_type == &#39;table&#39;:
+    if str(batch_type).lower() == &#39;table&#39;:
         # If this is sample data, we need to create absolute paths to the filepaths
         if sample_data:
             dataReadInfoDF = pd.read_csv(sampleFileKeyMap[&#39;sample_batch&#39;])
@@ -236,6 +236,13 @@ el.replaceWith(d);
                                     param_dict[col] = None
                             else:
                                 param_dict[col] = dataReadInfoDF.loc[row_ind, col]
+                                if str(param_dict[col]).startswith((&#39;[&#39;, &#34;(&#34;)):
+                                    param_dict[col] = str(param_dict[col]).replace(&#39;[&#39;, &#39;&#39;).replace(&#39;]&#39;, &#39;&#39;)
+                                    param_dict[col] = param_dict[col].replace(&#39;(&#39;, &#39;&#39;).replace(&#39;)&#39;, &#39;&#39;)
+                                    param_dict[col] = param_dict[col].split(&#39;,&#39;)
+                                    if col in [&#39;hvsr_band&#39;, &#39;peak_freq_range&#39;]:
+                                        param_dict[col] = [float(val) for val in param_dict[col]]
+
                 param_dict_list.append(param_dict)
         else:
             if param_col not in dataReadInfoDF.columns:
@@ -299,6 +306,7 @@ el.replaceWith(d);
 
         # Run input_params()
         try:
+            
             ipverboseString = &#39;\tinput_params: &lt;No parameters specified&gt;, &#39;
             for arg, value in input_params_kwargs.items():
                 ipverboseString = ipverboseString.replace(&#39;&lt;No parameters specified&gt;, &#39;, &#39;&#39;)                    
@@ -326,7 +334,7 @@ el.replaceWith(d);
             fdverboseString = fdverboseString[:-2]
             fdverboseString = (fdverboseString[:96] + &#39;...&#39;) if len(fdverboseString) &gt; 99 else fdverboseString
                 
-            hvsrData = fetch_data(params=params, **fetch_data_kwargs)
+            hvsrData = fetch_data(input_parameters=params, **fetch_data_kwargs)
         except Exception as e:
             hvsrData = params
             hvsrData[&#39;processing_status&#39;][&#39;fetch_data_status&#39;] = False
@@ -2280,7 +2288,7 @@ If 'processing', saves the processing settings to their respective file. By defa
     elif isinstance(input_parameters[&#39;input_data&#39;], HVSRData):
         rawDataIN = input_parameters[&#39;input_data&#39;][&#39;stream&#39;]
     else:
-        if source == &#39;raw&#39;:
+        if str(source).lower() == &#39;raw&#39;:
             try:
                 if inst.lower() in trominoNameList:
                     input_parameters[&#39;instrument&#39;] = &#39;Tromino&#39;
@@ -2303,9 +2311,9 @@ If 'processing', saves the processing settings to their respective file. By defa
 
             except Exception as e:
                 raise RuntimeError(f&#34;Data not fetched for {input_parameters[&#39;site&#39;]}. Check input parameters or the data file.\n\n{e}&#34;)
-        elif source == &#39;stream&#39; or isinstance(input_parameters, (obspy.Stream, obspy.Trace)):
+        elif str(source).lower() == &#39;stream&#39; or isinstance(input_parameters, (obspy.Stream, obspy.Trace)):
             rawDataIN = input_parameters[&#39;input_data&#39;].copy()
-        elif source == &#39;dir&#39;:
+        elif str(source).lower() == &#39;dir&#39;:
             if inst.lower() in raspShakeInstNameList:
                 rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, input_parameters, verbose=verbose)
             else:
@@ -2321,7 +2329,7 @@ If 'processing', saves the processing settings to their respective file. By defa
                         curr_data.merge()
                         obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath&#39;s stem as the site name
                 return HVSRBatch(obspyFiles)
-        elif source == &#39;file&#39; and str(input_parameters[&#39;input_data&#39;]).lower() not in SAMPLE_LIST:
+        elif str(source).lower() == &#39;file&#39; and str(input_parameters[&#39;input_data&#39;]).lower() not in SAMPLE_LIST:
             # Read the file specified by input_data
             # Automatically read tromino data
             tromCond1 = str(inst).lower() in trominoNameList
@@ -2376,7 +2384,20 @@ If 'processing', saves the processing settings to their respective file. By defa
                     rawDataIN = sprit_utils._get_sample_data(dPath)
                 else:
                     rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(input_parameters[&#39;starttime&#39;]), endttime=obspy.core.UTCDateTime(input_parameters[&#39;endtime&#39;]), nearest_sample =True)
-        elif source == &#39;batch&#39; and str(input_parameters[&#39;input_data&#39;]).lower() not in SAMPLE_LIST:
+        elif str(source).lower() == &#39;url&#39;:
+            url = input_parameters[&#39;input_data&#39;]
+
+            if url in SAMPLE_LIST or str(input_parameters[&#39;input_data&#39;]).lower().startswith(&#39;sample&#39;):
+                rawDataIN = sprit_utils._get_sample_data(input_parameters[&#39;input_data&#39;])
+            else:   
+                try:
+                    response = requests.get(url, timeout=60)
+                    response.raise_for_status()  # Raise error for bad status codes
+                    rawDataIN = obspy.read(io.BytesIO(response.content))  # Read bytestream into obspy Stream
+                except requests.exceptions.RequestException as e:
+                    traceback.print_exc()
+                    raise RuntimeError(f&#34;Error downloading file from {url}\n\t{e}&#34;)
+        elif str(source).lower() == &#39;batch&#39; and str(input_parameters[&#39;input_data&#39;]).lower() not in SAMPLE_LIST:
             if verbose:
                 print(&#39;\nFetching data (fetch_data())&#39;)
             batch_data_read_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(batch_data_read).parameters.keys())}
@@ -2387,7 +2408,9 @@ If 'processing', saves the processing settings to their respective file. By defa
             if source==&#39;batch&#39; or input_parameters[&#39;input_data&#39;] == &#39;batch&#39;:
                 batch_input = sprit_utils._get_sample_data(&#39;batch&#39;, verbose=verbose)
                 input_parameters = batch_data_read(batch_data=batch_input, batch_type=&#39;sample&#39;, verbose=verbose)
+                print(&#34;HERRRRRRE&#34;, input_parameters, type(input_parameters))
                 input_parameters = HVSRBatch(input_parameters, df_as_read=input_parameters.input_df)
+                print(input_parameters, type(input_parameters))
                 return input_parameters
             elif source==&#39;dir&#39;:
                 input_parameters[&#39;input_data&#39;] = SAMPLE_DATA_DIR.joinpath(&#39;Batch_SampleData.csv&#39;)
@@ -4008,7 +4031,7 @@ If not specified, does not write file</dd>
             # Generates print report and saves to hvsr_results[&#34;Print_Report&#34;]
             hsvr_results = _generate_print_report(hvsr_results, 
                                 azimuth = azimuth, 
-                                show_print_report = True, verbose=verbose_print)
+                                show_print_report = show_print_report, verbose=verbose_print)
 
             if &#39;print&#39; in report_export_format:
                 if exp_path is None:
@@ -4704,7 +4727,9 @@ with key:value pairs for each parameter name:value in that function.</dd>
     if pathlib.Path(str(input_data)).exists():
         input_data = pathlib.Path(input_data).as_posix()
 
+
     peak_freq_range = [float(f) for f in peak_freq_range]
+    hvsr_band = [float(f) for f in hvsr_band]
     #Add key/values to input parameter dictionary for use throughout the rest of the package
     inputParamDict = {&#39;site&#39;:site, &#39;project&#39;:project, &#39;hvsr_id&#39;:hvsr_id, &#39;network&#39;:network, &#39;station&#39;:station,&#39;location&#39;:location, &#39;channels&#39;:channels,
                       &#39;net&#39;:network,&#39;sta&#39;:station, &#39;loc&#39;:location, &#39;cha&#39;:channels, &#39;instrument&#39;:instrument,
@@ -6791,12 +6816,14 @@ This is minimum number of points a point needs in its neighborhood to not be con
     
     if isinstance(input_data, (pd.DataFrame, obspy.Stream, obspy.Trace)):
         pass
-    elif input_data is None or input_data == &#39;&#39; or str(input_data).lower() == &#39;sample&#39;:
+    elif input_data is None or input_data == &#39;&#39; or str(input_data).lower().startswith(&#39;sample&#39;) or isinstance(input_data, numbers.Number):
         if str(input_data).lower() == &#39;sample&#39; and str(source).lower() == &#39;batch&#39;:
             pass
+        elif isinstance(input_data, numbers.Number):
+            input_data = f&#39;sample{input_data}&#39;
         else:
             input_data = &#39;sample&#39;
-    elif pathlib.Path(input_data).exists() and ():
+    elif pathlib.Path(str(input_data)).exists() and ():
         input_data = pathlib.Path(input_data).as_posix()
     
     orig_args = locals().copy()  # Get the initial arguments
@@ -6858,6 +6885,8 @@ This is minimum number of points a point needs in its neighborhood to not be con
             if str(source).lower() in dirList:
                 batch_data_read_kwargs[&#39;batch_type&#39;] = &#39;dir&#39;
             hvsrDataIN = batch_data_read(batch_data=input_data, verbose=verbose, **batch_data_read_kwargs)
+            if verbose:
+                print(&#34;Batch data read completed successfully&#34;)
         except Exception as e:
             raise RuntimeError(f&#39;Batch data read in was not successful:\n{e}&#39;)
     else:
@@ -6877,6 +6906,8 @@ This is minimum number of points a point needs in its neighborhood to not be con
                 updated_ip_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(input_params).parameters.keys())}
                 input_params_kwargs.update({k: v for k, v in updated_ip_defaults.items() if k not in input_params_kwargs}) # Don&#39;t overwrite specified kwargs
                 params = input_params(input_data=input_data, verbose=verbose, **input_params_kwargs)
+            else:
+                params=input_data
         except Exception as e:
             if hasattr(e, &#39;message&#39;):
                 errMsg = e.message
@@ -6906,6 +6937,8 @@ This is minimum number of points a point needs in its neighborhood to not be con
                 fetch_data_kwargs.update({k:v for k,v in updated_fd_defaults.items() if k not in fetch_data_kwargs})
 
                 hvsrDataIN = fetch_data(input_parameters=params, source=source, verbose=verbose, **fetch_data_kwargs)
+            else:
+                hvsrDataIN = params
         except Exception as e:
             # Even if batch, this is reading in data for all sites so we want to raise error, not just warn
             if hasattr(e, &#39;message&#39;):
@@ -6928,20 +6961,20 @@ This is minimum number of points a point needs in its neighborhood to not be con
             run_kwargs = {}  #orig_args.copy()  # Make a copy so we don&#39;t accidentally overwrite
             print(f&#39;\n\n**PROCESSING DATA FOR SITE {site_name.upper()}**\n&#39;)
             run_kwargs[&#39;input_data&#39;] = site_data
-            
             # Update run kwargs       
+            dont_update_these_args = [&#39;input_data&#39;, &#39;source&#39;, &#39;kwargs&#39;]
+
             # First, get processing_parameters per site
             for funname, fundict in site_data[&#39;processing_parameters&#39;].items():
                 for funk, funv in fundict.items():
-                    run_kwargs[funk] = funv
-                                                
+                    if funk not in dont_update_these_args:
+                        run_kwargs[funk] = funv
+                                                            
             # Overwrite per-site processing parameters with params passed  to sprit.run() as kwargs
             for paramname, paramval in kwargs.items():
                 if paramname != &#39;source&#39;:  # Don&#39;t update source for batch data
                     run_kwargs[paramname] = paramval
-
-            dont_update_these_args = [&#39;input_data&#39;, &#39;source&#39;, &#39;kwargs&#39;]
-
+            
             # Overwrite per-site processing parameters with sprit.run()
             run_args = orig_args.copy()
             for k, v in run_args.items():
@@ -6951,9 +6984,10 @@ This is minimum number of points a point needs in its neighborhood to not be con
                                    
             # RUN FOR THIS SITE
             try:
-                hvsrBatchDict[site_name] = run(**run_kwargs)
+                hvsrBatchDict[site_name] = run(**run_kwargs, skip_steps=[&#39;input_params&#39;, &#39;fetch_data&#39;])
                 run_kwargs_for_df.append(run_kwargs)
             except Exception as e:
+                print(&#34;SOMETHING HAPPENED&#34;)
                 hvsrBatchDict[site_name] = site_data
                 hvsrBatchDict[site_name][&#39;Error_Message&#39;] = sprit_utils._get_error_from_exception(e,
                                                                                                   print_error_message=False,

@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "sprit"
-version="3.11.2"
+version="3.12.0"
 description = "A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data"
 readme = "README.md"
 license = {text = "MIT"}
@@ -83,7 +83,7 @@ include = [
 #authors = [{name="Riley Balikian"}]
 #dynamic = ["readme"]
 #license = {file = "LICENSE"}
-#version="3.11.2"
+#version="3.12.0"
 #description = "A package for processing and analyzing HVSR (Horizontal to Vertical Spectral Ratio) data"
 #keywords = ["HVSR", "seismic", "horizontal to vertical spectral ratio", "obspy", 'geology', 'geophysics', 'geotechnical']
 #requires-python = ">=3.10"

@@ -881,11 +881,6 @@ el.replaceWith(d);
     resample_hv_curve = widgets.IntText(description=&#39;&#39;, tooltip=&#34;If resampling, how many frequency points/bins to use.&#34;,
                                         placeholder=512, value=512)
 
-    smooth_hv_curve_bool = widgets.Checkbox(value=True,description=&#39;Smooth&#39;,
-                                            tooltip=&#39;Whether to smooth the data (this does not account for logarithmic frequency width increases.)&#39;)
-    smooth_hv_curve = widgets.IntText(description=&#39;&#39;, tooltip=&#34;The window width to use for smoothing.&#34;,
-                                    placeholder=51, value=51)
-
     peak_selection_type = widgets.Dropdown(description=&#39;Peak Method&#39;, value=&#39;max&#39;,
                                         options=[(&#39;Highest Peak&#39;, &#39;max&#39;),
                                              (&#39;Best Scored&#39;,&#39;scored&#39;)],
@@ -898,9 +893,7 @@ el.replaceWith(d);
     process_hvsr_grid[1, 2] = freq_smooth_width_float
     process_hvsr_grid[2, 0] = resample_hv_curve_bool
     process_hvsr_grid[2, 1] = resample_hv_curve
-    process_hvsr_grid[3, 0] = smooth_hv_curve_bool
-    process_hvsr_grid[3, 1] = smooth_hv_curve
-    process_hvsr_grid[4, 0] = peak_selection_type
+    process_hvsr_grid[3, 0] = peak_selection_type
 
     # Remove outlier curves
     # outlier_method=&#39;prototype&#39;,
@@ -1375,18 +1368,12 @@ el.replaceWith(d);
         return roc_kwargs
 
     def get_process_hvsr_kwargs():
-        if smooth_hv_curve_bool.value:
-            smooth_value = smooth_hv_curve.value
-        else:
-            smooth_value = smooth_hv_curve_bool.value
-
         if resample_hv_curve_bool.value:
             resample_value = resample_hv_curve.value
         else:
             resample_value = resample_hv_curve_bool.value
 
         ph_kwargs={&#39;horizontal_method&#39;:h_combine_meth_dropdown.value,
-                    &#39;smooth&#39;:smooth_value,
                     &#39;freq_smooth&#39;:freq_smoothing_dropdown.value,
                     &#39;f_smooth_width&#39;:freq_smooth_width_float.value,
                     &#39;resample&#39;:resample_value,
@@ -1397,11 +1384,10 @@ el.replaceWith(d);
     def update_process_hvsr_call():
         #ph_kwargs = get_process_hvsr_kwargs()
         ph_text = f&#34;&#34;&#34;(hvsr_data=hvsr_data, 
-                        horizontal_method={h_combine_meth_dropdown.value}, 
-                        smooth={smooth_hv_curve_bool.value}, 
-                        freq_smooth={freq_smoothing_dropdown.value}, 
-                        f_smooth_width={freq_smooth_width_float.value}, 
-                        resample={resample_hv_curve_bool.value}, 
+                        horizontal_method={h_combine_meth_dropdown.value},
+                        freq_smooth={freq_smoothing_dropdown.value},
+                        f_smooth_width={freq_smooth_width_float.value},
+                        resample={resample_hv_curve_bool.value},
                         verbose={verbose_check.value})&#34;&#34;&#34;
         process_hvsr_call.value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + ph_text + &#39;&lt;/p&gt;&#39;
     #update_process_hvsr_call()
@@ -2492,7 +2478,6 @@ el.replaceWith(d);
 
     #freq_smooth_hbox = widgets.HBox([freq_smoothing_dropdown, freq_smooth_width_float])
     #resample_hbox = widgets.HBox([resample_hv_curve_bool, resample_hv_curve])
-    #smooth_hbox = widgets.HBox([smooth_hv_curve_bool, smooth_hv_curve])
     
     # PLOT SETTINGS SUBTAB
     hv_plot_label = widgets.Label(value=&#39;HVSR Plot&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;))
@@ -2819,7 +2804,6 @@ el.replaceWith(d);
              &#39;period_limits&#39;:hvsr_band_rangeSlide},
         &#39;process_hvsr&#39;: 
             {&#39;horizontal_method&#39;: h_combine_meth_dropdown,
-            &#39;smooth&#39;: smooth_hv_curve,
             &#39;freq_smooth&#39;: freq_smoothing_dropdown,
             &#39;f_smooth_width&#39;: freq_smooth_width_float,
             &#39;resample&#39;: resample_hv_curve,

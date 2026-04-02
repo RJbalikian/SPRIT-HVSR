@@ -140,7 +140,7 @@ el.replaceWith(d);
                 paramNamesList.append(name)
                 curr_doc_str = get_param_docstring(func=hvsrFunctions[i], param_name=name)
                 if name == &#39;input_data&#39;:
-                    parser.add_argument(&#34;-i&#34;, &#34;--input_data&#34;, default=&#39;sample&#39;, help=f&#39;{curr_doc_str}&#39;)
+                    parser.add_argument(name, default=&#39;sample&#39;, help=f&#39;{curr_doc_str}&#39;)
                 elif name  == &#39;verbose&#39;:
                     parser.add_argument(&#39;-v&#39;, &#39;--verbose&#39;,  action=&#39;store_true&#39;,
                                         help=&#39;Print status and results to terminal.&#39;,
@@ -186,6 +186,15 @@ el.replaceWith(d);
                 continue
 
         if not is_default:
+            print(arg_value)
+            if str(arg_value).replace(&#39;.&#39;, &#39;&#39;).replace(&#39;,&#39;,&#39;&#39;).isnumeric():
+                arg_value = float(arg_value)
+            elif isinstance(arg_value, (tuple, list)):
+                avList = []
+                for av in arg_value:
+                    if str(av).replace(&#39;.&#39;, &#39;&#39;).replace(&#39;,&#39;,&#39;&#39;).isnumeric():
+                        avList.append(float(av))
+                arg_value = avList
             kwargs[arg_name] = arg_value
 
     # Call the sprit.run function with the generated kwargs

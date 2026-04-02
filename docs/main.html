@@ -163,7 +163,7 @@ to derive a relation between the resonant frequency and the …</p></div>
     
     if isinstance(batch_data, pd.DataFrame):
         sample_data=False
-    elif batch_type == &#39;sample&#39; or batch_data in sampleFileKeyMap.keys():
+    elif batch_type == &#39;sample&#39; or batch_data in sampleFileKeyMap.keys() or str(batch_data).startswith(&#39;sample&#39;):
         sample_data = True
         batch_type = &#39;table&#39;
     else:
@@ -175,7 +175,7 @@ to derive a relation between the resonant frequency and the …</p></div>
     data_dict = {}
     verboseStatement = []
 
-    if batch_type == &#39;table&#39;:
+    if str(batch_type).lower() == &#39;table&#39;:
         # If this is sample data, we need to create absolute paths to the filepaths
         if sample_data:
             dataReadInfoDF = pd.read_csv(sampleFileKeyMap[&#39;sample_batch&#39;])
@@ -266,6 +266,13 @@ to derive a relation between the resonant frequency and the …</p></div>
                                     param_dict[col] = None
                             else:
                                 param_dict[col] = dataReadInfoDF.loc[row_ind, col]
+                                if str(param_dict[col]).startswith((&#39;[&#39;, &#34;(&#34;)):
+                                    param_dict[col] = str(param_dict[col]).replace(&#39;[&#39;, &#39;&#39;).replace(&#39;]&#39;, &#39;&#39;)
+                                    param_dict[col] = param_dict[col].replace(&#39;(&#39;, &#39;&#39;).replace(&#39;)&#39;, &#39;&#39;)
+                                    param_dict[col] = param_dict[col].split(&#39;,&#39;)
+                                    if col in [&#39;hvsr_band&#39;, &#39;peak_freq_range&#39;]:
+                                        param_dict[col] = [float(val) for val in param_dict[col]]
+
                 param_dict_list.append(param_dict)
         else:
             if param_col not in dataReadInfoDF.columns:
@@ -329,6 +336,7 @@ to derive a relation between the resonant frequency and the …</p></div>
 
         # Run input_params()
         try:
+            
             ipverboseString = &#39;\tinput_params: &lt;No parameters specified&gt;, &#39;
             for arg, value in input_params_kwargs.items():
                 ipverboseString = ipverboseString.replace(&#39;&lt;No parameters specified&gt;, &#39;, &#39;&#39;)                    
@@ -356,7 +364,7 @@ to derive a relation between the resonant frequency and the …</p></div>
             fdverboseString = fdverboseString[:-2]
             fdverboseString = (fdverboseString[:96] + &#39;...&#39;) if len(fdverboseString) &gt; 99 else fdverboseString
                 
-            hvsrData = fetch_data(params=params, **fetch_data_kwargs)
+            hvsrData = fetch_data(input_parameters=params, **fetch_data_kwargs)
         except Exception as e:
             hvsrData = params
             hvsrData[&#39;processing_status&#39;][&#39;fetch_data_status&#39;] = False
@@ -1034,10 +1042,10 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
 
         if hasattr(freq_input, &#39;hvsr_curve&#39;):
             pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
-            freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input,
-                                                     show_depth_curve=show_depth_curve,
-                                                     fig=fig, ax=ax,
-                                                     **pdc_kwargs)
+            pdc_kwargs[&#39;show_depth_curve&#39;] = show_depth_curve
+            pdc_kwargs[&#39;fig&#39;] = fig
+            pdc_kwargs[&#39;ax&#39;] = ax
+            freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input, **pdc_kwargs)
         else:
             surfElevVal = tableReport.loc[0, surface_elevation_col]
             brElevVal = tableReport.loc[0, bedrock_elevation_column]
@@ -1057,7 +1065,7 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
             ax.scatter(x=0, y=brElevVal, c=&#39;k&#39;, marker=&#39;^&#39;)
             
             spc = &#34; &#34;
-            ax.text(x=0, y=brElevVal, 
+            ax.text(x=0, y=brElevVal,
                     s=f&#34;  Depth: {brElevVal}m {spc}({tableReport.loc[0, freq_col]} Hz)&#34;,
                     va=&#39;top&#39;)
             
@@ -1076,9 +1084,7 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
                         s=f&#34;  Depth Model: ${aText:.2f} * f_0 ^{{{bText:0.3f}}}$&#34;)
             
         plt.sca(ax)
-        if show_depth_curve:
-            plt.show()
-        else:
+        if not show_depth_curve:
             plt.close()
         
         # Export as specified
@@ -2422,11 +2428,6 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
     resample_hv_curve = widgets.IntText(description=&#39;&#39;, tooltip=&#34;If resampling, how many frequency points/bins to use.&#34;,
                                         placeholder=512, value=512)
 
-    smooth_hv_curve_bool = widgets.Checkbox(value=True,description=&#39;Smooth&#39;,
-                                            tooltip=&#39;Whether to smooth the data (this does not account for logarithmic frequency width increases.)&#39;)
-    smooth_hv_curve = widgets.IntText(description=&#39;&#39;, tooltip=&#34;The window width to use for smoothing.&#34;,
-                                    placeholder=51, value=51)
-
     peak_selection_type = widgets.Dropdown(description=&#39;Peak Method&#39;, value=&#39;max&#39;,
                                         options=[(&#39;Highest Peak&#39;, &#39;max&#39;),
                                              (&#39;Best Scored&#39;,&#39;scored&#39;)],
@@ -2439,9 +2440,7 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
     process_hvsr_grid[1, 2] = freq_smooth_width_float
     process_hvsr_grid[2, 0] = resample_hv_curve_bool
     process_hvsr_grid[2, 1] = resample_hv_curve
-    process_hvsr_grid[3, 0] = smooth_hv_curve_bool
-    process_hvsr_grid[3, 1] = smooth_hv_curve
-    process_hvsr_grid[4, 0] = peak_selection_type
+    process_hvsr_grid[3, 0] = peak_selection_type
 
     # Remove outlier curves
     # outlier_method=&#39;prototype&#39;,
@@ -2916,18 +2915,12 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
         return roc_kwargs
 
     def get_process_hvsr_kwargs():
-        if smooth_hv_curve_bool.value:
-            smooth_value = smooth_hv_curve.value
-        else:
-            smooth_value = smooth_hv_curve_bool.value
-
         if resample_hv_curve_bool.value:
             resample_value = resample_hv_curve.value
         else:
             resample_value = resample_hv_curve_bool.value
 
         ph_kwargs={&#39;horizontal_method&#39;:h_combine_meth_dropdown.value,
-                    &#39;smooth&#39;:smooth_value,
                     &#39;freq_smooth&#39;:freq_smoothing_dropdown.value,
                     &#39;f_smooth_width&#39;:freq_smooth_width_float.value,
                     &#39;resample&#39;:resample_value,
@@ -2938,11 +2931,10 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
     def update_process_hvsr_call():
         #ph_kwargs = get_process_hvsr_kwargs()
         ph_text = f&#34;&#34;&#34;(hvsr_data=hvsr_data, 
-                        horizontal_method={h_combine_meth_dropdown.value}, 
-                        smooth={smooth_hv_curve_bool.value}, 
-                        freq_smooth={freq_smoothing_dropdown.value}, 
-                        f_smooth_width={freq_smooth_width_float.value}, 
-                        resample={resample_hv_curve_bool.value}, 
+                        horizontal_method={h_combine_meth_dropdown.value},
+                        freq_smooth={freq_smoothing_dropdown.value},
+                        f_smooth_width={freq_smooth_width_float.value},
+                        resample={resample_hv_curve_bool.value},
                         verbose={verbose_check.value})&#34;&#34;&#34;
         process_hvsr_call.value=&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39; + ph_text + &#39;&lt;/p&gt;&#39;
     #update_process_hvsr_call()
@@ -4033,7 +4025,6 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
 
     #freq_smooth_hbox = widgets.HBox([freq_smoothing_dropdown, freq_smooth_width_float])
     #resample_hbox = widgets.HBox([resample_hv_curve_bool, resample_hv_curve])
-    #smooth_hbox = widgets.HBox([smooth_hv_curve_bool, smooth_hv_curve])
     
     # PLOT SETTINGS SUBTAB
     hv_plot_label = widgets.Label(value=&#39;HVSR Plot&#39;, layout=widgets.Layout(height=&#39;auto&#39;, width=&#39;auto&#39;, justify_content=&#39;center&#39;))
@@ -4360,7 +4351,6 @@ If a numeric value is used (e.g., int or float), this should be a frequency valu
              &#39;period_limits&#39;:hvsr_band_rangeSlide},
         &#39;process_hvsr&#39;: 
             {&#39;horizontal_method&#39;: h_combine_meth_dropdown,
-            &#39;smooth&#39;: smooth_hv_curve,
             &#39;freq_smooth&#39;: freq_smoothing_dropdown,
             &#39;f_smooth_width&#39;: freq_smooth_width_float,
             &#39;resample&#39;: resample_hv_curve,
@@ -5784,7 +5774,7 @@ If 'processing', saves the processing settings to their respective file. By defa
     elif isinstance(input_parameters[&#39;input_data&#39;], HVSRData):
         rawDataIN = input_parameters[&#39;input_data&#39;][&#39;stream&#39;]
     else:
-        if source == &#39;raw&#39;:
+        if str(source).lower() == &#39;raw&#39;:
             try:
                 if inst.lower() in trominoNameList:
                     input_parameters[&#39;instrument&#39;] = &#39;Tromino&#39;
@@ -5807,9 +5797,9 @@ If 'processing', saves the processing settings to their respective file. By defa
 
             except Exception as e:
                 raise RuntimeError(f&#34;Data not fetched for {input_parameters[&#39;site&#39;]}. Check input parameters or the data file.\n\n{e}&#34;)
-        elif source == &#39;stream&#39; or isinstance(input_parameters, (obspy.Stream, obspy.Trace)):
+        elif str(source).lower() == &#39;stream&#39; or isinstance(input_parameters, (obspy.Stream, obspy.Trace)):
             rawDataIN = input_parameters[&#39;input_data&#39;].copy()
-        elif source == &#39;dir&#39;:
+        elif str(source).lower() == &#39;dir&#39;:
             if inst.lower() in raspShakeInstNameList:
                 rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, input_parameters, verbose=verbose)
             else:
@@ -5825,7 +5815,7 @@ If 'processing', saves the processing settings to their respective file. By defa
                         curr_data.merge()
                         obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath&#39;s stem as the site name
                 return HVSRBatch(obspyFiles)
-        elif source == &#39;file&#39; and str(input_parameters[&#39;input_data&#39;]).lower() not in SAMPLE_LIST:
+        elif str(source).lower() == &#39;file&#39; and str(input_parameters[&#39;input_data&#39;]).lower() not in SAMPLE_LIST:
             # Read the file specified by input_data
             # Automatically read tromino data
             tromCond1 = str(inst).lower() in trominoNameList
@@ -5880,7 +5870,20 @@ If 'processing', saves the processing settings to their respective file. By defa
                     rawDataIN = sprit_utils._get_sample_data(dPath)
                 else:
                     rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(input_parameters[&#39;starttime&#39;]), endttime=obspy.core.UTCDateTime(input_parameters[&#39;endtime&#39;]), nearest_sample =True)
-        elif source == &#39;batch&#39; and str(input_parameters[&#39;input_data&#39;]).lower() not in SAMPLE_LIST:
+        elif str(source).lower() == &#39;url&#39;:
+            url = input_parameters[&#39;input_data&#39;]
+
+            if url in SAMPLE_LIST or str(input_parameters[&#39;input_data&#39;]).lower().startswith(&#39;sample&#39;):
+                rawDataIN = sprit_utils._get_sample_data(input_parameters[&#39;input_data&#39;])
+            else:   
+                try:
+                    response = requests.get(url, timeout=60)
+                    response.raise_for_status()  # Raise error for bad status codes
+                    rawDataIN = obspy.read(io.BytesIO(response.content))  # Read bytestream into obspy Stream
+                except requests.exceptions.RequestException as e:
+                    traceback.print_exc()
+                    raise RuntimeError(f&#34;Error downloading file from {url}\n\t{e}&#34;)
+        elif str(source).lower() == &#39;batch&#39; and str(input_parameters[&#39;input_data&#39;]).lower() not in SAMPLE_LIST:
             if verbose:
                 print(&#39;\nFetching data (fetch_data())&#39;)
             batch_data_read_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(batch_data_read).parameters.keys())}
@@ -5891,7 +5894,9 @@ If 'processing', saves the processing settings to their respective file. By defa
             if source==&#39;batch&#39; or input_parameters[&#39;input_data&#39;] == &#39;batch&#39;:
                 batch_input = sprit_utils._get_sample_data(&#39;batch&#39;, verbose=verbose)
                 input_parameters = batch_data_read(batch_data=batch_input, batch_type=&#39;sample&#39;, verbose=verbose)
+                print(&#34;HERRRRRRE&#34;, input_parameters, type(input_parameters))
                 input_parameters = HVSRBatch(input_parameters, df_as_read=input_parameters.input_df)
+                print(input_parameters, type(input_parameters))
                 return input_parameters
             elif source==&#39;dir&#39;:
                 input_parameters[&#39;input_data&#39;] = SAMPLE_DATA_DIR.joinpath(&#39;Batch_SampleData.csv&#39;)
@@ -7488,7 +7493,7 @@ If not specified, does not write file</dd>
             # Generates print report and saves to hvsr_results[&#34;Print_Report&#34;]
             hsvr_results = _generate_print_report(hvsr_results, 
                                 azimuth = azimuth, 
-                                show_print_report = True, verbose=verbose_print)
+                                show_print_report = show_print_report, verbose=verbose_print)
 
             if &#39;print&#39; in report_export_format:
                 if exp_path is None:
@@ -8184,7 +8189,9 @@ with key:value pairs for each parameter name:value in that function.</dd>
     if pathlib.Path(str(input_data)).exists():
         input_data = pathlib.Path(input_data).as_posix()
 
+
     peak_freq_range = [float(f) for f in peak_freq_range]
+    hvsr_band = [float(f) for f in hvsr_band]
     #Add key/values to input parameter dictionary for use throughout the rest of the package
     inputParamDict = {&#39;site&#39;:site, &#39;project&#39;:project, &#39;hvsr_id&#39;:hvsr_id, &#39;network&#39;:network, &#39;station&#39;:station,&#39;location&#39;:location, &#39;channels&#39;:channels,
                       &#39;net&#39;:network,&#39;sta&#39;:station, &#39;loc&#39;:location, &#39;cha&#39;:channels, &#39;instrument&#39;:instrument,
@@ -8614,7 +8621,7 @@ It takes a lot of time to process the data, but interpolation for vizualization 
 </dl></div>
 </dd>
 <dt id="sprit.plot_cross_section"><code class="name flex">
-<span>def <span class="ident">plot_cross_section</span></span>(<span>hvsr_data,<br>title=None,<br>fig=None,<br>ax=None,<br>use_elevation=True,<br>show_feet=False,<br>primary_unit='m',<br>show_curves=True,<br>annotate_curves=False,<br>curve_alignment='peak',<br>grid_size='auto',<br>orientation='WE',<br>do_interpolation=True,<br>interpolation_type='cloughtocher',<br>interpolate_log_values=True,<br>surface_elevations=None,<br>show_peak_points=True,<br>smooth_bedrock_surface=False,<br>depth_limit=150,<br>minimum_elevation=None,<br>show_bedrock_surface=True,<br>return_data_batch=True,<br>return_df=False,<br>show_cross_section=True,<br>verbose=False,<br>**kwargs)</span>
+<span>def <span class="ident">plot_cross_section</span></span>(<span>hvsr_data,<br>title=None,<br>fig=None,<br>ax=None,<br>use_elevation=True,<br>show_feet=False,<br>primary_unit='m',<br>show_curves=True,<br>annotate_curves=False,<br>curve_alignment='peak',<br>grid_size='auto',<br>orientation=None,<br>do_interpolation=True,<br>interpolation_type='cloughtocher',<br>interpolate_log_values=True,<br>surface_elevations=None,<br>show_peak_points=True,<br>smooth_bedrock_surface=False,<br>depth_limit=150,<br>minimum_elevation=None,<br>show_bedrock_surface=True,<br>return_data_batch=True,<br>return_df=False,<br>show_cross_section=True,<br>verbose=False,<br>**kwargs)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -8623,7 +8630,7 @@ It takes a lot of time to process the data, but interpolation for vizualization 
 </summary>
 <pre><code class="python">def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=True, show_feet=False, primary_unit=&#39;m&#39;, 
                        show_curves=True, annotate_curves=False, curve_alignment=&#39;peak&#39;,
-                       grid_size=&#39;auto&#39;, orientation=&#39;WE&#39;,  do_interpolation=True,
+                       grid_size=&#39;auto&#39;, orientation=None,  do_interpolation=True,
                        interpolation_type=&#39;cloughtocher&#39;, interpolate_log_values=True,
                        surface_elevations=None, show_peak_points=True, smooth_bedrock_surface=False,
                        depth_limit=150, minimum_elevation=None, show_bedrock_surface=True,
@@ -8725,11 +8732,33 @@ It takes a lot of time to process the data, but interpolation for vizualization 
 
     if verbose:
         print(&#34;Sorting and Orienting data&#34;)
+
+    # Get likely orientation if not specified
+    if orientation is None:
+        orientation = &#39;EW&#39;
+        xCoordList = []
+        yCoordList = []
+        for sitename, sitedata in hvDataBatch.items():
+            xCoordList.append(sitedata.xcoord)
+            yCoordList.append(sitedata.ycoord)
+
+        minX = min(xCoordList)
+        minY = min(yCoordList)
+        maxX = min(xCoordList)
+        maxY = min(yCoordList)
+
+        xRange = abs(maxX - minX)
+        yRange = abs(maxY - minY)
+
+        if yRange &gt; xRange:
+            orientation = &#39;SN&#39;
+
     # Get orientation/order of data
     nsList = [&#39;ns&#39;, &#34;north-south&#34;, &#39;northsouth&#39;, &#39;south&#39;, &#39;s&#39;]
     snList = [&#39;sn&#39;, &#34;south-north&#34;, &#39;southnorth&#39;, &#39;north&#39;, &#39;n&#39;]
     weList = [&#39;we&#39;, &#34;west-east&#34;, &#39;westeast&#39;, &#39;east&#39;, &#39;e&#39;]
     ewList = [&#39;ew&#39;, &#34;east-west&#34;, &#39;eastwest&#39;, &#39;west&#39;, &#39;w&#39;]
+
 
     if str(orientation).lower() in nsList:
         ordercoord = &#39;latitude&#39;
@@ -9054,7 +9083,7 @@ It takes a lot of time to process the data, but interpolation for vizualization 
         profileEnd = &#39;N&#39;
     elif profile_angle &lt; -11.25 + 22.5 * 2:
         profileEnd = &#39;NNE&#39;
-        profileStart = &#39;SSW&#39;        
+        profileStart = &#39;SSW&#39;
     elif profile_angle &lt; -11.25 + 22.5 * 3:
         profileEnd = &#39;NE&#39;
         profileStart = &#39;SW&#39;
@@ -9193,7 +9222,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 </dl></div>
 </dd>
 <dt id="sprit.plot_depth_curve"><code class="name flex">
-<span>def <span class="ident">plot_depth_curve</span></span>(<span>hvsr_results,<br>use_elevation=True,<br>show_feet=False,<br>normalize_curve=True,<br>depth_limit=250,<br>depth_model=None,<br>annotate=True,<br>depth_plot_export_path=None,<br>fig=None,<br>ax=None,<br>show_depth_curve=True)</span>
+<span>def <span class="ident">plot_depth_curve</span></span>(<span>hvsr_results,<br>use_elevation=True,<br>show_feet=False,<br>normalize_curve=True,<br>depth_limit=500,<br>depth_model=None,<br>annotate=True,<br>depth_plot_export_path=None,<br>fig=None,<br>ax=None,<br>show_depth_curve=True)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -9201,7 +9230,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normalize_curve=True, 
-                     depth_limit=250, depth_model=None,
+                     depth_limit=500, depth_model=None,
                      annotate=True, depth_plot_export_path=None,
                      fig=None, ax=None, show_depth_curve=True):
     &#34;&#34;&#34;Function to plot depth curves, given hvsr_results with depth_model specified.
@@ -9267,8 +9296,8 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
             xLims = [xBase-(0.15*curveRange), xCap+(0.15*curveRange)]
     
         if use_elevation:
-            yLims = [hvsr_results.x_elev_m[&#39;Z&#39;][0] - depth_limit,
-                hvsr_results.x_elev_m[&#39;Z&#39;][0]]
+            xtop = max(hvsr_results.x_elev_m[&#39;Z&#39;][0] - depth_limit, hvsr_results.x_elev_m[&#39;Z&#39;][-1])
+            yLims = [xtop, hvsr_results.x_elev_m[&#39;Z&#39;][0]]
             yVals = hvsr_results.x_elev_m[&#39;Z&#39;][:-1]
             ax.set_ylabel(&#39;Elevation [m]&#39;)
             bedrockVal = bedrockElev
@@ -11865,12 +11894,14 @@ This is minimum number of points a point needs in its neighborhood to not be con
     
     if isinstance(input_data, (pd.DataFrame, obspy.Stream, obspy.Trace)):
         pass
-    elif input_data is None or input_data == &#39;&#39; or str(input_data).lower() == &#39;sample&#39;:
+    elif input_data is None or input_data == &#39;&#39; or str(input_data).lower().startswith(&#39;sample&#39;) or isinstance(input_data, numbers.Number):
         if str(input_data).lower() == &#39;sample&#39; and str(source).lower() == &#39;batch&#39;:
             pass
+        elif isinstance(input_data, numbers.Number):
+            input_data = f&#39;sample{input_data}&#39;
         else:
             input_data = &#39;sample&#39;
-    elif pathlib.Path(input_data).exists() and ():
+    elif pathlib.Path(str(input_data)).exists() and ():
         input_data = pathlib.Path(input_data).as_posix()
     
     orig_args = locals().copy()  # Get the initial arguments
@@ -11932,6 +11963,8 @@ This is minimum number of points a point needs in its neighborhood to not be con
             if str(source).lower() in dirList:
                 batch_data_read_kwargs[&#39;batch_type&#39;] = &#39;dir&#39;
             hvsrDataIN = batch_data_read(batch_data=input_data, verbose=verbose, **batch_data_read_kwargs)
+            if verbose:
+                print(&#34;Batch data read completed successfully&#34;)
         except Exception as e:
             raise RuntimeError(f&#39;Batch data read in was not successful:\n{e}&#39;)
     else:
@@ -11951,6 +11984,8 @@ This is minimum number of points a point needs in its neighborhood to not be con
                 updated_ip_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(input_params).parameters.keys())}
                 input_params_kwargs.update({k: v for k, v in updated_ip_defaults.items() if k not in input_params_kwargs}) # Don&#39;t overwrite specified kwargs
                 params = input_params(input_data=input_data, verbose=verbose, **input_params_kwargs)
+            else:
+                params=input_data
         except Exception as e:
             if hasattr(e, &#39;message&#39;):
                 errMsg = e.message
@@ -11980,6 +12015,8 @@ This is minimum number of points a point needs in its neighborhood to not be con
                 fetch_data_kwargs.update({k:v for k,v in updated_fd_defaults.items() if k not in fetch_data_kwargs})
 
                 hvsrDataIN = fetch_data(input_parameters=params, source=source, verbose=verbose, **fetch_data_kwargs)
+            else:
+                hvsrDataIN = params
         except Exception as e:
             # Even if batch, this is reading in data for all sites so we want to raise error, not just warn
             if hasattr(e, &#39;message&#39;):
@@ -12002,20 +12039,20 @@ This is minimum number of points a point needs in its neighborhood to not be con
             run_kwargs = {}  #orig_args.copy()  # Make a copy so we don&#39;t accidentally overwrite
             print(f&#39;\n\n**PROCESSING DATA FOR SITE {site_name.upper()}**\n&#39;)
             run_kwargs[&#39;input_data&#39;] = site_data
-            
             # Update run kwargs       
+            dont_update_these_args = [&#39;input_data&#39;, &#39;source&#39;, &#39;kwargs&#39;]
+
             # First, get processing_parameters per site
             for funname, fundict in site_data[&#39;processing_parameters&#39;].items():
                 for funk, funv in fundict.items():
-                    run_kwargs[funk] = funv
-                                                
+                    if funk not in dont_update_these_args:
+                        run_kwargs[funk] = funv
+                                                            
             # Overwrite per-site processing parameters with params passed  to sprit.run() as kwargs
             for paramname, paramval in kwargs.items():
                 if paramname != &#39;source&#39;:  # Don&#39;t update source for batch data
                     run_kwargs[paramname] = paramval
-
-            dont_update_these_args = [&#39;input_data&#39;, &#39;source&#39;, &#39;kwargs&#39;]
-
+            
             # Overwrite per-site processing parameters with sprit.run()
             run_args = orig_args.copy()
             for k, v in run_args.items():
@@ -12025,9 +12062,10 @@ This is minimum number of points a point needs in its neighborhood to not be con
                                    
             # RUN FOR THIS SITE
             try:
-                hvsrBatchDict[site_name] = run(**run_kwargs)
+                hvsrBatchDict[site_name] = run(**run_kwargs, skip_steps=[&#39;input_params&#39;, &#39;fetch_data&#39;])
                 run_kwargs_for_df.append(run_kwargs)
             except Exception as e:
+                print(&#34;SOMETHING HAPPENED&#34;)
                 hvsrBatchDict[site_name] = site_data
                 hvsrBatchDict[site_name][&#39;Error_Message&#39;] = sprit_utils._get_error_from_exception(e,
                                                                                                   print_error_message=False,

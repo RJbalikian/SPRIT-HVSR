@@ -372,10 +372,10 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
 
         if hasattr(freq_input, &#39;hvsr_curve&#39;):
             pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
-            freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input,
-                                                     show_depth_curve=show_depth_curve,
-                                                     fig=fig, ax=ax,
-                                                     **pdc_kwargs)
+            pdc_kwargs[&#39;show_depth_curve&#39;] = show_depth_curve
+            pdc_kwargs[&#39;fig&#39;] = fig
+            pdc_kwargs[&#39;ax&#39;] = ax
+            freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input, **pdc_kwargs)
         else:
             surfElevVal = tableReport.loc[0, surface_elevation_col]
             brElevVal = tableReport.loc[0, bedrock_elevation_column]
@@ -395,7 +395,7 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
             ax.scatter(x=0, y=brElevVal, c=&#39;k&#39;, marker=&#39;^&#39;)
             
             spc = &#34; &#34;
-            ax.text(x=0, y=brElevVal, 
+            ax.text(x=0, y=brElevVal,
                     s=f&#34;  Depth: {brElevVal}m {spc}({tableReport.loc[0, freq_col]} Hz)&#34;,
                     va=&#39;top&#39;)
             
@@ -414,9 +414,7 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
                         s=f&#34;  Depth Model: ${aText:.2f} * f_0 ^{{{bText:0.3f}}}$&#34;)
             
         plt.sca(ax)
-        if show_depth_curve:
-            plt.show()
-        else:
+        if not show_depth_curve:
             plt.close()
         
         # Export as specified
