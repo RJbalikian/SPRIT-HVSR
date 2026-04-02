@@ -520,7 +520,7 @@ def _get_sample_data(sample_file='1', verbose=False):
             print(f'{sample_file} is not an acceptable sample file. Specify any number 1-14, or use "batch" for input_data')
         sampleKey = '1'
 
-    print(f" PROCESSING SAMPLE DATASET {sampleKey.zfill(2)} ".center(99, '*'))
+    print(f" READING SAMPLE DATASET {sampleKey.zfill(2)} ".center(99, '*'))
     onlineSampleKeyList = ['3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']
     if sampleKey in onlineSampleKeyList:
         print('*'+"**Attempting to access online sample data. For local sample data, use dataset 1 or 2**".center(97)+'*')    

@@ -2134,6 +2134,13 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
                                     param_dict[col] = None
                             else:
                                 param_dict[col] = dataReadInfoDF.loc[row_ind, col]
+                                if str(param_dict[col]).startswith(('[', "(")):
+                                    param_dict[col] = str(param_dict[col]).replace('[', '').replace(']', '')
+                                    param_dict[col] = param_dict[col].replace('(', '').replace(')', '')
+                                    param_dict[col] = param_dict[col].split(',')
+                                    if col in ['hvsr_band', 'peak_freq_range']:
+                                        param_dict[col] = [float(val) for val in param_dict[col]]
+
                 param_dict_list.append(param_dict)
         else:
             if param_col not in dataReadInfoDF.columns:

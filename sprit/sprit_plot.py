@@ -40,7 +40,7 @@ except:
 # Plot cross section
 def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=True, show_feet=False, primary_unit='m', 
                        show_curves=True, annotate_curves=False, curve_alignment='peak',
-                       grid_size='auto', orientation='WE',  do_interpolation=True,
+                       grid_size='auto', orientation=None,  do_interpolation=True,
                        interpolation_type='cloughtocher', interpolate_log_values=True,
                        surface_elevations=None, show_peak_points=True, smooth_bedrock_surface=False,
                        depth_limit=150, minimum_elevation=None, show_bedrock_surface=True,
@@ -142,11 +142,33 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
 
     if verbose:
         print("Sorting and Orienting data")
+
+    # Get likely orientation if not specified
+    if orientation is None:
+        orientation = 'EW'
+        xCoordList = []
+        yCoordList = []
+        for sitename, sitedata in hvDataBatch.items():
+            xCoordList.append(sitedata.xcoord)
+            yCoordList.append(sitedata.ycoord)
+
+        minX = min(xCoordList)
+        minY = min(yCoordList)
+        maxX = min(xCoordList)
+        maxY = min(yCoordList)
+
+        xRange = abs(maxX - minX)
+        yRange = abs(maxY - minY)
+
+        if yRange > xRange:
+            orientation = 'SN'
+
     # Get orientation/order of data
     nsList = ['ns', "north-south", 'northsouth', 'south', 's']
     snList = ['sn', "south-north", 'southnorth', 'north', 'n']
     weList = ['we', "west-east", 'westeast', 'east', 'e']
     ewList = ['ew', "east-west", 'eastwest', 'west', 'w']
+
 
     if str(orientation).lower() in nsList:
         ordercoord = 'latitude'
@@ -471,7 +493,7 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
         profileEnd = 'N'
     elif profile_angle < -11.25 + 22.5 * 2:
         profileEnd = 'NNE'
-        profileStart = 'SSW'        
+        profileStart = 'SSW'
     elif profile_angle < -11.25 + 22.5 * 3:
         profileEnd = 'NE'
         profileStart = 'SW'
