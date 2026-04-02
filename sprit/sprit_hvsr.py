@@ -2211,7 +2211,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
             fdverboseString = fdverboseString[:-2]
             fdverboseString = (fdverboseString[:96] + '...') if len(fdverboseString) > 99 else fdverboseString
                 
-            hvsrData = fetch_data(params=params, **fetch_data_kwargs)
+            hvsrData = fetch_data(input_parameters=params, **fetch_data_kwargs)
         except Exception as e:
             hvsrData = params
             hvsrData['processing_status']['fetch_data_status'] = False

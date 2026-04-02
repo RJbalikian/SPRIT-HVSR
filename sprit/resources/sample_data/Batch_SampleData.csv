@@ -1,7 +1,7 @@
-input_data,site,source,acq_date,starttime,endtime,tzone,xcoord,ycoord,elevation,input_crs
-SampleData01, EGG01_RAC84, file, 2023-02-15,17:04,17:34,UTC, -87.529,41.691,178.06,
-SampleData02,EGG06, file, 2023-02-15,15:35,15:55,US/Central, -87.52998,41.68078,178.56,
-SampleData03, EGG02, file, 2023-02-15,17:00,17:20, UTC, -87.52852,41.68798,178.16,
-SampleData04, EGG03, file, 2023-02-15,17:39,17:59, UTC, -87.5293,41.684156,179.01,
-SampleData05, EGG05, file, 2023-02-15,19:27,19:47, UTC, -87.53503,41.67629,178.09,
-SampleData06, EGG04, file, 2023-02-15,18:49,19:09, UTC, -87.52956,41.675,178.08,
+input_data,site,source,acq_date,starttime,endtime,tzone,xcoord,ycoord,elevation
+SampleData01,SampleData01,file,2023-02-15,17:04,17:34,UTC,-87.529,41.691,178.06
+SampleData02,SampleData02,file,2023-02-15,15:35,15:55,US/Central,-87.52998,41.68078,178.56
+SampleData03,EGG02,file,2023-02-15,17:00,17:20,UTC,-87.52852,41.68798,178.16
+SampleData04,EGG03,file,2023-02-15,17:39,17:59,UTC,-87.5293,41.684156,179.01
+SampleData05,EGG05,file,2023-02-15,19:27,19:47,UTC,-87.53503,41.67629,178.09
+SampleData06,EGG04,file,2023-02-15,18:49,19:09,UTC,-87.52956,41.675,178.08
