@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_plot &mdash; sprit 3.12.1 documentation</title>
+  <title>sprit.sprit_plot &mdash; sprit 3.12.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=bf028e07"></script>
+      <script src="../../_static/documentation_options.js?v=88fa046d"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -71,8 +71,11 @@
   <h1>Source code for sprit.sprit_plot</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numbers</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">webbrowser</span>
@@ -116,7 +119,7 @@
                        <span class="n">grid_size</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="n">do_interpolation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                        <span class="n">interpolation_type</span><span class="o">=</span><span class="s1">&#39;cloughtocher&#39;</span><span class="p">,</span> <span class="n">interpolate_log_values</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                        <span class="n">surface_elevations</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_peak_points</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">smooth_bedrock_surface</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                       <span class="n">depth_limit</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">minimum_elevation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_bedrock_surface</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                       <span class="n">depth_limit</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">minimum_elevation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_bedrock_surface</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                        <span class="n">return_data_batch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_df</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_cross_section</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                        <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to plot a cross section given an HVSRBatch or similar object</span>
@@ -205,6 +208,21 @@
         <span class="n">ax</span> <span class="o">=</span> <span class="n">ax</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">sca</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
 
+    <span class="k">if</span> <span class="n">hvsr_data</span><span class="o">==</span><span class="s1">&#39;sample&#39;</span><span class="p">:</span>
+        <span class="n">sampleFileNames</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;SampleJSON_RUS11.json&#39;</span><span class="p">,</span><span class="s1">&#39;SampleJSON_RUS13.json&#39;</span><span class="p">,</span><span class="s1">&#39;SampleJSON_RUS14.json&#39;</span><span class="p">,</span><span class="s1">&#39;SampleJSON_RUS15.json&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;SampleJSON_RUS16.json&#39;</span><span class="p">,</span><span class="s1">&#39;SampleJSON_RUS17.json&#39;</span><span class="p">,</span><span class="s1">&#39;SampleJSON_RUS18.json&#39;</span><span class="p">,</span><span class="s1">&#39;SampleJSON_RUS19.json&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;SampleJSON_RUS20.json&#39;</span><span class="p">,</span><span class="s1">&#39;SampleJSON_RUS21.json&#39;</span><span class="p">,</span><span class="s1">&#39;SampleJSON_RUS22.json&#39;</span><span class="p">,</span><span class="s1">&#39;SampleJSON_RUS23.json&#39;</span><span class="p">]</span>
+        <span class="n">BASE_URL</span> <span class="o">=</span> <span class="s2">&quot;https://raw.githubusercontent.com/RJbalikian/SPRIT-HVSR/main/sprit/extra_sample_data&quot;</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Reading 12 sample HVSR datasets&quot;</span><span class="p">)</span>
+        <span class="n">hvList</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sampleFileNames</span><span class="p">):</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">BASE_URL</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+            <span class="n">hvList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)))</span>
+        <span class="n">hvsr_data</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">HVSRBatch</span><span class="p">(</span><span class="n">hvList</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sorting and Orienting data&quot;</span><span class="p">)</span>
 
@@ -219,7 +237,7 @@
     <span class="c1"># Get likely orientation if not specified</span>
     <span class="k">if</span> <span class="n">orientation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         
-        <span class="n">orientation</span> <span class="o">=</span> <span class="s1">&#39;EW&#39;</span>
+        <span class="n">orientation</span> <span class="o">=</span> <span class="s1">&#39;WE&#39;</span>
         <span class="n">xCoordList</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">yCoordList</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">sitename</span><span class="p">,</span> <span class="n">sitedata</span> <span class="ow">in</span> <span class="n">hvDataBatch</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -424,11 +442,11 @@
 
         <span class="c1"># Set defaults for cmap and shading (if not overriden in kwargs)</span>
         <span class="k">if</span> <span class="s1">&#39;cmap&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pcolormeshKwargs</span><span class="p">:</span>
-            <span class="n">pcolormeshKwargs</span><span class="p">[</span><span class="s1">&#39;cmap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;afmhot_r&#39;</span>  <span class="c1"># old: &#39;nipy_spectral&#39;</span>
+            <span class="n">pcolormeshKwargs</span><span class="p">[</span><span class="s1">&#39;cmap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;OrRd&#39;</span>
         <span class="k">if</span> <span class="s1">&#39;shading&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pcolormeshKwargs</span><span class="p">:</span>
             <span class="n">pcolormeshKwargs</span><span class="p">[</span><span class="s1">&#39;shading&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;flat&#39;</span>
         <span class="k">if</span> <span class="s1">&#39;vmin&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pcolormeshKwargs</span><span class="p">:</span>
-            <span class="n">pcolormeshKwargs</span><span class="p">[</span><span class="s1">&#39;vmin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">pcolormeshKwargs</span><span class="p">[</span><span class="s1">&#39;vmin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;HVVal&#39;</span><span class="p">],</span> <span class="mi">10</span><span class="p">)</span>
         <span class="k">if</span> <span class="s1">&#39;vmax&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pcolormeshKwargs</span><span class="p">:</span>
             <span class="n">pcolormeshKwargs</span><span class="p">[</span><span class="s1">&#39;vmax&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;HVVal&#39;</span><span class="p">],</span> <span class="mi">95</span><span class="p">)</span>
 

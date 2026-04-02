@@ -137,7 +137,7 @@ el.replaceWith(d);
 </dl></div>
 </dd>
 <dt id="sprit.sprit_plot.plot_cross_section"><code class="name flex">
-<span>def <span class="ident">plot_cross_section</span></span>(<span>hvsr_data,<br>title=None,<br>fig=None,<br>ax=None,<br>use_elevation=True,<br>show_feet=False,<br>primary_unit='m',<br>show_curves=True,<br>annotate_curves=False,<br>curve_alignment='peak',<br>grid_size='auto',<br>orientation=None,<br>do_interpolation=True,<br>interpolation_type='cloughtocher',<br>interpolate_log_values=True,<br>surface_elevations=None,<br>show_peak_points=True,<br>smooth_bedrock_surface=False,<br>depth_limit=150,<br>minimum_elevation=None,<br>show_bedrock_surface=True,<br>return_data_batch=True,<br>return_df=False,<br>show_cross_section=True,<br>verbose=False,<br>**kwargs)</span>
+<span>def <span class="ident">plot_cross_section</span></span>(<span>hvsr_data,<br>title=None,<br>fig=None,<br>ax=None,<br>use_elevation=True,<br>show_feet=False,<br>primary_unit='m',<br>show_curves=True,<br>annotate_curves=False,<br>curve_alignment='peak',<br>grid_size='auto',<br>orientation=None,<br>do_interpolation=True,<br>interpolation_type='cloughtocher',<br>interpolate_log_values=True,<br>surface_elevations=None,<br>show_peak_points=True,<br>smooth_bedrock_surface=False,<br>depth_limit=150,<br>minimum_elevation=None,<br>show_bedrock_surface=False,<br>return_data_batch=True,<br>return_df=False,<br>show_cross_section=True,<br>verbose=False,<br>**kwargs)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -149,7 +149,7 @@ el.replaceWith(d);
                        grid_size=&#39;auto&#39;, orientation=None,  do_interpolation=True,
                        interpolation_type=&#39;cloughtocher&#39;, interpolate_log_values=True,
                        surface_elevations=None, show_peak_points=True, smooth_bedrock_surface=False,
-                       depth_limit=150, minimum_elevation=None, show_bedrock_surface=True,
+                       depth_limit=150, minimum_elevation=None, show_bedrock_surface=False,
                        return_data_batch=True, return_df=False, show_cross_section=True, verbose=False,
                        **kwargs):
     &#34;&#34;&#34;Function to plot a cross section given an HVSRBatch or similar object
@@ -238,6 +238,21 @@ el.replaceWith(d);
         ax = ax
     plt.sca(ax)
 
+    if hvsr_data==&#39;sample&#39;:
+        sampleFileNames = [&#39;SampleJSON_RUS11.json&#39;,&#39;SampleJSON_RUS13.json&#39;,&#39;SampleJSON_RUS14.json&#39;,&#39;SampleJSON_RUS15.json&#39;,
+                           &#39;SampleJSON_RUS16.json&#39;,&#39;SampleJSON_RUS17.json&#39;,&#39;SampleJSON_RUS18.json&#39;,&#39;SampleJSON_RUS19.json&#39;,
+                           &#39;SampleJSON_RUS20.json&#39;,&#39;SampleJSON_RUS21.json&#39;,&#39;SampleJSON_RUS22.json&#39;,&#39;SampleJSON_RUS23.json&#39;]
+        BASE_URL = &#34;https://raw.githubusercontent.com/RJbalikian/SPRIT-HVSR/main/sprit/extra_sample_data&#34;
+
+        print(&#34;Reading 12 sample HVSR datasets&#34;)
+        hvList = []
+        for i, f in enumerate(sampleFileNames):
+            url = f&#34;{BASE_URL}/{f}&#34;
+            print(f&#34;  {i}: {f}&#34;)
+            response = requests.get(url, timeout=60)
+            hvList.append(sprit_hvsr.from_json(io.StringIO(response.text)))
+        hvsr_data = sprit_hvsr.HVSRBatch(hvList)
+
     if verbose:
         print(&#34;Sorting and Orienting data&#34;)
 
@@ -252,7 +267,7 @@ el.replaceWith(d);
     # Get likely orientation if not specified
     if orientation is None:
         
-        orientation = &#39;EW&#39;
+        orientation = &#39;WE&#39;
         xCoordList = []
         yCoordList = []
         for sitename, sitedata in hvDataBatch.items():
@@ -457,11 +472,11 @@ el.replaceWith(d);
 
         # Set defaults for cmap and shading (if not overriden in kwargs)
         if &#39;cmap&#39; not in pcolormeshKwargs:
-            pcolormeshKwargs[&#39;cmap&#39;] = &#39;afmhot_r&#39;  # old: &#39;nipy_spectral&#39;
+            pcolormeshKwargs[&#39;cmap&#39;] = &#39;OrRd&#39;
         if &#39;shading&#39; not in pcolormeshKwargs:
             pcolormeshKwargs[&#39;shading&#39;] = &#39;flat&#39;
         if &#39;vmin&#39; not in pcolormeshKwargs:
-            pcolormeshKwargs[&#39;vmin&#39;] = 0
+            pcolormeshKwargs[&#39;vmin&#39;] = np.percentile(df[&#39;HVVal&#39;], 10)
         if &#39;vmax&#39; not in pcolormeshKwargs:
             pcolormeshKwargs[&#39;vmax&#39;] = np.percentile(df[&#39;HVVal&#39;], 95)
 

@@ -1344,7 +1344,8 @@ Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extensi
 
     dict_for_json = {}
     dict_str_list = []
-    for k, v in hvsr_results.__dict__.items():
+    for k, v in hvsr_results.__dict__.items():          
+        
         if k == &#39;_batch&#39;:
             continue
 
@@ -2951,14 +2952,14 @@ See here for more information: <a href="https://docs.obspy.org/packages/autogen/
 </dl></div>
 </dd>
 <dt id="sprit.sprit_hvsr.from_json"><code class="name flex">
-<span>def <span class="ident">from_json</span></span>(<span>json_input, return_hvsr=True, **kwargs)</span>
+<span>def <span class="ident">from_json</span></span>(<span>json_input, return_hvsr=True, verbose=False, **kwargs)</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def from_json(json_input, return_hvsr=True, **kwargs):
+<pre><code class="python">def from_json(json_input, return_hvsr=True, verbose=False, **kwargs):
     &#34;&#34;&#34;Read HVSR data from JSON-formatted text or file.
     This can be returned as a string, dict, or converted to a HVSRData object 
 
@@ -2977,7 +2978,11 @@ See here for more information: <a href="https://docs.obspy.org/packages/autogen/
         If it cannot do that, or return_hvsr=False, will attempt to return dict.
         If it cannot do that, it will attempt to return a string representation of the input object.
     &#34;&#34;&#34;
-    if pathlib.Path(json_input).exists():
+    if isinstance(json_input, io.StringIO):
+        jsonDictIN = json.load(json_input)
+    elif pathlib.Path(json_input).exists():
+        if verbose:
+            print(&#34;Found JSON File, reading in&#34;)
         try:
             with open(json_input, &#39;r&#39;) as ji:
                 jsonDictIN = json.load(ji)
@@ -6820,6 +6825,9 @@ This is minimum number of points a point needs in its neighborhood to not be con
     RuntimeError
         If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     &#34;&#34;&#34;
+    if pathlib.Path(input_data).exists():
+        input_data = pathlib.Path(input_data).as_posix()
+    
     if isinstance(input_data, (pd.DataFrame, obspy.Stream, obspy.Trace)):
         pass
     elif input_data is None or input_data == &#39;&#39; or str(input_data).lower().startswith(&#39;sample&#39;) or isinstance(input_data, numbers.Number):
