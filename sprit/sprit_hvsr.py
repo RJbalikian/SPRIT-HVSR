@@ -1278,12 +1278,14 @@ def run(input_data=None, source='file',
     
     if isinstance(input_data, (pd.DataFrame, obspy.Stream, obspy.Trace)):
         pass
-    elif input_data is None or input_data == '' or str(input_data).lower() == 'sample':
+    elif input_data is None or input_data == '' or str(input_data).lower().startswith('sample') or isinstance(input_data, numbers.Number):
         if str(input_data).lower() == 'sample' and str(source).lower() == 'batch':
             pass
+        elif isinstance(input_data, numbers.Number):
+            input_data = f'sample{input_data}'
         else:
             input_data = 'sample'
-    elif pathlib.Path(input_data).exists() and ():
+    elif pathlib.Path(str(input_data)).exists() and ():
         input_data = pathlib.Path(input_data).as_posix()
     
     orig_args = locals().copy()  # Get the initial arguments

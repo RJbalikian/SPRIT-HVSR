@@ -493,15 +493,24 @@ def _get_sample_data(sample_file='1', verbose=False):
                      '8': 'SampleHVSRSite08.MSEED',
                      '9': 'SampleHVSRSite09.MSEED',
                      '10': 'SampleHVSRSite10.MSEED',
-                     '11': 'SampleHVSRSite10.MSEED',
-                     '12': 'SampleHVSRSite10.MSEED',
-                     '13': 'SampleHVSRSite10.MSEED',
+                     '11': 'SampleHVSRSite11.MSEED',
+                     '12': 'SampleHVSRSite12.MSEED',
+                     '13': 'SampleHVSRSite13.MSEED',
+                     '14': 'SampleHVSRSite14.MSEED',
                      'batch': 'Batch_SampleData.csv'
                     }
+    addDict = {}
+    for key, file in sampleMapDict.items():
+        if len(key) == 1:
+            addDict[f'0{key}'] = file
+    sampleMapDict.update(addDict)
+    
     sampleKey = sample_file
 
-    if 'sample' in str(sampleKey).lower():
-        sampleKey = str(sampleKey).lower().split('sampledata')[1]
+    if 'sampledata' in str(sampleKey).lower():
+        sampleKey = str(sampleKey).lower().split('sampledata')[1]        
+    elif 'sample' in str(sampleKey).lower():
+        sampleKey = str(sampleKey).lower().split('sample')[1]
         if sampleKey[0] == '0':
             sampleKey = str(sampleKey[1:]).lower()
 
@@ -514,7 +523,8 @@ def _get_sample_data(sample_file='1', verbose=False):
         sampleKey = '1'
             
     print(f" PROCESSING SAMPLE DATASET {sampleKey.zfill(2)} ".center(99, '*'))
-    if sampleKey in ['3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']:
+    onlineSampleKeyList = ['3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']
+    if sampleKey in onlineSampleKeyList:
         print('*'+"**Attempting to access online sample data. For local sample data, use dataset 1 or 2**".center(97)+'*')    
     print('*'+"To read in your own data, use sprit.run(input_data='/path/to/your/seismic/data.mseed')".center(97)+'*')
     print('*'+"Any file format supported by osbpy.read() can be input to sprit_run()".center(97)+'*')
@@ -549,6 +559,7 @@ def _get_sample_data(sample_file='1', verbose=False):
     else:
         BASE_URL = "https://raw.githubusercontent.com/RJbalikian/SPRIT-HVSR/main/sprit/extra_sample_data"
         sampleDataURL = f"{BASE_URL}/{sampleMapDict[sampleKey]}"
+        print("SURL", sampleDataURL)
         try:
             resp = requests.get(sampleDataURL, timeout=30)
             resp.raise_for_status() 
