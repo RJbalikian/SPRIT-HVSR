@@ -43,7 +43,7 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
                        grid_size='auto', orientation=None,  do_interpolation=True,
                        interpolation_type='cloughtocher', interpolate_log_values=True,
                        surface_elevations=None, show_peak_points=True, smooth_bedrock_surface=False,
-                       depth_limit=150, minimum_elevation=None, show_bedrock_surface=True,
+                       depth_limit=150, minimum_elevation=None, show_bedrock_surface=False,
                        return_data_batch=True, return_df=False, show_cross_section=True, verbose=False,
                        **kwargs):
     """Function to plot a cross section given an HVSRBatch or similar object
@@ -146,7 +146,7 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
     # Get likely orientation if not specified
     if orientation is None:
         
-        orientation = 'EW'
+        orientation = 'WE'
         xCoordList = []
         yCoordList = []
         for sitename, sitedata in hvDataBatch.items():
@@ -351,11 +351,11 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
 
         # Set defaults for cmap and shading (if not overriden in kwargs)
         if 'cmap' not in pcolormeshKwargs:
-            pcolormeshKwargs['cmap'] = 'afmhot_r'  # old: 'nipy_spectral'
+            pcolormeshKwargs['cmap'] = 'OrRd'
         if 'shading' not in pcolormeshKwargs:
             pcolormeshKwargs['shading'] = 'flat'
         if 'vmin' not in pcolormeshKwargs:
-            pcolormeshKwargs['vmin'] = 0
+            pcolormeshKwargs['vmin'] = np.percentile(df['HVVal'], 10)
         if 'vmax' not in pcolormeshKwargs:
             pcolormeshKwargs['vmax'] = np.percentile(df['HVVal'], 95)
 
