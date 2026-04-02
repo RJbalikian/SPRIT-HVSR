@@ -1278,6 +1278,9 @@ def run(input_data=None, source='file',
     RuntimeError
         If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     """
+    if pathlib.Path(input_data).exists():
+        input_data = pathlib.Path(input_data).as_posix()
+    
     if isinstance(input_data, (pd.DataFrame, obspy.Stream, obspy.Trace)):
         pass
     elif input_data is None or input_data == '' or str(input_data).lower().startswith('sample') or isinstance(input_data, numbers.Number):
@@ -3056,7 +3059,8 @@ def export_json(hvsr_results, json_export_path=None,
 
     dict_for_json = {}
     dict_str_list = []
-    for k, v in hvsr_results.__dict__.items():
+    for k, v in hvsr_results.__dict__.items():          
+        
         if k == '_batch':
             continue
 
@@ -4508,7 +4512,7 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
 
 
 # Import from json
-def from_json(json_input, return_hvsr=True, **kwargs):
+def from_json(json_input, return_hvsr=True, verbose=False, **kwargs):
     """Read HVSR data from JSON-formatted text or file.
     This can be returned as a string, dict, or converted to a HVSRData object 
 
@@ -4528,6 +4532,8 @@ def from_json(json_input, return_hvsr=True, **kwargs):
         If it cannot do that, it will attempt to return a string representation of the input object.
     """
     if pathlib.Path(json_input).exists():
+        if verbose:
+            print("Found JSON File, reading in")
         try:
             with open(json_input, 'r') as ji:
                 jsonDictIN = json.load(ji)
