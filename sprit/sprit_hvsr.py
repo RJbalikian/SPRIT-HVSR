@@ -3674,7 +3674,9 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
         String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
             'raw' finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
             'dir' is used if the day's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
-            'file' is used if the 'input_data' specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
+            'file' is used if the 'input_data' specified in input_params() is the direct filepath to a single file to be read directly into an ObsPy stream.
+            'url' is used if input_data specifies a URL where seismic data can be downloaded. 
+                  This uses the requests.get(URL).content to read a bytestream into obspy.read(). Downloaded file must be readable by ObsPy.
             'batch' is used to read a list or specified set of seismic files. 
                 Most commonly, a csv file can be read in with all the parameters. Each row in the csv is a separate file. Columns can be arranged by parameter.
     data_export_path : None or str or pathlib obj, default=None
