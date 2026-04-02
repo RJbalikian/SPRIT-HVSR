@@ -20,6 +20,7 @@ import pathlib
 import pickle
 import importlib
 import re
+import requests
 import struct
 import sys
 import tempfile
@@ -3875,7 +3876,7 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
     elif isinstance(input_parameters['input_data'], HVSRData):
         rawDataIN = input_parameters['input_data']['stream']
     else:
-        if source == 'raw':
+        if str(source).lower() == 'raw':
             try:
                 if inst.lower() in trominoNameList:
                     input_parameters['instrument'] = 'Tromino'
@@ -3898,9 +3899,9 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
 
             except Exception as e:
                 raise RuntimeError(f"Data not fetched for {input_parameters['site']}. Check input parameters or the data file.\n\n{e}")
-        elif source == 'stream' or isinstance(input_parameters, (obspy.Stream, obspy.Trace)):
+        elif str(source).lower() == 'stream' or isinstance(input_parameters, (obspy.Stream, obspy.Trace)):
             rawDataIN = input_parameters['input_data'].copy()
-        elif source == 'dir':
+        elif str(source).lower() == 'dir':
             if inst.lower() in raspShakeInstNameList:
                 rawDataIN = __read_RS_file_struct(dPath, source, year, doy, inv, input_parameters, verbose=verbose)
             else:
@@ -3916,7 +3917,7 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
                         curr_data.merge()
                         obspyFiles[f.stem] = curr_data  #Add path object to dict, with filepath's stem as the site name
                 return HVSRBatch(obspyFiles)
-        elif source == 'file' and str(input_parameters['input_data']).lower() not in SAMPLE_LIST:
+        elif str(source).lower() == 'file' and str(input_parameters['input_data']).lower() not in SAMPLE_LIST:
             # Read the file specified by input_data
             # Automatically read tromino data
             tromCond1 = str(inst).lower() in trominoNameList
@@ -3971,7 +3972,19 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
                     rawDataIN = sprit_utils._get_sample_data(dPath)
                 else:
                     rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(input_parameters['starttime']), endttime=obspy.core.UTCDateTime(input_parameters['endtime']), nearest_sample =True)
-        elif source == 'batch' and str(input_parameters['input_data']).lower() not in SAMPLE_LIST:
+        elif str(source).lower() == 'url':
+            url = input_parameters['input_data']
+            if str(input_parameters['input_data']).lower().startswith('sample'):
+                rawDataIN = sprit_utils._get_sample_data(input_parameters['input_data'])
+            else:   
+                try:
+                    response = requests.get(url, timeout=60)
+                    response.raise_for_status()  # Raise error for bad status codes
+                    rawDataIN = obspy.read(io.BytesIO(response.content))  # Read bytestream into obspy Stream
+                except requests.exceptions.RequestException as e:
+                    traceback.print_exc()
+                    raise RuntimeError(f"Error downloading file from {url}\n\t{e}")
+        elif str(source).lower() == 'batch' and str(input_parameters['input_data']).lower() not in SAMPLE_LIST:
             if verbose:
                 print('\nFetching data (fetch_data())')
             batch_data_read_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(batch_data_read).parameters.keys())}

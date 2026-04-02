@@ -483,17 +483,20 @@ def _get_noise_models(model_type='vel'):
 def _get_sample_data(sample_file='1', verbose=False):
 
     # Get filenames depending on input
-    sampleMapDict = {'1':'SampleHVSRSite01.MSEED',
-                     '2':'SampleHVSRSite02.MSEED',
-                     '3':'SampleHVSRSite03.MSEED',
-                     '4':'SampleHVSRSite04.MSEED',
-                     '5':'SampleHVSRSite05.MSEED',
-                     '6':'SampleHVSRSite06.MSEED',
-                     '7':'SampleHVSRSite07.MSEED',
-                     '8':'SampleHVSRSite08.MSEED',
-                     '9':'SampleHVSRSite09.MSEED',
-                     '10':'SampleHVSRSite10.MSEED',
-                     'batch':'Batch_SampleData.csv'
+    sampleMapDict = {'1': 'SampleHVSRSite01.MSEED',
+                     '2': 'SampleHVSRSite02.MSEED',
+                     '3': 'SampleHVSRSite03.MSEED',
+                     '4': 'SampleHVSRSite04.MSEED',
+                     '5': 'SampleHVSRSite05.MSEED',
+                     '6': 'SampleHVSRSite06.MSEED',
+                     '7': 'SampleHVSRSite07.MSEED',
+                     '8': 'SampleHVSRSite08.MSEED',
+                     '9': 'SampleHVSRSite09.MSEED',
+                     '10': 'SampleHVSRSite10.MSEED',
+                     '11': 'SampleHVSRSite10.MSEED',
+                     '12': 'SampleHVSRSite10.MSEED',
+                     '13': 'SampleHVSRSite10.MSEED',
+                     'batch': 'Batch_SampleData.csv'
                     }
     sampleKey = sample_file
 
@@ -511,7 +514,7 @@ def _get_sample_data(sample_file='1', verbose=False):
         sampleKey = '1'
             
     print(f" PROCESSING SAMPLE DATASET {sampleKey.zfill(2)} ".center(99, '*'))
-    if sampleKey in ['3', '4', '5', '6', '7', '8', '9', '10']:
+    if sampleKey in ['3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']:
         print('*'+"**Attempting to access online sample data. For local sample data, use dataset 1 or 2**".center(97)+'*')    
     print('*'+"To read in your own data, use sprit.run(input_data='/path/to/your/seismic/data.mseed')".center(97)+'*')
     print('*'+"Any file format supported by osbpy.read() can be input to sprit_run()".center(97)+'*')
