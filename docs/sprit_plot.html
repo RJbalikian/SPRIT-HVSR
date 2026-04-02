@@ -239,6 +239,9 @@ el.replaceWith(d);
     plt.sca(ax)
 
     if verbose:
+        print(&#34;Sorting and Orienting data&#34;)
+
+    if verbose:
         print(&#34;Getting data batch for cross section plot&#34;)
     batchExt = None
     if isinstance(hvsr_data, (str, os.PathLike, pathlib.Path)):
@@ -246,11 +249,9 @@ el.replaceWith(d);
             batchExt = &#39;hvsr&#39;
     hvDataBatch = sprit_hvsr.HVSRBatch(hvsr_data, batch_ext=batchExt)
 
-    if verbose:
-        print(&#34;Sorting and Orienting data&#34;)
-
     # Get likely orientation if not specified
     if orientation is None:
+        
         orientation = &#39;EW&#39;
         xCoordList = []
         yCoordList = []
@@ -260,8 +261,8 @@ el.replaceWith(d);
 
         minX = min(xCoordList)
         minY = min(yCoordList)
-        maxX = min(xCoordList)
-        maxY = min(yCoordList)
+        maxX = max(xCoordList)
+        maxY = max(yCoordList)
 
         xRange = abs(maxX - minX)
         yRange = abs(maxY - minY)

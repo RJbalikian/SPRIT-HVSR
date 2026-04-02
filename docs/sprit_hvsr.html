@@ -225,7 +225,10 @@ el.replaceWith(d);
                         if col in inspect.signature(fun).parameters:
                             currParam = dataReadInfoDF.loc[row_ind, col]
                             if pd.isna(currParam) or currParam == &#39;nan&#39;:
-                                if col in default_dict.keys():
+                                keepBlankList = [&#39;azimuth_angle&#39;, &#39;azimuth_type&#39;]
+                                if col in keepBlankList:
+                                    pass
+                                elif col in default_dict.keys():
                                     param_dict[col] = default_dict[col]  # Get default value
                                     if verbose:
                                         if type(default_dict[col]) is str:
@@ -2066,7 +2069,9 @@ If 'processing', saves the processing settings to their respective file. By defa
         String indicating where/how data file was created. For example, if raw data, will need to find correct channels.
             &#39;raw&#39; finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
             &#39;dir&#39; is used if the day&#39;s 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
-            &#39;file&#39; is used if the &#39;input_data&#39; specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
+            &#39;file&#39; is used if the &#39;input_data&#39; specified in input_params() is the direct filepath to a single file to be read directly into an ObsPy stream.
+            &#39;url&#39; is used if input_data specifies a URL where seismic data can be downloaded. 
+                  This uses the requests.get(URL).content to read a bytestream into obspy.read(). Downloaded file must be readable by ObsPy.
             &#39;batch&#39; is used to read a list or specified set of seismic files. 
                 Most commonly, a csv file can be read in with all the parameters. Each row in the csv is a separate file. Columns can be arranged by parameter.
     data_export_path : None or str or pathlib obj, default=None
@@ -2902,7 +2907,9 @@ If 'processing', saves the processing settings to their respective file. By defa
 <dt>String indicating where/how data file was created. For example, if raw data, will need to find correct channels.</dt>
 <dt>'raw' finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders;</dt>
 <dt>'dir' is used if the day's 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.</dt>
-<dt>'file' is used if the 'input_data' specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.</dt>
+<dt>'file' is used if the 'input_data' specified in input_params() is the direct filepath to a single file to be read directly into an ObsPy stream.</dt>
+<dt>'url' is used if input_data specifies a URL where seismic data can be downloaded.</dt>
+<dt>This uses the requests.get(URL).content to read a bytestream into obspy.read(). Downloaded file must be readable by ObsPy.</dt>
 <dt>'batch' is used to read a list or specified set of seismic files.</dt>
 <dt>Most commonly, a csv file can be read in with all the parameters. Each row in the csv is a separate file. Columns can be arranged by parameter.</dt>
 <dt><strong><code>data_export_path</code></strong> :&ensp;<code>None</code> or <code>str</code> or <code>pathlib obj</code>, default=<code>None</code></dt>
@@ -6813,7 +6820,6 @@ This is minimum number of points a point needs in its neighborhood to not be con
     RuntimeError
         If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     &#34;&#34;&#34;
-    
     if isinstance(input_data, (pd.DataFrame, obspy.Stream, obspy.Trace)):
         pass
     elif input_data is None or input_data == &#39;&#39; or str(input_data).lower().startswith(&#39;sample&#39;) or isinstance(input_data, numbers.Number):
@@ -7026,11 +7032,6 @@ This is minimum number of points a point needs in its neighborhood to not be con
     azimuth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(calculate_azimuth).parameters.keys())}
     azList = [&#39;azimuth&#39;, &#39;single azimuth&#39;, &#39;single&#39;]
     
-    azCond1 = &#39;horizontal_method&#39; in kwargs.keys() and str(kwargs[&#39;horizontal_method&#39;]) == &#39;8&#39;
-    azCond2 = &#39;horizontal_method&#39; in kwargs.keys() and str(kwargs[&#39;horizontal_method&#39;]).lower() in azList
-    azCond3 = azimuth_calculation
-    azCond4 = len(azimuth_kwargs.keys()) &gt; 0
-
     # Correct for shorthand angles
     angleDict = {&#39;n&#39;:0,  &#39;north&#39;:0,   &#39;ne&#39;:45,  &#39;northeast&#39;:45,
                 &#39;e&#39;:90,  &#39;east&#39;:90,   &#39;se&#39;:135, &#39;southeast&#39;:135,
@@ -7038,6 +7039,8 @@ This is minimum number of points a point needs in its neighborhood to not be con
                 &#39;w&#39;:270, &#39;west&#39;:270,  &#39;nw&#39;:315, &#39;northwest&#39;:315}
 
     if &#39;azimuth_type&#39; in azimuth_kwargs:
+        if str(azimuth_kwargs[&#39;azimuth_type&#39;]).lower() == &#39;none&#39;:
+            del azimuth_kwargs[&#39;azimuth_type&#39;]        
         if str(azimuth_kwargs[&#39;azimuth_type&#39;]).lower() in angleDict.keys():
             azimuth_kwargs[&#39;azimuth_unit&#39;] = &#39;degrees&#39;
             azimuth_kwargs[&#39;azimuth_angle&#39;] = angleDict[azimuth_kwargs[&#39;azimuth_type&#39;]]
@@ -7048,13 +7051,20 @@ This is minimum number of points a point needs in its neighborhood to not be con
                 kwargs[&#39;plot_type&#39;] = &#39;HVSR p ann COMP+ p ann SPEC p ann AZ p&#39;
 
     if &#39;azimuth_angle&#39; in azimuth_kwargs:
+        if str(azimuth_kwargs[&#39;azimuth_angle&#39;]).lower() == &#39;none&#39;:
+            del azimuth_kwargs[&#39;azimuth_angle&#39;]
         if str(azimuth_kwargs[&#39;azimuth_angle&#39;]).lower() in angleDict.keys():
             azimuth_kwargs[&#39;azimuth_unit&#39;] = &#39;degrees&#39;
             azimuth_kwargs[&#39;azimuth_type&#39;] = &#39;single&#39;
             azimuth_kwargs[&#39;azimuth_angle&#39;] = angleDict[azimuth_kwargs[&#39;azimuth_angle&#39;]]
             kwargs[&#39;azimuth_angle&#39;] = angleDict[kwargs[&#39;azimuth_angle&#39;]]
-
+        
     # Calculate whether to do azimuth calculation
+    azCond1 = &#39;horizontal_method&#39; in kwargs.keys() and str(kwargs[&#39;horizontal_method&#39;]) == &#39;8&#39;
+    azCond2 = &#39;horizontal_method&#39; in kwargs.keys() and str(kwargs[&#39;horizontal_method&#39;]).lower() in azList
+    azCond3 = azimuth_calculation
+    azCond4 = len(azimuth_kwargs.keys()) &gt; 0
+
     if (azCond1 or azCond2 or azCond3 or azCond4) and (skip_steps is None or &#39;calculate_azimuth&#39; not in skip_steps):
         azimuth_calculation = True
         if &#39;azimuth_type&#39; not in kwargs.keys():

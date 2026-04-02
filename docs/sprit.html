@@ -6,12 +6,12 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit package &mdash; sprit 3.12.0 documentation</title>
+  <title>sprit package &mdash; sprit 3.12.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="_static/documentation_options.js?v=1b7a0a1e"></script>
+      <script src="_static/documentation_options.js?v=bf028e07"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -1042,11 +1042,15 @@ If ‘processing’, saves the processing settings to their respective file. By 
 <dt><strong>source</strong><span class="classifier">str, {‘raw’, ‘dir’, ‘file’, ‘batch’}</span></dt><dd><dl>
 <dt>String indicating where/how data file was created. For example, if raw data, will need to find correct channels.</dt><dd><p>‘raw’ finds raspberry shake data, from raw output copied using scp directly from Raspberry Shake, either in folder or subfolders; 
 ‘dir’ is used if the day’s 3 component files (currently Raspberry Shake supported only) are all 3 contained in a directory by themselves.
-‘file’ is used if the ‘input_data’ specified in input_params() is the direct filepath to a single file to be read directly into an obspy stream.
-‘batch’ is used to read a list or specified set of seismic files.</p>
+‘file’ is used if the ‘input_data’ specified in input_params() is the direct filepath to a single file to be read directly into an ObsPy stream.
+‘url’ is used if input_data specifies a URL where seismic data can be downloaded.</p>
 <blockquote>
-<div><p>Most commonly, a csv file can be read in with all the parameters. Each row in the csv is a separate file. Columns can be arranged by parameter.</p>
+<div><p>This uses the requests.get(URL).content to read a bytestream into obspy.read(). Downloaded file must be readable by ObsPy.</p>
 </div></blockquote>
+<dl class="simple">
+<dt>‘batch’ is used to read a list or specified set of seismic files. </dt><dd><p>Most commonly, a csv file can be read in with all the parameters. Each row in the csv is a separate file. Columns can be arranged by parameter.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd>

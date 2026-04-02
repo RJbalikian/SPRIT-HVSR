@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_plot &mdash; sprit 3.12.0 documentation</title>
+  <title>sprit.sprit_plot &mdash; sprit 3.12.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=1b7a0a1e"></script>
+      <script src="../../_static/documentation_options.js?v=bf028e07"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -206,6 +206,9 @@
     <span class="n">plt</span><span class="o">.</span><span class="n">sca</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sorting and Orienting data&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Getting data batch for cross section plot&quot;</span><span class="p">)</span>
     <span class="n">batchExt</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">,</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">)):</span>
@@ -213,11 +216,9 @@
             <span class="n">batchExt</span> <span class="o">=</span> <span class="s1">&#39;hvsr&#39;</span>
     <span class="n">hvDataBatch</span> <span class="o">=</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">HVSRBatch</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">batch_ext</span><span class="o">=</span><span class="n">batchExt</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sorting and Orienting data&quot;</span><span class="p">)</span>
-
     <span class="c1"># Get likely orientation if not specified</span>
     <span class="k">if</span> <span class="n">orientation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        
         <span class="n">orientation</span> <span class="o">=</span> <span class="s1">&#39;EW&#39;</span>
         <span class="n">xCoordList</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">yCoordList</span> <span class="o">=</span> <span class="p">[]</span>
@@ -227,8 +228,8 @@
 
         <span class="n">minX</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">xCoordList</span><span class="p">)</span>
         <span class="n">minY</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">yCoordList</span><span class="p">)</span>
-        <span class="n">maxX</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">xCoordList</span><span class="p">)</span>
-        <span class="n">maxY</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">yCoordList</span><span class="p">)</span>
+        <span class="n">maxX</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">xCoordList</span><span class="p">)</span>
+        <span class="n">maxY</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">yCoordList</span><span class="p">)</span>
 
         <span class="n">xRange</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">maxX</span> <span class="o">-</span> <span class="n">minX</span><span class="p">)</span>
         <span class="n">yRange</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">maxY</span> <span class="o">-</span> <span class="n">minY</span><span class="p">)</span>
