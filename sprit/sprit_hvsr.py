@@ -4531,7 +4531,9 @@ def from_json(json_input, return_hvsr=True, verbose=False, **kwargs):
         If it cannot do that, or return_hvsr=False, will attempt to return dict.
         If it cannot do that, it will attempt to return a string representation of the input object.
     """
-    if pathlib.Path(json_input).exists():
+    if isinstance(json_input, io.StringIO):
+        jsonDictIN = json.load(json_input)
+    elif pathlib.Path(json_input).exists():
         if verbose:
             print("Found JSON File, reading in")
         try:

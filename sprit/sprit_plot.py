@@ -1,7 +1,10 @@
 import datetime
 import inspect
+import io
+import json
 import math
 import numbers
+import requests
 import os
 import pathlib
 import webbrowser
@@ -131,6 +134,21 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
         fig = fig
         ax = ax
     plt.sca(ax)
+
+    if hvsr_data=='sample':
+        sampleFileNames = ['SampleJSON_RUS11.json','SampleJSON_RUS13.json','SampleJSON_RUS14.json','SampleJSON_RUS15.json',
+                           'SampleJSON_RUS16.json','SampleJSON_RUS17.json','SampleJSON_RUS18.json','SampleJSON_RUS19.json',
+                           'SampleJSON_RUS20.json','SampleJSON_RUS21.json','SampleJSON_RUS22.json','SampleJSON_RUS23.json']
+        BASE_URL = "https://raw.githubusercontent.com/RJbalikian/SPRIT-HVSR/main/sprit/extra_sample_data"
+
+        print("Reading 12 sample HVSR datasets")
+        hvList = []
+        for i, f in enumerate(sampleFileNames):
+            url = f"{BASE_URL}/{f}"
+            print(f"  {i}: {f}")
+            response = requests.get(url, timeout=60)
+            hvList.append(sprit_hvsr.from_json(io.StringIO(response.text)))
+        hvsr_data = sprit_hvsr.HVSRBatch(hvList)
 
     if verbose:
         print("Sorting and Orienting data")
