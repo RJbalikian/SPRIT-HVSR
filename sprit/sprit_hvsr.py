@@ -5429,7 +5429,7 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             # Generates print report and saves to hvsr_results["Print_Report"]
             hsvr_results = _generate_print_report(hvsr_results, 
                                 azimuth = azimuth, 
-                                show_print_report = True, verbose=verbose_print)
+                                show_print_report = show_print_report, verbose=verbose_print)
 
             if 'print' in report_export_format:
                 if exp_path is None:
@@ -5894,7 +5894,9 @@ def input_params(input_data,
     if pathlib.Path(str(input_data)).exists():
         input_data = pathlib.Path(input_data).as_posix()
 
+
     peak_freq_range = [float(f) for f in peak_freq_range]
+    hvsr_band = [float(f) for f in hvsr_band]
     #Add key/values to input parameter dictionary for use throughout the rest of the package
     inputParamDict = {'site':site, 'project':project, 'hvsr_id':hvsr_id, 'network':network, 'station':station,'location':location, 'channels':channels,
                       'net':network,'sta':station, 'loc':location, 'cha':channels, 'instrument':instrument,

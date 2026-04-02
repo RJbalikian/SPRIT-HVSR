@@ -887,11 +887,6 @@ def create_jupyter_ui():
     resample_hv_curve = widgets.IntText(description='', tooltip="If resampling, how many frequency points/bins to use.",
                                         placeholder=512, value=512)
 
-    smooth_hv_curve_bool = widgets.Checkbox(value=True,description='Smooth',
-                                            tooltip='Whether to smooth the data (this does not account for logarithmic frequency width increases.)')
-    smooth_hv_curve = widgets.IntText(description='', tooltip="The window width to use for smoothing.",
-                                    placeholder=51, value=51)
-
     peak_selection_type = widgets.Dropdown(description='Peak Method', value='max',
                                         options=[('Highest Peak', 'max'),
                                              ('Best Scored','scored')],
@@ -904,9 +899,7 @@ def create_jupyter_ui():
     process_hvsr_grid[1, 2] = freq_smooth_width_float
     process_hvsr_grid[2, 0] = resample_hv_curve_bool
     process_hvsr_grid[2, 1] = resample_hv_curve
-    process_hvsr_grid[3, 0] = smooth_hv_curve_bool
-    process_hvsr_grid[3, 1] = smooth_hv_curve
-    process_hvsr_grid[4, 0] = peak_selection_type
+    process_hvsr_grid[3, 0] = peak_selection_type
 
     # Remove outlier curves
     # outlier_method='prototype',
@@ -1381,18 +1374,12 @@ def create_jupyter_ui():
         return roc_kwargs
 
     def get_process_hvsr_kwargs():
-        if smooth_hv_curve_bool.value:
-            smooth_value = smooth_hv_curve.value
-        else:
-            smooth_value = smooth_hv_curve_bool.value
-
         if resample_hv_curve_bool.value:
             resample_value = resample_hv_curve.value
         else:
             resample_value = resample_hv_curve_bool.value
 
         ph_kwargs={'horizontal_method':h_combine_meth_dropdown.value,
-                    'smooth':smooth_value,
                     'freq_smooth':freq_smoothing_dropdown.value,
                     'f_smooth_width':freq_smooth_width_float.value,
                     'resample':resample_value,
@@ -1403,11 +1390,10 @@ def create_jupyter_ui():
     def update_process_hvsr_call():
         #ph_kwargs = get_process_hvsr_kwargs()
         ph_text = f"""(hvsr_data=hvsr_data, 
-                        horizontal_method={h_combine_meth_dropdown.value}, 
-                        smooth={smooth_hv_curve_bool.value}, 
-                        freq_smooth={freq_smoothing_dropdown.value}, 
-                        f_smooth_width={freq_smooth_width_float.value}, 
-                        resample={resample_hv_curve_bool.value}, 
+                        horizontal_method={h_combine_meth_dropdown.value},
+                        freq_smooth={freq_smoothing_dropdown.value},
+                        f_smooth_width={freq_smooth_width_float.value},
+                        resample={resample_hv_curve_bool.value},
                         verbose={verbose_check.value})"""
         process_hvsr_call.value='<style>p {word-wrap: break-word}</style> <p>' + ph_text + '</p>'
     #update_process_hvsr_call()
@@ -2498,7 +2484,6 @@ def create_jupyter_ui():
 
     #freq_smooth_hbox = widgets.HBox([freq_smoothing_dropdown, freq_smooth_width_float])
     #resample_hbox = widgets.HBox([resample_hv_curve_bool, resample_hv_curve])
-    #smooth_hbox = widgets.HBox([smooth_hv_curve_bool, smooth_hv_curve])
     
     # PLOT SETTINGS SUBTAB
     hv_plot_label = widgets.Label(value='HVSR Plot', layout=widgets.Layout(height='auto', width='auto', justify_content='center'))
@@ -2825,7 +2810,6 @@ def create_jupyter_ui():
              'period_limits':hvsr_band_rangeSlide},
         'process_hvsr': 
             {'horizontal_method': h_combine_meth_dropdown,
-            'smooth': smooth_hv_curve,
             'freq_smooth': freq_smoothing_dropdown,
             'f_smooth_width': freq_smooth_width_float,
             'resample': resample_hv_curve,

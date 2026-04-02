@@ -541,6 +541,8 @@ def _get_sample_data(sample_file='1', verbose=False):
                 raise FileNotFoundError(f"Sample '{sampleKey}' not found. Available samples: {available}")
 
         return obspy.read(io.BytesIO(resource.read_bytes()))
+    elif 'b' in str(sampleKey).lower():
+        return pd.read_csv(sampleDir / "Batch_SampleData.csv")
     else:
         BASE_URL = "https://raw.githubusercontent.com/RJbalikian/SPRIT-HVSR/main/sprit/extra_sample_data"
         sampleDataURL = f"{BASE_URL}/{sampleMapDict[sampleKey]}"

@@ -544,7 +544,7 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
 
 # Plot depth curve
 def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normalize_curve=True, 
-                     depth_limit=250, depth_model=None,
+                     depth_limit=500, depth_model=None,
                      annotate=True, depth_plot_export_path=None,
                      fig=None, ax=None, show_depth_curve=True):
     """Function to plot depth curves, given hvsr_results with depth_model specified.
@@ -610,8 +610,8 @@ def plot_depth_curve(hvsr_results, use_elevation=True, show_feet=False, normaliz
             xLims = [xBase-(0.15*curveRange), xCap+(0.15*curveRange)]
     
         if use_elevation:
-            yLims = [hvsr_results.x_elev_m['Z'][0] - depth_limit,
-                hvsr_results.x_elev_m['Z'][0]]
+            xtop = max(hvsr_results.x_elev_m['Z'][0] - depth_limit, hvsr_results.x_elev_m['Z'][-1])
+            yLims = [xtop, hvsr_results.x_elev_m['Z'][0]]
             yVals = hvsr_results.x_elev_m['Z'][:-1]
             ax.set_ylabel('Elevation [m]')
             bedrockVal = bedrockElev

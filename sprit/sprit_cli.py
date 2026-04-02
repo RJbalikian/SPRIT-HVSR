@@ -9,6 +9,8 @@ The input_data parameter of input_params() is the only required argument, though
 
 import argparse
 import inspect
+import numbers 
+
 #try:
 #    from sprit import sprit_hvsr
 #except Exception:
@@ -90,7 +92,7 @@ def main():
                 paramNamesList.append(name)
                 curr_doc_str = get_param_docstring(func=hvsrFunctions[i], param_name=name)
                 if name == 'input_data':
-                    parser.add_argument("-i", "--input_data", default='sample', help=f'{curr_doc_str}')
+                    parser.add_argument(name, default='sample', help=f'{curr_doc_str}')
                 elif name  == 'verbose':
                     parser.add_argument('-v', '--verbose',  action='store_true',
                                         help='Print status and results to terminal.',
@@ -136,6 +138,15 @@ def main():
                 continue
 
         if not is_default:
+            print(arg_value)
+            if str(arg_value).replace('.', '').replace(',','').isnumeric():
+                arg_value = float(arg_value)
+            elif isinstance(arg_value, (tuple, list)):
+                avList = []
+                for av in arg_value:
+                    if str(av).replace('.', '').replace(',','').isnumeric():
+                        avList.append(float(av))
+                arg_value = avList
             kwargs[arg_name] = arg_value
 
     # Call the sprit.run function with the generated kwargs

@@ -405,10 +405,10 @@ def calculate_depth(freq_input,
 
         if hasattr(freq_input, 'hvsr_curve'):
             pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
-            freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input,
-                                                     show_depth_curve=show_depth_curve,
-                                                     fig=fig, ax=ax,
-                                                     **pdc_kwargs)
+            pdc_kwargs['show_depth_curve'] = show_depth_curve
+            pdc_kwargs['fig'] = fig
+            pdc_kwargs['ax'] = ax
+            freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input, **pdc_kwargs)
         else:
             surfElevVal = tableReport.loc[0, surface_elevation_col]
             brElevVal = tableReport.loc[0, bedrock_elevation_column]
@@ -428,7 +428,7 @@ def calculate_depth(freq_input,
             ax.scatter(x=0, y=brElevVal, c='k', marker='^')
             
             spc = " "
-            ax.text(x=0, y=brElevVal, 
+            ax.text(x=0, y=brElevVal,
                     s=f"  Depth: {brElevVal}m {spc}({tableReport.loc[0, freq_col]} Hz)",
                     va='top')
             
@@ -447,9 +447,7 @@ def calculate_depth(freq_input,
                         s=f"  Depth Model: ${aText:.2f} * f_0 ^{{{bText:0.3f}}}$")
             
         plt.sca(ax)
-        if show_depth_curve:
-            plt.show()
-        else:
+        if not show_depth_curve:
             plt.close()
         
         # Export as specified
