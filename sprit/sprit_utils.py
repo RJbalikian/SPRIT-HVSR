@@ -498,30 +498,28 @@ def _get_sample_data(sample_file='1', verbose=False):
                      '13': 'SampleHVSRSite13.MSEED',
                      '14': 'SampleHVSRSite14.MSEED',
                      'batch': 'Batch_SampleData.csv'
-                    }
+                     }
     addDict = {}
     for key, file in sampleMapDict.items():
         if len(key) == 1:
             addDict[f'0{key}'] = file
     sampleMapDict.update(addDict)
-    
-    sampleKey = sample_file
 
+    sampleKey = sample_file
     if 'sampledata' in str(sampleKey).lower():
-        sampleKey = str(sampleKey).lower().split('sampledata')[1]        
+        sampleKey = str(sampleKey).lower().split('sampledata')[1]
     elif 'sample' in str(sampleKey).lower():
         sampleKey = str(sampleKey).lower().split('sample')[1]
         if sampleKey[0] == '0':
             sampleKey = str(sampleKey[1:]).lower()
-
-    if isinstance(sampleKey, numbers.Number):
+    elif isinstance(sampleKey, numbers.Number):
         sampleKey = str(sampleKey).lower()
 
     if sampleKey not in sampleMapDict.keys():
         if verbose:
-            print(f'{sample_file} is not an acceptable sample file. Specify any number 1-10, or use "batch" for input_data')
+            print(f'{sample_file} is not an acceptable sample file. Specify any number 1-14, or use "batch" for input_data')
         sampleKey = '1'
-            
+
     print(f" PROCESSING SAMPLE DATASET {sampleKey.zfill(2)} ".center(99, '*'))
     onlineSampleKeyList = ['3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']
     if sampleKey in onlineSampleKeyList:
@@ -536,7 +534,7 @@ def _get_sample_data(sample_file='1', verbose=False):
     print()
 
     sampleDir = importlib.resources.files('sprit') / "resources" / "sample_data"
-    if sampleKey in ['1', '2']:
+    if sampleKey in ['1', '2', '01', '02', 1, 2]:
         # Construct resource filename
         filename = sampleMapDict[sampleKey]
         resource = sampleDir / filename
@@ -562,7 +560,7 @@ def _get_sample_data(sample_file='1', verbose=False):
         print("SURL", sampleDataURL)
         try:
             resp = requests.get(sampleDataURL, timeout=30)
-            resp.raise_for_status() 
+            resp.raise_for_status()
             return obspy.read(io.BytesIO(resp.content))
         except Exception:
             print("Error reading online sample data, using local dataset")

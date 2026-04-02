@@ -84,11 +84,14 @@ max_rank = 0
 global do_run
 do_run = False
 
-sampleListNos = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-SAMPLE_LIST = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'batch', 'sample', 'sample_batch']
+sampleListNos = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']
+SAMPLE_LIST = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', 
+               'batch', 'sample', 'sample_batch']
 for s in sampleListNos:
     SAMPLE_LIST.append(f'sample{s}')
     SAMPLE_LIST.append(f'sample_{s}')
+    SAMPLE_LIST.append(s.zfill(2))
+    SAMPLE_LIST.append(int(s))
 
 sampleFileKeyMap = {'1':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite01'),
                     '2':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite02'),
@@ -1347,6 +1350,8 @@ def run(input_data=None, source='file',
             if str(source).lower() in dirList:
                 batch_data_read_kwargs['batch_type'] = 'dir'
             hvsrDataIN = batch_data_read(batch_data=input_data, verbose=verbose, **batch_data_read_kwargs)
+            if verbose:
+                print("Batch data read completed successfully")
         except Exception as e:
             raise RuntimeError(f'Batch data read in was not successful:\n{e}')
     else:
@@ -1366,6 +1371,8 @@ def run(input_data=None, source='file',
                 updated_ip_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(input_params).parameters.keys())}
                 input_params_kwargs.update({k: v for k, v in updated_ip_defaults.items() if k not in input_params_kwargs}) # Don't overwrite specified kwargs
                 params = input_params(input_data=input_data, verbose=verbose, **input_params_kwargs)
+            else:
+                params=input_data
         except Exception as e:
             if hasattr(e, 'message'):
                 errMsg = e.message
@@ -1395,6 +1402,8 @@ def run(input_data=None, source='file',
                 fetch_data_kwargs.update({k:v for k,v in updated_fd_defaults.items() if k not in fetch_data_kwargs})
 
                 hvsrDataIN = fetch_data(input_parameters=params, source=source, verbose=verbose, **fetch_data_kwargs)
+            else:
+                hvsrDataIN = params
         except Exception as e:
             # Even if batch, this is reading in data for all sites so we want to raise error, not just warn
             if hasattr(e, 'message'):
@@ -1417,20 +1426,20 @@ def run(input_data=None, source='file',
             run_kwargs = {}  #orig_args.copy()  # Make a copy so we don't accidentally overwrite
             print(f'\n\n**PROCESSING DATA FOR SITE {site_name.upper()}**\n')
             run_kwargs['input_data'] = site_data
-            
             # Update run kwargs       
+            dont_update_these_args = ['input_data', 'source', 'kwargs']
+
             # First, get processing_parameters per site
             for funname, fundict in site_data['processing_parameters'].items():
                 for funk, funv in fundict.items():
-                    run_kwargs[funk] = funv
-                                                
+                    if funk not in dont_update_these_args:
+                        run_kwargs[funk] = funv
+                                                            
             # Overwrite per-site processing parameters with params passed  to sprit.run() as kwargs
             for paramname, paramval in kwargs.items():
                 if paramname != 'source':  # Don't update source for batch data
                     run_kwargs[paramname] = paramval
-
-            dont_update_these_args = ['input_data', 'source', 'kwargs']
-
+            
             # Overwrite per-site processing parameters with sprit.run()
             run_args = orig_args.copy()
             for k, v in run_args.items():
@@ -1440,9 +1449,10 @@ def run(input_data=None, source='file',
                                    
             # RUN FOR THIS SITE
             try:
-                hvsrBatchDict[site_name] = run(**run_kwargs)
+                hvsrBatchDict[site_name] = run(**run_kwargs, skip_steps=['input_params', 'fetch_data'])
                 run_kwargs_for_df.append(run_kwargs)
             except Exception as e:
+                print("SOMETHING HAPPENED")
                 hvsrBatchDict[site_name] = site_data
                 hvsrBatchDict[site_name]['Error_Message'] = sprit_utils._get_error_from_exception(e,
                                                                                                   print_error_message=False,
@@ -2021,7 +2031,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
     
     if isinstance(batch_data, pd.DataFrame):
         sample_data=False
-    elif batch_type == 'sample' or batch_data in sampleFileKeyMap.keys():
+    elif batch_type == 'sample' or batch_data in sampleFileKeyMap.keys() or str(batch_data).startswith('sample'):
         sample_data = True
         batch_type = 'table'
     else:
@@ -2033,7 +2043,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
     data_dict = {}
     verboseStatement = []
 
-    if batch_type == 'table':
+    if str(batch_type).lower() == 'table':
         # If this is sample data, we need to create absolute paths to the filepaths
         if sample_data:
             dataReadInfoDF = pd.read_csv(sampleFileKeyMap['sample_batch'])
@@ -2187,6 +2197,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
 
         # Run input_params()
         try:
+            
             ipverboseString = '\tinput_params: <No parameters specified>, '
             for arg, value in input_params_kwargs.items():
                 ipverboseString = ipverboseString.replace('<No parameters specified>, ', '')                    
@@ -3976,7 +3987,8 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
                     rawDataIN = obspy.read(dPath, **obspyReadKwargs)#, starttime=obspy.core.UTCDateTime(input_parameters['starttime']), endttime=obspy.core.UTCDateTime(input_parameters['endtime']), nearest_sample =True)
         elif str(source).lower() == 'url':
             url = input_parameters['input_data']
-            if str(input_parameters['input_data']).lower().startswith('sample'):
+
+            if url in SAMPLE_LIST or str(input_parameters['input_data']).lower().startswith('sample'):
                 rawDataIN = sprit_utils._get_sample_data(input_parameters['input_data'])
             else:   
                 try:
@@ -3997,7 +4009,9 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
             if source=='batch' or input_parameters['input_data'] == 'batch':
                 batch_input = sprit_utils._get_sample_data('batch', verbose=verbose)
                 input_parameters = batch_data_read(batch_data=batch_input, batch_type='sample', verbose=verbose)
+                print("HERRRRRRE", input_parameters, type(input_parameters))
                 input_parameters = HVSRBatch(input_parameters, df_as_read=input_parameters.input_df)
+                print(input_parameters, type(input_parameters))
                 return input_parameters
             elif source=='dir':
                 input_parameters['input_data'] = SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv')
