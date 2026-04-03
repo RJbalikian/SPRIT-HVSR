@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_calibration &mdash; sprit 3.12.2 documentation</title>
+  <title>sprit.sprit_calibration &mdash; sprit 3.12.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=88fa046d"></script>
+      <script src="../../_static/documentation_options.js?v=2c828074"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -145,14 +145,15 @@
 
 <span class="n">model_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span> <span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">casefold</span><span class="p">(),</span> <span class="n">models</span><span class="p">))</span>
 
-<span class="n">model_parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ISGS_All&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mf">141.81</span><span class="p">,</span> <span class="mf">1.582</span><span class="p">),</span> <span class="s2">&quot;ISGS_North&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mf">142.95</span><span class="p">,</span><span class="mf">1.312</span><span class="p">),</span> <span class="s2">&quot;ISGS_Central&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mf">119.17</span><span class="p">,</span> <span class="mf">1.21</span><span class="p">),</span> <span class="s2">&quot;ISGS_Southeast&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mf">67.973</span><span class="p">,</span><span class="mf">1.166</span><span class="p">),</span>
-                    <span class="s2">&quot;ISGS_Southwest&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">61.238</span><span class="p">,</span><span class="mf">1.003</span><span class="p">),</span> <span class="s2">&quot;ISGS_North_Central&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mf">117.44</span><span class="p">,</span> <span class="mf">1.095</span><span class="p">),</span> <span class="s2">&quot;ISGS_SW_SE&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mf">62.62</span><span class="p">,</span> <span class="mf">1.039</span><span class="p">),</span>
+<span class="n">model_parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ISGS_All&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mf">92.58</span><span class="p">,</span><span class="mf">1.038</span><span class="p">),</span> <span class="s2">&quot;ISGS_North&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mf">73.718</span><span class="p">,</span><span class="mf">0.934</span><span class="p">),</span> <span class="s2">&quot;ISGS_Central&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mf">119.17</span><span class="p">,</span> <span class="mf">1.21</span><span class="p">),</span> <span class="s2">&quot;ISGS_Southeast&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mf">61.554</span><span class="p">,</span><span class="mf">0.861</span><span class="p">),</span>
+                    <span class="s2">&quot;ISGS_Southwest&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">51.075</span><span class="p">,</span><span class="mf">0.885</span><span class="p">),</span> <span class="s2">&quot;ISGS_North_Central&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mf">110.97</span><span class="p">,</span><span class="mi">1061</span><span class="p">),</span> <span class="s2">&quot;ISGS_SW_SE&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mf">62.62</span><span class="p">,</span> <span class="mf">1.039</span><span class="p">),</span>
                     <span class="s2">&quot;Minnesota_All&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mi">121</span><span class="p">,</span> <span class="mf">1.323</span><span class="p">),</span> <span class="s2">&quot;Minnesota_Twin_Cities&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mi">129</span><span class="p">,</span> <span class="mf">1.295</span><span class="p">),</span> <span class="s2">&quot;Minnesota_South_Central&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mi">135</span><span class="p">,</span> <span class="mf">1.248</span><span class="p">),</span>
                     <span class="s2">&quot;Minnesota_River_Valleys&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mi">83</span><span class="p">,</span> <span class="mf">1.232</span><span class="p">),</span> <span class="s2">&quot;Rhine_Graben&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mi">96</span><span class="p">,</span> <span class="mf">1.388</span><span class="p">),</span> 
                     <span class="s2">&quot;Ibsvon_A&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mi">96</span><span class="p">,</span> <span class="mf">1.388</span><span class="p">),</span> <span class="s2">&quot;Ibsvon_B&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mi">146</span><span class="p">,</span> <span class="mf">1.375</span><span class="p">),</span> <span class="s2">&quot;Delgado_A&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mf">55.11</span><span class="p">,</span> <span class="mf">1.256</span><span class="p">),</span> 
                     <span class="s2">&quot;Delgado_B&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mf">55.64</span><span class="p">,</span> <span class="mf">1.268</span><span class="p">),</span> <span class="s2">&quot;Parolai&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mi">108</span><span class="p">,</span> <span class="mf">1.551</span><span class="p">),</span> <span class="s2">&quot;Hinzen&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mi">137</span><span class="p">,</span> <span class="mf">1.19</span><span class="p">),</span> <span class="s2">&quot;Birgoren&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mf">150.99</span><span class="p">,</span> <span class="mf">1.153</span><span class="p">),</span> 
                     <span class="s2">&quot;Ozalaybey&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mi">141</span><span class="p">,</span> <span class="mf">1.270</span><span class="p">),</span> <span class="s2">&quot;Harutoonian&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mi">73</span><span class="p">,</span> <span class="mf">1.170</span><span class="p">),</span> <span class="s2">&quot;Fairchild&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mf">90.53</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="s2">&quot;DelMonaco&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mf">53.461</span><span class="p">,</span> <span class="mf">1.01</span><span class="p">),</span> 
                     <span class="s2">&quot;Tun&quot;</span> <span class="p">:</span> <span class="p">(</span><span class="mi">136</span><span class="p">,</span> <span class="mf">1.357</span><span class="p">),</span> <span class="s2">&quot;Thabet_A&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">117.13</span><span class="p">,</span> <span class="mf">1.197</span><span class="p">),</span> <span class="s2">&quot;Thabet_B&quot;</span><span class="p">:(</span><span class="mf">105.14</span><span class="p">,</span> <span class="mf">0.899</span><span class="p">),</span> <span class="s2">&quot;Thabet_C&quot;</span><span class="p">:(</span><span class="mf">132.67</span><span class="p">,</span> <span class="mf">1.084</span><span class="p">),</span> <span class="s2">&quot;Thabet_D&quot;</span><span class="p">:(</span><span class="mf">116.62</span><span class="p">,</span> <span class="mf">1.169</span><span class="p">)}</span>
+<span class="n">CONGLOMERATE_MODEL</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model_parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()]))]</span>
 
 
 <div class="viewcode-block" id="power_law">
@@ -165,22 +166,22 @@
 <div class="viewcode-block" id="calculate_depth">
 <a class="viewcode-back" href="../../sprit.sprit_calibration.html#sprit.calculate_depth">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">calculate_depth</span><span class="p">(</span><span class="n">freq_input</span><span class="p">,</span>
-                    <span class="n">depth_model</span><span class="o">=</span><span class="s2">&quot;ISGS_All&quot;</span><span class="p">,</span>
+                    <span class="n">depth_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                     <span class="n">freq_col</span><span class="o">=</span><span class="s2">&quot;Peak&quot;</span><span class="p">,</span>
                     <span class="n">calculate_depth_in_feet</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                     <span class="n">calculate_elevation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                    <span class="n">show_depth_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">generate_depth_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">show_depth_curve</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                     <span class="n">surface_elevation_data</span><span class="o">=</span><span class="s1">&#39;Elevation&#39;</span><span class="p">,</span>
                     <span class="n">bedrock_elevation_column</span><span class="o">=</span><span class="s2">&quot;BedrockElevation&quot;</span><span class="p">,</span>
                     <span class="n">depth_column</span><span class="o">=</span><span class="s2">&quot;BedrockDepth&quot;</span><span class="p">,</span>
-                    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>    <span class="c1"># if verbose is True, display warnings otherwise not</span>
+                    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="c1"># if verbose is True, warnings will be shown</span>
                     <span class="n">export_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                     <span class="n">swave_velocity</span><span class="o">=</span><span class="mf">563.0</span><span class="p">,</span>
                     <span class="n">decimal_places</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
                     <span class="n">depth_model_in_latex</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                     <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                     <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                    <span class="c1">#group_by = &quot;County&quot;, -&gt; make a kwarg</span>
                     <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate depth(s) based on a frequency input (usually HVSRData or HVSRBatch oject) and a frequency-depth depth_model (usually a power law relationship).</span>
 
@@ -196,6 +197,10 @@
 <span class="sd">        Name of the column containing the frequency information of the peak, by default &quot;Peak&quot; (per HVSRData.Table_Report output)</span>
 <span class="sd">    calculate_elevation : bool, optional</span>
 <span class="sd">        Whether or not to calculate elevation, by default True</span>
+<span class="sd">    generate_depth_curve</span>
+<span class="sd">        Whether to generate a plot curve (will be shown by default, but can be hidden using show_depth_curve=False), by default False</span>
+<span class="sd">    show_depth_curve</span>
+<span class="sd">        Whether to show the depth curve. If True, will also set generate_depth_curve to True.</span>
 <span class="sd">    surface_elevation_data : str or numeric, optional</span>
 <span class="sd">        The name of the column or a manually specified numeric value to use for the surface elevation value, by default &quot;Elevation&quot;</span>
 <span class="sd">    bedrock_elevation_column : str, optional</span>
@@ -222,6 +227,12 @@
     <span class="n">orig_args</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()</span>
     <span class="n">ip_params</span><span class="p">,</span> <span class="n">fd_params</span> <span class="o">=</span> <span class="n">__get_ip_df_params</span><span class="p">()</span>
 
+    <span class="k">if</span> <span class="n">depth_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">depth_model</span> <span class="o">=</span> <span class="n">CONGLOMERATE_MODEL</span>
+
+    <span class="k">if</span> <span class="n">show_depth_curve</span><span class="p">:</span>
+        <span class="n">generate_depth_curve</span> <span class="o">=</span> <span class="kc">True</span>
+
     <span class="c1"># Break out if list (of random or not) items</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">freq_input</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
         <span class="n">outputList</span> <span class="o">=</span> <span class="p">[]</span>
@@ -231,7 +242,7 @@
             <span class="n">calc_depth_kwargs</span> <span class="o">=</span> <span class="n">orig_args</span>
             <span class="n">outputList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">calculate_depth</span><span class="p">(</span><span class="n">freq_input</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="o">**</span><span class="n">calc_depth_kwargs</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">outputList</span>
-    
+
     <span class="c1"># Break out for Batch data</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">freq_input</span><span class="p">,</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">HVSRBatch</span><span class="p">):</span>
         <span class="n">newBatchList</span> <span class="o">=</span> <span class="p">[]</span>
@@ -242,7 +253,7 @@
             <span class="n">calc_depth_kwargs</span> <span class="o">=</span> <span class="n">orig_args</span>
             <span class="n">newBatchList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">calculate_depth</span><span class="p">(</span><span class="n">freq_input</span><span class="o">=</span><span class="n">freq_input</span><span class="p">[</span><span class="n">site</span><span class="p">],</span> <span class="o">**</span><span class="n">calc_depth_kwargs</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">sprit_hvsr</span><span class="o">.</span><span class="n">HVSRBatch</span><span class="p">(</span><span class="n">newBatchList</span><span class="p">,</span> <span class="n">df_as_read</span><span class="o">=</span><span class="n">freq_input</span><span class="o">.</span><span class="n">input_df</span><span class="p">)</span>    
-    
+
     <span class="c1"># initialize values</span>
     <span class="n">a</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">b</span> <span class="o">=</span> <span class="mi">0</span>
@@ -479,12 +490,13 @@
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">ax</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">freq_input</span><span class="p">,</span> <span class="s1">&#39;hvsr_curve&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">freq_input</span><span class="p">,</span> <span class="s1">&#39;hvsr_curve&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">generate_depth_curve</span><span class="p">:</span>
             <span class="n">pdc_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">sprit_plot</span><span class="o">.</span><span class="n">plot_depth_curve</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
             <span class="n">pdc_kwargs</span><span class="p">[</span><span class="s1">&#39;show_depth_curve&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">show_depth_curve</span>
             <span class="n">pdc_kwargs</span><span class="p">[</span><span class="s1">&#39;fig&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span>
             <span class="n">pdc_kwargs</span><span class="p">[</span><span class="s1">&#39;ax&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ax</span>
-            <span class="n">freq_input</span> <span class="o">=</span> <span class="n">sprit_plot</span><span class="o">.</span><span class="n">plot_depth_curve</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">=</span><span class="n">freq_input</span><span class="p">,</span> <span class="o">**</span><span class="n">pdc_kwargs</span><span class="p">)</span>
+            <span class="n">freq_input</span> <span class="o">=</span> <span class="n">sprit_plot</span><span class="o">.</span><span class="n">plot_depth_curve</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">=</span><span class="n">freq_input</span><span class="p">,</span> 
+                                                     <span class="o">**</span><span class="n">pdc_kwargs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">surfElevVal</span> <span class="o">=</span> <span class="n">tableReport</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">surface_elevation_col</span><span class="p">]</span>
             <span class="n">brElevVal</span> <span class="o">=</span> <span class="n">tableReport</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">bedrock_elevation_column</span><span class="p">]</span>
@@ -600,8 +612,6 @@
     <span class="n">bedrock_depth_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;BedrockDepth&quot;</span><span class="p">,</span> <span class="s2">&quot;DepthToBedrock&quot;</span><span class="p">,</span> <span class="s2">&quot;bedrock_depth&quot;</span><span class="p">,</span>
                             <span class="s2">&quot;depth_bedrock&quot;</span><span class="p">,</span> <span class="s2">&quot;depthtobedrock&quot;</span><span class="p">,</span> <span class="s2">&quot;bedrockdepth&quot;</span><span class="p">]</span>
 
-    <span class="c1">#if calib_type.lower() in power_list:</span>
-
     <span class="n">depthDataDF</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">calib_filepath</span><span class="p">)</span>
 
     <span class="n">depths</span> <span class="o">=</span> <span class="n">depthDataDF</span><span class="p">[</span><span class="n">calib_depth_col</span><span class="p">]</span>
@@ -629,8 +639,8 @@
             <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">freqs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">t</span> <span class="ow">and</span> <span class="nb">min</span><span class="p">(</span><span class="n">freqs</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">tickList</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]:</span>
                 <span class="n">minX</span> <span class="o">=</span> <span class="n">t</span>
             <span class="k">if</span> <span class="n">i</span><span class="o">!=</span><span class="mi">0</span> <span class="ow">and</span> <span class="nb">max</span><span class="p">(</span><span class="n">freqs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">tickList</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="nb">max</span><span class="p">(</span><span class="n">freqs</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">t</span><span class="p">:</span>
-                <span class="n">maxX</span> <span class="o">=</span> <span class="n">t</span>                
-        
+                <span class="n">maxX</span> <span class="o">=</span> <span class="n">t</span>
+    
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tickList</span><span class="p">):</span>
             <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">depths</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">t</span> <span class="ow">and</span> <span class="nb">min</span><span class="p">(</span><span class="n">depths</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">tickList</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]:</span>
                 <span class="n">minY</span> <span class="o">=</span> <span class="n">t</span>
@@ -697,7 +707,7 @@
         <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="n">xArr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mf">0.001</span><span class="o">*</span><span class="n">xArr</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xArr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mf">0.005</span><span class="o">*</span><span class="n">xArr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="n">yArr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mf">0.005</span><span class="o">*</span><span class="n">yArr</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">yArr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mf">0.005</span><span class="o">*</span><span class="n">yArr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-    
+
     <span class="n">calibration_vals</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">popt</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">calibration_vals</span></div>

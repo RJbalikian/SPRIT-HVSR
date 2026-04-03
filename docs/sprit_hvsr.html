@@ -2980,6 +2980,10 @@ See here for more information: <a href="https://docs.obspy.org/packages/autogen/
     &#34;&#34;&#34;
     if isinstance(json_input, io.StringIO):
         jsonDictIN = json.load(json_input)
+    elif str(json_input).lower() in [&#39;sample&#39;, &#39;sampledata&#39;]:
+        jPath = SAMPLE_DATA_DIR / &#34;SampleHVSRSite01.json&#34;
+        with open(jPath, &#39;r&#39;) as ji:
+            jsonDictIN = json.load(ji)
     elif pathlib.Path(json_input).exists():
         if verbose:
             print(&#34;Found JSON File, reading in&#34;)
@@ -6825,8 +6829,11 @@ This is minimum number of points a point needs in its neighborhood to not be con
     RuntimeError
         If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     &#34;&#34;&#34;
-    if pathlib.Path(input_data).exists():
-        input_data = pathlib.Path(input_data).as_posix()
+    try:
+        if pathlib.Path(input_data).exists():
+            input_data = pathlib.Path(input_data).as_posix()
+    except Exception:
+        pass
     
     if isinstance(input_data, (pd.DataFrame, obspy.Stream, obspy.Trace)):
         pass
@@ -6835,6 +6842,8 @@ This is minimum number of points a point needs in its neighborhood to not be con
             pass
         elif isinstance(input_data, numbers.Number):
             input_data = f&#39;sample{input_data}&#39;
+        elif str(input_data).lower().startswith(&#39;sample&#39;):
+            input_data = input_data
         else:
             input_data = &#39;sample&#39;
     elif pathlib.Path(str(input_data)).exists() and ():

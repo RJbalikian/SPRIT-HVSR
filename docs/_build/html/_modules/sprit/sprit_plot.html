@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_plot &mdash; sprit 3.12.2 documentation</title>
+  <title>sprit.sprit_plot &mdash; sprit 3.12.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=88fa046d"></script>
+      <script src="../../_static/documentation_options.js?v=2c828074"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -657,19 +657,22 @@
 
 
 
-<span class="c1"># Plot depth curve</span>
 <div class="viewcode-block" id="plot_depth_curve">
 <a class="viewcode-back" href="../../sprit.sprit_plot.html#sprit.plot_depth_curve">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">plot_depth_curve</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">use_elevation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_feet</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">normalize_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_depth_curve</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">depth_plot_type</span><span class="o">=</span><span class="s1">&#39;well&#39;</span><span class="p">,</span> <span class="n">use_elevation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_feet</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">normalize_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
                      <span class="n">depth_limit</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">depth_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                      <span class="n">annotate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">depth_plot_export_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                     <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_depth_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                     <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_depth_curve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to plot depth curves, given hvsr_results with depth_model specified.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    hvsr_results : sprit.HVSRData or sprit.HVSRBatch</span>
 <span class="sd">        HVSRData object with depth information (or `depth_model` specified).</span>
+<span class="sd">    depth_plot_type : str, optional</span>
+<span class="sd">        What type of depth plot to make. </span>
+<span class="sd">        If &quot;curve&quot;, will plot a vertically-oriented HVSR curve.</span>
+<span class="sd">        If &quot;well&quot;, will plot a color-coded borehole-style plot.</span>
 <span class="sd">    use_elevation : bool, optional</span>
 <span class="sd">        Whether to use elevation (True) or just depth (False), by default True</span>
 <span class="sd">    show_feet : bool, optional</span>
@@ -706,7 +709,9 @@
 
     <span class="k">if</span> <span class="n">depth_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">hvsr_results</span> <span class="o">=</span> <span class="n">sprit_calibration</span><span class="o">.</span><span class="n">calculate_depth</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">depth_model</span><span class="o">=</span><span class="n">depth_model</span><span class="p">,</span> <span class="n">show_depth_curve</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
+    <span class="k">elif</span> <span class="s1">&#39;BedrockElevation&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">Table_Report</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">hvsr_results</span> <span class="o">=</span> <span class="n">sprit_calibration</span><span class="o">.</span><span class="n">calculate_depth</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">,</span> <span class="n">depth_model</span><span class="o">=</span><span class="n">depth_model</span><span class="p">,</span> <span class="n">show_depth_curve</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    
     <span class="k">for</span> <span class="n">site_index</span><span class="p">,</span> <span class="n">site_data</span> <span class="ow">in</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">Table_Report</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
         <span class="n">surfElev</span> <span class="o">=</span> <span class="n">site_data</span><span class="p">[</span><span class="s1">&#39;Elevation&#39;</span><span class="p">]</span>
         <span class="n">bedrockElev</span> <span class="o">=</span> <span class="n">site_data</span><span class="p">[</span><span class="s1">&#39;BedrockElevation&#39;</span><span class="p">]</span>
@@ -714,6 +719,8 @@
         <span class="n">hvsr_results</span><span class="o">.</span><span class="n">hvsr_curve</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">hvsr_curve</span><span class="p">)</span>
         <span class="n">curveRange</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">hvsr_curve</span><span class="p">)</span> <span class="o">-</span> <span class="nb">min</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">hvsr_curve</span><span class="p">)</span>
 
+        <span class="n">wellTypeList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;well&#39;</span><span class="p">,</span> <span class="s1">&#39;borehole&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="s1">&#39;log&#39;</span><span class="p">]</span>
+        
         <span class="k">if</span> <span class="n">normalize_curve</span><span class="p">:</span>
             <span class="n">curvePlot</span> <span class="o">=</span> <span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">hvsr_curve</span> <span class="o">-</span> <span class="nb">min</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">hvsr_curve</span><span class="p">))</span> <span class="o">/</span> <span class="n">curveRange</span>
             <span class="n">xBase</span> <span class="o">=</span> <span class="mi">0</span>
@@ -725,48 +732,104 @@
             <span class="n">xBase</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">hvsr_curve</span><span class="p">)</span>
             <span class="n">xCap</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">BestPeak</span><span class="p">[</span><span class="s1">&#39;HV&#39;</span><span class="p">][</span><span class="s1">&#39;A0&#39;</span><span class="p">]</span><span class="c1">#max(hvsr_results.hvsr_curve)</span>
             <span class="n">xLims</span> <span class="o">=</span> <span class="p">[</span><span class="n">xBase</span><span class="o">-</span><span class="p">(</span><span class="mf">0.15</span><span class="o">*</span><span class="n">curveRange</span><span class="p">),</span> <span class="n">xCap</span><span class="o">+</span><span class="p">(</span><span class="mf">0.15</span><span class="o">*</span><span class="n">curveRange</span><span class="p">)]</span>
-    
+
         <span class="k">if</span> <span class="n">use_elevation</span><span class="p">:</span>
             <span class="n">xtop</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">hvsr_results</span><span class="o">.</span><span class="n">x_elev_m</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">depth_limit</span><span class="p">,</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">x_elev_m</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
             <span class="n">yLims</span> <span class="o">=</span> <span class="p">[</span><span class="n">xtop</span><span class="p">,</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">x_elev_m</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
             <span class="n">yVals</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">x_elev_m</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Elevation [m]&#39;</span><span class="p">)</span>
             <span class="n">bedrockVal</span> <span class="o">=</span> <span class="n">bedrockElev</span>
-            <span class="k">if</span> <span class="n">annotate</span><span class="p">:</span>
-                <span class="c1">#Annotate surface elevation</span>
-                <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xLims</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                        <span class="n">y</span><span class="o">=</span><span class="n">surfElev</span><span class="p">,</span>
-                        <span class="n">s</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">surfElev</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;m&#39;</span><span class="p">,</span>
-                        <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span>
-                        <span class="n">va</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span>
-                        <span class="n">size</span><span class="o">=</span><span class="s1">&#39;x-small&#39;</span><span class="p">)</span>
-
-                <span class="c1"># Annotate bedrock elevation</span>
-                <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xBase</span><span class="p">,</span>
-                        <span class="n">y</span><span class="o">=</span><span class="n">bedrockElev</span><span class="p">,</span>
-                        <span class="n">s</span><span class="o">=</span><span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">bedrockElev</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;m</span><span class="se">\n</span><span class="s1"> elevation&#39;</span><span class="p">,</span>
-                        <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span>
-                        <span class="n">va</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span>
-                        <span class="n">size</span><span class="o">=</span><span class="s1">&#39;x-small&#39;</span><span class="p">)</span>
-                
-                <span class="c1"># Annotate bedrock depth</span>
-                <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xBase</span><span class="p">,</span>
-                        <span class="n">y</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">yLims</span><span class="p">),</span>
-                        <span class="n">s</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">bedrockDepth</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;m deep &#39;</span><span class="p">,</span>
-                        <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span>
-                        <span class="n">va</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">,</span>
-                        <span class="n">size</span><span class="o">=</span><span class="s1">&#39;x-small&#39;</span><span class="p">,</span>
-                        <span class="n">rotation</span><span class="o">=</span><span class="s1">&#39;vertical&#39;</span><span class="p">)</span>
+            
+            <span class="n">xTopLoc</span> <span class="o">=</span> <span class="n">xLims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">yTopLoc</span> <span class="o">=</span> <span class="n">surfElev</span>
+            <span class="n">yTopLabel</span> <span class="o">=</span> <span class="n">surfElev</span>
+            
         <span class="k">else</span><span class="p">:</span>
             <span class="n">yLims</span> <span class="o">=</span> <span class="p">[</span><span class="n">depth_limit</span><span class="p">,</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">x_depth_m</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
             <span class="n">yVals</span> <span class="o">=</span> <span class="n">hvsr_results</span><span class="o">.</span><span class="n">x_depth_m</span><span class="p">[</span><span class="s1">&#39;Z&#39;</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Depth [m]&#39;</span><span class="p">)</span>
             <span class="n">bedrockVal</span> <span class="o">=</span> <span class="n">bedrockDepth</span>
+            
+            <span class="n">xTopLoc</span> <span class="o">=</span> <span class="n">xLims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">yTopLoc</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">yTopLabel</span> <span class="o">=</span> <span class="n">surfElev</span>
+
+        <span class="n">xlabel</span> <span class="o">=</span> <span class="s2">&quot;H/V Ratio&quot;</span>
+        <span class="k">if</span> <span class="n">normalize_curve</span><span class="p">:</span>
+            <span class="n">xlabel</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">(Normalized)&#39;</span>
+
+        <span class="n">wellTypeList</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;well&#39;</span><span class="p">,</span> <span class="s1">&#39;borehole&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="s1">&#39;log&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">depth_plot_type</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">wellTypeList</span><span class="p">:</span>
+            <span class="n">xSize</span> <span class="o">=</span> <span class="n">curvePlot</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">//</span><span class="mi">10</span>
+            <span class="n">curvePlot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">curvePlot</span><span class="p">,</span> <span class="p">(</span><span class="n">xSize</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">minY</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">yVals</span><span class="p">)</span>
+            <span class="n">maxY</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">yVals</span><span class="p">)</span>
+            <span class="n">yLims</span> <span class="o">=</span> <span class="p">[</span><span class="n">minY</span><span class="p">,</span> <span class="n">maxY</span><span class="p">]</span>
+            <span class="n">xBase</span> <span class="o">=</span> <span class="o">-</span><span class="mi">10</span>
+            <span class="n">xCap</span> <span class="o">=</span> <span class="n">xBase</span> <span class="o">+</span> <span class="n">xSize</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">xLims</span> <span class="o">=</span> <span class="p">[</span><span class="n">xBase</span><span class="p">,</span> <span class="n">xCap</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">xVals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">xBase</span><span class="p">,</span><span class="n">xCap</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="s1">&#39;cmap&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="n">cmap</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;cmap&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;YlOrRd&#39;</span>
+            <span class="n">cbar</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="n">xVals</span><span class="p">,</span> <span class="n">yVals</span><span class="p">,</span> <span class="n">curvePlot</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">cbar</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s1">&#39;horizontal&#39;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span> 
+                         <span class="n">pad</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span><span class="n">shrink</span><span class="o">=</span><span class="mf">1.75</span><span class="p">,</span> <span class="n">aspect</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                         <span class="n">label</span><span class="o">=</span><span class="n">xlabel</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">([])</span>
             <span class="k">if</span> <span class="n">annotate</span><span class="p">:</span>
                 <span class="c1"># Annotate surface elevation</span>
-                <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xLims</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                        <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                        <span class="n">s</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">surfElev</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;m&#39;</span><span class="p">,</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xBase</span><span class="p">,</span>
+                        <span class="n">y</span><span class="o">=</span><span class="n">maxY</span><span class="p">,</span>
+                        <span class="n">s</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">yTopLabel</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;m&#39;</span><span class="p">,</span>
+                        <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span>
+                        <span class="n">va</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">,</span>
+                        <span class="n">size</span><span class="o">=</span><span class="s1">&#39;x-small&#39;</span><span class="p">)</span>
+                
+                <span class="c1"># Annotate Bedrock elevation</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xCap</span><span class="o">*</span><span class="mf">1.1</span><span class="p">,</span>
+                        <span class="n">y</span><span class="o">=</span><span class="n">bedrockVal</span><span class="p">,</span>
+                        <span class="n">s</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">bedrockElev</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;m</span><span class="se">\n</span><span class="s1">elevation&#39;</span><span class="p">,</span>
+                        <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span>
+                        <span class="n">va</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span>
+                        <span class="n">size</span><span class="o">=</span><span class="s1">&#39;x-small&#39;</span><span class="p">)</span>
+
+                <span class="c1"># Annotate Bedrock depth</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xCap</span><span class="p">,</span>
+                        <span class="n">y</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">yLims</span><span class="p">),</span>
+                        <span class="n">s</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">bedrockDepth</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;m deep&#39;</span><span class="p">,</span>
+                        <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span>
+                        <span class="n">va</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">,</span>
+                        <span class="n">size</span><span class="o">=</span><span class="s1">&#39;x-small&#39;</span><span class="p">,</span>
+                        <span class="n">rotation</span><span class="o">=</span><span class="mi">270</span><span class="p">)</span>
+
+            <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mf">1.5</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+            <span class="c1">#fig.set_layout_engine(&#39;constrained&#39;)</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Plot curve</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">fill_betweenx</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">yVals</span><span class="p">,</span> <span class="n">x1</span><span class="o">=</span><span class="n">xBase</span><span class="p">,</span> <span class="n">x2</span><span class="o">=</span><span class="n">curvePlot</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">curvePlot</span><span class="p">,</span> <span class="n">yVals</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">show_feet</span><span class="p">:</span>
+                <span class="n">ax_ft</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">twinx</span><span class="p">()</span>
+                <span class="n">ax_ft</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">curvePlot</span><span class="p">,</span> <span class="n">yVals</span><span class="o">*</span><span class="mf">3.281</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">ax_ft</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">yLims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mf">3.281</span><span class="p">,</span> <span class="n">yLims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="mf">3.281</span><span class="p">)</span>
+                <span class="n">ax_ft</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Elevation [ft]&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">use_elevation</span><span class="p">:</span>
+                    <span class="n">ax_ft</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Depth [ft]&#39;</span><span class="p">)</span>
+                <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">normalize_curve</span><span class="p">:</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([])</span>
+
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;H/V Ratio&#39;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">annotate</span><span class="p">:</span>
+                <span class="c1"># Annotate surface elevation</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xTopLoc</span><span class="p">,</span>
+                        <span class="n">y</span><span class="o">=</span><span class="n">yTopLoc</span><span class="p">,</span>
+                        <span class="n">s</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">yTopLabel</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;m&#39;</span><span class="p">,</span>
                         <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span>
                         <span class="n">va</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span>
                         <span class="n">size</span><span class="o">=</span><span class="s1">&#39;x-small&#39;</span><span class="p">)</span>
@@ -775,30 +838,23 @@
                 <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xBase</span><span class="p">,</span>
                         <span class="n">y</span><span class="o">=</span><span class="n">bedrockVal</span><span class="p">,</span>
                         <span class="n">s</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">bedrockElev</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;m</span><span class="se">\n</span><span class="s1">elevation&#39;</span><span class="p">,</span>
-                        <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span>
+                        <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span>
                         <span class="n">va</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span>
                         <span class="n">size</span><span class="o">=</span><span class="s1">&#39;x-small&#39;</span><span class="p">)</span>
 
                 <span class="c1"># Annotate Bedrock depth</span>
                 <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xBase</span><span class="p">,</span>
-                        <span class="n">y</span><span class="o">=</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">yLims</span><span class="p">)</span><span class="o">+</span><span class="nb">float</span><span class="p">(</span><span class="n">bedrockDepth</span><span class="p">))</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>
+                        <span class="n">y</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">yLims</span><span class="p">),</span>
                         <span class="n">s</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">bedrockDepth</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;m deep&#39;</span><span class="p">,</span>
                         <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span>
                         <span class="n">va</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">,</span>
                         <span class="n">size</span><span class="o">=</span><span class="s1">&#39;x-small&#39;</span><span class="p">,</span>
                         <span class="n">rotation</span><span class="o">=</span><span class="s1">&#39;vertical&#39;</span><span class="p">)</span>
 
-        <span class="c1"># Plot curve</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">fill_betweenx</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">yVals</span><span class="p">,</span> <span class="n">x1</span><span class="o">=</span><span class="n">xBase</span><span class="p">,</span> <span class="n">x2</span><span class="o">=</span><span class="n">curvePlot</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">curvePlot</span><span class="p">,</span> <span class="n">yVals</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">show_feet</span><span class="p">:</span>
-            <span class="n">ax_ft</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">twinx</span><span class="p">()</span>
-            <span class="n">ax_ft</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">curvePlot</span><span class="p">,</span> <span class="n">yVals</span><span class="o">*</span><span class="mf">3.281</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-            <span class="n">ax_ft</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">yLims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mf">3.281</span><span class="p">,</span> <span class="n">yLims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="mf">3.281</span><span class="p">)</span>
-            <span class="n">ax_ft</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Elevation [ft]&#39;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">use_elevation</span><span class="p">:</span>
-                <span class="n">ax_ft</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Depth [ft]&#39;</span><span class="p">)</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
             
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">xLims</span><span class="p">)</span>    
         <span class="c1"># Plot peak location</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">bedrockVal</span><span class="p">,</span>
                 <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;dotted&#39;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
@@ -809,31 +865,25 @@
         <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xBase</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;dotted&#39;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
 
         <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">yLims</span><span class="p">)</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">xLims</span><span class="p">)</span>
-        
-        <span class="n">xlabel</span> <span class="o">=</span> <span class="s2">&quot;H/V Ratio&quot;</span>
-        <span class="k">if</span> <span class="n">normalize_curve</span><span class="p">:</span>
-            <span class="n">xlabel</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">(Normalized)&#39;</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([])</span>
 
-        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;H/V Ratio&#39;</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_label_position</span><span class="p">(</span><span class="s1">&#39;top&#39;</span><span class="p">)</span>
 
-        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">])</span>
+        <span class="c1">#ax.set_title(hvsr_results[&#39;site&#39;])</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">set_layout_engine</span><span class="p">(</span><span class="s1">&#39;constrained&#39;</span><span class="p">)</span>
 
         <span class="n">plt</span><span class="o">.</span><span class="n">sca</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
-        <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+        
         <span class="k">if</span> <span class="n">show_depth_curve</span><span class="p">:</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-            
+
         <span class="k">if</span> <span class="n">depth_plot_export_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">depth_plot_export_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">):</span>
                 <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">depth_plot_export_path</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Please specify a valid path for depth_plot_export_path, not </span><span class="si">{</span><span class="n">depth_plot_export_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        
+
         <span class="n">hvsr_results</span><span class="p">[</span><span class="s1">&#39;Depth_Plot&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span>
     <span class="k">return</span> <span class="n">hvsr_results</span></div>
 

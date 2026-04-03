@@ -48,7 +48,7 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="sprit.sprit_calibration.calculate_depth"><code class="name flex">
-<span>def <span class="ident">calculate_depth</span></span>(<span>freq_input,<br>depth_model='ISGS_All',<br>freq_col='Peak',<br>calculate_depth_in_feet=False,<br>calculate_elevation=True,<br>show_depth_curve=True,<br>surface_elevation_data='Elevation',<br>bedrock_elevation_column='BedrockElevation',<br>depth_column='BedrockDepth',<br>verbose=False,<br>export_path=None,<br>swave_velocity=563.0,<br>decimal_places=3,<br>depth_model_in_latex=False,<br>fig=None,<br>ax=None,<br>**kwargs)</span>
+<span>def <span class="ident">calculate_depth</span></span>(<span>freq_input,<br>depth_model=None,<br>freq_col='Peak',<br>calculate_depth_in_feet=False,<br>calculate_elevation=True,<br>generate_depth_curve=True,<br>show_depth_curve=False,<br>surface_elevation_data='Elevation',<br>bedrock_elevation_column='BedrockElevation',<br>depth_column='BedrockDepth',<br>verbose=False,<br>export_path=None,<br>swave_velocity=563.0,<br>decimal_places=3,<br>depth_model_in_latex=False,<br>fig=None,<br>ax=None,<br>**kwargs)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -56,22 +56,22 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def calculate_depth(freq_input,
-                    depth_model=&#34;ISGS_All&#34;,
+                    depth_model=None,
                     freq_col=&#34;Peak&#34;,
                     calculate_depth_in_feet=False,
                     calculate_elevation=True,
-                    show_depth_curve=True,
+                    generate_depth_curve=True,
+                    show_depth_curve=False,
                     surface_elevation_data=&#39;Elevation&#39;,
                     bedrock_elevation_column=&#34;BedrockElevation&#34;,
                     depth_column=&#34;BedrockDepth&#34;,
-                    verbose=False,    # if verbose is True, display warnings otherwise not
+                    verbose=False, # if verbose is True, warnings will be shown
                     export_path=None,
                     swave_velocity=563.0,
                     decimal_places=3,
                     depth_model_in_latex=False,
                     fig=None,
                     ax=None,
-                    #group_by = &#34;County&#34;, -&gt; make a kwarg
                     **kwargs):
     &#34;&#34;&#34;Calculate depth(s) based on a frequency input (usually HVSRData or HVSRBatch oject) and a frequency-depth depth_model (usually a power law relationship).
 
@@ -87,6 +87,10 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
         Name of the column containing the frequency information of the peak, by default &#34;Peak&#34; (per HVSRData.Table_Report output)
     calculate_elevation : bool, optional
         Whether or not to calculate elevation, by default True
+    generate_depth_curve
+        Whether to generate a plot curve (will be shown by default, but can be hidden using show_depth_curve=False), by default False
+    show_depth_curve
+        Whether to show the depth curve. If True, will also set generate_depth_curve to True.
     surface_elevation_data : str or numeric, optional
         The name of the column or a manually specified numeric value to use for the surface elevation value, by default &#34;Elevation&#34;
     bedrock_elevation_column : str, optional
@@ -113,6 +117,12 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
     orig_args = locals()
     ip_params, fd_params = __get_ip_df_params()
 
+    if depth_model is None:
+        depth_model = CONGLOMERATE_MODEL
+
+    if show_depth_curve:
+        generate_depth_curve = True
+
     # Break out if list (of random or not) items
     if isinstance(freq_input, (list, tuple)):
         outputList = []
@@ -122,7 +132,7 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
             calc_depth_kwargs = orig_args
             outputList.append(calculate_depth(freq_input=item, **calc_depth_kwargs))
         return outputList
-    
+
     # Break out for Batch data
     if isinstance(freq_input, sprit_hvsr.HVSRBatch):
         newBatchList = []
@@ -133,7 +143,7 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
             calc_depth_kwargs = orig_args
             newBatchList.append(calculate_depth(freq_input=freq_input[site], **calc_depth_kwargs))
         return sprit_hvsr.HVSRBatch(newBatchList, df_as_read=freq_input.input_df)    
-    
+
     # initialize values
     a = 0
     b = 0
@@ -370,12 +380,13 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
             if len(ax) == 1:
                 ax = ax[0]
 
-        if hasattr(freq_input, &#39;hvsr_curve&#39;):
+        if hasattr(freq_input, &#39;hvsr_curve&#39;) and generate_depth_curve:
             pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
             pdc_kwargs[&#39;show_depth_curve&#39;] = show_depth_curve
             pdc_kwargs[&#39;fig&#39;] = fig
             pdc_kwargs[&#39;ax&#39;] = ax
-            freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input, **pdc_kwargs)
+            freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input, 
+                                                     **pdc_kwargs)
         else:
             surfElevVal = tableReport.loc[0, surface_elevation_col]
             brElevVal = tableReport.loc[0, bedrock_elevation_column]
@@ -456,6 +467,10 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
 <dd>Name of the column containing the frequency information of the peak, by default "Peak" (per HVSRData.Table_Report output)</dd>
 <dt><strong><code>calculate_elevation</code></strong> :&ensp;<code>bool</code>, optional</dt>
 <dd>Whether or not to calculate elevation, by default True</dd>
+<dt><strong><code>generate_depth_curve</code></strong></dt>
+<dd>Whether to generate a plot curve (will be shown by default, but can be hidden using show_depth_curve=False), by default False</dd>
+<dt><strong><code>show_depth_curve</code></strong></dt>
+<dd>Whether to show the depth curve. If True, will also set generate_depth_curve to True.</dd>
 <dt><strong><code>surface_elevation_data</code></strong> :&ensp;<code>str</code> or <code>numeric</code>, optional</dt>
 <dd>The name of the column or a manually specified numeric value to use for the surface elevation value, by default "Elevation"</dd>
 <dt><strong><code>bedrock_elevation_column</code></strong> :&ensp;<code>str</code>, optional</dt>
@@ -531,8 +546,6 @@ if using the quarter wavelength shear wave velocity method, by default 563.0</dd
     bedrock_depth_names = [&#34;BedrockDepth&#34;, &#34;DepthToBedrock&#34;, &#34;bedrock_depth&#34;,
                             &#34;depth_bedrock&#34;, &#34;depthtobedrock&#34;, &#34;bedrockdepth&#34;]
 
-    #if calib_type.lower() in power_list:
-
     depthDataDF = pd.read_csv(calib_filepath)
 
     depths = depthDataDF[calib_depth_col]
@@ -560,8 +573,8 @@ if using the quarter wavelength shear wave velocity method, by default 563.0</dd
             if min(freqs) &gt; t and min(freqs) &lt;= tickList[i+1]:
                 minX = t
             if i!=0 and max(freqs) &gt; tickList[i-1] and max(freqs) &lt;= t:
-                maxX = t                
-        
+                maxX = t
+    
         for i, t in enumerate(tickList):
             if min(depths) &gt; t and min(depths) &lt;= tickList[i+1]:
                 minY = t
@@ -628,7 +641,7 @@ if using the quarter wavelength shear wave velocity method, by default 563.0</dd
         plt.xlim([xArr[0]-0.001*xArr[0], xArr[-1]+0.005*xArr[-1]])
         plt.ylim([yArr[0]-0.005*yArr[0], yArr[-1]+0.005*yArr[-1]])
         plt.show()
-    
+
     calibration_vals = tuple(popt)
 
     return calibration_vals</code></pre>

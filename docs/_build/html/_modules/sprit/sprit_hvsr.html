@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 3.12.2 documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 3.12.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
-      <script src="../../_static/documentation_options.js?v=88fa046d"></script>
+      <script src="../../_static/documentation_options.js?v=2c828074"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -164,38 +164,11 @@
     <span class="n">SAMPLE_LIST</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
     <span class="n">SAMPLE_LIST</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
 
-<span class="n">sampleFileKeyMap</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;1&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite01&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;2&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite02&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;3&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite03&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;4&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite04&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;5&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite05&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;6&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite06&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;7&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite07&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;8&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite08&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;9&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite09&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;10&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite10&#39;</span><span class="p">),</span>
+<span class="n">sampleFileKeyMap</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;1&#39;</span><span class="p">:</span> <span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite01&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;2&#39;</span><span class="p">:</span> <span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite02&#39;</span><span class="p">),</span>
                     
-                    <span class="s1">&#39;sample1&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite01&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample2&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite02&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample3&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite03&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample4&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite04&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample5&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite05&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample6&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite06&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample7&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite07&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample8&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite08&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample9&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite09&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample10&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite10&#39;</span><span class="p">),</span>
-
-                    <span class="s1">&#39;sample_1&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample_2&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample_3&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample_4&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample_5&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample_6&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample_7&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite7_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample_8&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite8_BNE_6_AM.RAC84.00.2023.191_2023-07-10_1806-1825.MSEED&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample_9&#39;</span><span class="p">:</span><span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite9_BNE-2_AM.RAC84.00.2023.192_2023-07-11_0000-0011.MSEED&#39;</span><span class="p">),</span>
-                    <span class="s1">&#39;sample_10&#39;</span><span class="p">:</span> <span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite10_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;sample1&#39;</span><span class="p">:</span> <span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite01&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;sample2&#39;</span><span class="p">:</span> <span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;SampleHVSRSite02&#39;</span><span class="p">),</span>
                     
                     <span class="s1">&#39;batch&#39;</span><span class="p">:</span> <span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;Batch_SampleData.csv&#39;</span><span class="p">),</span>
                     <span class="s1">&#39;sample_batch&#39;</span><span class="p">:</span> <span class="n">SAMPLE_DATA_DIR</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;Batch_SampleData.csv&#39;</span><span class="p">)}</span>
@@ -1423,8 +1396,11 @@
 <span class="sd">    RuntimeError</span>
 <span class="sd">        If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="n">input_data</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">input_data</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">pass</span>
     
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">)):</span>
         <span class="k">pass</span>
@@ -1433,6 +1409,8 @@
             <span class="k">pass</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">):</span>
             <span class="n">input_data</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;sample</span><span class="si">{</span><span class="n">input_data</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;sample&#39;</span><span class="p">):</span>
+            <span class="n">input_data</span> <span class="o">=</span> <span class="n">input_data</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">input_data</span> <span class="o">=</span> <span class="s1">&#39;sample&#39;</span>
     <span class="k">elif</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">input_data</span><span class="p">))</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="p">():</span>
@@ -4708,6 +4686,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">json_input</span><span class="p">,</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">):</span>
         <span class="n">jsonDictIN</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">json_input</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">json_input</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;sampledata&#39;</span><span class="p">]:</span>
+        <span class="n">jPath</span> <span class="o">=</span> <span class="n">SAMPLE_DATA_DIR</span> <span class="o">/</span> <span class="s2">&quot;SampleHVSRSite01.json&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">jPath</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ji</span><span class="p">:</span>
+            <span class="n">jsonDictIN</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">ji</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">json_input</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Found JSON File, reading in&quot;</span><span class="p">)</span>
