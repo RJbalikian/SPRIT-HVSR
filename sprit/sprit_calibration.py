@@ -74,14 +74,15 @@ swave = ["shear", "swave", "shearwave", "rayleigh", "rayleighwave", "vs"]
 
 model_list = list(map(lambda x : x.casefold(), models))
 
-model_parameters = {"ISGS_All" : (141.81, 1.582), "ISGS_North" : (142.95,1.312), "ISGS_Central" : (119.17, 1.21), "ISGS_Southeast" : (67.973,1.166),
-                    "ISGS_Southwest": (61.238,1.003), "ISGS_North_Central" : (117.44, 1.095), "ISGS_SW_SE" : (62.62, 1.039),
+model_parameters = {"ISGS_All" : (92.58,1.038), "ISGS_North" : (73.718,0.934), "ISGS_Central" : (119.17, 1.21), "ISGS_Southeast" : (61.554,0.861),
+                    "ISGS_Southwest": (51.075,0.885), "ISGS_North_Central" : (110.97,1061), "ISGS_SW_SE" : (62.62, 1.039),
                     "Minnesota_All" : (121, 1.323), "Minnesota_Twin_Cities" : (129, 1.295), "Minnesota_South_Central" : (135, 1.248),
                     "Minnesota_River_Valleys" : (83, 1.232), "Rhine_Graben" : (96, 1.388), 
                     "Ibsvon_A" : (96, 1.388), "Ibsvon_B" : (146, 1.375), "Delgado_A" : (55.11, 1.256), 
                     "Delgado_B" : (55.64, 1.268), "Parolai" : (108, 1.551), "Hinzen" : (137, 1.19), "Birgoren" : (150.99, 1.153), 
                     "Ozalaybey" : (141, 1.270), "Harutoonian" : (73, 1.170), "Fairchild" : (90.53, 1), "DelMonaco" : (53.461, 1.01), 
                     "Tun" : (136, 1.357), "Thabet_A": (117.13, 1.197), "Thabet_B":(105.14, 0.899), "Thabet_C":(132.67, 1.084), "Thabet_D":(116.62, 1.169)}
+CONGLOMERATE_MODEL = [float(np.nanmean(x)) for x in list(zip(*[v for k, v in model_parameters.items()]))]
 
 
 def power_law(f, a, b):
@@ -89,22 +90,22 @@ def power_law(f, a, b):
 
 
 def calculate_depth(freq_input,
-                    depth_model="ISGS_All",
+                    depth_model=None,
                     freq_col="Peak",
                     calculate_depth_in_feet=False,
                     calculate_elevation=True,
-                    show_depth_curve=True,
+                    generate_depth_curve=True,
+                    show_depth_curve=False,
                     surface_elevation_data='Elevation',
                     bedrock_elevation_column="BedrockElevation",
                     depth_column="BedrockDepth",
-                    verbose=False,    # if verbose is True, display warnings otherwise not
+                    verbose=False, # if verbose is True, warnings will be shown
                     export_path=None,
                     swave_velocity=563.0,
                     decimal_places=3,
                     depth_model_in_latex=False,
                     fig=None,
                     ax=None,
-                    #group_by = "County", -> make a kwarg
                     **kwargs):
     """Calculate depth(s) based on a frequency input (usually HVSRData or HVSRBatch oject) and a frequency-depth depth_model (usually a power law relationship).
 
@@ -120,6 +121,10 @@ def calculate_depth(freq_input,
         Name of the column containing the frequency information of the peak, by default "Peak" (per HVSRData.Table_Report output)
     calculate_elevation : bool, optional
         Whether or not to calculate elevation, by default True
+    generate_depth_curve
+        Whether to generate a plot curve (will be shown by default, but can be hidden using show_depth_curve=False), by default False
+    show_depth_curve
+        Whether to show the depth curve. If True, will also set generate_depth_curve to True.
     surface_elevation_data : str or numeric, optional
         The name of the column or a manually specified numeric value to use for the surface elevation value, by default "Elevation"
     bedrock_elevation_column : str, optional
@@ -145,6 +150,12 @@ def calculate_depth(freq_input,
     """
     orig_args = locals()
     ip_params, fd_params = __get_ip_df_params()
+
+    if depth_model is None:
+        depth_model = CONGLOMERATE_MODEL
+
+    if show_depth_curve:
+        generate_depth_curve = True
 
     # Break out if list (of random or not) items
     if isinstance(freq_input, (list, tuple)):
@@ -202,6 +213,7 @@ def calculate_depth(freq_input,
     if b < 0:
         b = b * -1
 
+    print("FREEEEQ", freq_input, type(freq_input))
     # Get frequency input
     # Checking if freq_input is HVSRData object
     if isinstance(freq_input, (sprit_hvsr.HVSRData, str, bytes, os.PathLike, float, int)):
@@ -403,12 +415,13 @@ def calculate_depth(freq_input,
             if len(ax) == 1:
                 ax = ax[0]
 
-        if hasattr(freq_input, 'hvsr_curve'):
+        if hasattr(freq_input, 'hvsr_curve') and generate_depth_curve:
             pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
             pdc_kwargs['show_depth_curve'] = show_depth_curve
             pdc_kwargs['fig'] = fig
             pdc_kwargs['ax'] = ax
-            freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input, **pdc_kwargs)
+            freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input, 
+                                                     **pdc_kwargs)
         else:
             surfElevVal = tableReport.loc[0, surface_elevation_col]
             brElevVal = tableReport.loc[0, bedrock_elevation_column]

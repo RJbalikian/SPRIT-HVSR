@@ -93,38 +93,11 @@ for s in sampleListNos:
     SAMPLE_LIST.append(s.zfill(2))
     SAMPLE_LIST.append(int(s))
 
-sampleFileKeyMap = {'1':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite01'),
-                    '2':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite02'),
-                    '3':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite03'),
-                    '4':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite04'),
-                    '5':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite05'),
-                    '6':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite06'),
-                    '7':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite07'),
-                    '8':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite08'),
-                    '9':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite09'),
-                    '10':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite10'),
+sampleFileKeyMap = {'1': SAMPLE_DATA_DIR.joinpath('SampleHVSRSite01'),
+                    '2': SAMPLE_DATA_DIR.joinpath('SampleHVSRSite02'),
                     
-                    'sample1':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite01'),
-                    'sample2':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite02'),
-                    'sample3':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite03'),
-                    'sample4':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite04'),
-                    'sample5':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite05'),
-                    'sample6':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite06'),
-                    'sample7':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite07'),
-                    'sample8':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite08'),
-                    'sample9':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite09'),
-                    'sample10':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite10'),
-
-                    'sample_1':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite1_AM.RAC84.00.2023.046_2023-02-15_1704-1734.MSEED'),
-                    'sample_2':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite2_AM.RAC84.00.2023-02-15_2132-2200.MSEED'),
-                    'sample_3':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite3_AM.RAC84.00.2023.199_2023-07-18_1432-1455.MSEED'),
-                    'sample_4':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite4_AM.RAC84.00.2023.199_2023-07-18_1609-1629.MSEED'),
-                    'sample_5':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite5_AM.RAC84.00.2023.199_2023-07-18_2039-2100.MSEED'),
-                    'sample_6':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite6_AM.RAC84.00.2023.192_2023-07-11_1510-1528.MSEED'),
-                    'sample_7':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite7_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
-                    'sample_8':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite8_BNE_6_AM.RAC84.00.2023.191_2023-07-10_1806-1825.MSEED'),
-                    'sample_9':SAMPLE_DATA_DIR.joinpath('SampleHVSRSite9_BNE-2_AM.RAC84.00.2023.192_2023-07-11_0000-0011.MSEED'),
-                    'sample_10': SAMPLE_DATA_DIR.joinpath('SampleHVSRSite10_BNE_4_AM.RAC84.00.2023.191_2023-07-10_2237-2259.MSEED'),
+                    'sample1': SAMPLE_DATA_DIR.joinpath('SampleHVSRSite01'),
+                    'sample2': SAMPLE_DATA_DIR.joinpath('SampleHVSRSite02'),
                     
                     'batch': SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv'),
                     'sample_batch': SAMPLE_DATA_DIR.joinpath('Batch_SampleData.csv')}
@@ -1291,6 +1264,8 @@ def run(input_data=None, source='file',
             pass
         elif isinstance(input_data, numbers.Number):
             input_data = f'sample{input_data}'
+        elif str(input_data).lower().startswith('sample'):
+            input_data = input_data
         else:
             input_data = 'sample'
     elif pathlib.Path(str(input_data)).exists() and ():
@@ -4536,6 +4511,10 @@ def from_json(json_input, return_hvsr=True, verbose=False, **kwargs):
     """
     if isinstance(json_input, io.StringIO):
         jsonDictIN = json.load(json_input)
+    elif str(json_input).lower() in ['sample', 'sampledata']:
+        jPath = SAMPLE_DATA_DIR / "SampleHVSRSite01.json"
+        with open(jPath, 'r') as ji:
+            jsonDictIN = json.load(ji)
     elif pathlib.Path(json_input).exists():
         if verbose:
             print("Found JSON File, reading in")
