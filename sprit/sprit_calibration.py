@@ -166,7 +166,7 @@ def calculate_depth(freq_input,
             calc_depth_kwargs = orig_args
             outputList.append(calculate_depth(freq_input=item, **calc_depth_kwargs))
         return outputList
-    
+
     # Break out for Batch data
     if isinstance(freq_input, sprit_hvsr.HVSRBatch):
         newBatchList = []
@@ -177,7 +177,7 @@ def calculate_depth(freq_input,
             calc_depth_kwargs = orig_args
             newBatchList.append(calculate_depth(freq_input=freq_input[site], **calc_depth_kwargs))
         return sprit_hvsr.HVSRBatch(newBatchList, df_as_read=freq_input.input_df)    
-    
+
     # initialize values
     a = 0
     b = 0
@@ -213,7 +213,6 @@ def calculate_depth(freq_input,
     if b < 0:
         b = b * -1
 
-    print("FREEEEQ", freq_input, type(freq_input))
     # Get frequency input
     # Checking if freq_input is HVSRData object
     if isinstance(freq_input, (sprit_hvsr.HVSRData, str, bytes, os.PathLike, float, int)):
@@ -534,8 +533,6 @@ def calibrate(calib_filepath, calib_type="power", peak_freq_col="PeakFrequency",
     bedrock_depth_names = ["BedrockDepth", "DepthToBedrock", "bedrock_depth",
                             "depth_bedrock", "depthtobedrock", "bedrockdepth"]
 
-    #if calib_type.lower() in power_list:
-
     depthDataDF = pd.read_csv(calib_filepath)
 
     depths = depthDataDF[calib_depth_col]
@@ -563,8 +560,8 @@ def calibrate(calib_filepath, calib_type="power", peak_freq_col="PeakFrequency",
             if min(freqs) > t and min(freqs) <= tickList[i+1]:
                 minX = t
             if i!=0 and max(freqs) > tickList[i-1] and max(freqs) <= t:
-                maxX = t                
-        
+                maxX = t
+    
         for i, t in enumerate(tickList):
             if min(depths) > t and min(depths) <= tickList[i+1]:
                 minY = t
@@ -631,7 +628,7 @@ def calibrate(calib_filepath, calib_type="power", peak_freq_col="PeakFrequency",
         plt.xlim([xArr[0]-0.001*xArr[0], xArr[-1]+0.005*xArr[-1]])
         plt.ylim([yArr[0]-0.005*yArr[0], yArr[-1]+0.005*yArr[-1]])
         plt.show()
-    
+
     calibration_vals = tuple(popt)
 
     return calibration_vals
