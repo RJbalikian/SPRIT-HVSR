@@ -1278,8 +1278,11 @@ def run(input_data=None, source='file',
     RuntimeError
         If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     """
-    if pathlib.Path(input_data).exists():
-        input_data = pathlib.Path(input_data).as_posix()
+    try:
+        if pathlib.Path(input_data).exists():
+            input_data = pathlib.Path(input_data).as_posix()
+    except Exception:
+        pass
     
     if isinstance(input_data, (pd.DataFrame, obspy.Stream, obspy.Trace)):
         pass
