@@ -10,7 +10,7 @@ SpRĪT (pronounced "sprite") is the Spectral Ratio Investigation Toolset, a free
 <br>
 
 # Documentation
-- API Documentation [here](https://rjbalikian.github.io/SPRIT-HVSR/main.html)
+- API Documentation: [ReadtheDocs][(https://sprit.readthedocs.io/en/latest/) or [Github Pages](https://rjbalikian.github.io/SPRIT-HVSR/main.html)
 - See Wiki for more tips, tutorials, usage guidelines, troubleshooting, and other information [here](https://github.com/RJbalikian/SPRIT-HVSR/wiki)
 - Pypi repository [here](https://pypi.org/project/sprit/)
 
@@ -40,6 +40,7 @@ Code examples include:
 * User interfaces
 * Export and import
 * Batch processing
+* Cross Section Plotting
 
 
 # Web App
