@@ -346,15 +346,18 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
 
         df = pd.DataFrame(interpCoords)
 
-        if str(interpolation_type).lower() in ctList:
-            interp = interpolate.CloughTocher2DInterpolator(list(zip(df[ordercoord], df['elevation'])), df['HVVal'])
-        elif str(interpolation_type).lower() in rbfList:
-            interp = interpolate.RBFInterpolator(list(zip(df[ordercoord], df['elevation'])), df['HVVal'])
-        elif str(interpolation_type).lower() in linList:
-            interp = interpolate.LinearNDInterpolator(list(zip(df[ordercoord], df['elevation'])), df['HVVal'])
-        elif str(interpolation_type).lower() in nearList:
-            interp = interpolate.NearestNDInterpolator(list(zip(df[ordercoord], df['elevation'])), df['HVVal'])
-        else:  # Default to nearest neighbor (fastest)
+        try:
+            if str(interpolation_type).lower() in ctList:
+                interp = interpolate.CloughTocher2DInterpolator(list(zip(df[ordercoord], df['elevation'])), df['HVVal'])
+            elif str(interpolation_type).lower() in rbfList:
+                interp = interpolate.RBFInterpolator(list(zip(df[ordercoord], df['elevation'])), df['HVVal'])
+            elif str(interpolation_type).lower() in linList:
+                interp = interpolate.LinearNDInterpolator(list(zip(df[ordercoord], df['elevation'])), df['HVVal'])
+            elif str(interpolation_type).lower() in nearList:
+                interp = interpolate.NearestNDInterpolator(list(zip(df[ordercoord], df['elevation'])), df['HVVal'])
+            else:  # Default to nearest neighbor (fastest)
+                interp = interpolate.NearestNDInterpolator(list(zip(df[ordercoord], df['elevation'])), df['HVVal'])
+        except:
             interp = interpolate.NearestNDInterpolator(list(zip(df[ordercoord], df['elevation'])), df['HVVal'])
 
         xx, zz = np.meshgrid(gridXcoords, gridZcoords)

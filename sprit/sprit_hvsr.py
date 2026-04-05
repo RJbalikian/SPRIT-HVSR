@@ -3039,6 +3039,7 @@ def export_json(hvsr_results, json_export_path=None,
     dict_str_list = []
     for k, v in hvsr_results.__dict__.items():          
         
+        # First, handle special items
         if k == '_batch':
             continue
 
@@ -3124,6 +3125,31 @@ def export_json(hvsr_results, json_export_path=None,
                 newDF.index = [str(i) for i in hvDF.index]
                 v = newDF.to_dict()
 
+        if k == 'inv' and v is not None:
+            print("IIIIINV", type(v))
+            try:
+                invDict = {}
+                for n in v.networks:
+                    invDict['networks'] =  str(n)+'\n'
+                    for sta in n:
+                        invDict['stations'] = str(sta)+'\n'
+                        for c in sta:
+                            invDict['channels'] = str(c)+'\n'
+                            invDict['response'] = {}
+                            for rk, rv in c.response.__dict__.items():
+                                if rk == 'instrument_sensitivity':
+                                    invDict['response'][rk] = rv.__dict__
+                                elif rk == 'response_stages':
+                                    invDict['response'][rk] = {i:str(rr.__dict__) for i, rr in enumerate(rv)}
+                                else:
+                                    invDict['response'][rk] = rv.__repr__()
+                v = invDict
+            except Exception:
+                print("MESSED UP?")
+                v = str(v)
+        
+
+        # Now, see if it can be made into a string natively
         try:
             json.dumps({k: v})  # This is just a test to ensure item can be dumped
 
@@ -3231,20 +3257,37 @@ def export_json(hvsr_results, json_export_path=None,
                 dictString = f'{indSpcs}"{k}": '+'{\n'+indSpcs+indSpcs
                 for chaz, chazVals in v.items():
                     if k == 'psds':
-                        dictString += f'"{chaz}": ' + '{\n' + indSpcs+indSpcs+indSpcs
-                        for psdKey, psdVal in v[chaz].items():
-                            if isinstance(psdVal, np.ndarray):
-                                dictString += json.dumps({psdKey: np.round(psdVal, 5).tolist()}).replace('{', '').replace("}", '') + ',\n'+indSpcs+indSpcs+indSpcs
-                            else:
-                                if isinstance(psdVal, (list, tuple)):
+                        try:
+                            dictString += f'"{chaz}": ' + '{\n' + indSpcs+indSpcs+indSpcs
+                            for psdKey, psdVal in v[chaz].items():
+                                if isinstance(psdVal, np.ndarray):
+                                    dictString += json.dumps({psdKey: np.round(psdVal, 5).tolist()}).replace('{', '').replace("}", '') + ',\n'+indSpcs+indSpcs+indSpcs
+                                elif isinstance(psdVal, obspy.core.inventory.inventory.Inventory):
+                                    try:
+                                        responseDict = {}
+                                        for pk, pv in psdVal.__dict__.items():
+                                            if pk == 'instrument_sensitivity':
+                                                responseDict['response'][pk] = str(pv.__dict__)
+                                            elif pk == 'response_stages':
+                                                responseDict['response'][pk] = {i:str(rr.__dict__) for i, rr in enumerate(pv)}
+                                            else:
+                                                responseDict['response'][pk] = str(pv.__repr__()     )
+                                        v = responseDict                       
+                                    except Exception:
+                                        v = str(v)
+                                elif isinstance(psdVal, (list, tuple)):
                                     newList = []
                                     for item in psdVal:
                                         newList.append(str(item))
                                     psdVal = newList
-                                outerDict = {psdKey: psdVal}
-                                dictString += json.dumps(outerDict).replace('{', '').replace("}", '') + ',\n'+indSpcs+indSpcs+indSpcs
+                                    outerDict = {psdKey: psdVal}
+                                    dictString += json.dumps(outerDict).replace('{', '').replace("}", '') + ',\n'+indSpcs+indSpcs+indSpcs
+                                else:
+                                    dictString += '{"'+psdKey+'":'+str(psdVal)+"},\n"+indSpcs+indSpcs
+                            dictString = dictString[:-14] +"\n" +indSpcs+indSpcs+"},\n"+indSpcs+indSpcs
+                        except Exception:
+                            dictString = dictString[:-14] +"\n" +indSpcs+indSpcs+"},\n"+indSpcs+indSpcs
 
-                        dictString = dictString[:-14] +"\n" +indSpcs+indSpcs+"},\n"+indSpcs+indSpcs
                     else:
                         outDict = {chaz:chazVals}
                         if isinstance(chazVals, np.ndarray):
