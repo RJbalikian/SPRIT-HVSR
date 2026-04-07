@@ -1380,12 +1380,14 @@ def run(input_data=None, source='file',
                 updated_fd_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(fetch_data).parameters.keys())}
                 updated_fd_defaults.update({k: v for k, v in DPD.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())})
                 fetch_data_kwargs.update({k:v for k,v in updated_fd_defaults.items() if k not in fetch_data_kwargs})
-
+                if 'remove_response' in kwargs and kwargs['remove_response']:
+                    fetch_data_kwargs['update_metadata'] = True
                 hvsrDataIN = fetch_data(input_parameters=params, source=source, verbose=verbose, **fetch_data_kwargs)
             else:
                 hvsrDataIN = params
         except Exception as e:
             # Even if batch, this is reading in data for all sites so we want to raise error, not just warn
+            traceback.print_exc()
             if hasattr(e, 'message'):
                 errMsg = e.message
             else:
@@ -3126,7 +3128,6 @@ def export_json(hvsr_results, json_export_path=None,
                 v = newDF.to_dict()
 
         if k == 'inv' and v is not None:
-            print("IIIIINV", type(v))
             try:
                 invDict = {}
                 for n in v.networks:
@@ -3145,7 +3146,6 @@ def export_json(hvsr_results, json_export_path=None,
                                     invDict['response'][rk] = rv.__repr__()
                 v = invDict
             except Exception:
-                print("MESSED UP?")
                 v = str(v)
         
 
@@ -3271,7 +3271,7 @@ def export_json(hvsr_results, json_export_path=None,
                                             elif pk == 'response_stages':
                                                 responseDict['response'][pk] = {i:str(rr.__dict__) for i, rr in enumerate(pv)}
                                             else:
-                                                responseDict['response'][pk] = str(pv.__repr__()     )
+                                                responseDict['response'][pk] = str(pv)
                                         v = responseDict                       
                                     except Exception:
                                         v = str(v)
@@ -3283,7 +3283,7 @@ def export_json(hvsr_results, json_export_path=None,
                                     outerDict = {psdKey: psdVal}
                                     dictString += json.dumps(outerDict).replace('{', '').replace("}", '') + ',\n'+indSpcs+indSpcs+indSpcs
                                 else:
-                                    dictString += '{"'+psdKey+'":'+str(psdVal)+"},\n"+indSpcs+indSpcs
+                                    dictString += '"'+psdKey+'": "'+str(psdVal)+'",\n'+indSpcs+indSpcs
                             dictString = dictString[:-14] +"\n" +indSpcs+indSpcs+"},\n"+indSpcs+indSpcs
                         except Exception:
                             dictString = dictString[:-14] +"\n" +indSpcs+indSpcs+"},\n"+indSpcs+indSpcs
@@ -3803,6 +3803,8 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 'rs', 'rs3d', 'rasp. shake', 'raspshake']
     trominoNameList = ['tromino', 'trom','tromino blue', 'tromino blu', 'tromino 3g', 'tromino 3g+', 'tr', 't']
 
+    if not isinstance(input_parameters, HVSRData):
+        input_parameters = sprit_utils._make_it_classy(input_parameters)
     # Check if data is from tromino, and adjust parameters accordingly
     if 'trc' in pathlib.Path(str(input_parameters['input_data'])).suffix:
         if verbose and hasattr(input_parameters, 'instrument') and input_parameters['instrument'].lower() not in trominoNameList:
@@ -3813,12 +3815,19 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
     # Get metadata (inventory/response information)
     if 'inv' not in input_parameters.keys():
         input_parameters['inv'] = None
+    inv = input_parameters['inv']
+    
+    if 'acq_date' not in input_parameters.keys():
+        input_parameters['acq_date'] = None
+    date = input_parameters['acq_date']
+
+
     if 'paz' not in input_parameters.keys():
         input_parameters['paz'] = None
-    if update_metadata:
-        input_parameters = get_metadata(input_parameters, update_metadata=update_metadata, source=source, verbose=verbose)
-    inv = input_parameters['inv']
-    date = input_parameters['acq_date']
+
+    #print("COMMMENTED OUT INITIAL GET_METADATA")
+    #input_parameters = get_metadata(input_parameters, update_metadata=update_metadata, source=source, verbose=verbose)
+    
 
     # Cleanup for gui input
     if isinstance(input_parameters['input_data'], (obspy.Stream, obspy.Trace)):
@@ -3860,6 +3869,8 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
         except Exception:
             dPath = input_parameters['input_data']
 
+    if 'instrument' not in input_parameters.keys():
+        input_parameters['instrument'] = None
     inst = input_parameters['instrument']
 
     # Need to put dates and times in right formats first
@@ -3900,11 +3911,12 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
     elif type(date) is int:
         doy = date
         year = datetime.datetime.today().year
-    else:  
-        date = datetime.datetime.now()
+    else:
+        indate = date
+        input_parameters['acq_date'] = date = datetime.datetime.now()
         doy = date.timetuple().tm_yday
         year = date.year
-        warnings.warn("Did not recognize date, using year {} and day {}".format(year, doy))
+        warnings.warn(f"Did not recognize specified date: {indate}, using year {year} and day {doy}")
 
     # Select which instrument we are reading from (requires different processes for each instrument)
     # Get any kwargs that are included in obspy.read
@@ -4111,7 +4123,9 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
             site_default = inspect.signature(input_params).parameters['site'].default
             updateMsg = []
 
-            if input_parameters['site'] == site_default:
+            if 'site' not in input_parameters.keys():
+                input_parameters['site'] = None
+            if input_parameters['site'] == site_default or input_parameters['site'] is None:
                 if input_parameters['site'] != pathlib.Path(str(dPath)).stem:
                     if isinstance(dPath, (list, tuple)):
                         dPath = dPath[0]
@@ -4122,7 +4136,9 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
                 
             # network
             net_default = inspect.signature(input_params).parameters['network'].default
-            if input_parameters['net'] == net_default and net_default != dataIN[0].stats.network:
+            if 'net' not in input_parameters.keys():
+                input_parameters['net'] = None
+            if (input_parameters['net'] == net_default and net_default != dataIN[0].stats.network) or input_parameters['net'] is None:
                 input_parameters['net'] = dataIN[0].stats.network
                 #input_parameters['params']['net'] = dataIN[0].stats.network
                 if verbose:
@@ -4130,7 +4146,18 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
 
             # station
             sta_default = inspect.signature(input_params).parameters['station'].default
-            if str(input_parameters['sta']) == sta_default and str(input_parameters['sta']) != dataIN[0].stats.station:
+            if 'sta' not in input_parameters.keys():
+                input_parameters['sta'] = None
+            if 'station' not in input_parameters.keys():
+                input_parameters['station'] = None
+            
+            updateStaCond1 = input_parameters['sta'] == None
+            updateStaCond2 = input_parameters['station'] == None
+            updateStaCond3 = input_parameters['sta'] != input_parameters['station']
+            updateStaCond4a = input_parameters['sta'] == sta_default
+            updateStaCond4b = str(input_parameters['sta']) != dataIN[0].stats.station
+
+            if updateStaCond1 or updateStaCond2 or (updateStaCond4a and updateStaCond4b):
                 input_parameters['sta'] = dataIN[0].stats.station
                 input_parameters['station'] = dataIN[0].stats.station
                 #input_parameters['params']['sta'] = dataIN[0].stats.station
@@ -4139,6 +4166,8 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
                     updateMsg.append(f"\tStation name updated to {input_parameters['sta']}")
 
             # location
+            if 'location' not in input_parameters.keys():
+                input_parameters['location'] = None
             loc_default = inspect.signature(input_params).parameters['location'].default
             if input_parameters['location'] == loc_default and input_parameters['location'] != dataIN[0].stats.location:
                 input_parameters['location'] = dataIN[0].stats.location
@@ -4149,6 +4178,8 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
             # channels
             channelList = []
             cha_default = inspect.signature(input_params).parameters['channels'].default
+            if 'cha' not in input_parameters.keys():
+                input_parameters['cha'] = None
             if str(input_parameters['cha']) == cha_default:
                 for tr in dataIN:
                     if tr.stats.channel not in channelList:
@@ -4195,6 +4226,8 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
                                              hour=0, minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc)
 
             stime_default = obspy.UTCDateTime(NOWTIME)
+            if 'starttime' not in input_parameters.keys():
+                input_parameters['starttime'] = stime_default
             sTimeIsDefault = input_parameters['starttime'] == stime_default
                 
             # Check if stime is not the same as the data starttime (if it is, leave it alone!)
@@ -4255,6 +4288,8 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
             # endttime
             # Endtime only matters if it is used to trim the data
             eTimeDefault = obspy.UTCDateTime(NOWTIME.year, NOWTIME.month, NOWTIME.day, 23, 59, 59, 999999)
+            if 'endtime' not in input_parameters.keys():
+                input_parameters['endtime'] = eTimeDefault
             eTimeIsDefault = input_parameters['endtime'] == eTimeDefault
             
             minEndTime = dataIN.merge()[-1].stats.endtime
@@ -4274,6 +4309,8 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
                 #params['params']['endtime'] = minEndTime
 
             # HVSR_ID (derived)
+            if 'project' not in input_parameters.keys():
+                input_parameters['project'] = None
             project = input_parameters['project']
             if project is None:
                 proj_id = ''
@@ -4295,6 +4332,7 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
             dataIN = dataIN.trim(starttime=input_parameters['starttime'], endtime=input_parameters['endtime'])
             dataIN.merge()
     except Exception as e:
+        traceback.print_exc()
         raise RuntimeError(f'Data as read by obspy does not contain the proper metadata. \n{e}.\nCheck your input parameters or the data file.')
 
     # Latitude, Longitude, Elevation
@@ -4316,7 +4354,10 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
         #input_parameters['params']['input_crs'] = dataIN[0].stats['input_crs']
 
     # Get and update metadata after updating data from source
-    if update_metadata:
+    metaCond1 = input_parameters['metadata'] is not None
+    metaCond2 = update_metadata
+
+    if metaCond1 or metaCond2:
         input_parameters = get_metadata(input_parameters, update_metadata=update_metadata, source=source)
         inv = input_parameters['inv']
     # Trim and save data as specified
@@ -4520,6 +4561,10 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
                 print("\tMetadata/instrument response does not match data.")
                 print("\t  Raw data (without the instrument response removed) will be used for processing.")
     
+    if 'processing_status' not in input_parameters.keys():
+        input_parameters['processing_status'] = {'input_parameters_status': None,
+                                                 'fetch_data_status': None
+                                                }
     input_parameters['processing_status']['fetch_data_status'] = True
     if verbose and not isinstance(input_parameters, HVSRBatch):
         print('\n')
@@ -4527,7 +4572,7 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
         for line in dataINStr:
             print('\t\t', line)
     
-    input_parameters = sprit_utils._check_processing_status(input_parameters, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+    input_parameters = sprit_utils._check_processing_status(hvsr_data=input_parameters, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
     return input_parameters
 
@@ -5174,86 +5219,88 @@ def get_metadata(input_parameters, write_path='', update_metadata=False, source=
         Modified input dictionary with additional key:value pair containing paz or inv dictionary (key = "paz")
     """
     
+    if 'metadata' not in input_parameters.keys():
+        input_parameters['metadata'] = None
     invPath = input_parameters['metadata']
     raspShakeInstNameList = ['raspberry shake', 'shake', 'raspberry', 
                              'rs', 'rs3d', 'rasp. shake', 
                              'raspshake', 'raspberry shake 3d']
     trominoNameList = ['tromino', 'trom', 'trm', 't']
-       
-    if str(input_parameters['instrument']).lower() in raspShakeInstNameList:
-        if update_metadata:
+
+    try:
+        if str(input_parameters['instrument']).lower() in raspShakeInstNameList:
             input_parameters = _update_shake_metadata(filepath=invPath, params=input_parameters, write_path=write_path, verbose=verbose)
-        input_parameters = _read_RS_Metadata(input_parameters, source=source)
-    elif input_parameters['instrument'].lower() in trominoNameList:
-        input_parameters['paz'] = {'Z':{}, 'E':{}, 'N':{}}
+            input_parameters = _read_RS_Metadata(input_parameters, source=source)
+        elif str(input_parameters['instrument']).lower() in trominoNameList:
+            input_parameters['paz'] = {'Z':{}, 'E':{}, 'N':{}}
+            # Initially started here: https://ds.iris.edu/NRL/sensors/Sunfull/RESP.XX.NS721..BHZ.PS-4.5C1_LF4.5_RC3400_RSNone_SG82_STgroundVel
+            tromino_paz = { 'zeros': [-3.141592653589793/2-0j, -3.141592653589793/2-0j],
+                            'poles': [(50-24j), (50+24j)],
+                            'stage_gain':100000000,
+                            'stage_gain_frequency':10,
+                            'normalization_frequency':5, 
+                            'normalization_factor':1}
+            
+            input_parameters['paz']['Z'] =  input_parameters['paz']['E'] = input_parameters['paz']['N'] = tromino_paz
+            
+            tromChaResponse = obspy.core.inventory.response.Response().from_paz(**tromino_paz)
 
-        # Initially started here: https://ds.iris.edu/NRL/sensors/Sunfull/RESP.XX.NS721..BHZ.PS-4.5C1_LF4.5_RC3400_RSNone_SG82_STgroundVel
-        tromino_paz = { 'zeros': [-3.141592653589793/2-0j, -3.141592653589793/2-0j],
-                        'poles': [(17-24j), (17+24j)],
-                        'stage_gain':100,
-                        'stage_gain_frequency':10,
-                        'normalization_frequency':5, 
-                        'normalization_factor':1}
-        
-        input_parameters['paz']['Z'] =  input_parameters['paz']['E'] = input_parameters['paz']['N'] = tromino_paz
-        
-        tromChaResponse = obspy.core.inventory.response.Response().from_paz(**tromino_paz)
+            obspyStartDate = obspy.UTCDateTime(1900,1,1)
+            obspyNow = obspy.UTCDateTime.now()
 
-        obspyStartDate = obspy.UTCDateTime(1900,1,1)
-        obspyNow = obspy.UTCDateTime.now()
+            # Update location code to match partition
+            if type(input_parameters['station']) is int or str(input_parameters['station']).isdigit():
+                input_parameters['location'] = str(input_parameters['station'])
 
-        # Update location code to match partition
-        if type(input_parameters['station']) is int or str(input_parameters['station']).isdigit():
-            input_parameters['location'] = str(input_parameters['station'])
+            # Create channel objects to be used in inventory                
+            channelObj_Z = obspy.core.inventory.channel.Channel(code='?HZ', location_code=input_parameters['location'], latitude=input_parameters['latitude'], 
+                                                    longitude=input_parameters['longitude'], elevation=input_parameters['elevation'], depth=input_parameters['depth'], 
+                                                    azimuth=0, dip=90, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse)
+            channelObj_E = obspy.core.inventory.channel.Channel(code='?HE', location_code=input_parameters['location'], latitude=input_parameters['latitude'], 
+                                                    longitude=input_parameters['longitude'], elevation=input_parameters['elevation'], depth=input_parameters['depth'], 
+                                                    azimuth=90, dip=0, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse) 
+            channelObj_N = obspy.core.inventory.channel.Channel(code='?HN', location_code=input_parameters['location'], latitude=input_parameters['latitude'], 
+                                                    longitude=input_parameters['longitude'], elevation=input_parameters['elevation'], depth=input_parameters['depth'], 
+                                                    azimuth=0, dip=0, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse) 
+            
+            # Create site object for inventory
+            siteObj = obspy.core.inventory.util.Site(name=input_parameters['station'], description=None, town=None, county=None, region=None, country=None)
 
-        # Create channel objects to be used in inventory                
-        channelObj_Z = obspy.core.inventory.channel.Channel(code='EHZ', location_code=input_parameters['location'], latitude=input_parameters['latitude'], 
-                                                longitude=input_parameters['longitude'], elevation=input_parameters['elevation'], depth=input_parameters['depth'], 
-                                                azimuth=0, dip=90, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse)
-        channelObj_E = obspy.core.inventory.channel.Channel(code='EHE', location_code=input_parameters['location'], latitude=input_parameters['latitude'], 
-                                                longitude=input_parameters['longitude'], elevation=input_parameters['elevation'], depth=input_parameters['depth'], 
-                                                azimuth=90, dip=0, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse) 
-        channelObj_N = obspy.core.inventory.channel.Channel(code='EHN', location_code=input_parameters['location'], latitude=input_parameters['latitude'], 
-                                                longitude=input_parameters['longitude'], elevation=input_parameters['elevation'], depth=input_parameters['depth'], 
-                                                azimuth=0, dip=0, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse) 
-        
-        # Create site object for inventory
-        siteObj = obspy.core.inventory.util.Site(name=input_parameters['site'], description=None, town=None, county=None, region=None, country=None)
-        
-        # Create station object for inventory
-        stationObj = obspy.core.inventory.station.Station(code='TRMNO', latitude=input_parameters['latitude'], longitude=input_parameters['longitude'], 
-                                            elevation=input_parameters['elevation'], channels=[channelObj_Z, channelObj_E, channelObj_N], site=siteObj, 
-                                            vault=None, geology=None, equipments=None, operators=None, creation_date=obspyStartDate,
-                                            termination_date=obspy.UTCDateTime(2100,1,1), total_number_of_channels=3, 
-                                            selected_number_of_channels=3, description='Estimated data for Tromino, this is NOT from the manufacturer',
-                                            comments=None, start_date=obspyStartDate, end_date=obspyNow, 
-                                            restricted_status=None, alternate_code=None, historical_code=None, 
-                                            data_availability=obspy.core.inventory.util.DataAvailability(obspyStartDate, obspy.UTCDateTime.now()), 
-                                            identifiers=None, water_level=None, source_id=None)
+            # Create station object for inventory
+            stationObj = obspy.core.inventory.station.Station(code=input_parameters['station'], latitude=input_parameters['latitude'], longitude=input_parameters['longitude'], 
+                                                elevation=input_parameters['elevation'], channels=[channelObj_Z, channelObj_E, channelObj_N], site=siteObj, 
+                                                vault=None, geology=None, equipments=None, operators=None, creation_date=obspyStartDate,
+                                                termination_date=obspy.UTCDateTime(2100,1,1), total_number_of_channels=3, 
+                                                selected_number_of_channels=3, description='Estimated data for Tromino, this is NOT from the manufacturer',
+                                                comments=None, start_date=obspyStartDate, end_date=obspyNow, 
+                                                restricted_status=None, alternate_code=None, historical_code=None, 
+                                                data_availability=obspy.core.inventory.util.DataAvailability(obspyStartDate, obspy.UTCDateTime.now()), 
+                                                identifiers=None, water_level=None, source_id=None)
 
-        # Create network object for inventory
-        network = [obspy.core.inventory.network.Network(code='AM', stations=[stationObj], total_number_of_stations=None, 
-                                            selected_number_of_stations=None, description=None, comments=None, start_date=obspyStartDate, 
-                                            end_date=obspyNow, restricted_status=None, alternate_code=None, historical_code=None, 
-                                            data_availability=None, identifiers=None, operators=None, source_id=None)]
-        
-        input_parameters['inv'] = obspy.Inventory(networks=network)
-    else:
-        if not invPath:
-            pass #if invPath is None
-        elif not pathlib.Path(invPath).exists() or invPath == '':
-            warnings.warn(f"The metadata parameter was not specified correctly. Returning original input_parameters value {input_parameters['metadata']}")
-        readInvKwargs = {}
-        argspecs = inspect.getfullargspec(obspy.read_inventory)
-        for argName in argspecs[0]:
-            if argName in read_inventory_kwargs.keys():
-                readInvKwargs[argName] = read_inventory_kwargs[argName]
+            # Create network object for inventory
+            network = [obspy.core.inventory.network.Network(code='TR', stations=[stationObj], total_number_of_stations=None, 
+                                                selected_number_of_stations=None, description=None, comments=None, start_date=obspyStartDate, 
+                                                end_date=obspyNow, restricted_status=None, alternate_code=None, historical_code=None, 
+                                                data_availability=None, identifiers=None, operators=None, source_id=None)]
+            input_parameters['inv'] = obspy.Inventory(networks=network)
+        else:
+            if not invPath:
+                pass #if invPath is None
+            elif not pathlib.Path(invPath).exists() or invPath == '':
+                warnings.warn(f"The metadata parameter was not specified correctly. Returning original input_parameters value {input_parameters['metadata']}")
+            readInvKwargs = {}
+            argspecs = inspect.getfullargspec(obspy.read_inventory)
+            for argName in argspecs[0]:
+                if argName in read_inventory_kwargs.keys():
+                    readInvKwargs[argName] = read_inventory_kwargs[argName]
 
-        readInvKwargs['path_or_file_object'] = invPath
-        input_parameters['inv'] = obspy.read_inventory(invPath)
-        #if 'params' in input_parameters.keys():
-        #    input_parameters['params']['inv'] = params['inv']
-
+            readInvKwargs['path_or_file_object'] = invPath
+            input_parameters['inv'] = obspy.read_inventory(invPath)
+            #if 'params' in input_parameters.keys():
+            #    input_parameters['params']['inv'] = params['inv']
+    except:
+        traceback.print_exc()
+        input_parameters['inv'] = None
     return input_parameters
 
 
@@ -5651,7 +5698,7 @@ def import_data(import_filepath, data_format='gzip', show_data=True):
         except Exception as e:
             with open(import_filepath, 'rb') as f:
                 dataIN = pickle.load(f)
-    
+
     if show_data:
         print(dataIN)
     
@@ -10391,12 +10438,11 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_meth
             compStream = compStream.split()
 
             trList = []
-            
             for trace in compStream:
                 trList.append(trace.remove_response(hvsr_data['inv'], 
-                                                    pre_filt=[pf1, pf2, pf3, pf4]))
+                                                    pre_filt=[pf1, pf2, pf3, pf4]
+                                                    ))
             dataDict[key] = obspy.Stream(trList).merge()
-            #compStream.merge()
 
         if verbose:
             print("\n\tInstrument Response Removed from Traces\n")
@@ -12181,7 +12227,7 @@ def _plot_hvsr(hvsr_data, plot_type, xtype='frequency', fig=None, ax=None, azimu
             ax.fill_betweenx(ylim, [xlim[0], xlim[0]],[lowPeakSearchThresh,lowPeakSearchThresh], **frStyleDict)          
             ax.fill_betweenx(ylim, [hiPeakSearchThresh, hiPeakSearchThresh],[xlim[1],xlim[1]], **frStyleDict)          
 
-        elif 'nm' in k:
+        elif 'nm' in k and '-' not in k:
             nmdict = sprit_utils._get_noise_models()
             NHNMVals = np.interp(nmdict['NLNM_periods'], nmdict['NHNM_periods'], nmdict['NHNM'])
             ax.fill_between(nmdict['NLNM_freqs'], nmdict['NLNM'], NHNMVals, 

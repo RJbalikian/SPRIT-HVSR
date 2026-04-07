@@ -179,6 +179,9 @@ def _check_processing_status(hvsr_data, start_time=datetime.datetime.now(), func
     """
 
     # Convert HVSRData to same format as HVSRBatch so same code works the same on both
+    if isinstance(hvsr_data, dict):
+        hvsr_data = sprit_hvsr.HVSRData(hvsr_data)
+
     if isinstance(hvsr_data, sprit_hvsr.HVSRData):
         sn = hvsr_data['site']
         hvsr_interim = {sn: hvsr_data}
@@ -481,9 +484,30 @@ def _get_noise_models(model_type='vel'):
 
 # Get sample data from resources
 def _get_sample_data(sample_file='1', verbose=False):
+    """Get sample data from distributed, online, or local sources
 
+    Parameters
+    ----------
+    sample_file : str, optional
+        Sample file to use, by default '1'
+    verbose : bool, optional
+        Whether to print information about process to terminal, by default False
+
+    Returns
+    -------
+    obspy.Stream
+        ObsPy Stream object of sample data specified.
+
+    Raises
+    ------
+    FileNotFoundError
+        _description_
+    """
+    if sample_file=='sample':
+        sample_file = '1'
     # Get filenames depending on input
-    sampleMapDict = {'1': 'SampleHVSRSite01.MSEED',
+    sampleMapDict = {'sample': 'SampleHVSRSite01.MSEED',
+                     '1': 'SampleHVSRSite01.MSEED',
                      '2': 'SampleHVSRSite02.MSEED',
                      '3': 'SampleHVSRSite03.MSEED',
                      '4': 'SampleHVSRSite04.MSEED',
