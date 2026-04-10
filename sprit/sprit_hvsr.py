@@ -57,6 +57,7 @@ from xhtml2pdf import pisa
 from . import sprit_utils
 from . import sprit_jupyter_UI
 from . import sprit_plot
+from . import sprit_calibration
 
 # Constants, etc
 NOWTIME = datetime.datetime.now()
@@ -1917,6 +1918,13 @@ def run(input_data=None, source='file',
                 if 'plot_engine' in get_report_kwargs and 'y' not in get_report_kwargs['plot_engine']:
                     print("Showing plot")
                     plt.show()
+
+            calc_depth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_calibration.calculate_depth).parameters.keys())}
+            if calc_depth_kwargs != {}:
+                if 'show_depth_curve' not in calc_depth_kwargs and 'suppress_report_outputs' not in kwargs:
+                    calc_depth_kwargs['show_depth_curve'] = True
+                hvsr_results = sprit_calibration.calculate_depth(freq_input=hvsr_results, **calc_depth_kwargs)
+
     except Exception as e:
         print("Error in data export or report generation. Results have been returned.\n")
         traceback.print_exception(sys.exc_info()[1])
