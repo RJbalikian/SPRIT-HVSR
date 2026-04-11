@@ -5292,20 +5292,23 @@ def get_metadata(input_parameters, write_path='', update_metadata=False, source=
                                                 data_availability=None, identifiers=None, operators=None, source_id=None)]
             input_parameters['inv'] = obspy.Inventory(networks=network)
         else:
-            if not invPath:
-                pass #if invPath is None
-            elif not pathlib.Path(invPath).exists() or invPath == '':
-                warnings.warn(f"The metadata parameter was not specified correctly. Returning original input_parameters value {input_parameters['metadata']}")
-            readInvKwargs = {}
-            argspecs = inspect.getfullargspec(obspy.read_inventory)
-            for argName in argspecs[0]:
-                if argName in read_inventory_kwargs.keys():
-                    readInvKwargs[argName] = read_inventory_kwargs[argName]
+            if isinstance(invPath, obspy.Inventory):
+                input_parameters['inv'] = invPath
+            else:
+                if not invPath:
+                    pass #if invPath is None
+                elif not pathlib.Path(str(invPath)).exists() or invPath == '':
+                    warnings.warn(f"The metadata parameter was not specified correctly. Returning original input_parameters value {input_parameters['metadata']}")
+                readInvKwargs = {}
+                argspecs = inspect.getfullargspec(obspy.read_inventory)
+                for argName in argspecs[0]:
+                    if argName in read_inventory_kwargs.keys():
+                        readInvKwargs[argName] = read_inventory_kwargs[argName]
 
-            readInvKwargs['path_or_file_object'] = invPath
-            input_parameters['inv'] = obspy.read_inventory(invPath)
-            #if 'params' in input_parameters.keys():
-            #    input_parameters['params']['inv'] = params['inv']
+                readInvKwargs['path_or_file_object'] = invPath
+                input_parameters['inv'] = obspy.read_inventory(invPath)
+                #if 'params' in input_parameters.keys():
+                #    input_parameters['params']['inv'] = params['inv']
     except:
         traceback.print_exc()
         input_parameters['inv'] = None
@@ -5504,7 +5507,6 @@ def get_report(hvsr_results, report_formats=['print', 'table', 'plot', 'html', '
             hvsr_results['Plot_Report'] = plot_hvsr(hvsr_results, plot_type=plotString_noBestPeak, azimuth=azimuth, 
                                                     return_fig=True, show_plot=True, verbose=True)
         except Exception as e2:
-            print("E2 MESSAGE", e2)
             traceback.print_exc()
         return hvsr_results
         #raise RuntimeError('No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_psds(). Otherwise, data may not be usable for HVSR.')
