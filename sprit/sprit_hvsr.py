@@ -63,7 +63,7 @@ from . import sprit_calibration
 NOWTIME = datetime.datetime.now()
 DEFAULT_PLOT_STR = "HVSR p ann COMP+ p ann SPEC p ann"
 OBSPY_FORMATS = ['AH', 'ALSEP_PSE', 'ALSEP_WTH', 'ALSEP_WTN', 'CSS', 'DMX', 
-                 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', 
+                 'GCF', 'GSE1', 'GSE2', 'KINEMETRICS_EVT', 'KNET', 'MSEED', "MINISEED", 
                  'NNSA_KB_CORE', 'PDAS', 'PICKLE', 'Q', 'REFTEK130', 'RG16', 
                  'SAC', 'SACXY', 'SEG2', 'SEGY', 'SEISAN', 'SH_ASC', 'SLIST', 'TRC',
                  'SU', 'TSPAIR', 'WAV', 'WIN', 'Y']
@@ -3997,7 +3997,7 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
             tromCond2 = 'trc' in pathlib.Path(str(dPath)).suffix
             tromCond3 = "GRILLA" in pathlib.Path(str(dPath)).name and pathlib.Path(str(dPath)).is_dir()                
             
-            if tromCond1 or tromCond2 or tromCond3:
+            if tromCond2 or tromCond3:
                 input_parameters['instrument'] = 'Tromino'
 
                 if 'blu' in str(inst).lower():
@@ -4147,7 +4147,7 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
             if 'net' not in input_parameters.keys():
                 input_parameters['net'] = None
             if (input_parameters['net'] == net_default and net_default != dataIN[0].stats.network) or input_parameters['net'] is None:
-                input_parameters['net'] = dataIN[0].stats.network
+                input_parameters['net'] = input_parameters['network'] = dataIN[0].stats.network
                 #input_parameters['params']['net'] = dataIN[0].stats.network
                 if verbose:
                     updateMsg.append(f"\tNetwork name updated to {input_parameters['net']}")
@@ -4343,6 +4343,8 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
         traceback.print_exc()
         raise RuntimeError(f'Data as read by obspy does not contain the proper metadata. \n{e}.\nCheck your input parameters or the data file.')
 
+    input_parameters['stream'] = dataIN
+
     # Latitude, Longitude, Elevation
     # Maybe make this more comprehensive, like for all input_params
     if hasattr(dataIN[0].stats, 'latitude'):
@@ -4366,7 +4368,7 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
     metaCond2 = update_metadata
 
     if metaCond1 or metaCond2:
-        input_parameters = get_metadata(input_parameters, update_metadata=update_metadata, source=source)
+        input_parameters = get_metadata(input_parameters, update_metadata=update_metadata, source=source, verbose=verbose)
         inv = input_parameters['inv']
     # Trim and save data as specified
     if data_export_path == 'None':
@@ -5242,13 +5244,31 @@ def get_metadata(input_parameters, write_path='', update_metadata=False, source=
         elif str(input_parameters['instrument']).lower() in trominoNameList:
             input_parameters['paz'] = {'Z':{}, 'E':{}, 'N':{}}
             # Initially started here: https://ds.iris.edu/NRL/sensors/Sunfull/RESP.XX.NS721..BHZ.PS-4.5C1_LF4.5_RC3400_RSNone_SG82_STgroundVel
-            tromino_paz = { 'zeros': [-3.141592653589793/2-0j, -3.141592653589793/2-0j],
-                            'poles': [(50-24j), (50+24j)],
-                            'stage_gain':100000000,
-                            'stage_gain_frequency':10,
-                            'normalization_frequency':5, 
-                            'normalization_factor':1}
-            
+            #tromino_paz = { 'zeros': [-3.14159/2-0j, -3.14159/2-0j],
+            #                'poles': [(5-24j), (50+24j)],
+            #                'stage_gain':10000000,
+            #                'stage_gain_frequency':10,
+            #                'normalization_frequency':5, 
+            #                'normalization_factor':1}
+        
+            f0 = 2.27          # natural frequency Hz
+            w0 = 2 * np.pi * f0  # = 14.26 rad/s
+            h  = 0.74          # damping ratio (loaded, 20kΩ)
+
+            sigma = h * w0          # = 10.55
+            wd    = w0 * np.sqrt(1 - h**2)  # = 9.59
+
+            tromino_paz = {
+                'zeros': [0+0j, 0+0j],          # velocity sensor: 2 zeros at origin
+                'poles': [
+                    complex(-sigma, +wd),        # -10.55 + 9.59j
+                    complex(-sigma, -wd)         # -10.55 - 9.59j  (conjugate pair)
+                ],
+                'stage_gain': 100.0,             # 100 V/m/s flat sensitivity
+                'stage_gain_frequency': 10.0,    # Hz, in the flat band
+                'normalization_frequency': 2.27, # Hz, at natural frequency
+                'normalization_factor': 1.0      
+            }
             input_parameters['paz']['Z'] =  input_parameters['paz']['E'] = input_parameters['paz']['N'] = tromino_paz
             
             tromChaResponse = obspy.core.inventory.response.Response().from_paz(**tromino_paz)
@@ -5256,20 +5276,37 @@ def get_metadata(input_parameters, write_path='', update_metadata=False, source=
             obspyStartDate = obspy.UTCDateTime(1900,1,1)
             obspyNow = obspy.UTCDateTime.now()
 
+
             # Update location code to match partition
             if type(input_parameters['station']) is int or str(input_parameters['station']).isdigit():
                 input_parameters['location'] = str(input_parameters['station'])
 
+            srate = 128
+            zChannel = "?HZ"
+            eChannel = "?HE"
+            nChannel = "?HN"
+            if hasattr(input_parameters, 'stream') and isinstance(input_parameters['stream'], (obspy.Stream, obspy.Trace)):
+                st = input_parameters['stream']
+                zTrace = st.select(component='Z')[0]
+                eTrace = st.select(component='E')[0]
+                nTrace = st.select(component='N')[0]
+
+                zChannel = zTrace.stats.channel
+                eChannel = eTrace.stats.channel
+                nChannel = nTrace.stats.channel
+
+                srate = zTrace.stats.sampling_rate
+
             # Create channel objects to be used in inventory                
-            channelObj_Z = obspy.core.inventory.channel.Channel(code='?HZ', location_code=input_parameters['location'], latitude=input_parameters['latitude'], 
+            channelObj_Z = obspy.core.inventory.channel.Channel(code=zChannel, location_code=input_parameters['location'], latitude=input_parameters['latitude'], 
                                                     longitude=input_parameters['longitude'], elevation=input_parameters['elevation'], depth=input_parameters['depth'], 
-                                                    azimuth=0, dip=90, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse)
-            channelObj_E = obspy.core.inventory.channel.Channel(code='?HE', location_code=input_parameters['location'], latitude=input_parameters['latitude'], 
+                                                    azimuth=0, dip=90, start_date=obspyStartDate, end_date=obspyNow, sample_rate=srate, response=tromChaResponse)
+            channelObj_E = obspy.core.inventory.channel.Channel(code=eChannel, location_code=input_parameters['location'], latitude=input_parameters['latitude'], 
                                                     longitude=input_parameters['longitude'], elevation=input_parameters['elevation'], depth=input_parameters['depth'], 
-                                                    azimuth=90, dip=0, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse) 
-            channelObj_N = obspy.core.inventory.channel.Channel(code='?HN', location_code=input_parameters['location'], latitude=input_parameters['latitude'], 
+                                                    azimuth=90, dip=0, start_date=obspyStartDate, end_date=obspyNow, sample_rate=srate, response=tromChaResponse) 
+            channelObj_N = obspy.core.inventory.channel.Channel(code=nChannel, location_code=input_parameters['location'], latitude=input_parameters['latitude'], 
                                                     longitude=input_parameters['longitude'], elevation=input_parameters['elevation'], depth=input_parameters['depth'], 
-                                                    azimuth=0, dip=0, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse) 
+                                                    azimuth=0, dip=0, start_date=obspyStartDate, end_date=obspyNow, sample_rate=srate, response=tromChaResponse) 
             
             # Create site object for inventory
             siteObj = obspy.core.inventory.util.Site(name=input_parameters['station'], description=None, town=None, county=None, region=None, country=None)
@@ -5286,11 +5323,23 @@ def get_metadata(input_parameters, write_path='', update_metadata=False, source=
                                                 identifiers=None, water_level=None, source_id=None)
 
             # Create network object for inventory
-            network = [obspy.core.inventory.network.Network(code='TR', stations=[stationObj], total_number_of_stations=None, 
+            network = [obspy.core.inventory.network.Network(code=input_parameters['network'], stations=[stationObj], total_number_of_stations=None, 
                                                 selected_number_of_stations=None, description=None, comments=None, start_date=obspyStartDate, 
                                                 end_date=obspyNow, restricted_status=None, alternate_code=None, historical_code=None, 
                                                 data_availability=None, identifiers=None, operators=None, source_id=None)]
-            input_parameters['inv'] = obspy.Inventory(networks=network)
+            input_parameters['inv'] = inv = obspy.Inventory(networks=network)
+
+            if verbose:
+                print('\tInventory object defined for following network.station.channels: ', sep='')
+                chList = []
+                for network in inv:
+                    for station in network:
+                        for channel in station:
+                            chID = f"{network.code}.{station.code}.{channel.code}"
+                            if chID not in chList:
+                                chList.append(chID)
+                print(chList)
+
         else:
             if isinstance(invPath, obspy.Inventory):
                 input_parameters['inv'] = invPath
@@ -8457,12 +8506,10 @@ def __read_tromino_data_yellow(input_data, sampling_rate=None,
         'seismometer_data': None, # Will be replaced with a (3, n) numpy array
         'stream': None 
         }
-    
-    if verbose:
-        print("\n\t Tromino Header Information")
+
     for text in header_text:
-        if verbose and len(re.findall(r'\w+', text.decode('ascii', errors='ignore')))>0:
-            print('\t\t ', text.decode('ascii', errors='ignore'))
+        #if verbose and len(re.findall(r'\w+', text.decode('ascii', errors='ignore')))>0:
+        #    print('\t\t ', text.decode('ascii', errors='ignore'))
         if b'NAKAGRILLA FLASHCARD HEADER' in text:
             result['header']['file_type'] = text.decode('ascii', errors='ignore').strip('\x00')
         # Add more header parsing as needed
@@ -10449,7 +10496,7 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_meth
 
             trList = []
             for trace in compStream:
-                trList.append(trace.remove_response(hvsr_data['inv'], 
+                trList.append(trace.remove_response(hvsr_data['inv'],
                                                     pre_filt=[pf1, pf2, pf3, pf4]
                                                     ))
             dataDict[key] = obspy.Stream(trList).merge()
