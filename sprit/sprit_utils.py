@@ -463,7 +463,17 @@ def _get_noise_models(model_type='vel'):
     
     nlnmAcc = nlnmA + nlnmB * np.log10(nlnm_periods)
     nhnmAcc = nhnmA + nhnmB * np.log10(nhnm_periods)
+
+
     if 'vel' in str(model_type).lower():
+        #    from obspy.signal.spectral_estimation import get_nlnm, get_nhnm
+
+        #nlnm_periods, nlnmOUT = get_nlnm()
+        #nlnm_freqs = 1/nlnm_periods
+
+        #nhnm_periods, nhnmOUT = get_nhnm()
+        #nhnm_freqs = 1/nhnm_periods
+
         nlnmOUT = nlnmAcc + 20 * np.log10(nlnm_periods/2*np.pi)
         nhnmOUT = nhnmAcc + 20 * np.log10(nhnm_periods/2*np.pi)
     elif 'disp' in str(model_type).lower():
