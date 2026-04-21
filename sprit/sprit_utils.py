@@ -466,7 +466,7 @@ def _get_noise_models(model_type='vel'):
 
 
     if 'vel' in str(model_type).lower():
-        #    from obspy.signal.spectral_estimation import get_nlnm, get_nhnm
+        #from obspy.signal.spectral_estimation import get_nlnm, get_nhnm
 
         #nlnm_periods, nlnmOUT = get_nlnm()
         #nlnm_freqs = 1/nlnm_periods
@@ -483,12 +483,12 @@ def _get_noise_models(model_type='vel'):
         nlnmOUT = nlnmAcc
         nhnmOUT = nhnmAcc
     
-    nnmDict = {'NLNM_periods':nlnm_periods,
-               'NLNM_freqs':nlnm_freqs,
-               'NHNM_periods':nhnm_periods,
-               'NHNM_freqs':nhnm_freqs,
-               'NLNM':nlnmOUT,
-               'NHNM':nhnmOUT}
+    nnmDict = {'NLNM_periods': nlnm_periods,
+               'NLNM_freqs': nlnm_freqs,
+               'NHNM_periods': nhnm_periods,
+               'NHNM_freqs': nhnm_freqs,
+               'NLNM': nlnmOUT,
+               'NHNM': nhnmOUT}
     return nnmDict
 
 
