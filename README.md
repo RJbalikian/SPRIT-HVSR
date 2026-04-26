@@ -29,7 +29,7 @@ This should be done using command line. It is recommended to do this in a virtua
 For troubleshooting issues with installation or usage of the sprit package, see the [Troubleshooting](https://github.com/RJbalikian/SPRIT-HVSR/wiki/Troubleshooting) page of the wiki.
 
 # Usage and Examples
-Using SpRIT is designed to be simple for students and professionals alike. To carry out HVSR on seismic data, all that is needed is a seismic file readable by ObsPy with the proper components (usually, a Z, E, and N component). 
+Using SpRIT is designed to be simple for students and professionals alike. To carry out HVSR on seismic data, all that is needed is a seismic file readable by ObsPy with the proper seismometer components (usually, a Z, E, and N component). 
 
 There are three interfaces to the SpRIT HVSR processing code:
 - Python interface: `sprit.run(input_data=seisimic_data)`
