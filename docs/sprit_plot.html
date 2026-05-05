@@ -449,15 +449,18 @@ el.replaceWith(d);
 
         df = pd.DataFrame(interpCoords)
 
-        if str(interpolation_type).lower() in ctList:
-            interp = interpolate.CloughTocher2DInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
-        elif str(interpolation_type).lower() in rbfList:
-            interp = interpolate.RBFInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
-        elif str(interpolation_type).lower() in linList:
-            interp = interpolate.LinearNDInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
-        elif str(interpolation_type).lower() in nearList:
-            interp = interpolate.NearestNDInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
-        else:  # Default to nearest neighbor (fastest)
+        try:
+            if str(interpolation_type).lower() in ctList:
+                interp = interpolate.CloughTocher2DInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
+            elif str(interpolation_type).lower() in rbfList:
+                interp = interpolate.RBFInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
+            elif str(interpolation_type).lower() in linList:
+                interp = interpolate.LinearNDInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
+            elif str(interpolation_type).lower() in nearList:
+                interp = interpolate.NearestNDInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
+            else:  # Default to nearest neighbor (fastest)
+                interp = interpolate.NearestNDInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
+        except:
             interp = interpolate.NearestNDInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
 
         xx, zz = np.meshgrid(gridXcoords, gridZcoords)
@@ -761,7 +764,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def plot_depth_curve(hvsr_results, depth_plot_type=&#39;well&#39;, use_elevation=True, show_feet=False, normalize_curve=True, 
+<pre><code class="python">def plot_depth_curve(hvsr_results, depth_plot_type=&#39;well&#39;, use_elevation=True, show_feet=False, normalize_curve=True,
                      depth_limit=500, depth_model=None,
                      annotate=True, depth_plot_export_path=None,
                      fig=None, ax=None, show_depth_curve=True, **kwargs):
@@ -809,11 +812,15 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
         ax.set_title(&#39;Calibrated Depth to Interface&#39;, size=&#39;small&#39;)
     ax.tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
 
-    if depth_model is not None:
+    if depth_model is None:
+        print(&#39;No depth model specified, using average of several power-law models:&#39;, sprit_calibration.CONGLOMERATE_MODEL)
+        depth_model = sprit_calibration.CONGLOMERATE_MODEL
+
+    #if depth_model is not None:
+    #    hvsr_results = sprit_calibration.calculate_depth(hvsr_results, depth_model=depth_model, show_depth_curve=False)
+    if &#39;BedrockElevation&#39; not in hvsr_results.Table_Report.columns:
         hvsr_results = sprit_calibration.calculate_depth(hvsr_results, depth_model=depth_model, show_depth_curve=False)
-    elif &#39;BedrockElevation&#39; not in hvsr_results.Table_Report.columns:
-        hvsr_results = sprit_calibration.calculate_depth(hvsr_results, depth_model=depth_model, show_depth_curve=False)
-    
+
     for site_index, site_data in hvsr_results.Table_Report.iterrows():
         surfElev = site_data[&#39;Elevation&#39;]
         bedrockElev = site_data[&#39;BedrockElevation&#39;]
@@ -822,7 +829,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
         curveRange = max(hvsr_results.hvsr_curve) - min(hvsr_results.hvsr_curve)
 
         wellTypeList = [&#39;well&#39;, &#39;borehole&#39;, &#39;w&#39;, &#39;log&#39;]
-        
+
         if normalize_curve:
             curvePlot = (hvsr_results.hvsr_curve - min(hvsr_results.hvsr_curve)) / curveRange
             xBase = 0
@@ -841,17 +848,16 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
             yVals = hvsr_results.x_elev_m[&#39;Z&#39;][:-1]
             ax.set_ylabel(&#39;Elevation [m]&#39;)
             bedrockVal = bedrockElev
-            
+
             xTopLoc = xLims[0]
             yTopLoc = surfElev
             yTopLabel = surfElev
-            
         else:
             yLims = [depth_limit, hvsr_results.x_depth_m[&#39;Z&#39;][0]]
             yVals = hvsr_results.x_depth_m[&#39;Z&#39;][:-1]
             ax.set_ylabel(&#39;Depth [m]&#39;)
             bedrockVal = bedrockDepth
-            
+
             xTopLoc = xLims[0]
             yTopLoc = 0
             yTopLabel = surfElev
@@ -870,16 +876,17 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
             xBase = -10
             xCap = xBase + xSize + 1
             xLims = [xBase, xCap-1]
-            xVals = np.arange(xBase,xCap)
+            xVals = np.arange(xBase, xCap)
 
             if &#39;cmap&#39; in kwargs:
                 cmap = kwargs[&#39;cmap&#39;]
             else:
                 cmap = &#39;YlOrRd&#39;
             cbar = ax.pcolormesh(xVals, yVals, curvePlot[:, :-1].T, cmap=cmap)
-            plt.colorbar(cbar, orientation=&#39;horizontal&#39;, location=&#39;bottom&#39;, 
-                         pad=0.05,shrink=1.75, aspect=4,
+            plt.colorbar(cbar, orientation=&#39;horizontal&#39;, location=&#39;bottom&#39;,
+                         pad=0.025, shrink=1.75, aspect=6,
                          label=xlabel)
+
             ax.set_xticklabels([])
             if annotate:
                 # Annotate surface elevation
@@ -889,9 +896,9 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
                         ha=&#39;right&#39;,
                         va=&#39;top&#39;,
                         size=&#39;x-small&#39;)
-                
+
                 # Annotate Bedrock elevation
-                ax.text(x=xCap*1.1,
+                ax.text(x=xCap*1.2,
                         y=bedrockVal,
                         s=str(round(float(bedrockElev), 2))+&#39;m\nelevation&#39;,
                         ha=&#39;left&#39;,
@@ -907,12 +914,12 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
                         size=&#39;x-small&#39;,
                         rotation=270)
 
-            fig.set_size_inches(1.5, 8)
-            #fig.set_layout_engine(&#39;constrained&#39;)
-            
+            fig.set_size_inches(1., 10)
+
         else:
             # Plot curve
-            ax.fill_betweenx(y=yVals, x1=xBase, x2=curvePlot, alpha=0.2, facecolor=&#39;k&#39;)
+            ax.fill_betweenx(y=yVals, x1=xBase, x2=curvePlot,
+                             alpha=0.2, facecolor=&#39;k&#39;)
             ax.plot(curvePlot, yVals, c=&#39;k&#39;, linewidth=0.5)
             if show_feet:
                 ax_ft = ax.twinx()
@@ -926,7 +933,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
                 ax.set_xticks([])
 
             ax.set_xlabel(&#39;H/V Ratio&#39;)
-            
+
             if annotate:
                 # Annotate surface elevation
                 ax.text(x=xTopLoc,
@@ -954,15 +961,14 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
                         rotation=&#39;vertical&#39;)
 
             fig.set_size_inches(4, 8)
-            
-
-        ax.set_xlim(xLims)    
+            fig.set_layout_engine(&#39;constrained&#39;)
+        ax.set_xlim(xLims)
         # Plot peak location
         ax.axhline(y=bedrockVal,
                 linestyle=&#39;dotted&#39;, c=&#39;k&#39;, linewidth=0.5)
         ax.scatter(xBase, y=bedrockVal, c=&#39;k&#39;, s=0.5)
         ax.scatter(xCap, y=bedrockVal, c=&#39;k&#39;, s=0.5)
-        
+
         # Plot &#34;base&#34; line
         ax.axvline(x=xBase, linestyle=&#39;dotted&#39;, c=&#39;k&#39;, linewidth=0.5)
 
@@ -970,8 +976,8 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 
         ax.xaxis.set_label_position(&#39;top&#39;)
 
-        #ax.set_title(hvsr_results[&#39;site&#39;])
-        fig.set_layout_engine(&#39;constrained&#39;)
+        ax.set_title(hvsr_results[&#39;site&#39;])
+        #fig.set_layout_engine(&#39;constrained&#39;)
 
         plt.sca(ax)
         

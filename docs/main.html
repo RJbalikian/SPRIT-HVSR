@@ -721,7 +721,7 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
 </dl></div>
 </dd>
 <dt id="sprit.calculate_depth"><code class="name flex">
-<span>def <span class="ident">calculate_depth</span></span>(<span>freq_input,<br>depth_model=None,<br>freq_col='Peak',<br>calculate_depth_in_feet=False,<br>calculate_elevation=True,<br>generate_depth_curve=True,<br>show_depth_curve=False,<br>surface_elevation_data='Elevation',<br>bedrock_elevation_column='BedrockElevation',<br>depth_column='BedrockDepth',<br>verbose=False,<br>export_path=None,<br>swave_velocity=563.0,<br>decimal_places=3,<br>depth_model_in_latex=False,<br>fig=None,<br>ax=None,<br>**kwargs)</span>
+<span>def <span class="ident">calculate_depth</span></span>(<span>freq_input,<br>depth_model=None,<br>freq_col='Peak',<br>calculate_depth_in_feet=False,<br>calculate_elevation=True,<br>generate_depth_curve=True,<br>show_depth_curve=False,<br>surface_elevation_data='Elevation',<br>bedrock_elevation_data='BedrockElevation',<br>bedrock_depth_data='BedrockDepth',<br>depth_plot_export_path=None,<br>swave_velocity=563.0,<br>depth_model_in_latex=False,<br>verbose=False,<br>**kwargs)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -736,15 +736,12 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
                     generate_depth_curve=True,
                     show_depth_curve=False,
                     surface_elevation_data=&#39;Elevation&#39;,
-                    bedrock_elevation_column=&#34;BedrockElevation&#34;,
-                    depth_column=&#34;BedrockDepth&#34;,
-                    verbose=False, # if verbose is True, warnings will be shown
-                    export_path=None,
+                    bedrock_elevation_data=&#34;BedrockElevation&#34;,
+                    bedrock_depth_data=&#34;BedrockDepth&#34;,
+                    depth_plot_export_path=None,
                     swave_velocity=563.0,
-                    decimal_places=3,
                     depth_model_in_latex=False,
-                    fig=None,
-                    ax=None,
+                    verbose=False,  # if verbose=True, warnings will be shown
                     **kwargs):
     &#34;&#34;&#34;Calculate depth(s) based on a frequency input (usually HVSRData or HVSRBatch oject) and a frequency-depth depth_model (usually a power law relationship).
 
@@ -766,20 +763,18 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
         Whether to show the depth curve. If True, will also set generate_depth_curve to True.
     surface_elevation_data : str or numeric, optional
         The name of the column or a manually specified numeric value to use for the surface elevation value, by default &#34;Elevation&#34;
-    bedrock_elevation_column : str, optional
+    bedrock_elevation_data : str, optional
         The name of the column in the TableReport for the bedrock elevation of the point.
         This can be either the name of a column in a table (i.e., Table_Report) or a numeric value, by default &#34;BedrockElevation&#34;
-    depth_column : str, optional
+    bedrock_depth_data : str, optional
         _description_, by default &#34;BedrockDepth&#34;
     verbose : bool, optional
         Whether or not to print information about the processing to the terminal, by default False
-    export_path : _type_, optional
+    depth_plot_export_path : _type_, optional
         _description_, by default None
     swave_velocity : float, optional
         Shear wave velocity to use for depth calculations in meters/second, 
         if using the quarter wavelength shear wave velocity method, by default 563.0
-    decimal_places : int, optional
-        Number of decimal places to round depth results, by default 3
 
     Returns
     -------
@@ -792,9 +787,26 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
 
     if depth_model is None:
         depth_model = CONGLOMERATE_MODEL
+        orig_args[&#39;depth_model&#39;] = depth_model
 
     if show_depth_curve:
         generate_depth_curve = True
+        orig_args[&#39;generate_depth_curve&#39;] = generate_depth_curve
+
+    plot_engine = &#39;matplotlib&#39;
+    if &#39;plot_engine&#39; in kwargs:
+        plot_engine = kwargs[&#39;plot_engine&#39;]
+
+    decimal_places = 3
+    if &#39;decimal_places&#39; in kwargs:
+        decimal_places = kwargs[&#39;decimal_places&#39;]
+
+    fig = None
+    ax = None
+    if &#39;fig&#39; in kwargs:
+        fig = kwargs[&#39;fig&#39;]
+    if &#39;ax&#39; in kwargs:
+        ax = kwargs[&#39;ax&#39;]
 
     # Break out if list (of random or not) items
     if isinstance(freq_input, (list, tuple)):
@@ -821,21 +833,26 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
     a = 0
     b = 0
     depth_model_params = None
+    if isinstance(depth_model, (list, tuple, np.ndarray)) and len(depth_model) == 2:
+        (a, b) = depth_model
 
     # Fetch parameters for frequency-depth model
-    if isinstance(depth_model, (tuple, list, dict)):
+    if isinstance(depth_model, (tuple, list)):
         (a, b) = depth_model
         if a == 0 or b == 0:
             raise ValueError(f&#34;Model parameters (a, b)={depth_model} cannot be zero, check model inputs.&#34;)
+    elif isinstance(depth_model, dict):
+        depth_modelDict = {k.lower(): v for k, v in depth_model.items()}
+        a = depth_modelDict[&#39;a&#39;]
+        b = depth_modelDict[&#39;b&#39;]
     elif isinstance(depth_model, str):
-
         if depth_model.casefold() in list(map(str.casefold, model_parameters)):
             for k, v in model_parameters.items():
                 if depth_model.casefold() == k.casefold():
                     (a, b) = v
                     break
 
-        elif depth_model.casefold() in swave:
+        elif depth_model.casefold() in swave_model_list:
             depth_model_params = depth_model.casefold()
 
         elif depth_model.casefold() == &#34;all&#34;:
@@ -849,6 +866,7 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
             if a == 0 or b == 0:
                 raise ValueError(&#34;Parameters cannot be zero, check model inputs&#34;)            
 
+    # Standardize b as positive for input to function
     if b &lt; 0:
         b = b * -1
 
@@ -862,12 +880,12 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
             if isinstance(freq_input, (float, int)):
                 if freq_input &lt;= 0:
                     raise ValueError(&#34;Peak Frequency cannot be zero or negative&#34;)
-                
+
                 if isinstance(surface_elevation_data, numbers.Number):
                     surface_elevation_col = &#39;Elevation&#39;
                 else:
                     surface_elevation_col = surface_elevation_data
-                
+
                 tableReport = pd.DataFrame(columns=[&#39;Site Name&#39;,
                                                     &#39;Acq_Date&#39;,
                                                     &#39;XCoord&#39;,
@@ -877,7 +895,7 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
                                                     &#39;Peak_StDev&#39;
                                                     &#39;PeakPasses&#39;])
                 tableReport.loc[0, freq_col] = freq_input
-                
+
                 # Get extra parameters read in via kwargs, if applicable
                 paramDict = {&#39;input_data&#39;: &#34;from_user&#34;}
                 if isinstance(surface_elevation_data, numbers.Number):
@@ -956,7 +974,7 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
             if not hasattr(freq_input, &#39;Table_Report&#39;):
                 if verbose:
                     warn(&#34;Passed HVSRData Object has no attribute Table_Report, attempting to generate one.&#34;)
-                tableReport = sprit_hvsr.get_report(freq_input, report_format=&#39;csv&#39;)
+                tableReport = sprit_hvsr.get_report(freq_input, report_format=&#39;table&#39;)
             else:
                 tableReport = freq_input.Table_Report
 
@@ -980,9 +998,9 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
 
         for site_peak_freq in pf_values:
             try:
-                if depth_model in swave:
+                if str(depth_model).lower() in swave_model_list:
                     calib_data.append(swave_velocity/(4*site_peak_freq))
-                    
+
                     if depth_model_in_latex:
                         dModelStr = f&#34;$\\frac{{{swave_velocity}}}{{4\\times{site_peak_freq}}}$&#34;
                     else:
@@ -990,14 +1008,10 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
                     depthModelList.append(dModelStr)
                     depthModelTypeList.append(&#39;Quarter Wavelength&#39;)
                 else:
-                    if depth_model == &#34;all&#34;:
-                        a_list = []
-                        b_list = []
-                        for name, model_params in model_parameters.items():
-                            a_list.append(model_params[0])
-                            b_list.append(model_params[1])
-                        (a, b) = (np.nanmean(a_list), np.nanmean(b_list))
-
+                    if str(depth_model).lower() in [&#34;all&#34;, &#39;average&#39;, &#39;conglomerate&#39;]:
+                        (a, b) = CONGLOMERATE_MODEL
+                    else:
+                        (a, b) = depth_model
                     calib_data.append(a*(site_peak_freq**-b))
                     if hasattr(freq_input, &#39;x_freqs&#39;):
                         freq_input[&#39;x_depth_m&#39;] = {&#39;Z&#39;: np.around([a*(f**-b) for f in freq_input[&#34;x_freqs&#34;][&#39;Z&#39;]], decimal_places),
@@ -1008,7 +1022,7 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
                         freq_input[&#39;x_depth_ft&#39;] = {&#39;Z&#39;: np.around(freq_input[&#39;x_depth_m&#39;][&#39;Z&#39;]*3.281, decimal_places),
                                                     &#39;E&#39;: np.around(freq_input[&#39;x_depth_m&#39;][&#39;E&#39;]*3.281, decimal_places),
                                                     &#39;N&#39;: np.around(freq_input[&#39;x_depth_m&#39;][&#39;N&#39;]*3.281, decimal_places)}
-                             
+
                     if depth_model_in_latex:
                         dModelStr = f&#34;{a} \\times {{{site_peak_freq}}}^{{-{b}}}&#34;
                     else:
@@ -1020,21 +1034,21 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
                 raise ValueError(&#34;Error in calculating depth, check HVSRData object for empty values or missing columns&#34;) from e
 
         # Record depth data in table
-        tableReport[depth_column] = np.around(calib_data, decimal_places)
-        
+        tableReport[bedrock_depth_data] = np.around(calib_data, decimal_places)
+
         # Calculate elevation data
         if calculate_elevation and surface_elevation_data in tableReport.columns:
-            tableReport[bedrock_elevation_column] = np.around((np.float32(tableReport.loc[:, surface_elevation_data]) - np.float32(tableReport.loc[:, depth_column])), decimal_places)
+            tableReport[bedrock_elevation_data] = np.around((np.float32(tableReport.loc[:, surface_elevation_data]) - np.float32(tableReport.loc[:, bedrock_depth_data])), decimal_places)
             if hasattr(freq_input, &#39;x_depth_m&#39;):
                 freq_input[&#39;x_elev_m&#39;] = {&#39;Z&#39;: np.around([float(tableReport[surface_elevation_data].values[0]) - float(f) for f in freq_input[&#34;x_depth_m&#34;][&#39;Z&#39;]], decimal_places),
                                           &#39;E&#39;: np.around([float(tableReport[surface_elevation_data].values[0]) - float(f) for f in freq_input[&#34;x_depth_m&#34;][&#39;E&#39;]], decimal_places),
                                           &#39;N&#39;: np.around([float(tableReport[surface_elevation_data].values[0]) - float(f) for f in freq_input[&#34;x_depth_m&#34;][&#39;N&#39;]], decimal_places)}
 
         if calculate_depth_in_feet:
-            tableReport[depth_column+&#39;_ft&#39;] = np.around(calib_data*3.281,
+            tableReport[bedrock_depth_data+&#39;_ft&#39;] = np.around(calib_data*3.281,
                                                      decimals=decimal_places)
             if calculate_elevation and surface_elevation_data in tableReport.columns:
-                tableReport[bedrock_elevation_column+&#39;_ft&#39;] = np.around(tableReport[bedrock_elevation_column] * 3.281,
+                tableReport[bedrock_elevation_data+&#39;_ft&#39;] = np.around(tableReport[bedrock_elevation_data] * 3.281,
                                                                 decimals=decimal_places)
                 if hasattr(freq_input, &#39;x_elev_m&#39;) and not hasattr(freq_input[&#39;x_depth_ft&#39;]):
                     # Calculate depth in feet
@@ -1045,85 +1059,91 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
         tableReport[&#34;DepthModel&#34;] = depthModelList
         tableReport[&#34;DepthModelType&#34;] = depthModelTypeList
 
-        # Do plotting work
-        if fig is None and ax is None:
-            fig, ax = plt.subplots()
-        elif fig is not None:
-            ax = fig.get_axes()
-            if len(ax) == 1:
-                ax = ax[0]
+        mplList = [&#39;matplotlib&#39;, &#39;mpl&#39;, &#39;m&#39;,]
+        if str(plot_engine).lower() in mplList:
+            # Do plotting work
+            if fig is None and ax is None:
+                fig, ax = plt.subplots()
+            elif fig is not None:
+                ax = fig.get_axes()
+                if len(ax) == 1:
+                    ax = ax[0]
 
-        if hasattr(freq_input, &#39;hvsr_curve&#39;) and generate_depth_curve:
-            pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
-            pdc_kwargs[&#39;show_depth_curve&#39;] = show_depth_curve
-            pdc_kwargs[&#39;fig&#39;] = fig
-            pdc_kwargs[&#39;ax&#39;] = ax
-            freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input, 
-                                                     **pdc_kwargs)
-        else:
-            surfElevVal = tableReport.loc[0, surface_elevation_col]
-            brElevVal = tableReport.loc[0, bedrock_elevation_column]
-            if np.isnan(surfElevVal):
-                surfElevVal = 0
-                
-            if np.isnan(brElevVal):
-                brElevVal = tableReport.loc[0, depth_column]
-                yLIMITS = [brElevVal*1.1, brElevVal*-0.1]
+            if hasattr(freq_input, &#39;hvsr_curve&#39;) and generate_depth_curve:
+                pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
+                pdc_kwargs[&#39;show_depth_curve&#39;] = show_depth_curve
+                pdc_kwargs[&#39;fig&#39;] = fig
+                pdc_kwargs[&#39;ax&#39;] = ax
+                freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input,
+                                                         **pdc_kwargs)
             else:
-                yLIMITS = [0, brElevVal - ((surfElevVal-brElevVal) * 0.1)]
+                surfElevVal = tableReport.loc[0, surface_elevation_col]
+                brElevVal = tableReport.loc[0, bedrock_elevation_data]
+                if np.isnan(surfElevVal):
+                    surfElevVal = 0
+                    
+                if np.isnan(brElevVal):
+                    brElevVal = tableReport.loc[0, bedrock_depth_data]
+                    yLIMITS = [brElevVal*1.1, brElevVal*-0.1]
+                else:
+                    yLIMITS = [0, brElevVal - ((surfElevVal-brElevVal) * 0.1)]
 
-            ax.axhline(0, xmin=-0.1, xmax=1, c=&#39;k&#39;)
-            ax.plot([0, 0], [0, brElevVal], linestyle=&#39;dotted&#39;, c=&#39;k&#39;)
-            
-            ax.scatter(x=0, y=surfElevVal, c=&#39;k&#39;, marker=&#39;v&#39;)
-            ax.scatter(x=0, y=brElevVal, c=&#39;k&#39;, marker=&#39;^&#39;)
-            
-            spc = &#34; &#34;
-            ax.text(x=0, y=brElevVal,
-                    s=f&#34;  Depth: {brElevVal}m {spc}({tableReport.loc[0, freq_col]} Hz)&#34;,
-                    va=&#39;top&#39;)
-            
-            ax.set_xlim([-0.1, 1])
-            ax.set_ylim(yLIMITS)
-            
-            ax.set_ylabel(&#39;Depth [m]&#39;)
-            ax.set_xticks([])
-            titleText = f&#39;Calibrated Depth from Input Frequency&#39;
-            fig.suptitle(titleText)
-            if isinstance(depth_model, (tuple, list)):
-                aText = depth_model[0]
-                bText = np.sqrt(depth_model[1]**2)*-1
-                ax.text(x=0,
-                        y=surfElevVal, va=&#39;bottom&#39;,
-                        s=f&#34;  Depth Model: ${aText:.2f} * f_0 ^{{{bText:0.3f}}}$&#34;)
-            
-        plt.sca(ax)
-        if not show_depth_curve:
-            plt.close()
+                ax.axhline(0, xmin=-0.1, xmax=1, c=&#39;k&#39;)
+                ax.plot([0, 0], [0, brElevVal], linestyle=&#39;dotted&#39;, c=&#39;k&#39;)
+                
+                ax.scatter(x=0, y=surfElevVal, c=&#39;k&#39;, marker=&#39;v&#39;)
+                ax.scatter(x=0, y=brElevVal, c=&#39;k&#39;, marker=&#39;^&#39;)
+                
+                spc = &#34; &#34;
+                ax.text(x=0, y=brElevVal,
+                        s=f&#34;  Depth: {brElevVal}m {spc}({tableReport.loc[0, freq_col]} Hz)&#34;,
+                        va=&#39;top&#39;)
+                
+                ax.set_xlim([-0.1, 1])
+                ax.set_ylim(yLIMITS)
+                
+                ax.set_ylabel(&#39;Depth [m]&#39;)
+                ax.set_xticks([])
+                titleText = f&#39;Calibrated Depth from Input Frequency&#39;
+                fig.suptitle(titleText)
+                if isinstance(depth_model, (tuple, list)):
+                    aText = depth_model[0]
+                    bText = np.sqrt(depth_model[1]**2)*-1
+                    ax.text(x=0,
+                            y=surfElevVal, va=&#39;bottom&#39;,
+                            s=f&#34;  Depth Model: ${aText:.2f} * f_0 ^{{{bText:0.3f}}}$&#34;)
+                
+            plt.sca(ax)
+            if not show_depth_curve:
+                plt.close()
         
         # Export as specified
-        if export_path is not None and os.path.exists(export_path):
-            if export_path == freq_input:
-                tableReport.to_csv(freq_input)
-                if verbose:
-                    print(&#34;Saving data in the original file&#34;)
+        if depth_plot_export_path is not None:
+            try:
+                pathlib.path(depth_plot_export_path)
 
-            else:
-                if &#34;/&#34; in export_path:
-                    temp = os.path.join(export_path+ &#34;/&#34;+ site + &#34;.csv&#34;)
-                    tableReport.to_csv(temp)
-                
+                if pathlib.Path(depth_plot_export_path).is_dir():
+                    if hasattr(freq_input, &#39;site&#39;):
+                        site = freq_input[&#39;site&#39;]
+                    else:
+                        site = str(freq_input)
+
+                    if len(site) &gt; 15:
+                        site = site[:15]
+                    dm = str(depth_model)
+
+                    fname = f&#34;{site}_{dm}_Depth_Sounding_Plot.png&#34;
+                    dpExPath = pathlib.Path(depth_plot_export_path).joinpath(fname)
                 else:
-                    temp = os.path.join(export_path+&#34;\\&#34;+ site + &#34;.csv&#34;)
-                    tableReport.to_csv(temp)
+                    dpExPath = pathlib.Path(depth_plot_export_path)
 
-                if verbose:
-                    print(&#34;Saving data to the path specified&#34;)
-        
-        
+                if str(plot_engine).lower() in mplList:
+                    plt.savefig(dpExPath.as_posix())
+            except Exception:
+                print(f&#39;Path specified for depth_plot_export_path cannot be parsed as filepath: {depth_plot_export_path}&#39;)
+
         freq_input.Table_Report = tableReport
         return freq_input
-            
     else:
         raise RuntimeError(f&#34;The freq_input parameter is not the correct type:\n\ttype(freq_input)={type(freq_input)}&#34;)</code></pre>
 </details>
@@ -1146,20 +1166,18 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
 <dd>Whether to show the depth curve. If True, will also set generate_depth_curve to True.</dd>
 <dt><strong><code>surface_elevation_data</code></strong> :&ensp;<code>str</code> or <code>numeric</code>, optional</dt>
 <dd>The name of the column or a manually specified numeric value to use for the surface elevation value, by default "Elevation"</dd>
-<dt><strong><code>bedrock_elevation_column</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dt><strong><code>bedrock_elevation_data</code></strong> :&ensp;<code>str</code>, optional</dt>
 <dd>The name of the column in the TableReport for the bedrock elevation of the point.
 This can be either the name of a column in a table (i.e., Table_Report) or a numeric value, by default "BedrockElevation"</dd>
-<dt><strong><code>depth_column</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dt><strong><code>bedrock_depth_data</code></strong> :&ensp;<code>str</code>, optional</dt>
 <dd><em>description</em>, by default "BedrockDepth"</dd>
 <dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, optional</dt>
 <dd>Whether or not to print information about the processing to the terminal, by default False</dd>
-<dt><strong><code>export_path</code></strong> :&ensp;<code>_type_</code>, optional</dt>
+<dt><strong><code>depth_plot_export_path</code></strong> :&ensp;<code>_type_</code>, optional</dt>
 <dd><em>description</em>, by default None</dd>
 <dt><strong><code>swave_velocity</code></strong> :&ensp;<code>float</code>, optional</dt>
 <dd>Shear wave velocity to use for depth calculations in meters/second,
 if using the quarter wavelength shear wave velocity method, by default 563.0</dd>
-<dt><strong><code>decimal_places</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>Number of decimal places to round depth results, by default 3</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
@@ -4845,6 +4863,7 @@ Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extensi
     dict_str_list = []
     for k, v in hvsr_results.__dict__.items():          
         
+        # First, handle special items
         if k == &#39;_batch&#39;:
             continue
 
@@ -4930,6 +4949,29 @@ Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extensi
                 newDF.index = [str(i) for i in hvDF.index]
                 v = newDF.to_dict()
 
+        if k == &#39;inv&#39; and v is not None:
+            try:
+                invDict = {}
+                for n in v.networks:
+                    invDict[&#39;networks&#39;] =  str(n)+&#39;\n&#39;
+                    for sta in n:
+                        invDict[&#39;stations&#39;] = str(sta)+&#39;\n&#39;
+                        for c in sta:
+                            invDict[&#39;channels&#39;] = str(c)+&#39;\n&#39;
+                            invDict[&#39;response&#39;] = {}
+                            for rk, rv in c.response.__dict__.items():
+                                if rk == &#39;instrument_sensitivity&#39;:
+                                    invDict[&#39;response&#39;][rk] = rv.__dict__
+                                elif rk == &#39;response_stages&#39;:
+                                    invDict[&#39;response&#39;][rk] = {i:str(rr.__dict__) for i, rr in enumerate(rv)}
+                                else:
+                                    invDict[&#39;response&#39;][rk] = rv.__repr__()
+                v = invDict
+            except Exception:
+                v = str(v)
+        
+
+        # Now, see if it can be made into a string natively
         try:
             json.dumps({k: v})  # This is just a test to ensure item can be dumped
 
@@ -5037,20 +5079,37 @@ Otherwise, saves a pickle-serialized object to a gzip file (with a .hvsr extensi
                 dictString = f&#39;{indSpcs}&#34;{k}&#34;: &#39;+&#39;{\n&#39;+indSpcs+indSpcs
                 for chaz, chazVals in v.items():
                     if k == &#39;psds&#39;:
-                        dictString += f&#39;&#34;{chaz}&#34;: &#39; + &#39;{\n&#39; + indSpcs+indSpcs+indSpcs
-                        for psdKey, psdVal in v[chaz].items():
-                            if isinstance(psdVal, np.ndarray):
-                                dictString += json.dumps({psdKey: np.round(psdVal, 5).tolist()}).replace(&#39;{&#39;, &#39;&#39;).replace(&#34;}&#34;, &#39;&#39;) + &#39;,\n&#39;+indSpcs+indSpcs+indSpcs
-                            else:
-                                if isinstance(psdVal, (list, tuple)):
+                        try:
+                            dictString += f&#39;&#34;{chaz}&#34;: &#39; + &#39;{\n&#39; + indSpcs+indSpcs+indSpcs
+                            for psdKey, psdVal in v[chaz].items():
+                                if isinstance(psdVal, np.ndarray):
+                                    dictString += json.dumps({psdKey: np.round(psdVal, 5).tolist()}).replace(&#39;{&#39;, &#39;&#39;).replace(&#34;}&#34;, &#39;&#39;) + &#39;,\n&#39;+indSpcs+indSpcs+indSpcs
+                                elif isinstance(psdVal, obspy.core.inventory.inventory.Inventory):
+                                    try:
+                                        responseDict = {}
+                                        for pk, pv in psdVal.__dict__.items():
+                                            if pk == &#39;instrument_sensitivity&#39;:
+                                                responseDict[&#39;response&#39;][pk] = str(pv.__dict__)
+                                            elif pk == &#39;response_stages&#39;:
+                                                responseDict[&#39;response&#39;][pk] = {i:str(rr.__dict__) for i, rr in enumerate(pv)}
+                                            else:
+                                                responseDict[&#39;response&#39;][pk] = str(pv)
+                                        v = responseDict                       
+                                    except Exception:
+                                        v = str(v)
+                                elif isinstance(psdVal, (list, tuple)):
                                     newList = []
                                     for item in psdVal:
                                         newList.append(str(item))
                                     psdVal = newList
-                                outerDict = {psdKey: psdVal}
-                                dictString += json.dumps(outerDict).replace(&#39;{&#39;, &#39;&#39;).replace(&#34;}&#34;, &#39;&#39;) + &#39;,\n&#39;+indSpcs+indSpcs+indSpcs
+                                    outerDict = {psdKey: psdVal}
+                                    dictString += json.dumps(outerDict).replace(&#39;{&#39;, &#39;&#39;).replace(&#34;}&#34;, &#39;&#39;) + &#39;,\n&#39;+indSpcs+indSpcs+indSpcs
+                                else:
+                                    dictString += &#39;&#34;&#39;+psdKey+&#39;&#34;: &#34;&#39;+str(psdVal)+&#39;&#34;,\n&#39;+indSpcs+indSpcs
+                            dictString = dictString[:-14] +&#34;\n&#34; +indSpcs+indSpcs+&#34;},\n&#34;+indSpcs+indSpcs
+                        except Exception:
+                            dictString = dictString[:-14] +&#34;\n&#34; +indSpcs+indSpcs+&#34;},\n&#34;+indSpcs+indSpcs
 
-                        dictString = dictString[:-14] +&#34;\n&#34; +indSpcs+indSpcs+&#34;},\n&#34;+indSpcs+indSpcs
                     else:
                         outDict = {chaz:chazVals}
                         if isinstance(chazVals, np.ndarray):
@@ -5667,6 +5726,8 @@ If 'processing', saves the processing settings to their respective file. By defa
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, &#39;raspshake&#39;]
     trominoNameList = [&#39;tromino&#39;, &#39;trom&#39;,&#39;tromino blue&#39;, &#39;tromino blu&#39;, &#39;tromino 3g&#39;, &#39;tromino 3g+&#39;, &#39;tr&#39;, &#39;t&#39;]
 
+    if not isinstance(input_parameters, HVSRData):
+        input_parameters = sprit_utils._make_it_classy(input_parameters)
     # Check if data is from tromino, and adjust parameters accordingly
     if &#39;trc&#39; in pathlib.Path(str(input_parameters[&#39;input_data&#39;])).suffix:
         if verbose and hasattr(input_parameters, &#39;instrument&#39;) and input_parameters[&#39;instrument&#39;].lower() not in trominoNameList:
@@ -5677,12 +5738,19 @@ If 'processing', saves the processing settings to their respective file. By defa
     # Get metadata (inventory/response information)
     if &#39;inv&#39; not in input_parameters.keys():
         input_parameters[&#39;inv&#39;] = None
+    inv = input_parameters[&#39;inv&#39;]
+    
+    if &#39;acq_date&#39; not in input_parameters.keys():
+        input_parameters[&#39;acq_date&#39;] = None
+    date = input_parameters[&#39;acq_date&#39;]
+
+
     if &#39;paz&#39; not in input_parameters.keys():
         input_parameters[&#39;paz&#39;] = None
-    if update_metadata:
-        input_parameters = get_metadata(input_parameters, update_metadata=update_metadata, source=source, verbose=verbose)
-    inv = input_parameters[&#39;inv&#39;]
-    date = input_parameters[&#39;acq_date&#39;]
+
+    #print(&#34;COMMMENTED OUT INITIAL GET_METADATA&#34;)
+    #input_parameters = get_metadata(input_parameters, update_metadata=update_metadata, source=source, verbose=verbose)
+    
 
     # Cleanup for gui input
     if isinstance(input_parameters[&#39;input_data&#39;], (obspy.Stream, obspy.Trace)):
@@ -5724,6 +5792,8 @@ If 'processing', saves the processing settings to their respective file. By defa
         except Exception:
             dPath = input_parameters[&#39;input_data&#39;]
 
+    if &#39;instrument&#39; not in input_parameters.keys():
+        input_parameters[&#39;instrument&#39;] = None
     inst = input_parameters[&#39;instrument&#39;]
 
     # Need to put dates and times in right formats first
@@ -5764,11 +5834,12 @@ If 'processing', saves the processing settings to their respective file. By defa
     elif type(date) is int:
         doy = date
         year = datetime.datetime.today().year
-    else:  
-        date = datetime.datetime.now()
+    else:
+        indate = date
+        input_parameters[&#39;acq_date&#39;] = date = datetime.datetime.now()
         doy = date.timetuple().tm_yday
         year = date.year
-        warnings.warn(&#34;Did not recognize date, using year {} and day {}&#34;.format(year, doy))
+        warnings.warn(f&#34;Did not recognize specified date: {indate}, using year {year} and day {doy}&#34;)
 
     # Select which instrument we are reading from (requires different processes for each instrument)
     # Get any kwargs that are included in obspy.read
@@ -5841,7 +5912,7 @@ If 'processing', saves the processing settings to their respective file. By defa
             tromCond2 = &#39;trc&#39; in pathlib.Path(str(dPath)).suffix
             tromCond3 = &#34;GRILLA&#34; in pathlib.Path(str(dPath)).name and pathlib.Path(str(dPath)).is_dir()                
             
-            if tromCond1 or tromCond2 or tromCond3:
+            if tromCond2 or tromCond3:
                 input_parameters[&#39;instrument&#39;] = &#39;Tromino&#39;
 
                 if &#39;blu&#39; in str(inst).lower():
@@ -5975,7 +6046,9 @@ If 'processing', saves the processing settings to their respective file. By defa
             site_default = inspect.signature(input_params).parameters[&#39;site&#39;].default
             updateMsg = []
 
-            if input_parameters[&#39;site&#39;] == site_default:
+            if &#39;site&#39; not in input_parameters.keys():
+                input_parameters[&#39;site&#39;] = None
+            if input_parameters[&#39;site&#39;] == site_default or input_parameters[&#39;site&#39;] is None:
                 if input_parameters[&#39;site&#39;] != pathlib.Path(str(dPath)).stem:
                     if isinstance(dPath, (list, tuple)):
                         dPath = dPath[0]
@@ -5986,15 +6059,28 @@ If 'processing', saves the processing settings to their respective file. By defa
                 
             # network
             net_default = inspect.signature(input_params).parameters[&#39;network&#39;].default
-            if input_parameters[&#39;net&#39;] == net_default and net_default != dataIN[0].stats.network:
-                input_parameters[&#39;net&#39;] = dataIN[0].stats.network
+            if &#39;net&#39; not in input_parameters.keys():
+                input_parameters[&#39;net&#39;] = None
+            if (input_parameters[&#39;net&#39;] == net_default and net_default != dataIN[0].stats.network) or input_parameters[&#39;net&#39;] is None:
+                input_parameters[&#39;net&#39;] = input_parameters[&#39;network&#39;] = dataIN[0].stats.network
                 #input_parameters[&#39;params&#39;][&#39;net&#39;] = dataIN[0].stats.network
                 if verbose:
                     updateMsg.append(f&#34;\tNetwork name updated to {input_parameters[&#39;net&#39;]}&#34;)
 
             # station
             sta_default = inspect.signature(input_params).parameters[&#39;station&#39;].default
-            if str(input_parameters[&#39;sta&#39;]) == sta_default and str(input_parameters[&#39;sta&#39;]) != dataIN[0].stats.station:
+            if &#39;sta&#39; not in input_parameters.keys():
+                input_parameters[&#39;sta&#39;] = None
+            if &#39;station&#39; not in input_parameters.keys():
+                input_parameters[&#39;station&#39;] = None
+            
+            updateStaCond1 = input_parameters[&#39;sta&#39;] == None
+            updateStaCond2 = input_parameters[&#39;station&#39;] == None
+            updateStaCond3 = input_parameters[&#39;sta&#39;] != input_parameters[&#39;station&#39;]
+            updateStaCond4a = input_parameters[&#39;sta&#39;] == sta_default
+            updateStaCond4b = str(input_parameters[&#39;sta&#39;]) != dataIN[0].stats.station
+
+            if updateStaCond1 or updateStaCond2 or (updateStaCond4a and updateStaCond4b):
                 input_parameters[&#39;sta&#39;] = dataIN[0].stats.station
                 input_parameters[&#39;station&#39;] = dataIN[0].stats.station
                 #input_parameters[&#39;params&#39;][&#39;sta&#39;] = dataIN[0].stats.station
@@ -6003,6 +6089,8 @@ If 'processing', saves the processing settings to their respective file. By defa
                     updateMsg.append(f&#34;\tStation name updated to {input_parameters[&#39;sta&#39;]}&#34;)
 
             # location
+            if &#39;location&#39; not in input_parameters.keys():
+                input_parameters[&#39;location&#39;] = None
             loc_default = inspect.signature(input_params).parameters[&#39;location&#39;].default
             if input_parameters[&#39;location&#39;] == loc_default and input_parameters[&#39;location&#39;] != dataIN[0].stats.location:
                 input_parameters[&#39;location&#39;] = dataIN[0].stats.location
@@ -6013,6 +6101,8 @@ If 'processing', saves the processing settings to their respective file. By defa
             # channels
             channelList = []
             cha_default = inspect.signature(input_params).parameters[&#39;channels&#39;].default
+            if &#39;cha&#39; not in input_parameters.keys():
+                input_parameters[&#39;cha&#39;] = None
             if str(input_parameters[&#39;cha&#39;]) == cha_default:
                 for tr in dataIN:
                     if tr.stats.channel not in channelList:
@@ -6059,6 +6149,8 @@ If 'processing', saves the processing settings to their respective file. By defa
                                              hour=0, minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc)
 
             stime_default = obspy.UTCDateTime(NOWTIME)
+            if &#39;starttime&#39; not in input_parameters.keys():
+                input_parameters[&#39;starttime&#39;] = stime_default
             sTimeIsDefault = input_parameters[&#39;starttime&#39;] == stime_default
                 
             # Check if stime is not the same as the data starttime (if it is, leave it alone!)
@@ -6119,6 +6211,8 @@ If 'processing', saves the processing settings to their respective file. By defa
             # endttime
             # Endtime only matters if it is used to trim the data
             eTimeDefault = obspy.UTCDateTime(NOWTIME.year, NOWTIME.month, NOWTIME.day, 23, 59, 59, 999999)
+            if &#39;endtime&#39; not in input_parameters.keys():
+                input_parameters[&#39;endtime&#39;] = eTimeDefault
             eTimeIsDefault = input_parameters[&#39;endtime&#39;] == eTimeDefault
             
             minEndTime = dataIN.merge()[-1].stats.endtime
@@ -6138,6 +6232,8 @@ If 'processing', saves the processing settings to their respective file. By defa
                 #params[&#39;params&#39;][&#39;endtime&#39;] = minEndTime
 
             # HVSR_ID (derived)
+            if &#39;project&#39; not in input_parameters.keys():
+                input_parameters[&#39;project&#39;] = None
             project = input_parameters[&#39;project&#39;]
             if project is None:
                 proj_id = &#39;&#39;
@@ -6159,7 +6255,10 @@ If 'processing', saves the processing settings to their respective file. By defa
             dataIN = dataIN.trim(starttime=input_parameters[&#39;starttime&#39;], endtime=input_parameters[&#39;endtime&#39;])
             dataIN.merge()
     except Exception as e:
+        traceback.print_exc()
         raise RuntimeError(f&#39;Data as read by obspy does not contain the proper metadata. \n{e}.\nCheck your input parameters or the data file.&#39;)
+
+    input_parameters[&#39;stream&#39;] = dataIN
 
     # Latitude, Longitude, Elevation
     # Maybe make this more comprehensive, like for all input_params
@@ -6180,8 +6279,11 @@ If 'processing', saves the processing settings to their respective file. By defa
         #input_parameters[&#39;params&#39;][&#39;input_crs&#39;] = dataIN[0].stats[&#39;input_crs&#39;]
 
     # Get and update metadata after updating data from source
-    if update_metadata:
-        input_parameters = get_metadata(input_parameters, update_metadata=update_metadata, source=source)
+    metaCond1 = input_parameters[&#39;metadata&#39;] is not None
+    metaCond2 = update_metadata
+
+    if metaCond1 or metaCond2:
+        input_parameters = get_metadata(input_parameters, update_metadata=update_metadata, source=source, verbose=verbose)
         inv = input_parameters[&#39;inv&#39;]
     # Trim and save data as specified
     if data_export_path == &#39;None&#39;:
@@ -6384,6 +6486,10 @@ If 'processing', saves the processing settings to their respective file. By defa
                 print(&#34;\tMetadata/instrument response does not match data.&#34;)
                 print(&#34;\t  Raw data (without the instrument response removed) will be used for processing.&#34;)
     
+    if &#39;processing_status&#39; not in input_parameters.keys():
+        input_parameters[&#39;processing_status&#39;] = {&#39;input_parameters_status&#39;: None,
+                                                 &#39;fetch_data_status&#39;: None
+                                                }
     input_parameters[&#39;processing_status&#39;][&#39;fetch_data_status&#39;] = True
     if verbose and not isinstance(input_parameters, HVSRBatch):
         print(&#39;\n&#39;)
@@ -6391,7 +6497,7 @@ If 'processing', saves the processing settings to their respective file. By defa
         for line in dataINStr:
             print(&#39;\t\t&#39;, line)
     
-    input_parameters = sprit_utils._check_processing_status(input_parameters, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
+    input_parameters = sprit_utils._check_processing_status(hvsr_data=input_parameters, start_time=start_time, func_name=inspect.stack()[0][3], verbose=verbose)
 
     return input_parameters</code></pre>
 </details>
@@ -7163,86 +7269,138 @@ If the following keywords are not specified, their defaults are amended in this 
         Modified input dictionary with additional key:value pair containing paz or inv dictionary (key = &#34;paz&#34;)
     &#34;&#34;&#34;
     
+    if &#39;metadata&#39; not in input_parameters.keys():
+        input_parameters[&#39;metadata&#39;] = None
     invPath = input_parameters[&#39;metadata&#39;]
     raspShakeInstNameList = [&#39;raspberry shake&#39;, &#39;shake&#39;, &#39;raspberry&#39;, 
                              &#39;rs&#39;, &#39;rs3d&#39;, &#39;rasp. shake&#39;, 
                              &#39;raspshake&#39;, &#39;raspberry shake 3d&#39;]
     trominoNameList = [&#39;tromino&#39;, &#39;trom&#39;, &#39;trm&#39;, &#39;t&#39;]
-       
-    if str(input_parameters[&#39;instrument&#39;]).lower() in raspShakeInstNameList:
-        if update_metadata:
+
+    try:
+        if str(input_parameters[&#39;instrument&#39;]).lower() in raspShakeInstNameList:
             input_parameters = _update_shake_metadata(filepath=invPath, params=input_parameters, write_path=write_path, verbose=verbose)
-        input_parameters = _read_RS_Metadata(input_parameters, source=source)
-    elif input_parameters[&#39;instrument&#39;].lower() in trominoNameList:
-        input_parameters[&#39;paz&#39;] = {&#39;Z&#39;:{}, &#39;E&#39;:{}, &#39;N&#39;:{}}
-
-        # Initially started here: https://ds.iris.edu/NRL/sensors/Sunfull/RESP.XX.NS721..BHZ.PS-4.5C1_LF4.5_RC3400_RSNone_SG82_STgroundVel
-        tromino_paz = { &#39;zeros&#39;: [-3.141592653589793/2-0j, -3.141592653589793/2-0j],
-                        &#39;poles&#39;: [(17-24j), (17+24j)],
-                        &#39;stage_gain&#39;:100,
-                        &#39;stage_gain_frequency&#39;:10,
-                        &#39;normalization_frequency&#39;:5, 
-                        &#39;normalization_factor&#39;:1}
+            input_parameters = _read_RS_Metadata(input_parameters, source=source)
+        elif str(input_parameters[&#39;instrument&#39;]).lower() in trominoNameList:
+            input_parameters[&#39;paz&#39;] = {&#39;Z&#39;:{}, &#39;E&#39;:{}, &#39;N&#39;:{}}
+            # Initially started here: https://ds.iris.edu/NRL/sensors/Sunfull/RESP.XX.NS721..BHZ.PS-4.5C1_LF4.5_RC3400_RSNone_SG82_STgroundVel
+            #tromino_paz = { &#39;zeros&#39;: [-3.14159/2-0j, -3.14159/2-0j],
+            #                &#39;poles&#39;: [(5-24j), (50+24j)],
+            #                &#39;stage_gain&#39;:10000000,
+            #                &#39;stage_gain_frequency&#39;:10,
+            #                &#39;normalization_frequency&#39;:5, 
+            #                &#39;normalization_factor&#39;:1}
         
-        input_parameters[&#39;paz&#39;][&#39;Z&#39;] =  input_parameters[&#39;paz&#39;][&#39;E&#39;] = input_parameters[&#39;paz&#39;][&#39;N&#39;] = tromino_paz
-        
-        tromChaResponse = obspy.core.inventory.response.Response().from_paz(**tromino_paz)
+            f0 = 2.27          # natural frequency Hz
+            w0 = 2 * np.pi * f0  # = 14.26 rad/s
+            h  = 0.74          # damping ratio (loaded, 20kΩ)
 
-        obspyStartDate = obspy.UTCDateTime(1900,1,1)
-        obspyNow = obspy.UTCDateTime.now()
+            sigma = h * w0          # = 10.55
+            wd    = w0 * np.sqrt(1 - h**2)  # = 9.59
 
-        # Update location code to match partition
-        if type(input_parameters[&#39;station&#39;]) is int or str(input_parameters[&#39;station&#39;]).isdigit():
-            input_parameters[&#39;location&#39;] = str(input_parameters[&#39;station&#39;])
+            tromino_paz = {
+                &#39;zeros&#39;: [0+0j, 0+0j],          # velocity sensor: 2 zeros at origin
+                &#39;poles&#39;: [
+                    complex(-sigma, +wd),        # -10.55 + 9.59j
+                    complex(-sigma, -wd)         # -10.55 - 9.59j  (conjugate pair)
+                ],
+                &#39;stage_gain&#39;: 100.0,             # 100 V/m/s flat sensitivity
+                &#39;stage_gain_frequency&#39;: 10.0,    # Hz, in the flat band
+                &#39;normalization_frequency&#39;: 2.27, # Hz, at natural frequency
+                &#39;normalization_factor&#39;: 1.0      
+            }
+            input_parameters[&#39;paz&#39;][&#39;Z&#39;] =  input_parameters[&#39;paz&#39;][&#39;E&#39;] = input_parameters[&#39;paz&#39;][&#39;N&#39;] = tromino_paz
+            
+            tromChaResponse = obspy.core.inventory.response.Response().from_paz(**tromino_paz)
 
-        # Create channel objects to be used in inventory                
-        channelObj_Z = obspy.core.inventory.channel.Channel(code=&#39;EHZ&#39;, location_code=input_parameters[&#39;location&#39;], latitude=input_parameters[&#39;latitude&#39;], 
-                                                longitude=input_parameters[&#39;longitude&#39;], elevation=input_parameters[&#39;elevation&#39;], depth=input_parameters[&#39;depth&#39;], 
-                                                azimuth=0, dip=90, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse)
-        channelObj_E = obspy.core.inventory.channel.Channel(code=&#39;EHE&#39;, location_code=input_parameters[&#39;location&#39;], latitude=input_parameters[&#39;latitude&#39;], 
-                                                longitude=input_parameters[&#39;longitude&#39;], elevation=input_parameters[&#39;elevation&#39;], depth=input_parameters[&#39;depth&#39;], 
-                                                azimuth=90, dip=0, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse) 
-        channelObj_N = obspy.core.inventory.channel.Channel(code=&#39;EHN&#39;, location_code=input_parameters[&#39;location&#39;], latitude=input_parameters[&#39;latitude&#39;], 
-                                                longitude=input_parameters[&#39;longitude&#39;], elevation=input_parameters[&#39;elevation&#39;], depth=input_parameters[&#39;depth&#39;], 
-                                                azimuth=0, dip=0, start_date=obspyStartDate, end_date=obspyNow, response=tromChaResponse) 
-        
-        # Create site object for inventory
-        siteObj = obspy.core.inventory.util.Site(name=input_parameters[&#39;site&#39;], description=None, town=None, county=None, region=None, country=None)
-        
-        # Create station object for inventory
-        stationObj = obspy.core.inventory.station.Station(code=&#39;TRMNO&#39;, latitude=input_parameters[&#39;latitude&#39;], longitude=input_parameters[&#39;longitude&#39;], 
-                                            elevation=input_parameters[&#39;elevation&#39;], channels=[channelObj_Z, channelObj_E, channelObj_N], site=siteObj, 
-                                            vault=None, geology=None, equipments=None, operators=None, creation_date=obspyStartDate,
-                                            termination_date=obspy.UTCDateTime(2100,1,1), total_number_of_channels=3, 
-                                            selected_number_of_channels=3, description=&#39;Estimated data for Tromino, this is NOT from the manufacturer&#39;,
-                                            comments=None, start_date=obspyStartDate, end_date=obspyNow, 
-                                            restricted_status=None, alternate_code=None, historical_code=None, 
-                                            data_availability=obspy.core.inventory.util.DataAvailability(obspyStartDate, obspy.UTCDateTime.now()), 
-                                            identifiers=None, water_level=None, source_id=None)
+            obspyStartDate = obspy.UTCDateTime(1900,1,1)
+            obspyNow = obspy.UTCDateTime.now()
 
-        # Create network object for inventory
-        network = [obspy.core.inventory.network.Network(code=&#39;AM&#39;, stations=[stationObj], total_number_of_stations=None, 
-                                            selected_number_of_stations=None, description=None, comments=None, start_date=obspyStartDate, 
-                                            end_date=obspyNow, restricted_status=None, alternate_code=None, historical_code=None, 
-                                            data_availability=None, identifiers=None, operators=None, source_id=None)]
-        
-        input_parameters[&#39;inv&#39;] = obspy.Inventory(networks=network)
-    else:
-        if not invPath:
-            pass #if invPath is None
-        elif not pathlib.Path(invPath).exists() or invPath == &#39;&#39;:
-            warnings.warn(f&#34;The metadata parameter was not specified correctly. Returning original input_parameters value {input_parameters[&#39;metadata&#39;]}&#34;)
-        readInvKwargs = {}
-        argspecs = inspect.getfullargspec(obspy.read_inventory)
-        for argName in argspecs[0]:
-            if argName in read_inventory_kwargs.keys():
-                readInvKwargs[argName] = read_inventory_kwargs[argName]
 
-        readInvKwargs[&#39;path_or_file_object&#39;] = invPath
-        input_parameters[&#39;inv&#39;] = obspy.read_inventory(invPath)
-        #if &#39;params&#39; in input_parameters.keys():
-        #    input_parameters[&#39;params&#39;][&#39;inv&#39;] = params[&#39;inv&#39;]
+            # Update location code to match partition
+            if type(input_parameters[&#39;station&#39;]) is int or str(input_parameters[&#39;station&#39;]).isdigit():
+                input_parameters[&#39;location&#39;] = str(input_parameters[&#39;station&#39;])
 
+            srate = 128
+            zChannel = &#34;?HZ&#34;
+            eChannel = &#34;?HE&#34;
+            nChannel = &#34;?HN&#34;
+            if hasattr(input_parameters, &#39;stream&#39;) and isinstance(input_parameters[&#39;stream&#39;], (obspy.Stream, obspy.Trace)):
+                st = input_parameters[&#39;stream&#39;]
+                zTrace = st.select(component=&#39;Z&#39;)[0]
+                eTrace = st.select(component=&#39;E&#39;)[0]
+                nTrace = st.select(component=&#39;N&#39;)[0]
+
+                zChannel = zTrace.stats.channel
+                eChannel = eTrace.stats.channel
+                nChannel = nTrace.stats.channel
+
+                srate = zTrace.stats.sampling_rate
+
+            # Create channel objects to be used in inventory                
+            channelObj_Z = obspy.core.inventory.channel.Channel(code=zChannel, location_code=input_parameters[&#39;location&#39;], latitude=input_parameters[&#39;latitude&#39;], 
+                                                    longitude=input_parameters[&#39;longitude&#39;], elevation=input_parameters[&#39;elevation&#39;], depth=input_parameters[&#39;depth&#39;], 
+                                                    azimuth=0, dip=90, start_date=obspyStartDate, end_date=obspyNow, sample_rate=srate, response=tromChaResponse)
+            channelObj_E = obspy.core.inventory.channel.Channel(code=eChannel, location_code=input_parameters[&#39;location&#39;], latitude=input_parameters[&#39;latitude&#39;], 
+                                                    longitude=input_parameters[&#39;longitude&#39;], elevation=input_parameters[&#39;elevation&#39;], depth=input_parameters[&#39;depth&#39;], 
+                                                    azimuth=90, dip=0, start_date=obspyStartDate, end_date=obspyNow, sample_rate=srate, response=tromChaResponse) 
+            channelObj_N = obspy.core.inventory.channel.Channel(code=nChannel, location_code=input_parameters[&#39;location&#39;], latitude=input_parameters[&#39;latitude&#39;], 
+                                                    longitude=input_parameters[&#39;longitude&#39;], elevation=input_parameters[&#39;elevation&#39;], depth=input_parameters[&#39;depth&#39;], 
+                                                    azimuth=0, dip=0, start_date=obspyStartDate, end_date=obspyNow, sample_rate=srate, response=tromChaResponse) 
+            
+            # Create site object for inventory
+            siteObj = obspy.core.inventory.util.Site(name=input_parameters[&#39;station&#39;], description=None, town=None, county=None, region=None, country=None)
+
+            # Create station object for inventory
+            stationObj = obspy.core.inventory.station.Station(code=input_parameters[&#39;station&#39;], latitude=input_parameters[&#39;latitude&#39;], longitude=input_parameters[&#39;longitude&#39;], 
+                                                elevation=input_parameters[&#39;elevation&#39;], channels=[channelObj_Z, channelObj_E, channelObj_N], site=siteObj, 
+                                                vault=None, geology=None, equipments=None, operators=None, creation_date=obspyStartDate,
+                                                termination_date=obspy.UTCDateTime(2100,1,1), total_number_of_channels=3, 
+                                                selected_number_of_channels=3, description=&#39;Estimated data for Tromino, this is NOT from the manufacturer&#39;,
+                                                comments=None, start_date=obspyStartDate, end_date=obspyNow, 
+                                                restricted_status=None, alternate_code=None, historical_code=None, 
+                                                data_availability=obspy.core.inventory.util.DataAvailability(obspyStartDate, obspy.UTCDateTime.now()), 
+                                                identifiers=None, water_level=None, source_id=None)
+
+            # Create network object for inventory
+            network = [obspy.core.inventory.network.Network(code=input_parameters[&#39;network&#39;], stations=[stationObj], total_number_of_stations=None, 
+                                                selected_number_of_stations=None, description=None, comments=None, start_date=obspyStartDate, 
+                                                end_date=obspyNow, restricted_status=None, alternate_code=None, historical_code=None, 
+                                                data_availability=None, identifiers=None, operators=None, source_id=None)]
+            input_parameters[&#39;inv&#39;] = inv = obspy.Inventory(networks=network)
+
+            if verbose:
+                print(&#39;\tInventory object defined for following network.station.channels: &#39;, sep=&#39;&#39;)
+                chList = []
+                for network in inv:
+                    for station in network:
+                        for channel in station:
+                            chID = f&#34;{network.code}.{station.code}.{channel.code}&#34;
+                            if chID not in chList:
+                                chList.append(chID)
+                print(chList)
+
+        else:
+            if isinstance(invPath, obspy.Inventory):
+                input_parameters[&#39;inv&#39;] = invPath
+            else:
+                if not invPath:
+                    pass #if invPath is None
+                elif not pathlib.Path(str(invPath)).exists() or invPath == &#39;&#39;:
+                    warnings.warn(f&#34;The metadata parameter was not specified correctly. Returning original input_parameters value {input_parameters[&#39;metadata&#39;]}&#34;)
+                readInvKwargs = {}
+                argspecs = inspect.getfullargspec(obspy.read_inventory)
+                for argName in argspecs[0]:
+                    if argName in read_inventory_kwargs.keys():
+                        readInvKwargs[argName] = read_inventory_kwargs[argName]
+
+                readInvKwargs[&#39;path_or_file_object&#39;] = invPath
+                input_parameters[&#39;inv&#39;] = obspy.read_inventory(invPath)
+                #if &#39;params&#39; in input_parameters.keys():
+                #    input_parameters[&#39;params&#39;][&#39;inv&#39;] = params[&#39;inv&#39;]
+    except:
+        traceback.print_exc()
+        input_parameters[&#39;inv&#39;] = None
     return input_parameters</code></pre>
 </details>
 <div class="desc"><p>Get metadata and calculate or get paz parameter needed for PSD
@@ -7465,7 +7623,6 @@ If not specified, does not write file</dd>
             hvsr_results[&#39;Plot_Report&#39;] = plot_hvsr(hvsr_results, plot_type=plotString_noBestPeak, azimuth=azimuth, 
                                                     return_fig=True, show_plot=True, verbose=True)
         except Exception as e2:
-            print(&#34;E2 MESSAGE&#34;, e2)
             traceback.print_exc()
         return hvsr_results
         #raise RuntimeError(&#39;No BestPeak identified. Check peak_freq_range or hvsr_band or try to remove bad noise windows using remove_noise() or change processing parameters in process_hvsr() or generate_psds(). Otherwise, data may not be usable for HVSR.&#39;)
@@ -7855,7 +8012,7 @@ The extension/suffix defaults to png for report_formats="plot", csv for 'table',
         except Exception as e:
             with open(import_filepath, &#39;rb&#39;) as f:
                 dataIN = pickle.load(f)
-    
+
     if show_data:
         print(dataIN)
     
@@ -7939,7 +8096,7 @@ with key:value pairs for each parameter name:value in that function.</dd>
 </dl></div>
 </dd>
 <dt id="sprit.input_params"><code class="name flex">
-<span>def <span class="ident">input_params</span></span>(<span>input_data,<br>site='HVSRSite',<br>project=None,<br>network='AM',<br>station='NONE',<br>location='00',<br>channels=['EHZ', 'EHN', 'EHE'],<br>acq_date=None,<br>starttime=None,<br>endtime=None,<br>tzone='UTC',<br>xcoord=-88.229,<br>ycoord=40.101,<br>elevation=225,<br>input_crs='EPSG:4326',<br>output_crs=None,<br>elev_unit='meters',<br>depth=0,<br>instrument='Seismometer',<br>metadata=None,<br>hvsr_band=[0.5, 32],<br>peak_freq_range=[0.5, 32],<br>processing_parameters={},<br>verbose=False)</span>
+<span>def <span class="ident">input_params</span></span>(<span>input_data,<br>site='HVSRSite',<br>project=None,<br>network='AM',<br>station='NONE',<br>location='00',<br>channels=['EHZ', 'EHN', 'EHE'],<br>acq_date=None,<br>starttime=None,<br>endtime=None,<br>tzone='UTC',<br>xcoord=-88.229,<br>ycoord=40.101,<br>elevation=0,<br>input_crs='EPSG:4326',<br>output_crs=None,<br>elev_unit='meters',<br>depth=0,<br>instrument='Seismometer',<br>metadata=None,<br>hvsr_band=[0.5, 32],<br>peak_freq_range=[0.5, 32],<br>processing_parameters={},<br>verbose=False)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -7959,7 +8116,7 @@ with key:value pairs for each parameter name:value in that function.</dd>
                 tzone = &#39;UTC&#39;,
                 xcoord = -88.229,
                 ycoord =  40.101,
-                elevation = 225,
+                elevation = 0,
                 input_crs = &#39;EPSG:4326&#39;, #Default is WGS84,#4269 is NAD83
                 output_crs = None,
                 elev_unit = &#39;meters&#39;,
@@ -8962,15 +9119,18 @@ It takes a lot of time to process the data, but interpolation for vizualization 
 
         df = pd.DataFrame(interpCoords)
 
-        if str(interpolation_type).lower() in ctList:
-            interp = interpolate.CloughTocher2DInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
-        elif str(interpolation_type).lower() in rbfList:
-            interp = interpolate.RBFInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
-        elif str(interpolation_type).lower() in linList:
-            interp = interpolate.LinearNDInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
-        elif str(interpolation_type).lower() in nearList:
-            interp = interpolate.NearestNDInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
-        else:  # Default to nearest neighbor (fastest)
+        try:
+            if str(interpolation_type).lower() in ctList:
+                interp = interpolate.CloughTocher2DInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
+            elif str(interpolation_type).lower() in rbfList:
+                interp = interpolate.RBFInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
+            elif str(interpolation_type).lower() in linList:
+                interp = interpolate.LinearNDInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
+            elif str(interpolation_type).lower() in nearList:
+                interp = interpolate.NearestNDInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
+            else:  # Default to nearest neighbor (fastest)
+                interp = interpolate.NearestNDInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
+        except:
             interp = interpolate.NearestNDInterpolator(list(zip(df[ordercoord], df[&#39;elevation&#39;])), df[&#39;HVVal&#39;])
 
         xx, zz = np.meshgrid(gridXcoords, gridZcoords)
@@ -9274,7 +9434,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def plot_depth_curve(hvsr_results, depth_plot_type=&#39;well&#39;, use_elevation=True, show_feet=False, normalize_curve=True, 
+<pre><code class="python">def plot_depth_curve(hvsr_results, depth_plot_type=&#39;well&#39;, use_elevation=True, show_feet=False, normalize_curve=True,
                      depth_limit=500, depth_model=None,
                      annotate=True, depth_plot_export_path=None,
                      fig=None, ax=None, show_depth_curve=True, **kwargs):
@@ -9322,11 +9482,15 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
         ax.set_title(&#39;Calibrated Depth to Interface&#39;, size=&#39;small&#39;)
     ax.tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
 
-    if depth_model is not None:
+    if depth_model is None:
+        print(&#39;No depth model specified, using average of several power-law models:&#39;, sprit_calibration.CONGLOMERATE_MODEL)
+        depth_model = sprit_calibration.CONGLOMERATE_MODEL
+
+    #if depth_model is not None:
+    #    hvsr_results = sprit_calibration.calculate_depth(hvsr_results, depth_model=depth_model, show_depth_curve=False)
+    if &#39;BedrockElevation&#39; not in hvsr_results.Table_Report.columns:
         hvsr_results = sprit_calibration.calculate_depth(hvsr_results, depth_model=depth_model, show_depth_curve=False)
-    elif &#39;BedrockElevation&#39; not in hvsr_results.Table_Report.columns:
-        hvsr_results = sprit_calibration.calculate_depth(hvsr_results, depth_model=depth_model, show_depth_curve=False)
-    
+
     for site_index, site_data in hvsr_results.Table_Report.iterrows():
         surfElev = site_data[&#39;Elevation&#39;]
         bedrockElev = site_data[&#39;BedrockElevation&#39;]
@@ -9335,7 +9499,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
         curveRange = max(hvsr_results.hvsr_curve) - min(hvsr_results.hvsr_curve)
 
         wellTypeList = [&#39;well&#39;, &#39;borehole&#39;, &#39;w&#39;, &#39;log&#39;]
-        
+
         if normalize_curve:
             curvePlot = (hvsr_results.hvsr_curve - min(hvsr_results.hvsr_curve)) / curveRange
             xBase = 0
@@ -9354,17 +9518,16 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
             yVals = hvsr_results.x_elev_m[&#39;Z&#39;][:-1]
             ax.set_ylabel(&#39;Elevation [m]&#39;)
             bedrockVal = bedrockElev
-            
+
             xTopLoc = xLims[0]
             yTopLoc = surfElev
             yTopLabel = surfElev
-            
         else:
             yLims = [depth_limit, hvsr_results.x_depth_m[&#39;Z&#39;][0]]
             yVals = hvsr_results.x_depth_m[&#39;Z&#39;][:-1]
             ax.set_ylabel(&#39;Depth [m]&#39;)
             bedrockVal = bedrockDepth
-            
+
             xTopLoc = xLims[0]
             yTopLoc = 0
             yTopLabel = surfElev
@@ -9383,16 +9546,17 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
             xBase = -10
             xCap = xBase + xSize + 1
             xLims = [xBase, xCap-1]
-            xVals = np.arange(xBase,xCap)
+            xVals = np.arange(xBase, xCap)
 
             if &#39;cmap&#39; in kwargs:
                 cmap = kwargs[&#39;cmap&#39;]
             else:
                 cmap = &#39;YlOrRd&#39;
             cbar = ax.pcolormesh(xVals, yVals, curvePlot[:, :-1].T, cmap=cmap)
-            plt.colorbar(cbar, orientation=&#39;horizontal&#39;, location=&#39;bottom&#39;, 
-                         pad=0.05,shrink=1.75, aspect=4,
+            plt.colorbar(cbar, orientation=&#39;horizontal&#39;, location=&#39;bottom&#39;,
+                         pad=0.025, shrink=1.75, aspect=6,
                          label=xlabel)
+
             ax.set_xticklabels([])
             if annotate:
                 # Annotate surface elevation
@@ -9402,9 +9566,9 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
                         ha=&#39;right&#39;,
                         va=&#39;top&#39;,
                         size=&#39;x-small&#39;)
-                
+
                 # Annotate Bedrock elevation
-                ax.text(x=xCap*1.1,
+                ax.text(x=xCap*1.2,
                         y=bedrockVal,
                         s=str(round(float(bedrockElev), 2))+&#39;m\nelevation&#39;,
                         ha=&#39;left&#39;,
@@ -9420,12 +9584,12 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
                         size=&#39;x-small&#39;,
                         rotation=270)
 
-            fig.set_size_inches(1.5, 8)
-            #fig.set_layout_engine(&#39;constrained&#39;)
-            
+            fig.set_size_inches(1., 10)
+
         else:
             # Plot curve
-            ax.fill_betweenx(y=yVals, x1=xBase, x2=curvePlot, alpha=0.2, facecolor=&#39;k&#39;)
+            ax.fill_betweenx(y=yVals, x1=xBase, x2=curvePlot,
+                             alpha=0.2, facecolor=&#39;k&#39;)
             ax.plot(curvePlot, yVals, c=&#39;k&#39;, linewidth=0.5)
             if show_feet:
                 ax_ft = ax.twinx()
@@ -9439,7 +9603,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
                 ax.set_xticks([])
 
             ax.set_xlabel(&#39;H/V Ratio&#39;)
-            
+
             if annotate:
                 # Annotate surface elevation
                 ax.text(x=xTopLoc,
@@ -9467,15 +9631,14 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
                         rotation=&#39;vertical&#39;)
 
             fig.set_size_inches(4, 8)
-            
-
-        ax.set_xlim(xLims)    
+            fig.set_layout_engine(&#39;constrained&#39;)
+        ax.set_xlim(xLims)
         # Plot peak location
         ax.axhline(y=bedrockVal,
                 linestyle=&#39;dotted&#39;, c=&#39;k&#39;, linewidth=0.5)
         ax.scatter(xBase, y=bedrockVal, c=&#39;k&#39;, s=0.5)
         ax.scatter(xCap, y=bedrockVal, c=&#39;k&#39;, s=0.5)
-        
+
         # Plot &#34;base&#34; line
         ax.axvline(x=xBase, linestyle=&#39;dotted&#39;, c=&#39;k&#39;, linewidth=0.5)
 
@@ -9483,8 +9646,8 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
 
         ax.xaxis.set_label_position(&#39;top&#39;)
 
-        #ax.set_title(hvsr_results[&#39;site&#39;])
-        fig.set_layout_engine(&#39;constrained&#39;)
+        ax.set_title(hvsr_results[&#39;site&#39;])
+        #fig.set_layout_engine(&#39;constrained&#39;)
 
         plt.sca(ax)
         
@@ -12120,12 +12283,14 @@ This is minimum number of points a point needs in its neighborhood to not be con
                 updated_fd_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(fetch_data).parameters.keys())}
                 updated_fd_defaults.update({k: v for k, v in DPD.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())})
                 fetch_data_kwargs.update({k:v for k,v in updated_fd_defaults.items() if k not in fetch_data_kwargs})
-
+                if &#39;remove_response&#39; in kwargs and kwargs[&#39;remove_response&#39;]:
+                    fetch_data_kwargs[&#39;update_metadata&#39;] = True
                 hvsrDataIN = fetch_data(input_parameters=params, source=source, verbose=verbose, **fetch_data_kwargs)
             else:
                 hvsrDataIN = params
         except Exception as e:
             # Even if batch, this is reading in data for all sites so we want to raise error, not just warn
+            traceback.print_exc()
             if hasattr(e, &#39;message&#39;):
                 errMsg = e.message
             else:
@@ -12655,6 +12820,16 @@ This is minimum number of points a point needs in its neighborhood to not be con
                 if &#39;plot_engine&#39; in get_report_kwargs and &#39;y&#39; not in get_report_kwargs[&#39;plot_engine&#39;]:
                     print(&#34;Showing plot&#34;)
                     plt.show()
+
+            calcplot_depth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_calibration.calculate_depth).parameters.keys())}
+            plot_depth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
+            calcplot_depth_kwargs.update(plot_depth_kwargs)
+
+            if calcplot_depth_kwargs != {}:
+                if &#39;show_depth_curve&#39; not in calcplot_depth_kwargs and &#39;suppress_report_outputs&#39; not in kwargs:
+                    calcplot_depth_kwargs[&#39;show_depth_curve&#39;] = True
+                hvsr_results = sprit_calibration.calculate_depth(freq_input=hvsr_results, **calcplot_depth_kwargs)
+
     except Exception as e:
         print(&#34;Error in data export or report generation. Results have been returned.\n&#34;)
         traceback.print_exception(sys.exc_info()[1])
@@ -12751,7 +12926,7 @@ See API documentation: <a href="https://sprit.readthedocs.io/en/latest/sprit.htm
 <dd>See API documentation at link above or at <code>help(<a title="sprit.input_params" href="#sprit.input_params">input_params()</a>)</code> for specifics.</dd>
 <dt><strong><code>ycoord</code></strong> :&ensp;<code>any</code>, default <code>= 40.101</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.input_params" href="#sprit.input_params">input_params()</a>)</code> for specifics.</dd>
-<dt><strong><code>elevation</code></strong> :&ensp;<code>any</code>, default <code>= 225</code></dt>
+<dt><strong><code>elevation</code></strong> :&ensp;<code>any</code>, default <code>= 0</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.input_params" href="#sprit.input_params">input_params()</a>)</code> for specifics.</dd>
 <dt><strong><code>input_crs</code></strong> :&ensp;<code>any</code>, default <code>= 'EPSG:4326'</code></dt>
 <dd>See API documentation at link above or at <code>help(<a title="sprit.input_params" href="#sprit.input_params">input_params()</a>)</code> for specifics.</dd>

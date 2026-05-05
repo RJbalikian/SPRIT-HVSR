@@ -48,7 +48,7 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="sprit.sprit_calibration.calculate_depth"><code class="name flex">
-<span>def <span class="ident">calculate_depth</span></span>(<span>freq_input,<br>depth_model=None,<br>freq_col='Peak',<br>calculate_depth_in_feet=False,<br>calculate_elevation=True,<br>generate_depth_curve=True,<br>show_depth_curve=False,<br>surface_elevation_data='Elevation',<br>bedrock_elevation_column='BedrockElevation',<br>depth_column='BedrockDepth',<br>verbose=False,<br>export_path=None,<br>swave_velocity=563.0,<br>decimal_places=3,<br>depth_model_in_latex=False,<br>fig=None,<br>ax=None,<br>**kwargs)</span>
+<span>def <span class="ident">calculate_depth</span></span>(<span>freq_input,<br>depth_model=None,<br>freq_col='Peak',<br>calculate_depth_in_feet=False,<br>calculate_elevation=True,<br>generate_depth_curve=True,<br>show_depth_curve=False,<br>surface_elevation_data='Elevation',<br>bedrock_elevation_data='BedrockElevation',<br>bedrock_depth_data='BedrockDepth',<br>depth_plot_export_path=None,<br>swave_velocity=563.0,<br>depth_model_in_latex=False,<br>verbose=False,<br>**kwargs)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -63,15 +63,12 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
                     generate_depth_curve=True,
                     show_depth_curve=False,
                     surface_elevation_data=&#39;Elevation&#39;,
-                    bedrock_elevation_column=&#34;BedrockElevation&#34;,
-                    depth_column=&#34;BedrockDepth&#34;,
-                    verbose=False, # if verbose is True, warnings will be shown
-                    export_path=None,
+                    bedrock_elevation_data=&#34;BedrockElevation&#34;,
+                    bedrock_depth_data=&#34;BedrockDepth&#34;,
+                    depth_plot_export_path=None,
                     swave_velocity=563.0,
-                    decimal_places=3,
                     depth_model_in_latex=False,
-                    fig=None,
-                    ax=None,
+                    verbose=False,  # if verbose=True, warnings will be shown
                     **kwargs):
     &#34;&#34;&#34;Calculate depth(s) based on a frequency input (usually HVSRData or HVSRBatch oject) and a frequency-depth depth_model (usually a power law relationship).
 
@@ -93,20 +90,18 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
         Whether to show the depth curve. If True, will also set generate_depth_curve to True.
     surface_elevation_data : str or numeric, optional
         The name of the column or a manually specified numeric value to use for the surface elevation value, by default &#34;Elevation&#34;
-    bedrock_elevation_column : str, optional
+    bedrock_elevation_data : str, optional
         The name of the column in the TableReport for the bedrock elevation of the point.
         This can be either the name of a column in a table (i.e., Table_Report) or a numeric value, by default &#34;BedrockElevation&#34;
-    depth_column : str, optional
+    bedrock_depth_data : str, optional
         _description_, by default &#34;BedrockDepth&#34;
     verbose : bool, optional
         Whether or not to print information about the processing to the terminal, by default False
-    export_path : _type_, optional
+    depth_plot_export_path : _type_, optional
         _description_, by default None
     swave_velocity : float, optional
         Shear wave velocity to use for depth calculations in meters/second, 
         if using the quarter wavelength shear wave velocity method, by default 563.0
-    decimal_places : int, optional
-        Number of decimal places to round depth results, by default 3
 
     Returns
     -------
@@ -119,9 +114,26 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
 
     if depth_model is None:
         depth_model = CONGLOMERATE_MODEL
+        orig_args[&#39;depth_model&#39;] = depth_model
 
     if show_depth_curve:
         generate_depth_curve = True
+        orig_args[&#39;generate_depth_curve&#39;] = generate_depth_curve
+
+    plot_engine = &#39;matplotlib&#39;
+    if &#39;plot_engine&#39; in kwargs:
+        plot_engine = kwargs[&#39;plot_engine&#39;]
+
+    decimal_places = 3
+    if &#39;decimal_places&#39; in kwargs:
+        decimal_places = kwargs[&#39;decimal_places&#39;]
+
+    fig = None
+    ax = None
+    if &#39;fig&#39; in kwargs:
+        fig = kwargs[&#39;fig&#39;]
+    if &#39;ax&#39; in kwargs:
+        ax = kwargs[&#39;ax&#39;]
 
     # Break out if list (of random or not) items
     if isinstance(freq_input, (list, tuple)):
@@ -148,21 +160,26 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
     a = 0
     b = 0
     depth_model_params = None
+    if isinstance(depth_model, (list, tuple, np.ndarray)) and len(depth_model) == 2:
+        (a, b) = depth_model
 
     # Fetch parameters for frequency-depth model
-    if isinstance(depth_model, (tuple, list, dict)):
+    if isinstance(depth_model, (tuple, list)):
         (a, b) = depth_model
         if a == 0 or b == 0:
             raise ValueError(f&#34;Model parameters (a, b)={depth_model} cannot be zero, check model inputs.&#34;)
+    elif isinstance(depth_model, dict):
+        depth_modelDict = {k.lower(): v for k, v in depth_model.items()}
+        a = depth_modelDict[&#39;a&#39;]
+        b = depth_modelDict[&#39;b&#39;]
     elif isinstance(depth_model, str):
-
         if depth_model.casefold() in list(map(str.casefold, model_parameters)):
             for k, v in model_parameters.items():
                 if depth_model.casefold() == k.casefold():
                     (a, b) = v
                     break
 
-        elif depth_model.casefold() in swave:
+        elif depth_model.casefold() in swave_model_list:
             depth_model_params = depth_model.casefold()
 
         elif depth_model.casefold() == &#34;all&#34;:
@@ -176,6 +193,7 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
             if a == 0 or b == 0:
                 raise ValueError(&#34;Parameters cannot be zero, check model inputs&#34;)            
 
+    # Standardize b as positive for input to function
     if b &lt; 0:
         b = b * -1
 
@@ -189,12 +207,12 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
             if isinstance(freq_input, (float, int)):
                 if freq_input &lt;= 0:
                     raise ValueError(&#34;Peak Frequency cannot be zero or negative&#34;)
-                
+
                 if isinstance(surface_elevation_data, numbers.Number):
                     surface_elevation_col = &#39;Elevation&#39;
                 else:
                     surface_elevation_col = surface_elevation_data
-                
+
                 tableReport = pd.DataFrame(columns=[&#39;Site Name&#39;,
                                                     &#39;Acq_Date&#39;,
                                                     &#39;XCoord&#39;,
@@ -204,7 +222,7 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
                                                     &#39;Peak_StDev&#39;
                                                     &#39;PeakPasses&#39;])
                 tableReport.loc[0, freq_col] = freq_input
-                
+
                 # Get extra parameters read in via kwargs, if applicable
                 paramDict = {&#39;input_data&#39;: &#34;from_user&#34;}
                 if isinstance(surface_elevation_data, numbers.Number):
@@ -283,7 +301,7 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
             if not hasattr(freq_input, &#39;Table_Report&#39;):
                 if verbose:
                     warn(&#34;Passed HVSRData Object has no attribute Table_Report, attempting to generate one.&#34;)
-                tableReport = sprit_hvsr.get_report(freq_input, report_format=&#39;csv&#39;)
+                tableReport = sprit_hvsr.get_report(freq_input, report_format=&#39;table&#39;)
             else:
                 tableReport = freq_input.Table_Report
 
@@ -307,9 +325,9 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
 
         for site_peak_freq in pf_values:
             try:
-                if depth_model in swave:
+                if str(depth_model).lower() in swave_model_list:
                     calib_data.append(swave_velocity/(4*site_peak_freq))
-                    
+
                     if depth_model_in_latex:
                         dModelStr = f&#34;$\\frac{{{swave_velocity}}}{{4\\times{site_peak_freq}}}$&#34;
                     else:
@@ -317,14 +335,10 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
                     depthModelList.append(dModelStr)
                     depthModelTypeList.append(&#39;Quarter Wavelength&#39;)
                 else:
-                    if depth_model == &#34;all&#34;:
-                        a_list = []
-                        b_list = []
-                        for name, model_params in model_parameters.items():
-                            a_list.append(model_params[0])
-                            b_list.append(model_params[1])
-                        (a, b) = (np.nanmean(a_list), np.nanmean(b_list))
-
+                    if str(depth_model).lower() in [&#34;all&#34;, &#39;average&#39;, &#39;conglomerate&#39;]:
+                        (a, b) = CONGLOMERATE_MODEL
+                    else:
+                        (a, b) = depth_model
                     calib_data.append(a*(site_peak_freq**-b))
                     if hasattr(freq_input, &#39;x_freqs&#39;):
                         freq_input[&#39;x_depth_m&#39;] = {&#39;Z&#39;: np.around([a*(f**-b) for f in freq_input[&#34;x_freqs&#34;][&#39;Z&#39;]], decimal_places),
@@ -335,7 +349,7 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
                         freq_input[&#39;x_depth_ft&#39;] = {&#39;Z&#39;: np.around(freq_input[&#39;x_depth_m&#39;][&#39;Z&#39;]*3.281, decimal_places),
                                                     &#39;E&#39;: np.around(freq_input[&#39;x_depth_m&#39;][&#39;E&#39;]*3.281, decimal_places),
                                                     &#39;N&#39;: np.around(freq_input[&#39;x_depth_m&#39;][&#39;N&#39;]*3.281, decimal_places)}
-                             
+
                     if depth_model_in_latex:
                         dModelStr = f&#34;{a} \\times {{{site_peak_freq}}}^{{-{b}}}&#34;
                     else:
@@ -347,21 +361,21 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
                 raise ValueError(&#34;Error in calculating depth, check HVSRData object for empty values or missing columns&#34;) from e
 
         # Record depth data in table
-        tableReport[depth_column] = np.around(calib_data, decimal_places)
-        
+        tableReport[bedrock_depth_data] = np.around(calib_data, decimal_places)
+
         # Calculate elevation data
         if calculate_elevation and surface_elevation_data in tableReport.columns:
-            tableReport[bedrock_elevation_column] = np.around((np.float32(tableReport.loc[:, surface_elevation_data]) - np.float32(tableReport.loc[:, depth_column])), decimal_places)
+            tableReport[bedrock_elevation_data] = np.around((np.float32(tableReport.loc[:, surface_elevation_data]) - np.float32(tableReport.loc[:, bedrock_depth_data])), decimal_places)
             if hasattr(freq_input, &#39;x_depth_m&#39;):
                 freq_input[&#39;x_elev_m&#39;] = {&#39;Z&#39;: np.around([float(tableReport[surface_elevation_data].values[0]) - float(f) for f in freq_input[&#34;x_depth_m&#34;][&#39;Z&#39;]], decimal_places),
                                           &#39;E&#39;: np.around([float(tableReport[surface_elevation_data].values[0]) - float(f) for f in freq_input[&#34;x_depth_m&#34;][&#39;E&#39;]], decimal_places),
                                           &#39;N&#39;: np.around([float(tableReport[surface_elevation_data].values[0]) - float(f) for f in freq_input[&#34;x_depth_m&#34;][&#39;N&#39;]], decimal_places)}
 
         if calculate_depth_in_feet:
-            tableReport[depth_column+&#39;_ft&#39;] = np.around(calib_data*3.281,
+            tableReport[bedrock_depth_data+&#39;_ft&#39;] = np.around(calib_data*3.281,
                                                      decimals=decimal_places)
             if calculate_elevation and surface_elevation_data in tableReport.columns:
-                tableReport[bedrock_elevation_column+&#39;_ft&#39;] = np.around(tableReport[bedrock_elevation_column] * 3.281,
+                tableReport[bedrock_elevation_data+&#39;_ft&#39;] = np.around(tableReport[bedrock_elevation_data] * 3.281,
                                                                 decimals=decimal_places)
                 if hasattr(freq_input, &#39;x_elev_m&#39;) and not hasattr(freq_input[&#39;x_depth_ft&#39;]):
                     # Calculate depth in feet
@@ -372,85 +386,91 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
         tableReport[&#34;DepthModel&#34;] = depthModelList
         tableReport[&#34;DepthModelType&#34;] = depthModelTypeList
 
-        # Do plotting work
-        if fig is None and ax is None:
-            fig, ax = plt.subplots()
-        elif fig is not None:
-            ax = fig.get_axes()
-            if len(ax) == 1:
-                ax = ax[0]
+        mplList = [&#39;matplotlib&#39;, &#39;mpl&#39;, &#39;m&#39;,]
+        if str(plot_engine).lower() in mplList:
+            # Do plotting work
+            if fig is None and ax is None:
+                fig, ax = plt.subplots()
+            elif fig is not None:
+                ax = fig.get_axes()
+                if len(ax) == 1:
+                    ax = ax[0]
 
-        if hasattr(freq_input, &#39;hvsr_curve&#39;) and generate_depth_curve:
-            pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
-            pdc_kwargs[&#39;show_depth_curve&#39;] = show_depth_curve
-            pdc_kwargs[&#39;fig&#39;] = fig
-            pdc_kwargs[&#39;ax&#39;] = ax
-            freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input, 
-                                                     **pdc_kwargs)
-        else:
-            surfElevVal = tableReport.loc[0, surface_elevation_col]
-            brElevVal = tableReport.loc[0, bedrock_elevation_column]
-            if np.isnan(surfElevVal):
-                surfElevVal = 0
-                
-            if np.isnan(brElevVal):
-                brElevVal = tableReport.loc[0, depth_column]
-                yLIMITS = [brElevVal*1.1, brElevVal*-0.1]
+            if hasattr(freq_input, &#39;hvsr_curve&#39;) and generate_depth_curve:
+                pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
+                pdc_kwargs[&#39;show_depth_curve&#39;] = show_depth_curve
+                pdc_kwargs[&#39;fig&#39;] = fig
+                pdc_kwargs[&#39;ax&#39;] = ax
+                freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input,
+                                                         **pdc_kwargs)
             else:
-                yLIMITS = [0, brElevVal - ((surfElevVal-brElevVal) * 0.1)]
+                surfElevVal = tableReport.loc[0, surface_elevation_col]
+                brElevVal = tableReport.loc[0, bedrock_elevation_data]
+                if np.isnan(surfElevVal):
+                    surfElevVal = 0
+                    
+                if np.isnan(brElevVal):
+                    brElevVal = tableReport.loc[0, bedrock_depth_data]
+                    yLIMITS = [brElevVal*1.1, brElevVal*-0.1]
+                else:
+                    yLIMITS = [0, brElevVal - ((surfElevVal-brElevVal) * 0.1)]
 
-            ax.axhline(0, xmin=-0.1, xmax=1, c=&#39;k&#39;)
-            ax.plot([0, 0], [0, brElevVal], linestyle=&#39;dotted&#39;, c=&#39;k&#39;)
-            
-            ax.scatter(x=0, y=surfElevVal, c=&#39;k&#39;, marker=&#39;v&#39;)
-            ax.scatter(x=0, y=brElevVal, c=&#39;k&#39;, marker=&#39;^&#39;)
-            
-            spc = &#34; &#34;
-            ax.text(x=0, y=brElevVal,
-                    s=f&#34;  Depth: {brElevVal}m {spc}({tableReport.loc[0, freq_col]} Hz)&#34;,
-                    va=&#39;top&#39;)
-            
-            ax.set_xlim([-0.1, 1])
-            ax.set_ylim(yLIMITS)
-            
-            ax.set_ylabel(&#39;Depth [m]&#39;)
-            ax.set_xticks([])
-            titleText = f&#39;Calibrated Depth from Input Frequency&#39;
-            fig.suptitle(titleText)
-            if isinstance(depth_model, (tuple, list)):
-                aText = depth_model[0]
-                bText = np.sqrt(depth_model[1]**2)*-1
-                ax.text(x=0,
-                        y=surfElevVal, va=&#39;bottom&#39;,
-                        s=f&#34;  Depth Model: ${aText:.2f} * f_0 ^{{{bText:0.3f}}}$&#34;)
-            
-        plt.sca(ax)
-        if not show_depth_curve:
-            plt.close()
+                ax.axhline(0, xmin=-0.1, xmax=1, c=&#39;k&#39;)
+                ax.plot([0, 0], [0, brElevVal], linestyle=&#39;dotted&#39;, c=&#39;k&#39;)
+                
+                ax.scatter(x=0, y=surfElevVal, c=&#39;k&#39;, marker=&#39;v&#39;)
+                ax.scatter(x=0, y=brElevVal, c=&#39;k&#39;, marker=&#39;^&#39;)
+                
+                spc = &#34; &#34;
+                ax.text(x=0, y=brElevVal,
+                        s=f&#34;  Depth: {brElevVal}m {spc}({tableReport.loc[0, freq_col]} Hz)&#34;,
+                        va=&#39;top&#39;)
+                
+                ax.set_xlim([-0.1, 1])
+                ax.set_ylim(yLIMITS)
+                
+                ax.set_ylabel(&#39;Depth [m]&#39;)
+                ax.set_xticks([])
+                titleText = f&#39;Calibrated Depth from Input Frequency&#39;
+                fig.suptitle(titleText)
+                if isinstance(depth_model, (tuple, list)):
+                    aText = depth_model[0]
+                    bText = np.sqrt(depth_model[1]**2)*-1
+                    ax.text(x=0,
+                            y=surfElevVal, va=&#39;bottom&#39;,
+                            s=f&#34;  Depth Model: ${aText:.2f} * f_0 ^{{{bText:0.3f}}}$&#34;)
+                
+            plt.sca(ax)
+            if not show_depth_curve:
+                plt.close()
         
         # Export as specified
-        if export_path is not None and os.path.exists(export_path):
-            if export_path == freq_input:
-                tableReport.to_csv(freq_input)
-                if verbose:
-                    print(&#34;Saving data in the original file&#34;)
+        if depth_plot_export_path is not None:
+            try:
+                pathlib.path(depth_plot_export_path)
 
-            else:
-                if &#34;/&#34; in export_path:
-                    temp = os.path.join(export_path+ &#34;/&#34;+ site + &#34;.csv&#34;)
-                    tableReport.to_csv(temp)
-                
+                if pathlib.Path(depth_plot_export_path).is_dir():
+                    if hasattr(freq_input, &#39;site&#39;):
+                        site = freq_input[&#39;site&#39;]
+                    else:
+                        site = str(freq_input)
+
+                    if len(site) &gt; 15:
+                        site = site[:15]
+                    dm = str(depth_model)
+
+                    fname = f&#34;{site}_{dm}_Depth_Sounding_Plot.png&#34;
+                    dpExPath = pathlib.Path(depth_plot_export_path).joinpath(fname)
                 else:
-                    temp = os.path.join(export_path+&#34;\\&#34;+ site + &#34;.csv&#34;)
-                    tableReport.to_csv(temp)
+                    dpExPath = pathlib.Path(depth_plot_export_path)
 
-                if verbose:
-                    print(&#34;Saving data to the path specified&#34;)
-        
-        
+                if str(plot_engine).lower() in mplList:
+                    plt.savefig(dpExPath.as_posix())
+            except Exception:
+                print(f&#39;Path specified for depth_plot_export_path cannot be parsed as filepath: {depth_plot_export_path}&#39;)
+
         freq_input.Table_Report = tableReport
         return freq_input
-            
     else:
         raise RuntimeError(f&#34;The freq_input parameter is not the correct type:\n\ttype(freq_input)={type(freq_input)}&#34;)</code></pre>
 </details>
@@ -473,20 +493,18 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
 <dd>Whether to show the depth curve. If True, will also set generate_depth_curve to True.</dd>
 <dt><strong><code>surface_elevation_data</code></strong> :&ensp;<code>str</code> or <code>numeric</code>, optional</dt>
 <dd>The name of the column or a manually specified numeric value to use for the surface elevation value, by default "Elevation"</dd>
-<dt><strong><code>bedrock_elevation_column</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dt><strong><code>bedrock_elevation_data</code></strong> :&ensp;<code>str</code>, optional</dt>
 <dd>The name of the column in the TableReport for the bedrock elevation of the point.
 This can be either the name of a column in a table (i.e., Table_Report) or a numeric value, by default "BedrockElevation"</dd>
-<dt><strong><code>depth_column</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dt><strong><code>bedrock_depth_data</code></strong> :&ensp;<code>str</code>, optional</dt>
 <dd><em>description</em>, by default "BedrockDepth"</dd>
 <dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, optional</dt>
 <dd>Whether or not to print information about the processing to the terminal, by default False</dd>
-<dt><strong><code>export_path</code></strong> :&ensp;<code>_type_</code>, optional</dt>
+<dt><strong><code>depth_plot_export_path</code></strong> :&ensp;<code>_type_</code>, optional</dt>
 <dd><em>description</em>, by default None</dd>
 <dt><strong><code>swave_velocity</code></strong> :&ensp;<code>float</code>, optional</dt>
 <dd>Shear wave velocity to use for depth calculations in meters/second,
 if using the quarter wavelength shear wave velocity method, by default 563.0</dd>
-<dt><strong><code>decimal_places</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>Number of decimal places to round depth results, by default 3</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
