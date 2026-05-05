@@ -586,7 +586,7 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
     return fig
 
 
-def plot_depth_curve(hvsr_results, depth_plot_type='well', use_elevation=True, show_feet=False, normalize_curve=True, 
+def plot_depth_curve(hvsr_results, depth_plot_type='well', use_elevation=True, show_feet=False, normalize_curve=True,
                      depth_limit=500, depth_model=None,
                      annotate=True, depth_plot_export_path=None,
                      fig=None, ax=None, show_depth_curve=True, **kwargs):
@@ -634,11 +634,15 @@ def plot_depth_curve(hvsr_results, depth_plot_type='well', use_elevation=True, s
         ax.set_title('Calibrated Depth to Interface', size='small')
     ax.tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
 
-    if depth_model is not None:
+    if depth_model is None:
+        print('No depth model specified, using average of several power-law models:', sprit_calibration.CONGLOMERATE_MODEL)
+        depth_model = sprit_calibration.CONGLOMERATE_MODEL
+
+    #if depth_model is not None:
+    #    hvsr_results = sprit_calibration.calculate_depth(hvsr_results, depth_model=depth_model, show_depth_curve=False)
+    if 'BedrockElevation' not in hvsr_results.Table_Report.columns:
         hvsr_results = sprit_calibration.calculate_depth(hvsr_results, depth_model=depth_model, show_depth_curve=False)
-    elif 'BedrockElevation' not in hvsr_results.Table_Report.columns:
-        hvsr_results = sprit_calibration.calculate_depth(hvsr_results, depth_model=depth_model, show_depth_curve=False)
-    
+
     for site_index, site_data in hvsr_results.Table_Report.iterrows():
         surfElev = site_data['Elevation']
         bedrockElev = site_data['BedrockElevation']
@@ -647,7 +651,7 @@ def plot_depth_curve(hvsr_results, depth_plot_type='well', use_elevation=True, s
         curveRange = max(hvsr_results.hvsr_curve) - min(hvsr_results.hvsr_curve)
 
         wellTypeList = ['well', 'borehole', 'w', 'log']
-        
+
         if normalize_curve:
             curvePlot = (hvsr_results.hvsr_curve - min(hvsr_results.hvsr_curve)) / curveRange
             xBase = 0
@@ -666,17 +670,16 @@ def plot_depth_curve(hvsr_results, depth_plot_type='well', use_elevation=True, s
             yVals = hvsr_results.x_elev_m['Z'][:-1]
             ax.set_ylabel('Elevation [m]')
             bedrockVal = bedrockElev
-            
+
             xTopLoc = xLims[0]
             yTopLoc = surfElev
             yTopLabel = surfElev
-            
         else:
             yLims = [depth_limit, hvsr_results.x_depth_m['Z'][0]]
             yVals = hvsr_results.x_depth_m['Z'][:-1]
             ax.set_ylabel('Depth [m]')
             bedrockVal = bedrockDepth
-            
+
             xTopLoc = xLims[0]
             yTopLoc = 0
             yTopLabel = surfElev
@@ -695,16 +698,17 @@ def plot_depth_curve(hvsr_results, depth_plot_type='well', use_elevation=True, s
             xBase = -10
             xCap = xBase + xSize + 1
             xLims = [xBase, xCap-1]
-            xVals = np.arange(xBase,xCap)
+            xVals = np.arange(xBase, xCap)
 
             if 'cmap' in kwargs:
                 cmap = kwargs['cmap']
             else:
                 cmap = 'YlOrRd'
             cbar = ax.pcolormesh(xVals, yVals, curvePlot[:, :-1].T, cmap=cmap)
-            plt.colorbar(cbar, orientation='horizontal', location='bottom', 
-                         pad=0.05,shrink=1.75, aspect=4,
+            plt.colorbar(cbar, orientation='horizontal', location='bottom',
+                         pad=0.025, shrink=1.75, aspect=6,
                          label=xlabel)
+
             ax.set_xticklabels([])
             if annotate:
                 # Annotate surface elevation
@@ -714,9 +718,9 @@ def plot_depth_curve(hvsr_results, depth_plot_type='well', use_elevation=True, s
                         ha='right',
                         va='top',
                         size='x-small')
-                
+
                 # Annotate Bedrock elevation
-                ax.text(x=xCap*1.1,
+                ax.text(x=xCap*1.2,
                         y=bedrockVal,
                         s=str(round(float(bedrockElev), 2))+'m\nelevation',
                         ha='left',
@@ -732,12 +736,12 @@ def plot_depth_curve(hvsr_results, depth_plot_type='well', use_elevation=True, s
                         size='x-small',
                         rotation=270)
 
-            fig.set_size_inches(1.5, 8)
-            #fig.set_layout_engine('constrained')
-            
+            fig.set_size_inches(1., 10)
+
         else:
             # Plot curve
-            ax.fill_betweenx(y=yVals, x1=xBase, x2=curvePlot, alpha=0.2, facecolor='k')
+            ax.fill_betweenx(y=yVals, x1=xBase, x2=curvePlot,
+                             alpha=0.2, facecolor='k')
             ax.plot(curvePlot, yVals, c='k', linewidth=0.5)
             if show_feet:
                 ax_ft = ax.twinx()
@@ -751,7 +755,7 @@ def plot_depth_curve(hvsr_results, depth_plot_type='well', use_elevation=True, s
                 ax.set_xticks([])
 
             ax.set_xlabel('H/V Ratio')
-            
+
             if annotate:
                 # Annotate surface elevation
                 ax.text(x=xTopLoc,
@@ -779,15 +783,14 @@ def plot_depth_curve(hvsr_results, depth_plot_type='well', use_elevation=True, s
                         rotation='vertical')
 
             fig.set_size_inches(4, 8)
-            
-
-        ax.set_xlim(xLims)    
+            fig.set_layout_engine('constrained')
+        ax.set_xlim(xLims)
         # Plot peak location
         ax.axhline(y=bedrockVal,
                 linestyle='dotted', c='k', linewidth=0.5)
         ax.scatter(xBase, y=bedrockVal, c='k', s=0.5)
         ax.scatter(xCap, y=bedrockVal, c='k', s=0.5)
-        
+
         # Plot "base" line
         ax.axvline(x=xBase, linestyle='dotted', c='k', linewidth=0.5)
 
@@ -795,8 +798,8 @@ def plot_depth_curve(hvsr_results, depth_plot_type='well', use_elevation=True, s
 
         ax.xaxis.set_label_position('top')
 
-        #ax.set_title(hvsr_results['site'])
-        fig.set_layout_engine('constrained')
+        ax.set_title(hvsr_results['site'])
+        #fig.set_layout_engine('constrained')
 
         plt.sca(ax)
         

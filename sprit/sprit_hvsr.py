@@ -1919,11 +1919,14 @@ def run(input_data=None, source='file',
                     print("Showing plot")
                     plt.show()
 
-            calc_depth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_calibration.calculate_depth).parameters.keys())}
-            if calc_depth_kwargs != {}:
-                if 'show_depth_curve' not in calc_depth_kwargs and 'suppress_report_outputs' not in kwargs:
-                    calc_depth_kwargs['show_depth_curve'] = True
-                hvsr_results = sprit_calibration.calculate_depth(freq_input=hvsr_results, **calc_depth_kwargs)
+            calcplot_depth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_calibration.calculate_depth).parameters.keys())}
+            plot_depth_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
+            calcplot_depth_kwargs.update(plot_depth_kwargs)
+
+            if calcplot_depth_kwargs != {}:
+                if 'show_depth_curve' not in calcplot_depth_kwargs and 'suppress_report_outputs' not in kwargs:
+                    calcplot_depth_kwargs['show_depth_curve'] = True
+                hvsr_results = sprit_calibration.calculate_depth(freq_input=hvsr_results, **calcplot_depth_kwargs)
 
     except Exception as e:
         print("Error in data export or report generation. Results have been returned.\n")
@@ -5818,7 +5821,7 @@ def input_params(input_data,
                 tzone = 'UTC',
                 xcoord = -88.229,
                 ycoord =  40.101,
-                elevation = 225,
+                elevation = 0,
                 input_crs = 'EPSG:4326', #Default is WGS84,#4269 is NAD83
                 output_crs = None,
                 elev_unit = 'meters',

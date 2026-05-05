@@ -22,7 +22,7 @@
     "detrend": "spline",
     "detrend_options": 2,
     "elev_unit": "meters",
-    "elevation": 225,
+    "elevation": 0,
     "endtime": null,
     "export_plots": false,
     "ext": "hvsr",
