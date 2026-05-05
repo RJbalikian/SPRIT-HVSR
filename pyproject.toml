@@ -34,10 +34,11 @@ dependencies = [
     "plotly",
     "pyproj",
     "PyQt5-sip",
+    "requests",
     "scipy",
     "shapely",
     "streamlit",
-    "xhtml2pdf"
+    "xhtml2pdf",
 ]
 
 # Development dependencies
