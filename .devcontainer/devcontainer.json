@@ -18,5 +18,5 @@
       }
     }
   },
-  "postCreateCommand": "uv sync"
+  "postCreateCommand": "uv venv && uv sync"
 }
