@@ -1,5 +1,6 @@
 {
   "name": "SpRIT Codespace",
+
   "build": {
     "dockerfile": "Dockerfile"
   },
@@ -10,15 +11,12 @@
         "ms-python.python",
         "ms-toolsai.jupyter",
         "mathematic.vscode-pdf"
-      ]
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+        "python.terminal.activateEnvironment": true
+      }
     }
   },
-
-  "postCreateCommand": [
-    "pip3 install --upgrade pip",
-    "pip3 install uv",
-    "uv venv .venv",
-    "source .venv/bin/activate",
-    "uv pip install sprit ipykernel --upgrade"
-  ]
+  "postCreateCommand": "uv venv && uv sync"
 }
