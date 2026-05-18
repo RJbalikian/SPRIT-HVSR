@@ -420,7 +420,8 @@ def calculate_depth(freq_input,
         tableReport["DepthModelType"] = depthModelTypeList
 
         mplList = ['matplotlib', 'mpl', 'm',]
-        if str(plot_engine).lower() in mplList:
+        # Currently only MPL supported
+        if str(plot_engine).lower() in mplList or str(plot_engine).lower() not in mplList:
             # Do plotting work
             if fig is None and ax is None:
                 fig, ax = plt.subplots()
@@ -432,6 +433,7 @@ def calculate_depth(freq_input,
             if hasattr(freq_input, 'hvsr_curve') and generate_depth_curve:
                 pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
                 pdc_kwargs['show_depth_curve'] = show_depth_curve
+                pdc_kwargs['depth_model'] = depth_model
                 pdc_kwargs['fig'] = fig
                 pdc_kwargs['ax'] = ax
                 freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input,
