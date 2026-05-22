@@ -189,6 +189,7 @@ def calculate_depth(freq_input,
             newBatchList.append(calculate_depth(freq_input=freq_input[site], **calc_depth_kwargs))
         return sprit_hvsr.HVSRBatch(newBatchList, df_as_read=freq_input.input_df)    
 
+    # Extract and standardize depth_model for a, b
     # initialize values
     a = 0
     b = 0
@@ -196,39 +197,41 @@ def calculate_depth(freq_input,
     if isinstance(depth_model, (list, tuple, np.ndarray)) and len(depth_model) == 2:
         (a, b) = depth_model
 
-    # Fetch parameters for frequency-depth model
-    if isinstance(depth_model, (tuple, list)):
-        (a, b) = depth_model
-        if a == 0 or b == 0:
-            raise ValueError(f"Model parameters (a, b)={depth_model} cannot be zero, check model inputs.")
-    elif isinstance(depth_model, dict):
-        depth_modelDict = {k.lower(): v for k, v in depth_model.items()}
-        a = depth_modelDict['a']
-        b = depth_modelDict['b']
-    elif isinstance(depth_model, str):
-        if depth_model.casefold() in list(map(str.casefold, model_parameters)):
-            for k, v in model_parameters.items():
-                if depth_model.casefold() == k.casefold():
-                    (a, b) = v
-                    break
-
-        elif depth_model.casefold() in swave_model_list:
-            depth_model_params = depth_model.casefold()
-
-        elif depth_model.casefold() == "all":
-            depth_model_params = depth_model.casefold()
-
-        else:   # parameters a and b could be passed in as a parsable string
-            depth_model_params = depth_model.split(',')
-            # Work on re update[int(s) for s in re.findall(r"[-+]?(?:\d*\.*\d+)", 
-            # depth_model)]  #figure this out later for floating points; works for integers
-            (a, b) = depth_model_params
+        # Fetch parameters for frequency-depth model
+        if isinstance(depth_model, (tuple, list)):
+            (a, b) = depth_model
             if a == 0 or b == 0:
-                raise ValueError("Parameters cannot be zero, check model inputs")            
+                raise ValueError(f"Model parameters (a, b)={depth_model} cannot be zero, check model inputs.")
+        elif isinstance(depth_model, dict):
+            depth_modelDict = {k.lower(): v for k, v in depth_model.items()}
+            a = depth_modelDict['a']
+            b = depth_modelDict['b']
+        elif isinstance(depth_model, str):
+            if depth_model.casefold() in list(map(str.casefold, model_parameters)):
+                for k, v in model_parameters.items():
+                    if depth_model.casefold() == k.casefold():
+                        (a, b) = v
+                        break
 
-    # Standardize b as positive for input to function
-    if b < 0:
-        b = b * -1
+            elif depth_model.casefold() in swave_model_list:
+                depth_model_params = depth_model.casefold()
+
+            elif depth_model.casefold() == "all":
+                depth_model_params = depth_model.casefold()
+
+            else:   # parameters a and b could be passed in as a parsable string
+                depth_model_params = depth_model.split(',')
+                # Work on re update[int(s) for s in re.findall(r"[-+]?(?:\d*\.*\d+)", 
+                # depth_model)]  #figure this out later for floating points; works for integers
+                (a, b) = depth_model_params
+                if a == 0 or b == 0:
+                    raise ValueError("Parameters cannot be zero, check model inputs")            
+
+        # Standardize b as positive for input to function
+        if b < 0:
+            b = b * -1
+        
+        depth_model = (a, b)
 
     # Get frequency input
     # Checking if freq_input is HVSRData object
@@ -433,6 +436,7 @@ def calculate_depth(freq_input,
             if hasattr(freq_input, 'hvsr_curve') and generate_depth_curve:
                 pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
                 pdc_kwargs['show_depth_curve'] = show_depth_curve
+                pdc_kwargs['depth_plot_export_path'] = depth_plot_export_path
                 pdc_kwargs['depth_model'] = depth_model
                 pdc_kwargs['fig'] = fig
                 pdc_kwargs['ax'] = ax

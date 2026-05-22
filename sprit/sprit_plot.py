@@ -1,3 +1,4 @@
+import copy
 import datetime
 import inspect
 import io
@@ -694,7 +695,7 @@ def plot_depth_curve(hvsr_results, depth_plot_type='well', use_elevation=True, s
             curvePlot = np.tile(curvePlot, (xSize, 1))
             minY = min(yVals)
             maxY = max(yVals)
-            yLims = [minY, maxY]
+            #yLims = [minY, maxY]
             xBase = -10
             xCap = xBase + xSize + 1
             xLims = [xBase, xCap-1]
@@ -802,17 +803,32 @@ def plot_depth_curve(hvsr_results, depth_plot_type='well', use_elevation=True, s
         #fig.set_layout_engine('constrained')
 
         plt.sca(ax)
-        
+
+        if depth_plot_export_path is not None:
+            try:
+                if depth_plot_export_path is True:
+                    if pathlib.Path(str(hvsr_results['input_data'])).exists():
+                        fname = f'{hvsr_results.site}_DepthCurve_{stats.starttime.strftime("%Y%m%d")}-{stats.starttime.strftime("%H%M")}-{hvsr_results.station}-{datetime.date.today().strftime("%Y-%m-%d")}.png'
+
+                        depth_plot_export_path = pathlib.Path(str(hvsr_results['input_data'])).with_name(fname)
+                elif pathlib.Path(depth_plot_export_path).is_dir():
+                    st = hvsr_results.stream
+                    stats = st[0].stats
+                    fname = f'{hvsr_results.site}_DepthCurve_{stats.starttime.strftime("%Y%m%d")}-{stats.starttime.strftime("%H%M")}-{hvsr_results.station}-{datetime.date.today().strftime("%Y-%m-%d")}.png'
+                    if not pathlib.Path(depth_plot_export_path).exists():
+                        print("Creating directory for Depth Curve Image export at", depth_plot_export_path)
+                        pathlib.Path(depth_plot_export_path).mkdir(exist_ok=True, parents=True)
+                    depth_plot_export_path = pathlib.Path(depth_plot_export_path).joinpath(fname)
+
+                fig.savefig(pathlib.Path(depth_plot_export_path).as_posix(), bbox_inches='tight')                
+            except:
+                print(f'Please specify a valid path for depth_plot_export_path, not {depth_plot_export_path}')
+
+
         if show_depth_curve:
             plt.show()
         else:
             plt.close()
-
-        if depth_plot_export_path is not None:
-            if isinstance(depth_plot_export_path, os.PathLike):
-                fig.savefig(depth_plot_export_path)
-            else:
-                print(f'Please specify a valid path for depth_plot_export_path, not {depth_plot_export_path}')
 
         hvsr_results['Depth_Plot'] = fig
     return hvsr_results

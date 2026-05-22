@@ -1297,7 +1297,7 @@ def run(input_data=None, source='file',
     # Start processing tasks
     if verbose:
         print('Using sprit.run() with the following parameters:')
-        print(f'\tinput_data = {input_data}')
+        print(f'\tinput_data = {str(input_data):.250}')
         print(f'\tazimuth_calculation = {azimuth_calculation}')
         print(f'\tnoise_removal = {noise_removal}')
         print(f'\toutlier_curves_removal = {outlier_curves_removal}')
@@ -1895,20 +1895,6 @@ def run(input_data=None, source='file',
     # Data export and report display
     try:
         # Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
-        if 'hvsr_export_path' in kwargs.keys() or DPD['hvsr_export_path'] is not None:
-            if kwargs['hvsr_export_path'] is None:
-                pass
-            else:
-                if 'hvsr_export_ext' in kwargs.keys():
-                    ext = kwargs['hvsr_export_ext']
-                else:
-                    ext = 'hvsr'
-                export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], hvsr_export_ext=ext, verbose=verbose)
-        if 'json_export_path' in kwargs.keys() or DPD['json_export_path'] is not None:
-            export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
-            if len(export_json_kwargs.keys()) > 0:
-                export_json(hvsr_results=hvsr_results, verbose=verbose, **export_json_kwargs)
-        
         if generate_reports:
             if 'show_plot_report' in get_report_kwargs and not get_report_kwargs['show_plot_report']:
                 plt.close()
@@ -1927,6 +1913,20 @@ def run(input_data=None, source='file',
                 if 'show_depth_curve' not in calcplot_depth_kwargs and 'suppress_report_outputs' not in kwargs:
                     calcplot_depth_kwargs['show_depth_curve'] = True
                 hvsr_results = sprit_calibration.calculate_depth(freq_input=hvsr_results, **calcplot_depth_kwargs)
+
+        if 'hvsr_export_path' in kwargs.keys() or DPD['hvsr_export_path'] is not None:
+            if kwargs['hvsr_export_path'] is None:
+                pass
+            else:
+                if 'hvsr_export_ext' in kwargs.keys():
+                    ext = kwargs['hvsr_export_ext']
+                else:
+                    ext = 'hvsr'
+                export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs['hvsr_export_path'], hvsr_export_ext=ext, verbose=verbose)
+        if 'json_export_path' in kwargs.keys() or DPD['json_export_path'] is not None:
+            export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
+            if len(export_json_kwargs.keys()) > 0:
+                export_json(hvsr_results=hvsr_results, verbose=verbose, **export_json_kwargs)
 
     except Exception as e:
         print("Error in data export or report generation. Results have been returned.\n")
@@ -2112,7 +2112,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
         # If param_col, format is string of format: "param_name=param_val, param_name2=param_val2"
         param_dict_list = []
         if param_col is None:  # Not a single parameter column, each col=parameter
-            for row_ind in range(dataReadInfoDF.shape[0]):
+            for i, row_ind in enumerate(dataReadInfoDF.index):
                 param_dict = {}
                 verboseStatement.append([])
                 for col in dataReadInfoDF.columns:
@@ -2127,9 +2127,9 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
                                     param_dict[col] = default_dict[col]  # Get default value
                                     if verbose:
                                         if type(default_dict[col]) is str:
-                                            verboseStatement[row_ind].append("\t\t'{}' parameter not specified in batch file. Using {}='{}'".format(col, col, default_dict[col]))
+                                            verboseStatement[i].append("\t\t'{}' parameter not specified in batch file. Using {}='{}'".format(col, col, default_dict[col]))
                                         else:
-                                            verboseStatement[row_ind].append("\t\t'{}' parameter not specified in batch file. Using {}={}".format(col, col, default_dict[col]))
+                                            verboseStatement[i].append("\t\t'{}' parameter not specified in batch file. Using {}={}".format(col, col, default_dict[col]))
                                 else:
                                     param_dict[col] = None
                             else:
@@ -3816,6 +3816,10 @@ def fetch_data(input_parameters, source='file', data_export_path=None, data_expo
 
     if not isinstance(input_parameters, HVSRData):
         input_parameters = sprit_utils._make_it_classy(input_parameters)
+    
+    if isinstance(input_parameters, HVSRBatch):
+        return input_parameters
+    
     # Check if data is from tromino, and adjust parameters accordingly
     if 'trc' in pathlib.Path(str(input_parameters['input_data'])).suffix:
         if verbose and hasattr(input_parameters, 'instrument') and input_parameters['instrument'].lower() not in trominoNameList:
@@ -5909,6 +5913,22 @@ def input_params(input_data,
     # Record any updates that are made to input_params based
     update_msg = []
     
+    batchFTypes = ['.csv','.txt']
+    batchCond1 = isinstance(input_data, pd.DataFrame)
+    batchCond2 = pathlib.Path(str(input_data)).exists() and pathlib.Path(str(input_data)).suffix.lower() in ['.csv', '.txt']
+    batchCond3 = isinstance(input_data, (list, tuple)) 
+    batchCond4 = pathlib.Path(str(input_data)).is_dir()
+    
+    if batchCond1 or batchCond2:
+        batchType='table'
+    elif batchCond3:
+        batchType='filelist'
+    elif batchCond4:
+        batchType = 'directory'
+    
+    if any([batchCond1, batchCond2, batchCond3, batchCond4]):
+        return batch_data_read(input_data, batch_type=batchType)
+    
     # Reformat times
     # Date will come out of this block as a string of datetime.date in the form of "YYYY-mm-dd"
     date = str(acq_date)
@@ -5962,7 +5982,8 @@ def input_params(input_data,
     elif type(acq_date) is int:
         year=datetime.datetime.today().year
         date = str((datetime.datetime(year, 1, 1) + datetime.timedelta(acq_date - 1)).date())
-
+    elif isinstance(acq_date, pd.Timestamp):
+        date = str(acq_date.to_pydatetime().date())
     # Starttime will be standardized as string, then converted to UTCDateTime
     # If not specified, will be set to 00:00 of current UTC date
     if starttime is None:
@@ -6119,7 +6140,7 @@ def input_params(input_data,
     if verbose:
         print('Gathering input parameters (input_params())')
         for key, value in inputParamDict.items():
-            print('\t  {}={}'.format(key, value))
+            print(f'\t  {key}={str(value):.100}')
         print()
 
         update_msg.insert(0, '\tThe following parameters were modified from the raw input:')
