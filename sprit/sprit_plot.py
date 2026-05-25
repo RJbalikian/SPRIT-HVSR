@@ -23,6 +23,7 @@ import numpy as np
 from obspy import UTCDateTime
 import obspy
 import pandas as pd
+import plotext as pltxt
 import plotly.express as px
 from plotly.graph_objs import Heatmap as goHeatmap
 from plotly.express import timeline as pxTimeline
@@ -1231,60 +1232,70 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
 
 
 # Plot to terminal
-def plot_text(hvsr_data):
+def plot_text(hvsr_data, textplot_height=1, textplot_width=1, 
+              hvsr_textplot=True, component_textplot=True, spectrogram_textplot=True):
     """Function to plot HVSR results to terminal"""
-    import plotext as pltxt
+    import numpy as np
 
     x = hvsr_data.x_freqs['Z'][:-1]
 
     y = hvsr_data.hvsr_curve
-    yp1 = hvsr_data.hvsrp2['HV']
-    ym1 = hvsr_data.hvsrm2['HV']-0.5
+    yp1 = hvsr_data.hvsrp['HV']
+    ym1 = hvsr_data.hvsrm['HV']-0.5
 
-    fig = pltxt.subplots(rows=3)
-    twFact = 0.8
-    pltxt.subplot(1)
-    pltxt.plotsize(pltxt.tw()*twFact, pltxt.th()*0.27)
-    pltxt.title(hvsr_data.site)
-    pltxt.plot(x, yp1, fillx=True, color='gray')
-    pltxt.plot(x, ym1, fillx=True, color="white")
-    pltxt.plot(x, y, color='black')
-    pltxt.xticks([])
-    pltxt.xscale('log')
+    twFactor = textplot_width
+    numPlots = sum([hvsr_textplot, component_textplot, spectrogram_textplot])
+    thFactor = textplot_height * (3/numPlots)
+
+    if hvsr_textplot:
+        fig = pltxt.subplots(rows=1)
+        pltxt.subplot(1)
+        pltxt.plotsize(pltxt.tw()*twFactor, pltxt.th()*0.27 * thFactor)
+        pltxt.title(hvsr_data.site)
+        if pltxt.th()*0.27 * thFactor > 20:
+            pltxt.plot(x, yp1, fillx=True, color='silver')
+            pltxt.plot(x, ym1, fillx=True, color='white')
+        pltxt.plot(x, y, color='black')
+        pltxt.xticks([])
+        pltxt.xscale('log')
+        pltxt.show()
 
     # Component plot
-    import numpy as np
-    psdZ = np.median(np.stack(hvsr_data.hvsr_windows_df['psd_values_Z']), axis=0)[:-1]
-    psdE = np.median(np.stack(hvsr_data.hvsr_windows_df['psd_values_E']), axis=0)[:-1]
-    psdN = np.median(np.stack(hvsr_data.hvsr_windows_df['psd_values_N']), axis=0)[:-1]
+    if component_textplot:
+        fig = pltxt.subplots(rows=1)
+        import numpy as np
+        psdZ = np.median(np.stack(hvsr_data.hvsr_windows_df['psd_values_Z']), axis=0)[:-1]
+        psdE = np.median(np.stack(hvsr_data.hvsr_windows_df['psd_values_E']), axis=0)[:-1]
+        psdN = np.median(np.stack(hvsr_data.hvsr_windows_df['psd_values_N']), axis=0)[:-1]
 
-    pltxt.subplot(2)
-    pltxt.plotsize(pltxt.tw()*twFact, pltxt.th()*0.27)
-    pltxt.plot(x, psdZ, color='black', label='Z')
-    pltxt.plot(x, psdE, color='blue', label='E')
-    pltxt.plot(x, psdN, color='red', label='N')
-    pltxt.xscale('log')
-
+        pltxt.subplot(1)
+        pltxt.plotsize(pltxt.tw()*twFactor, pltxt.th()*0.27*thFactor)
+        pltxt.plot(x, psdZ, color='black', label='Z')
+        pltxt.plot(x, psdE, color='blue', label='E')
+        pltxt.plot(x, psdN, color='red', label='N')
+        pltxt.xscale('log')
+        pltxt.show()
+    
     # Spectrogram Plot
-    pltxt.subplot(3)
-    pltxt.plotsize(pltxt.tw()*twFact, pltxt.th()*0.45)
-    imageDest='./temp.png'
-    data = np.stack(hvsr_data.hvsr_windows_df["HV_Curves"])
-    norm = (255 * (data - data.min()) / (data.max() - data.min())).astype(np.uint8)
+    if spectrogram_textplot:
+        fig = pltxt.subplots(rows=1)
+        pltxt.subplot(1)
+        pltxt.plotsize(pltxt.tw()*twFactor, pltxt.th()*0.45*thFactor)
+        data = np.stack(hvsr_data.hvsr_windows_df["HV_Curves"])
+        norm = (255 * (data - data.min()) / (data.max() - data.min())).astype(np.uint8)
 
-    from PIL import Image
-    colored = matplotlib.cm.jet(norm)[..., :3]
-    rgb = (colored * 255).astype(np.uint8)
-    rgb = np.transpose(rgb, (1, 0, 2))
+        from PIL import Image
+        colored = matplotlib.cm.jet(norm)[..., :3]
+        rgb = (colored * 255).astype(np.uint8)
+        rgb = np.transpose(rgb, (1, 0, 2))
 
-    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-        img = Image.fromarray(rgb)
-        img.save(tmp.name, format="PNG")
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+            img = Image.fromarray(rgb)
+            img.save(tmp.name, format="PNG")
+            temp_path = tmp.name
+            pltxt.image_plot(temp_path)
 
-        temp_path = tmp.name
-        pltxt.image_plot(temp_path)
-
-    pltxt.show()
+        pltxt.show()
 
 # Parse plot string
 def parse_plot_string(plot_string):

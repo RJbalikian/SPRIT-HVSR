@@ -53,7 +53,10 @@ def main():
                      sprit_hvsr.export_data,
                      sprit_hvsr.export_hvsr,
                      sprit_hvsr.export_report,
-                     sprit_hvsr.plot_hvsr]
+                     sprit_hvsr.plot_hvsr,
+                     sprit_calibration.calculate_depth,
+                     sprit_plot.plot_depth_curve,
+                     sprit_plot.plot_text]
 
     hvsrFunDict = {sprit_hvsr.run: inspect.signature(sprit_hvsr.run).parameters,
                    sprit_hvsr.input_params: inspect.signature(sprit_hvsr.input_params).parameters,
@@ -72,6 +75,7 @@ def main():
                    sprit_plot.plot_depth_curve: inspect.signature(sprit_plot.plot_depth_curve).parameters,
                    sprit_calibration.calculate_depth: inspect.signature(sprit_calibration.calculate_depth).parameters,
                    sprit_hvsr.plot_hvsr: inspect.signature(sprit_hvsr.plot_hvsr).parameters,
+                   sprit_plot.plot_text: inspect.signature(sprit_plot.plot_text).parameters,
                    }
 
     # Get default parameters from main functions
@@ -81,7 +85,7 @@ def main():
 
     # Add argument and options to the parser
     intermediate_params_list = ['params', 'input_parameters', 'input', 'hvsr_data', 'hvsr_results']
-    storeTrueList = ['noise_removal', 'outlier_curves_removal',
+    storeTrueList = ['noise_removal', 'outlier_curves_removal', 'suppress_report_outputs',
                      'show_pdf_report', 'show_plot_report', 'plot_input_stream', 'remove_response',
                       'show_outlier_plot', 'suppress_report_outputs', 'show_report_outputs',
                         'return_json_string', 'include_dataframe', 'include_plots', 'export_edited_stream','use_subplots',
@@ -115,6 +119,7 @@ def main():
     for arg_name, arg_value in vars(args).items():
         if arg_name == 'input_data':
             inData = arg_value
+
         if isinstance(arg_value, str):
             if "=" in arg_value:
                 arg_value = {arg_value.split('=')[0]: arg_value.split('=')[1]}
@@ -143,20 +148,15 @@ def main():
 
         do_terminal_plot=True
         if not is_default:
-            if arg_name not in hvsrFunDict.keys():
-                if str(arg_name).lower() == 'plotext' and arg_value is False:
-                    do_terminal_plot = False
-            else:
-                print(arg_value)
-                if str(arg_value).replace('.', '').replace(',','').isnumeric():
-                    arg_value = float(arg_value)
-                elif isinstance(arg_value, (tuple, list)):
-                    avList = []
-                    for av in arg_value:
-                        if str(av).replace('.', '').replace(',','').isnumeric():
-                            avList.append(float(av))
-                    arg_value = avList
-                kwargs[arg_name] = arg_value
+            if str(arg_value).replace('.', '').replace(',','').isnumeric():
+                arg_value = float(arg_value)
+            elif isinstance(arg_value, (tuple, list)):
+                avList = []
+                for av in arg_value:
+                    if str(av).replace('.', '').replace(',','').isnumeric():
+                        avList.append(float(av))
+                arg_value = avList
+            kwargs[arg_name] = arg_value
 
     if 'input_data' not in kwargs:
         kwargs['input_data'] = inData
@@ -187,7 +187,8 @@ def main():
         hvData =  sprit_hvsr.run(**kwargs)
 
         if do_terminal_plot:
-            sprit_plot.plot_text(hvData)
+            ptkwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_text).parameters.keys())}
+            sprit_plot.plot_text(hvData, **ptkwargs)
 
 if __name__ == '__main__':
     main()
