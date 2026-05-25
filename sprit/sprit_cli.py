@@ -16,7 +16,7 @@ import numbers
 #except Exception:
 #    import sprit_hvsr
 
-from . import sprit_hvsr
+from . import sprit_hvsr, sprit_plot, sprit_calibration
 
 def get_param_docstring(func, param_name):
     function_docstring = func.__doc__
@@ -69,6 +69,8 @@ def main():
                    sprit_hvsr.export_data: inspect.signature(sprit_hvsr.export_data).parameters,
                    sprit_hvsr.export_hvsr: inspect.signature(sprit_hvsr.export_hvsr).parameters,
                    sprit_hvsr.export_report: inspect.signature(sprit_hvsr.export_report).parameters,
+                   sprit_plot.plot_depth_curve: inspect.signature(sprit_plot.plot_depth_curve).parameters,
+                   sprit_calibration.calculate_depth: inspect.signature(sprit_calibration.calculate_depth).parameters,
                    sprit_hvsr.plot_hvsr: inspect.signature(sprit_hvsr.plot_hvsr).parameters,
                    }
 
@@ -111,6 +113,8 @@ def main():
     # Map command-line arguments/options to kwargs
     kwargs = {}
     for arg_name, arg_value in vars(args).items():
+        if arg_name == 'input_data':
+            inData = arg_value
         if isinstance(arg_value, str):
             if "=" in arg_value:
                 arg_value = {arg_value.split('=')[0]: arg_value.split('=')[1]}
@@ -137,20 +141,27 @@ def main():
             if is_default:
                 continue
 
+        do_terminal_plot=True
         if not is_default:
-            print(arg_value)
-            if str(arg_value).replace('.', '').replace(',','').isnumeric():
-                arg_value = float(arg_value)
-            elif isinstance(arg_value, (tuple, list)):
-                avList = []
-                for av in arg_value:
-                    if str(av).replace('.', '').replace(',','').isnumeric():
-                        avList.append(float(av))
-                arg_value = avList
-            kwargs[arg_name] = arg_value
+            if arg_name not in hvsrFunDict.keys():
+                if str(arg_name).lower() == 'plotext' and arg_value is False:
+                    do_terminal_plot = False
+            else:
+                print(arg_value)
+                if str(arg_value).replace('.', '').replace(',','').isnumeric():
+                    arg_value = float(arg_value)
+                elif isinstance(arg_value, (tuple, list)):
+                    avList = []
+                    for av in arg_value:
+                        if str(av).replace('.', '').replace(',','').isnumeric():
+                            avList.append(float(av))
+                    arg_value = avList
+                kwargs[arg_name] = arg_value
 
+    if 'input_data' not in kwargs:
+        kwargs['input_data'] = inData
     # Call the sprit.run function with the generated kwargs
-    kwargs['input_data'] = kwargs['input_data'].replace("'", "")  # Remove single quotes to reduce errors
+    kwargs['input_data'] = str(kwargs['input_data']).replace("'", "")  # Remove single quotes to reduce errors
     if str(kwargs['input_data']).lower() == 'gui':
         sprit_hvsr.gui()
     else:
@@ -172,8 +183,11 @@ def main():
         print('\tNon-default kwargs:')
         [print(f"\t\t {k} = {v}") for k, v in kwargs.items()]
         print()
+        
+        hvData =  sprit_hvsr.run(**kwargs)
 
-        sprit_hvsr.run(**kwargs)
+        if do_terminal_plot:
+            sprit_plot.plot_text(hvData)
 
 if __name__ == '__main__':
     main()

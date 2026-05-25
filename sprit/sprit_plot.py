@@ -8,6 +8,7 @@ import numbers
 import requests
 import os
 import pathlib
+import tempfile
 import webbrowser
 
 from zoneinfo import available_timezones
@@ -1228,6 +1229,62 @@ def plot_outlier_curves(hvsr_data, plot_engine='plotly', plotly_module='go', rem
     hvsr_data['Outlier_Plot'] = outlier_fig 
     return outlier_fig
 
+
+# Plot to terminal
+def plot_text(hvsr_data):
+    """Function to plot HVSR results to terminal"""
+    import plotext as pltxt
+
+    x = hvsr_data.x_freqs['Z'][:-1]
+
+    y = hvsr_data.hvsr_curve
+    yp1 = hvsr_data.hvsrp2['HV']
+    ym1 = hvsr_data.hvsrm2['HV']-0.5
+
+    fig = pltxt.subplots(rows=3)
+    twFact = 0.8
+    pltxt.subplot(1)
+    pltxt.plotsize(pltxt.tw()*twFact, pltxt.th()*0.27)
+    pltxt.title(hvsr_data.site)
+    pltxt.plot(x, yp1, fillx=True, color='gray')
+    pltxt.plot(x, ym1, fillx=True, color="white")
+    pltxt.plot(x, y, color='black')
+    pltxt.xticks([])
+    pltxt.xscale('log')
+
+    # Component plot
+    import numpy as np
+    psdZ = np.median(np.stack(hvsr_data.hvsr_windows_df['psd_values_Z']), axis=0)[:-1]
+    psdE = np.median(np.stack(hvsr_data.hvsr_windows_df['psd_values_E']), axis=0)[:-1]
+    psdN = np.median(np.stack(hvsr_data.hvsr_windows_df['psd_values_N']), axis=0)[:-1]
+
+    pltxt.subplot(2)
+    pltxt.plotsize(pltxt.tw()*twFact, pltxt.th()*0.27)
+    pltxt.plot(x, psdZ, color='black', label='Z')
+    pltxt.plot(x, psdE, color='blue', label='E')
+    pltxt.plot(x, psdN, color='red', label='N')
+    pltxt.xscale('log')
+
+    # Spectrogram Plot
+    pltxt.subplot(3)
+    pltxt.plotsize(pltxt.tw()*twFact, pltxt.th()*0.45)
+    imageDest='./temp.png'
+    data = np.stack(hvsr_data.hvsr_windows_df["HV_Curves"])
+    norm = (255 * (data - data.min()) / (data.max() - data.min())).astype(np.uint8)
+
+    from PIL import Image
+    colored = matplotlib.cm.jet(norm)[..., :3]
+    rgb = (colored * 255).astype(np.uint8)
+    rgb = np.transpose(rgb, (1, 0, 2))
+
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+        img = Image.fromarray(rgb)
+        img.save(tmp.name, format="PNG")
+
+        temp_path = tmp.name
+        pltxt.image_plot(temp_path)
+
+    pltxt.show()
 
 # Parse plot string
 def parse_plot_string(plot_string):

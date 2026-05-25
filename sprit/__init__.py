@@ -60,6 +60,7 @@ from sprit.sprit_plot import (
     plot_outlier_curves,
     parse_plot_string,
     plot_results_plotly,
+    plot_text,
     )
 
 from sprit.sprit_calibration import (
@@ -107,6 +108,7 @@ __all__ = ('sprit_hvsr',
             'plot_outlier_curves',
             'parse_plot_string',
             'plot_results_plotly',
+            'plot_text',
         'sprit_calibration',
             'calculate_depth',
             'calibrate',
