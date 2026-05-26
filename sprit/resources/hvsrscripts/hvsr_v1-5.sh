@@ -1,13 +1,14 @@
 #!/bin/bash
 set -e
 #VERSIONING
-SCRIPT_VERSION="v1.4"
-SCRIPT_UPDATE="2026-05-05"
+SCRIPT_VERSION="v1.5"
+SCRIPT_UPDATE="2026-05-26"
 
 #DESCRIPTION
 # This will be used to do site-based analysis on raspberry shake instruments.
 # This is very much a work in progress
-USAGE_TEXT="Usage: $(basename "$0") CAPITALIZED WORD after option indicates variable to which that argument gets passed.\n\n\t\
+
+USAGE_TEXT="Usage: $(basename -- "$0") CAPITALIZED WORD after option indicates variable to which that argument gets passed.\n\n\t\
 OPTION |   ARGUMENT   | DESCRIPTION       \n\t\
 -------|--------------|-------------------\n\t\
  -n    | SITE_NAME    | Name of site; this will be used as the first part of the filename; defaults to 'HVSRSite'\n\t\
@@ -37,6 +38,10 @@ STATION=$(ls "/opt/data/archive/$CURR_YEAR/AM")
 HVSR_DIR="/opt/hvsr"
 HVSRDATA_DIR="/opt/hvsr/data"
 EXPORT_DISK="/dev/sda1"
+SPRIT_INSTALLED=false
+if python3 -c "import sprit" 2>/dev/null; then
+    echo SPRIT_INSTALLED=true
+fi
 
 # Time to wait for startup and powerdown at start/after end of acquisition.PDOWN_TIME Not currently used
 STARTUP_TIME=30
@@ -50,7 +55,7 @@ fi
 
 # READ IN OPTIONS
 # Get options
-while getopts 'n:t:d:c:s:h:ve' opt; do
+while getopts 'n:d:c:s:tpveh' opt; do
     case "$opt" in
         n) SITE_NAME="$OPTARG"
             echo $SITE_NAME
@@ -61,7 +66,7 @@ while getopts 'n:t:d:c:s:h:ve' opt; do
         c) CHECK_INT="$OPTARG";;
         s) STARTUP_TIME="$OPTARG";;
         v) VERBOSE="-v";;
-        p) PROCESS_DATA=true
+        p) PROCESS_DATA=true;;
         e)
             # Not sure how this works, but it does
             # Check next positional parameter
@@ -97,12 +102,12 @@ while getopts 'n:t:d:c:s:h:ve' opt; do
                 USBDISKS=$(readlink -f /dev/disk/by-id/usb*)
 
                 # Detect USB drives
-                while read dev;do
-                    LASTDISK=$dev;
-                done <<< $USBDISKS
-		        echo $LASTDISK
+                while read dev; do
+                    LASTDISK="$dev";
+                done <<< "$USBDISKS"s
+		echo $LASTDISK
 
-		        EXPORT_DISK=$LASTDISK
+		EXPORT_DISK=$LASTDISK
 
                 if [[ -z "$EXPORT_DISK" ]]; then
                     echo "No USB disks detected. Data not exported"
@@ -155,7 +160,10 @@ while getopts 'n:t:d:c:s:h:ve' opt; do
 	        echo "$EXPORT_DISK successfully unmounted, you may now remove drive"
             exit 0
             ;;
-	  \?) printf "$USAGE_TEXT" exit 1 ;;
+	  \?)
+              printf "%b" "$USAGE_TEXT"
+              exit 1
+              ;;
     esac
 done
 
@@ -167,7 +175,7 @@ read mindur mindecdur <<< $(echo $DURATION | awk -F. '{print $1, $2}')
 mindecdur=$(printf %.1s "$mindecdur")
 
 # Now get the duration in seconds
-S_DURATION=$(($((mindur * 60))+$((mindecdur*6))))
+S_DURATION=$((mindur * 60 + mindecdur * 6))
 START_TIME=$(date -d "@$(( $(date +%s) + $STARTUP_TIME ))" +"%H:%M:%S")
 START_TIMESTAMP=$(date -d "@$(( $(date +%s) + $STARTUP_TIME ))" +"%s")
 END_TIMESTAMP=$(date -d "@$(( $(date +%s) + $STARTUP_TIME + $S_DURATION ))" +"%s")
@@ -178,6 +186,10 @@ LAT=""
 LON=""
 ALT=""
 
+LAT_STR="[GPS Latitude  not available]"
+LON_STR="[GPS Longitude not available]"
+ALT_STR="[GPS Altitude  not available]"
+
 TPV=$(gpspipe -w -n 5 2>/dev/null | grep '"class":"TPV"' | head -n 1)
 
 if [ -n "$TPV" ]; then
@@ -186,10 +198,14 @@ if [ -n "$TPV" ]; then
   if [ "$MODE" -ge 2 ]; then
     LAT=$(echo "$TPV" | sed -n 's/.*"lat":\([-0-9.]*\).*/\1/p')
     LON=$(echo "$TPV" | sed -n 's/.*"lon":\([-0-9.]*\).*/\1/p')
+    LAT_STR="$LAT"
+    LON_STR="$LON"
+
   fi
 
   if [ "$MODE" -eq 3 ]; then
     ALT=$(echo "$TPV" | sed -n 's/.*"alt":\([-0-9.]*\).*/\1/p')
+    ALT_STR="$ALT"
   fi
 fi
 
@@ -210,17 +226,17 @@ echo "  DAY OF YEAR       |  $(date +%j)"
 echo "START TIME          |  $START_TIME"
 echo "END TIME            |  $END_TIME"
 echo "---------------------------------------------------------------------"
-echo "LONGITUDE           |  $LON"
-echo "LATITUDE            |  $LAT"
-echo "ELEVATION (GPS) [m] |  $ALT"
+echo "LONGITUDE           |  $LON_STR"
+echo "LATITUDE            |  $LAT_STR"
+echo "ELEVATION (GPS) [m] |  $ALT_STR"
 echo "---------------------------------------------------------------------"
 echo ""
 
 # Start up timer
-while [[ $STARTUP_TIME > 0 ]]; do
+while [[ "$STARTUP_TIME" > 0 ]]; do
     echo -ne "Beginning acquisition in $STARTUP_TIME seconds \033[0K\r"
     sleep 1
-    STARTUP_TIME=$(($STARTUP_TIME - 1))
+    STARTUP_TIME=$(("$STARTUP_TIME" - 1))
 done
 
 # Set the start time as current time
@@ -228,13 +244,24 @@ START_TIME=$(date +'%Y-%m-%d %T')
 START_TIMESTAMP=$(date +%s)
 
 # End time add duration to start time
-END_TIME=$(date -d "$date $S_DURATION seconds" +'%Y-%m-%d %T')
-END_HOUR=$(date -d "$date $S_DURATION seconds" +'%H')
-END_MIN=$(date -d "$date $S_DURATION seconds" +'%M')
-END_SEC=$(date -d "$date $S_DURATION seconds" +'%S')
-END_TIMESTAMP=$(date -d "$date $S_DURATION seconds" +'%s')
+END_TIME=$(date -d "$START_TIME $S_DURATION seconds" +'%Y-%m-%d %T')
+END_HOUR=$(date -d "$START_TIME $S_DURATION seconds" +'%H')
+END_MIN=$(date -d "$START_TIME $S_DURATION seconds" +'%M')
+END_SEC=$(date -d "$START_TIME $S_DURATION seconds" +'%S')
+END_TIMESTAMP=$(date -d "$START_TIME $S_DURATION seconds" +'%s')
 
 UTC_DIFF=$(date +%:::z)
+
+# Check if processing previews will be used (and if sprit is installed)
+if ! "$PROCESS_DATA"; then
+    if "$SPRIT_INSTALLED"; then
+        echo "Processing previews will not be displayed. Use -p for processing previews"
+        echo
+    else
+        echo "Processing previews are not available (SpRIT python package must be installed)"
+        echo
+    fi
+fi
 
 # Print out the times of everything
 echo -ne "  Acquisition start time is $(date -d "$START_TIME" +'%H:%M') (UTC $UTC_DIFF)"
@@ -262,14 +289,12 @@ eTIME="$eYEAR,$eMON,$eDAY,$eHOUR,$eMIN,$eSEC"
 CURRENT_TIMESTAMP=$(date +%s)
 
 # Loop through every CHECK_INT seconds, print progress and keep it going until we reach desired time
-while [[ $CURRENT_TIMESTAMP < $END_TIMESTAMP ]]; do
-    # Get the timestamp for the current time
-    CURRENT_TIMESTAMP=$(date +%s)
+while [[ "$CURRENT_TIMESTAMP" < "$END_TIMESTAMP" ]]; do
 
     # Calculate time remaining
-    MIN_REMAINING=$(( ($END_TIMESTAMP - $CURRENT_TIMESTAMP)/60))
-    SEC_REMAINING=$(( ($END_TIMESTAMP - $CURRENT_TIMESTAMP) - ($MIN_REMAINING*60)))
-    TOT_SEC_REMAINING=$(( ($END_TIMESTAMP - $CURRENT_TIMESTAMP)))
+    MIN_REMAINING=$(( ("$END_TIMESTAMP" - "$CURRENT_TIMESTAMP")/60))
+    SEC_REMAINING=$(( ("$END_TIMESTAMP - $CURRENT_TIMESTAMP") - ("$MIN_REMAINING"*60)))
+    TOT_SEC_REMAINING=$(( ("$END_TIMESTAMP" - "$CURRENT_TIMESTAMP")))
     printf "    %02d:%02d Remaining   |  CURRENT TIME: $(date +%T)  |  END TIME: $(date -d "$END_TIME" '+%T')\n" $MIN_REMAINING $SEC_REMAINING
 
     # Only for the last interval, where the check int is less than the total time remaining
@@ -280,9 +305,8 @@ while [[ $CURRENT_TIMESTAMP < $END_TIMESTAMP ]]; do
         sleep $TOT_SEC_REMAINING
     fi
 
-    if [ "$PROCESS_DATA" = true ]; then
-        python3 -c "import sprit" 2>/dev/null
-        if [ $? -eq 0 ]; then
+    if "$PROCESS_DATA"; then
+        if "$SPRIT_INSTALLED"; then
 
             cYEAR=$(date +%Y)
             cMON=$(date +%m)
@@ -291,18 +315,18 @@ while [[ $CURRENT_TIMESTAMP < $END_TIMESTAMP ]]; do
             cMIN=$(date +%M)
             cSEC=$(date +%S)
 
-            currentSLINKTime = "$cYEAR,$cMON,$cDAY,$cHOUR,$cMIN,$cSEC"
+            currentSLINKTime="$cYEAR,$cMON,$cDAY,$cHOUR,$cMIN,$cSEC"
             if [ ! -d "$HVSRDATA_DIR/temp" ]; then
                 mkdir "$HVSRDATA_DIR/temp"
             fi
-            TEMP_FPATH="$HVSRDATA_DIR/temp/"$SITE_NAME"_"$STATION"_$(date -d "$START_TIME" '+%j_%Y-%m-%d_%H%M')-$(date -d "$END_TIME" '+%H%M')_${LON:0:8}E_${LAT:0:8}N.mseed"
-            slinktool -S "AM_$STATION:EH?" -tw "$sTIME:$cTIME" -o "$TEMP_FPATH" :18000
-            sprit TEMP_FPATH
+            TEMP_FPATH="$HVSRDATA_DIR/temp/"$SITE_NAME"_"$STATION"_$(date -d "$START_TIME" '+%j_%Y-%m-%d_%H%M')-$(date '+%H%M')_${LON:0:8}E_${LAT:0:8}N.mseed"
+            slinktool -S "AM_$STATION:EH?" -tw "$sTIME:$currentSLINKTime" -o "$TEMP_FPATH" :18000
+            sprit "$TEMP_FPATH"
         else
-            echo "sprit is not installed, will not attempt to process data"
+            echo "SpRIT is not installed, processing previews will not be attempted."
             PROCESS_DATA=false
         fi
-    if
+    fi
 
     # Get the timestamp for the current time again (to check against END_TIMESTAMP)
     CURRENT_TIMESTAMP=$(date +%s)
@@ -319,11 +343,11 @@ echo "Cleaning up data now"
 
 # Use slinktool to trim, combine, and export data
 # First, create the directory to hold the data if it does not already exist
-if [ ! -d $HVSR_DIR ]; then
+if [ ! -d "$HVSR_DIR" ]; then
     mkdir "$HVSR_DIR"
 fi
 
-if [ ! -d $HVSRDATA_DIR ]; then
+if [ ! -d "$HVSRDATA_DIR" ]; then
     mkdir "$HVSRDATA_DIR"
 fi
 
@@ -332,6 +356,10 @@ echo "Exporting site data to  $fpath"
 
 # slinktool will query data on shake, between start and end time, and save it as an mseed file in HVSR_DIR
 slinktool -S "AM_$STATION:EH?" -tw "$sTIME:$eTIME" -o "$fpath" $VERBOSE :18000
+
+if "$PROCESS_DATA"; then
+    if python3 -c "import sprit" 2>/dev/null; then
+fi
 
 #RASPBERRY SHAKE SYSTEM CHECK HERE
 # If this is being run on a raspberry shake, poweroff instrument

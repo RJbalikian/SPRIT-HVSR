@@ -1297,6 +1297,7 @@ def plot_text(hvsr_data, textplot_height=1, textplot_width=1,
 
         pltxt.show()
 
+
 # Parse plot string
 def parse_plot_string(plot_string):
     """Function to parse a plot string into a list readable by plotting functions
