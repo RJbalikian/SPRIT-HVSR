@@ -5065,6 +5065,10 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
 
     else:
 
+        if overlap_pct > 1:
+            overlap_pct = overlap_pct / 100
+
+
         psdDict, times_bool = __single_psd_from_raw_data(hvsr_data, window_length=window_length, window_length_method=window_length_method, window_type=window_type,
                                                            num_freq_bins=num_freq_bins, verbose=verbose,
                                                            overlap=overlap_pct, remove_response=remove_response, do_azimuths=azimuthal_psds)
@@ -7650,6 +7654,10 @@ def remove_outlier_curves(hvsr_data, outlier_method='prototype',
                 compNames.append(col_name)
         colNames = compNames
         col_prefix = 'HV_Curves'
+
+
+    if 0 < float(outlier_threshold) < 1:
+        outlier_threshold = outlier_threshold * 100
 
     # Remove outlier depending on method, prototype as default if nothing else specified
     if str(outlier_method).lower() == 'none' or outlier_method is None:
