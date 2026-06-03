@@ -479,6 +479,7 @@ class HVSRBatch:
 
         return self
     
+    
     def get_report(self, **kwargs):
         """Method to get report from processed data, in print, graphical, or tabular format.
 
@@ -511,6 +512,7 @@ class HVSRBatch:
             get_report(self[sitename], **kwargs)
         return
 
+
     def report(self, **kwargs):
         """Wrapper of get_report()
         
@@ -519,6 +521,20 @@ class HVSRBatch:
         get_report
         """
         return self.get_report(**kwargs)
+
+    def remove(self, site_name, **kwargs):
+        if hasattr(self, site_name):
+            delattr(self, site_name)
+
+        if site_name in self.batch_dict:
+            del self.batch_dict[site_name]
+
+        if site_name in self.input_df['site']:
+            inDFInd = self.input_df[self.input_df['site']==site_name].index[0]
+            self.input_df.drop(index=inDFInd, inplace=True)
+
+        self.sites = list(self.batch_dict.keys())
+
 
     def export_settings(self, site_name=None, export_settings_path='default', export_settings_type='all', include_location=False, verbose=True):
         """Method to export settings from HVSRData object in HVSRBatch object. 
@@ -1297,7 +1313,10 @@ def run(input_data=None, source='file',
     # Start processing tasks
     if verbose:
         print('Using sprit.run() with the following parameters:')
-        print(f'\tinput_data = {str(input_data):.250}')
+        if isinstance(input_data, HVSRData):
+            print(f'\tinput_data = HVSRData({input_data.site})')
+        else:
+            print(f'\tinput_data = {str(input_data):.250}')
         print(f'\tazimuth_calculation = {azimuth_calculation}')
         print(f'\tnoise_removal = {noise_removal}')
         print(f'\toutlier_curves_removal = {outlier_curves_removal}')
@@ -1450,23 +1469,27 @@ def run(input_data=None, source='file',
         
         # Create batch object
         hvsrBatchData = HVSRBatch(hvsrBatchDict, df_as_read=pd.DataFrame(run_kwargs_for_df))
-        
-        # Use batch object to get Output Table with all data, including results and inputs
-        for s, site in enumerate(hvsrBatchData):
+
+        report_frames = []
+        for site in hvsrBatchData:
             if hasattr(hvsrBatchData[site], 'Table_Report'):
-                if s == 0:
-                    table_reports = hvsrBatchData[site].Table_Report
-                else:
-                    table_reports = pd.concat([table_reports, hvsrBatchData[site].Table_Report])
-            else:
-                if s == 0:
-                    table_reports = pd.DataFrame()
-                else:
-                    pass
-                
-        hvsrBatchData['Table_Report'] = pd.merge(left=hvsrBatchData.input_df, right=table_reports,
-                                                 how='outer',
-                                                 left_on='site', right_on='Site Name')
+                report_frames.append(hvsrBatchData[site].Table_Report.copy())
+                if verbose:
+                    print(f"\tTable from {site} copied to main Table_Reports attribute of HVSRBatch object")
+
+        if len(report_frames) > 0:
+            table_reports = pd.concat(report_frames, ignore_index=True)
+        else:
+            table_reports = pd.DataFrame()
+
+        hvsrBatchData['Table_Report'] = pd.merge(
+            left=hvsrBatchData.input_df,
+            right=table_reports,
+            how='outer',
+            left_on='site',
+            right_on='Site Name'
+        )
+
         return hvsrBatchData
 
     # Calculate azimuths
@@ -1984,7 +2007,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
 
     if verbose:
         print(f'Processing batch data from {batch_type}:')
-        print(f"  Batch data source: {batch_data}")
+        print(f"  Batch data source: {type(batch_data)}")
 
     # First figure out which parameters go with which function
     input_params_params = inspect.signature(input_params).parameters

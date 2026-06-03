@@ -144,6 +144,7 @@ def calculate_depth(freq_input,
     """
     orig_args = locals()
     ip_params, fd_params = __get_ip_df_params()
+    print("FRREEEQQINPUT", type(freq_input))
 
     if depth_model is None:
         depth_model = CONGLOMERATE_MODEL
@@ -337,7 +338,8 @@ def calculate_depth(freq_input,
             if not hasattr(freq_input, 'Table_Report'):
                 if verbose:
                     warn("Passed HVSRData Object has no attribute Table_Report, attempting to generate one.")
-                tableReport = sprit_hvsr.get_report(freq_input, report_format='table')
+                freq_input = sprit_hvsr.get_report(freq_input, report_format='table')
+                tableReport = freq_input.Table_Report
             else:
                 tableReport = freq_input.Table_Report
 

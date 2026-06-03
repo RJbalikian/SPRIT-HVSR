@@ -159,10 +159,22 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
     if verbose:
         print("Getting data batch for cross section plot")
     batchExt = None
-    if isinstance(hvsr_data, (str, os.PathLike, pathlib.Path)):
-        if pathlib.Path(hvsr_data).exists() and pathlib.Path(hvsr_data).is_dir():
-            batchExt = 'hvsr'
-    hvDataBatch = sprit_hvsr.HVSRBatch(hvsr_data, batch_ext=batchExt)
+    hvDataBatch = hvsr_data
+    if not isinstance(hvDataBatch, sprit_hvsr.HVSRBatch):
+        if isinstance(hvsr_data, (str, os.PathLike, pathlib.Path)):
+            if pathlib.Path(hvsr_data).exists() and pathlib.Path(hvsr_data).is_dir():
+                batchExt = 'hvsr'
+
+        hvDataBatch = sprit_hvsr.HVSRBatch(hvsr_data, batch_ext=batchExt)
+
+    # Remove data temporarily from Batch if it does not have proper data
+    noTableList = []
+    for sitename in hvDataBatch.sites:
+        if not hasattr(hvDataBatch[sitename], "Table_Report") or not hasattr(hvDataBatch[sitename], "BestPeak"):
+            noTableList.append(sitename)
+
+    for site in noTableList:
+        hvDataBatch.remove(site)
 
     # Get likely orientation if not specified
     if orientation is None:
