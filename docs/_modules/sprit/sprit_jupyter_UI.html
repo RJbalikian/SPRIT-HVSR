@@ -5,14 +5,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_jupyter_UI &mdash; sprit 3.4.2 documentation</title>
+  <title>sprit.sprit_jupyter_UI &mdash; sprit 3.13.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
 
   
-      <script src="../../_static/documentation_options.js?v=23636ea3"></script>
-      <script src="../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/documentation_options.js?v=ced7c45e"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -90,14 +90,18 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">plotly.subplots</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">subplots</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">signal</span>
 
-<span class="k">try</span><span class="p">:</span> <span class="c1">#For distribution</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">sprit</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_utils</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">sprit</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_hvsr</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">sprit</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_plot</span>
-<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span> <span class="c1">#For local testing</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit_hvsr</span> 
-    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit_utils</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">sprit_plot</span>
+<span class="c1">#try: #For distribution</span>
+<span class="c1">#    from sprit import sprit_utils</span>
+<span class="c1">#    from sprit import sprit_hvsr</span>
+<span class="c1">#    from sprit import sprit_plot</span>
+<span class="c1">#except Exception: #For local testing</span>
+<span class="c1">#    import sprit_hvsr </span>
+<span class="c1">#    import sprit_utils</span>
+<span class="c1">#    import sprit_plot</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_utils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_hvsr</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">sprit_plot</span>
 
 <span class="k">global</span> <span class="n">hvsr_data</span>
     
@@ -956,11 +960,6 @@
     <span class="n">resample_hv_curve</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">IntText</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">tooltip</span><span class="o">=</span><span class="s2">&quot;If resampling, how many frequency points/bins to use.&quot;</span><span class="p">,</span>
                                         <span class="n">placeholder</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">512</span><span class="p">)</span>
 
-    <span class="n">smooth_hv_curve_bool</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Checkbox</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Smooth&#39;</span><span class="p">,</span>
-                                            <span class="n">tooltip</span><span class="o">=</span><span class="s1">&#39;Whether to smooth the data (this does not account for logarithmic frequency width increases.)&#39;</span><span class="p">)</span>
-    <span class="n">smooth_hv_curve</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">IntText</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">tooltip</span><span class="o">=</span><span class="s2">&quot;The window width to use for smoothing.&quot;</span><span class="p">,</span>
-                                    <span class="n">placeholder</span><span class="o">=</span><span class="mi">51</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">51</span><span class="p">)</span>
-
     <span class="n">peak_selection_type</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Peak Method&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s1">&#39;max&#39;</span><span class="p">,</span>
                                         <span class="n">options</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;Highest Peak&#39;</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">),</span>
                                              <span class="p">(</span><span class="s1">&#39;Best Scored&#39;</span><span class="p">,</span><span class="s1">&#39;scored&#39;</span><span class="p">)],</span>
@@ -973,9 +972,7 @@
     <span class="n">process_hvsr_grid</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">freq_smooth_width_float</span>
     <span class="n">process_hvsr_grid</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">resample_hv_curve_bool</span>
     <span class="n">process_hvsr_grid</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">resample_hv_curve</span>
-    <span class="n">process_hvsr_grid</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">smooth_hv_curve_bool</span>
-    <span class="n">process_hvsr_grid</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">smooth_hv_curve</span>
-    <span class="n">process_hvsr_grid</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">peak_selection_type</span>
+    <span class="n">process_hvsr_grid</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">peak_selection_type</span>
 
     <span class="c1"># Remove outlier curves</span>
     <span class="c1"># outlier_method=&#39;prototype&#39;,</span>
@@ -1450,18 +1447,12 @@
         <span class="k">return</span> <span class="n">roc_kwargs</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">get_process_hvsr_kwargs</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">smooth_hv_curve_bool</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
-            <span class="n">smooth_value</span> <span class="o">=</span> <span class="n">smooth_hv_curve</span><span class="o">.</span><span class="n">value</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">smooth_value</span> <span class="o">=</span> <span class="n">smooth_hv_curve_bool</span><span class="o">.</span><span class="n">value</span>
-
         <span class="k">if</span> <span class="n">resample_hv_curve_bool</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
             <span class="n">resample_value</span> <span class="o">=</span> <span class="n">resample_hv_curve</span><span class="o">.</span><span class="n">value</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">resample_value</span> <span class="o">=</span> <span class="n">resample_hv_curve_bool</span><span class="o">.</span><span class="n">value</span>
 
         <span class="n">ph_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;horizontal_method&#39;</span><span class="p">:</span><span class="n">h_combine_meth_dropdown</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-                    <span class="s1">&#39;smooth&#39;</span><span class="p">:</span><span class="n">smooth_value</span><span class="p">,</span>
                     <span class="s1">&#39;freq_smooth&#39;</span><span class="p">:</span><span class="n">freq_smoothing_dropdown</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
                     <span class="s1">&#39;f_smooth_width&#39;</span><span class="p">:</span><span class="n">freq_smooth_width_float</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
                     <span class="s1">&#39;resample&#39;</span><span class="p">:</span><span class="n">resample_value</span><span class="p">,</span>
@@ -1472,11 +1463,10 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">update_process_hvsr_call</span><span class="p">():</span>
         <span class="c1">#ph_kwargs = get_process_hvsr_kwargs()</span>
         <span class="n">ph_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;(hvsr_data=hvsr_data, </span>
-<span class="s2">                        horizontal_method=</span><span class="si">{</span><span class="n">h_combine_meth_dropdown</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, </span>
-<span class="s2">                        smooth=</span><span class="si">{</span><span class="n">smooth_hv_curve_bool</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, </span>
-<span class="s2">                        freq_smooth=</span><span class="si">{</span><span class="n">freq_smoothing_dropdown</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, </span>
-<span class="s2">                        f_smooth_width=</span><span class="si">{</span><span class="n">freq_smooth_width_float</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, </span>
-<span class="s2">                        resample=</span><span class="si">{</span><span class="n">resample_hv_curve_bool</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, </span>
+<span class="s2">                        horizontal_method=</span><span class="si">{</span><span class="n">h_combine_meth_dropdown</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">,</span>
+<span class="s2">                        freq_smooth=</span><span class="si">{</span><span class="n">freq_smoothing_dropdown</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">,</span>
+<span class="s2">                        f_smooth_width=</span><span class="si">{</span><span class="n">freq_smooth_width_float</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">,</span>
+<span class="s2">                        resample=</span><span class="si">{</span><span class="n">resample_hv_curve_bool</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">,</span>
 <span class="s2">                        verbose=</span><span class="si">{</span><span class="n">verbose_check</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">)&quot;&quot;&quot;</span>
         <span class="n">process_hvsr_call</span><span class="o">.</span><span class="n">value</span><span class="o">=</span><span class="s1">&#39;&lt;style&gt;p {word-wrap: break-word}&lt;/style&gt; &lt;p&gt;&#39;</span> <span class="o">+</span> <span class="n">ph_text</span> <span class="o">+</span> <span class="s1">&#39;&lt;/p&gt;&#39;</span>
     <span class="c1">#update_process_hvsr_call()</span>
@@ -1892,7 +1882,7 @@
                                         <span class="n">secondary_y</span><span class="o">=</span><span class="n">use_secondary</span><span class="p">,</span>
                                         <span class="n">row</span><span class="o">=</span><span class="n">compRow</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
                 
-                <span class="n">results_fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x_data</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">ppsd_std_vals_m</span><span class="p">[</span><span class="n">comp</span><span class="p">],</span>
+                <span class="n">results_fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x_data</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">hvsr_data</span><span class="o">.</span><span class="n">psd_std_vals_m</span><span class="p">[</span><span class="n">comp</span><span class="p">],</span>
                                         <span class="n">line</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span><span class="n">compColor_semi_light</span><span class="p">[</span><span class="n">comp</span><span class="p">],</span> <span class="s1">&#39;width&#39;</span><span class="p">:</span><span class="mf">0.1</span><span class="p">},</span><span class="n">marker</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                         <span class="n">fill</span><span class="o">=</span><span class="s1">&#39;tonexty&#39;</span><span class="p">,</span> <span class="n">fillcolor</span><span class="o">=</span><span class="n">compColor_semi_light</span><span class="p">[</span><span class="n">comp</span><span class="p">],</span>
                                         <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;St.Dev. [</span><span class="si">{</span><span class="n">comp</span><span class="si">}</span><span class="s1">]&#39;</span><span class="p">,</span> <span class="n">hoverinfo</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">showlegend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
@@ -2567,7 +2557,6 @@
 
     <span class="c1">#freq_smooth_hbox = widgets.HBox([freq_smoothing_dropdown, freq_smooth_width_float])</span>
     <span class="c1">#resample_hbox = widgets.HBox([resample_hv_curve_bool, resample_hv_curve])</span>
-    <span class="c1">#smooth_hbox = widgets.HBox([smooth_hv_curve_bool, smooth_hv_curve])</span>
     
     <span class="c1"># PLOT SETTINGS SUBTAB</span>
     <span class="n">hv_plot_label</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s1">&#39;HVSR Plot&#39;</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">justify_content</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">))</span>
@@ -2894,7 +2883,6 @@
              <span class="s1">&#39;period_limits&#39;</span><span class="p">:</span><span class="n">hvsr_band_rangeSlide</span><span class="p">},</span>
         <span class="s1">&#39;process_hvsr&#39;</span><span class="p">:</span> 
             <span class="p">{</span><span class="s1">&#39;horizontal_method&#39;</span><span class="p">:</span> <span class="n">h_combine_meth_dropdown</span><span class="p">,</span>
-            <span class="s1">&#39;smooth&#39;</span><span class="p">:</span> <span class="n">smooth_hv_curve</span><span class="p">,</span>
             <span class="s1">&#39;freq_smooth&#39;</span><span class="p">:</span> <span class="n">freq_smoothing_dropdown</span><span class="p">,</span>
             <span class="s1">&#39;f_smooth_width&#39;</span><span class="p">:</span> <span class="n">freq_smooth_width_float</span><span class="p">,</span>
             <span class="s1">&#39;resample&#39;</span><span class="p">:</span> <span class="n">resample_hv_curve</span><span class="p">,</span>

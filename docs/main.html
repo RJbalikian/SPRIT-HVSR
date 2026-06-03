@@ -247,7 +247,7 @@ to derive a relation between the resonant frequency and the …</p></div>
         # If param_col, format is string of format: &#34;param_name=param_val, param_name2=param_val2&#34;
         param_dict_list = []
         if param_col is None:  # Not a single parameter column, each col=parameter
-            for row_ind in range(dataReadInfoDF.shape[0]):
+            for i, row_ind in enumerate(dataReadInfoDF.index):
                 param_dict = {}
                 verboseStatement.append([])
                 for col in dataReadInfoDF.columns:
@@ -262,9 +262,9 @@ to derive a relation between the resonant frequency and the …</p></div>
                                     param_dict[col] = default_dict[col]  # Get default value
                                     if verbose:
                                         if type(default_dict[col]) is str:
-                                            verboseStatement[row_ind].append(&#34;\t\t&#39;{}&#39; parameter not specified in batch file. Using {}=&#39;{}&#39;&#34;.format(col, col, default_dict[col]))
+                                            verboseStatement[i].append(&#34;\t\t&#39;{}&#39; parameter not specified in batch file. Using {}=&#39;{}&#39;&#34;.format(col, col, default_dict[col]))
                                         else:
-                                            verboseStatement[row_ind].append(&#34;\t\t&#39;{}&#39; parameter not specified in batch file. Using {}={}&#34;.format(col, col, default_dict[col]))
+                                            verboseStatement[i].append(&#34;\t\t&#39;{}&#39; parameter not specified in batch file. Using {}={}&#34;.format(col, col, default_dict[col]))
                                 else:
                                     param_dict[col] = None
                             else:
@@ -829,6 +829,7 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
             newBatchList.append(calculate_depth(freq_input=freq_input[site], **calc_depth_kwargs))
         return sprit_hvsr.HVSRBatch(newBatchList, df_as_read=freq_input.input_df)    
 
+    # Extract and standardize depth_model for a, b
     # initialize values
     a = 0
     b = 0
@@ -836,39 +837,41 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
     if isinstance(depth_model, (list, tuple, np.ndarray)) and len(depth_model) == 2:
         (a, b) = depth_model
 
-    # Fetch parameters for frequency-depth model
-    if isinstance(depth_model, (tuple, list)):
-        (a, b) = depth_model
-        if a == 0 or b == 0:
-            raise ValueError(f&#34;Model parameters (a, b)={depth_model} cannot be zero, check model inputs.&#34;)
-    elif isinstance(depth_model, dict):
-        depth_modelDict = {k.lower(): v for k, v in depth_model.items()}
-        a = depth_modelDict[&#39;a&#39;]
-        b = depth_modelDict[&#39;b&#39;]
-    elif isinstance(depth_model, str):
-        if depth_model.casefold() in list(map(str.casefold, model_parameters)):
-            for k, v in model_parameters.items():
-                if depth_model.casefold() == k.casefold():
-                    (a, b) = v
-                    break
-
-        elif depth_model.casefold() in swave_model_list:
-            depth_model_params = depth_model.casefold()
-
-        elif depth_model.casefold() == &#34;all&#34;:
-            depth_model_params = depth_model.casefold()
-
-        else:   # parameters a and b could be passed in as a parsable string
-            depth_model_params = depth_model.split(&#39;,&#39;)
-            # Work on re update[int(s) for s in re.findall(r&#34;[-+]?(?:\d*\.*\d+)&#34;, 
-            # depth_model)]  #figure this out later for floating points; works for integers
-            (a, b) = depth_model_params
+        # Fetch parameters for frequency-depth model
+        if isinstance(depth_model, (tuple, list)):
+            (a, b) = depth_model
             if a == 0 or b == 0:
-                raise ValueError(&#34;Parameters cannot be zero, check model inputs&#34;)            
+                raise ValueError(f&#34;Model parameters (a, b)={depth_model} cannot be zero, check model inputs.&#34;)
+        elif isinstance(depth_model, dict):
+            depth_modelDict = {k.lower(): v for k, v in depth_model.items()}
+            a = depth_modelDict[&#39;a&#39;]
+            b = depth_modelDict[&#39;b&#39;]
+        elif isinstance(depth_model, str):
+            if depth_model.casefold() in list(map(str.casefold, model_parameters)):
+                for k, v in model_parameters.items():
+                    if depth_model.casefold() == k.casefold():
+                        (a, b) = v
+                        break
 
-    # Standardize b as positive for input to function
-    if b &lt; 0:
-        b = b * -1
+            elif depth_model.casefold() in swave_model_list:
+                depth_model_params = depth_model.casefold()
+
+            elif depth_model.casefold() == &#34;all&#34;:
+                depth_model_params = depth_model.casefold()
+
+            else:   # parameters a and b could be passed in as a parsable string
+                depth_model_params = depth_model.split(&#39;,&#39;)
+                # Work on re update[int(s) for s in re.findall(r&#34;[-+]?(?:\d*\.*\d+)&#34;, 
+                # depth_model)]  #figure this out later for floating points; works for integers
+                (a, b) = depth_model_params
+                if a == 0 or b == 0:
+                    raise ValueError(&#34;Parameters cannot be zero, check model inputs&#34;)            
+
+        # Standardize b as positive for input to function
+        if b &lt; 0:
+            b = b * -1
+        
+        depth_model = (a, b)
 
     # Get frequency input
     # Checking if freq_input is HVSRData object
@@ -1060,7 +1063,8 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
         tableReport[&#34;DepthModelType&#34;] = depthModelTypeList
 
         mplList = [&#39;matplotlib&#39;, &#39;mpl&#39;, &#39;m&#39;,]
-        if str(plot_engine).lower() in mplList:
+        # Currently only MPL supported
+        if str(plot_engine).lower() in mplList or str(plot_engine).lower() not in mplList:
             # Do plotting work
             if fig is None and ax is None:
                 fig, ax = plt.subplots()
@@ -1072,6 +1076,8 @@ with *** being zero-padded (3 digits) azimuth angle in degrees.</dd>
             if hasattr(freq_input, &#39;hvsr_curve&#39;) and generate_depth_curve:
                 pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
                 pdc_kwargs[&#39;show_depth_curve&#39;] = show_depth_curve
+                pdc_kwargs[&#39;depth_plot_export_path&#39;] = depth_plot_export_path
+                pdc_kwargs[&#39;depth_model&#39;] = depth_model
                 pdc_kwargs[&#39;fig&#39;] = fig
                 pdc_kwargs[&#39;ax&#39;] = ax
                 freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input,
@@ -5728,6 +5734,10 @@ If 'processing', saves the processing settings to their respective file. By defa
 
     if not isinstance(input_parameters, HVSRData):
         input_parameters = sprit_utils._make_it_classy(input_parameters)
+    
+    if isinstance(input_parameters, HVSRBatch):
+        return input_parameters
+    
     # Check if data is from tromino, and adjust parameters accordingly
     if &#39;trc&#39; in pathlib.Path(str(input_parameters[&#39;input_data&#39;])).suffix:
         if verbose and hasattr(input_parameters, &#39;instrument&#39;) and input_parameters[&#39;instrument&#39;].lower() not in trominoNameList:
@@ -7044,6 +7054,10 @@ If it cannot do that, it will attempt to return a string representation of the i
 
     else:
 
+        if overlap_pct &gt; 1:
+            overlap_pct = overlap_pct / 100
+
+
         psdDict, times_bool = __single_psd_from_raw_data(hvsr_data, window_length=window_length, window_length_method=window_length_method, window_type=window_type,
                                                            num_freq_bins=num_freq_bins, verbose=verbose,
                                                            overlap=overlap_pct, remove_response=remove_response, do_azimuths=azimuthal_psds)
@@ -8204,6 +8218,22 @@ with key:value pairs for each parameter name:value in that function.</dd>
     # Record any updates that are made to input_params based
     update_msg = []
     
+    batchFTypes = [&#39;.csv&#39;,&#39;.txt&#39;]
+    batchCond1 = isinstance(input_data, pd.DataFrame)
+    batchCond2 = pathlib.Path(str(input_data)).exists() and pathlib.Path(str(input_data)).suffix.lower() in [&#39;.csv&#39;, &#39;.txt&#39;]
+    batchCond3 = isinstance(input_data, (list, tuple)) 
+    batchCond4 = pathlib.Path(str(input_data)).is_dir()
+    
+    if batchCond1 or batchCond2:
+        batchType=&#39;table&#39;
+    elif batchCond3:
+        batchType=&#39;filelist&#39;
+    elif batchCond4:
+        batchType = &#39;directory&#39;
+    
+    if any([batchCond1, batchCond2, batchCond3, batchCond4]):
+        return batch_data_read(input_data, batch_type=batchType)
+    
     # Reformat times
     # Date will come out of this block as a string of datetime.date in the form of &#34;YYYY-mm-dd&#34;
     date = str(acq_date)
@@ -8257,7 +8287,8 @@ with key:value pairs for each parameter name:value in that function.</dd>
     elif type(acq_date) is int:
         year=datetime.datetime.today().year
         date = str((datetime.datetime(year, 1, 1) + datetime.timedelta(acq_date - 1)).date())
-
+    elif isinstance(acq_date, pd.Timestamp):
+        date = str(acq_date.to_pydatetime().date())
     # Starttime will be standardized as string, then converted to UTCDateTime
     # If not specified, will be set to 00:00 of current UTC date
     if starttime is None:
@@ -8414,7 +8445,7 @@ with key:value pairs for each parameter name:value in that function.</dd>
     if verbose:
         print(&#39;Gathering input parameters (input_params())&#39;)
         for key, value in inputParamDict.items():
-            print(&#39;\t  {}={}&#39;.format(key, value))
+            print(f&#39;\t  {key}={str(value):.100}&#39;)
         print()
 
         update_msg.insert(0, &#39;\tThe following parameters were modified from the raw input:&#39;)
@@ -9542,7 +9573,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
             curvePlot = np.tile(curvePlot, (xSize, 1))
             minY = min(yVals)
             maxY = max(yVals)
-            yLims = [minY, maxY]
+            #yLims = [minY, maxY]
             xBase = -10
             xCap = xBase + xSize + 1
             xLims = [xBase, xCap-1]
@@ -9650,17 +9681,32 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
         #fig.set_layout_engine(&#39;constrained&#39;)
 
         plt.sca(ax)
-        
+
+        if depth_plot_export_path is not None:
+            try:
+                if depth_plot_export_path is True:
+                    if pathlib.Path(str(hvsr_results[&#39;input_data&#39;])).exists():
+                        fname = f&#39;{hvsr_results.site}_DepthCurve_{stats.starttime.strftime(&#34;%Y%m%d&#34;)}-{stats.starttime.strftime(&#34;%H%M&#34;)}-{hvsr_results.station}-{datetime.date.today().strftime(&#34;%Y-%m-%d&#34;)}.png&#39;
+
+                        depth_plot_export_path = pathlib.Path(str(hvsr_results[&#39;input_data&#39;])).with_name(fname)
+                elif pathlib.Path(depth_plot_export_path).is_dir():
+                    st = hvsr_results.stream
+                    stats = st[0].stats
+                    fname = f&#39;{hvsr_results.site}_DepthCurve_{stats.starttime.strftime(&#34;%Y%m%d&#34;)}-{stats.starttime.strftime(&#34;%H%M&#34;)}-{hvsr_results.station}-{datetime.date.today().strftime(&#34;%Y-%m-%d&#34;)}.png&#39;
+                    if not pathlib.Path(depth_plot_export_path).exists():
+                        print(&#34;Creating directory for Depth Curve Image export at&#34;, depth_plot_export_path)
+                        pathlib.Path(depth_plot_export_path).mkdir(exist_ok=True, parents=True)
+                    depth_plot_export_path = pathlib.Path(depth_plot_export_path).joinpath(fname)
+
+                fig.savefig(pathlib.Path(depth_plot_export_path).as_posix(), bbox_inches=&#39;tight&#39;)                
+            except:
+                print(f&#39;Please specify a valid path for depth_plot_export_path, not {depth_plot_export_path}&#39;)
+
+
         if show_depth_curve:
             plt.show()
         else:
             plt.close()
-
-        if depth_plot_export_path is not None:
-            if isinstance(depth_plot_export_path, os.PathLike):
-                fig.savefig(depth_plot_export_path)
-            else:
-                print(f&#39;Please specify a valid path for depth_plot_export_path, not {depth_plot_export_path}&#39;)
 
         hvsr_results[&#39;Depth_Plot&#39;] = fig
     return hvsr_results</code></pre>
@@ -10749,6 +10795,81 @@ This is the default, so usually 'i' is not needed.
 <dt><code>plotly figure</code></dt>
 <dd>Only if return_fig is True.</dd>
 </dl></div>
+</dd>
+<dt id="sprit.plot_text"><code class="name flex">
+<span>def <span class="ident">plot_text</span></span>(<span>hvsr_data,<br>textplot_height=1,<br>textplot_width=1,<br>hvsr_textplot=True,<br>component_textplot=True,<br>spectrogram_textplot=True)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_text(hvsr_data, textplot_height=1, textplot_width=1, 
+              hvsr_textplot=True, component_textplot=True, spectrogram_textplot=True):
+    &#34;&#34;&#34;Function to plot HVSR results to terminal&#34;&#34;&#34;
+    import numpy as np
+
+    x = hvsr_data.x_freqs[&#39;Z&#39;][:-1]
+
+    y = hvsr_data.hvsr_curve
+    yp1 = hvsr_data.hvsrp[&#39;HV&#39;]
+    ym1 = hvsr_data.hvsrm[&#39;HV&#39;]-0.5
+
+    twFactor = textplot_width
+    numPlots = sum([hvsr_textplot, component_textplot, spectrogram_textplot])
+    thFactor = textplot_height * (3/numPlots)
+
+    if hvsr_textplot:
+        fig = pltxt.subplots(rows=1)
+        pltxt.subplot(1)
+        pltxt.plotsize(pltxt.tw()*twFactor, pltxt.th()*0.27 * thFactor)
+        pltxt.title(hvsr_data.site)
+        if pltxt.th()*0.27 * thFactor &gt; 20:
+            pltxt.plot(x, yp1, fillx=True, color=&#39;silver&#39;)
+            pltxt.plot(x, ym1, fillx=True, color=&#39;white&#39;)
+        pltxt.plot(x, y, color=&#39;black&#39;)
+        pltxt.xticks([])
+        pltxt.xscale(&#39;log&#39;)
+        pltxt.show()
+
+    # Component plot
+    if component_textplot:
+        fig = pltxt.subplots(rows=1)
+        import numpy as np
+        psdZ = np.median(np.stack(hvsr_data.hvsr_windows_df[&#39;psd_values_Z&#39;]), axis=0)[:-1]
+        psdE = np.median(np.stack(hvsr_data.hvsr_windows_df[&#39;psd_values_E&#39;]), axis=0)[:-1]
+        psdN = np.median(np.stack(hvsr_data.hvsr_windows_df[&#39;psd_values_N&#39;]), axis=0)[:-1]
+
+        pltxt.subplot(1)
+        pltxt.plotsize(pltxt.tw()*twFactor, pltxt.th()*0.27*thFactor)
+        pltxt.plot(x, psdZ, color=&#39;black&#39;, label=&#39;Z&#39;)
+        pltxt.plot(x, psdE, color=&#39;blue&#39;, label=&#39;E&#39;)
+        pltxt.plot(x, psdN, color=&#39;red&#39;, label=&#39;N&#39;)
+        pltxt.xscale(&#39;log&#39;)
+        pltxt.show()
+    
+    # Spectrogram Plot
+    if spectrogram_textplot:
+        fig = pltxt.subplots(rows=1)
+        pltxt.subplot(1)
+        pltxt.plotsize(pltxt.tw()*twFactor, pltxt.th()*0.45*thFactor)
+        data = np.stack(hvsr_data.hvsr_windows_df[&#34;HV_Curves&#34;])
+        norm = (255 * (data - data.min()) / (data.max() - data.min())).astype(np.uint8)
+
+        from PIL import Image
+        colored = matplotlib.cm.jet(norm)[..., :3]
+        rgb = (colored * 255).astype(np.uint8)
+        rgb = np.transpose(rgb, (1, 0, 2))
+
+        with tempfile.NamedTemporaryFile(suffix=&#34;.png&#34;, delete=False) as tmp:
+            img = Image.fromarray(rgb)
+            img.save(tmp.name, format=&#34;PNG&#34;)
+            temp_path = tmp.name
+            pltxt.image_plot(temp_path)
+
+        pltxt.show()</code></pre>
+</details>
+<div class="desc"><p>Function to plot HVSR results to terminal</p></div>
 </dd>
 <dt id="sprit.process_hvsr"><code class="name flex">
 <span>def <span class="ident">process_hvsr</span></span>(<span>hvsr_data,<br>horizontal_method=None,<br>freq_smooth='konno ohmachi',<br>f_smooth_width=40,<br>resample=True,<br>array_processing=True,<br>outlier_curve_percentile_threshold=False,<br>azimuth=None,<br>verbose=False)</span>
@@ -11959,6 +12080,10 @@ divided by the standard deviation calculated for the entire trace. This rolling 
         colNames = compNames
         col_prefix = &#39;HV_Curves&#39;
 
+
+    if 0 &lt; float(outlier_threshold) &lt; 1:
+        outlier_threshold = outlier_threshold * 100
+
     # Remove outlier depending on method, prototype as default if nothing else specified
     if str(outlier_method).lower() == &#39;none&#39; or outlier_method is None:
         # Skip all outlier removal
@@ -12199,7 +12324,7 @@ This is minimum number of points a point needs in its neighborhood to not be con
     # Start processing tasks
     if verbose:
         print(&#39;Using sprit.run() with the following parameters:&#39;)
-        print(f&#39;\tinput_data = {input_data}&#39;)
+        print(f&#39;\tinput_data = {str(input_data):.250}&#39;)
         print(f&#39;\tazimuth_calculation = {azimuth_calculation}&#39;)
         print(f&#39;\tnoise_removal = {noise_removal}&#39;)
         print(f&#39;\toutlier_curves_removal = {outlier_curves_removal}&#39;)
@@ -12797,20 +12922,6 @@ This is minimum number of points a point needs in its neighborhood to not be con
     # Data export and report display
     try:
         # Export processed data if hvsr_export_path(as pickle currently, default .hvsr extension)
-        if &#39;hvsr_export_path&#39; in kwargs.keys() or DPD[&#39;hvsr_export_path&#39;] is not None:
-            if kwargs[&#39;hvsr_export_path&#39;] is None:
-                pass
-            else:
-                if &#39;hvsr_export_ext&#39; in kwargs.keys():
-                    ext = kwargs[&#39;hvsr_export_ext&#39;]
-                else:
-                    ext = &#39;hvsr&#39;
-                export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs[&#39;hvsr_export_path&#39;], hvsr_export_ext=ext, verbose=verbose)
-        if &#39;json_export_path&#39; in kwargs.keys() or DPD[&#39;json_export_path&#39;] is not None:
-            export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
-            if len(export_json_kwargs.keys()) &gt; 0:
-                export_json(hvsr_results=hvsr_results, verbose=verbose, **export_json_kwargs)
-        
         if generate_reports:
             if &#39;show_plot_report&#39; in get_report_kwargs and not get_report_kwargs[&#39;show_plot_report&#39;]:
                 plt.close()
@@ -12829,6 +12940,20 @@ This is minimum number of points a point needs in its neighborhood to not be con
                 if &#39;show_depth_curve&#39; not in calcplot_depth_kwargs and &#39;suppress_report_outputs&#39; not in kwargs:
                     calcplot_depth_kwargs[&#39;show_depth_curve&#39;] = True
                 hvsr_results = sprit_calibration.calculate_depth(freq_input=hvsr_results, **calcplot_depth_kwargs)
+
+        if &#39;hvsr_export_path&#39; in kwargs.keys() or DPD[&#39;hvsr_export_path&#39;] is not None:
+            if kwargs[&#39;hvsr_export_path&#39;] is None:
+                pass
+            else:
+                if &#39;hvsr_export_ext&#39; in kwargs.keys():
+                    ext = kwargs[&#39;hvsr_export_ext&#39;]
+                else:
+                    ext = &#39;hvsr&#39;
+                export_hvsr(hvsr_data=hvsr_results, hvsr_export_path=kwargs[&#39;hvsr_export_path&#39;], hvsr_export_ext=ext, verbose=verbose)
+        if &#39;json_export_path&#39; in kwargs.keys() or DPD[&#39;json_export_path&#39;] is not None:
+            export_json_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(export_json).parameters.keys())}
+            if len(export_json_kwargs.keys()) &gt; 0:
+                export_json(hvsr_results=hvsr_results, verbose=verbose, **export_json_kwargs)
 
     except Exception as e:
         print(&#34;Error in data export or report generation. Results have been returned.\n&#34;)
@@ -15264,6 +15389,7 @@ If both are set to True, dict will override string.</dd>
 <li><code><a title="sprit.plot_input_stream" href="#sprit.plot_input_stream">plot_input_stream</a></code></li>
 <li><code><a title="sprit.plot_outlier_curves" href="#sprit.plot_outlier_curves">plot_outlier_curves</a></code></li>
 <li><code><a title="sprit.plot_results_plotly" href="#sprit.plot_results_plotly">plot_results_plotly</a></code></li>
+<li><code><a title="sprit.plot_text" href="#sprit.plot_text">plot_text</a></code></li>
 <li><code><a title="sprit.process_hvsr" href="#sprit.process_hvsr">process_hvsr</a></code></li>
 <li><code><a title="sprit.read_tromino_files" href="#sprit.read_tromino_files">read_tromino_files</a></code></li>
 <li><code><a title="sprit.remove_noise" href="#sprit.remove_noise">remove_noise</a></code></li>

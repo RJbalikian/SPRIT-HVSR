@@ -156,6 +156,7 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
             newBatchList.append(calculate_depth(freq_input=freq_input[site], **calc_depth_kwargs))
         return sprit_hvsr.HVSRBatch(newBatchList, df_as_read=freq_input.input_df)    
 
+    # Extract and standardize depth_model for a, b
     # initialize values
     a = 0
     b = 0
@@ -163,39 +164,41 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
     if isinstance(depth_model, (list, tuple, np.ndarray)) and len(depth_model) == 2:
         (a, b) = depth_model
 
-    # Fetch parameters for frequency-depth model
-    if isinstance(depth_model, (tuple, list)):
-        (a, b) = depth_model
-        if a == 0 or b == 0:
-            raise ValueError(f&#34;Model parameters (a, b)={depth_model} cannot be zero, check model inputs.&#34;)
-    elif isinstance(depth_model, dict):
-        depth_modelDict = {k.lower(): v for k, v in depth_model.items()}
-        a = depth_modelDict[&#39;a&#39;]
-        b = depth_modelDict[&#39;b&#39;]
-    elif isinstance(depth_model, str):
-        if depth_model.casefold() in list(map(str.casefold, model_parameters)):
-            for k, v in model_parameters.items():
-                if depth_model.casefold() == k.casefold():
-                    (a, b) = v
-                    break
-
-        elif depth_model.casefold() in swave_model_list:
-            depth_model_params = depth_model.casefold()
-
-        elif depth_model.casefold() == &#34;all&#34;:
-            depth_model_params = depth_model.casefold()
-
-        else:   # parameters a and b could be passed in as a parsable string
-            depth_model_params = depth_model.split(&#39;,&#39;)
-            # Work on re update[int(s) for s in re.findall(r&#34;[-+]?(?:\d*\.*\d+)&#34;, 
-            # depth_model)]  #figure this out later for floating points; works for integers
-            (a, b) = depth_model_params
+        # Fetch parameters for frequency-depth model
+        if isinstance(depth_model, (tuple, list)):
+            (a, b) = depth_model
             if a == 0 or b == 0:
-                raise ValueError(&#34;Parameters cannot be zero, check model inputs&#34;)            
+                raise ValueError(f&#34;Model parameters (a, b)={depth_model} cannot be zero, check model inputs.&#34;)
+        elif isinstance(depth_model, dict):
+            depth_modelDict = {k.lower(): v for k, v in depth_model.items()}
+            a = depth_modelDict[&#39;a&#39;]
+            b = depth_modelDict[&#39;b&#39;]
+        elif isinstance(depth_model, str):
+            if depth_model.casefold() in list(map(str.casefold, model_parameters)):
+                for k, v in model_parameters.items():
+                    if depth_model.casefold() == k.casefold():
+                        (a, b) = v
+                        break
 
-    # Standardize b as positive for input to function
-    if b &lt; 0:
-        b = b * -1
+            elif depth_model.casefold() in swave_model_list:
+                depth_model_params = depth_model.casefold()
+
+            elif depth_model.casefold() == &#34;all&#34;:
+                depth_model_params = depth_model.casefold()
+
+            else:   # parameters a and b could be passed in as a parsable string
+                depth_model_params = depth_model.split(&#39;,&#39;)
+                # Work on re update[int(s) for s in re.findall(r&#34;[-+]?(?:\d*\.*\d+)&#34;, 
+                # depth_model)]  #figure this out later for floating points; works for integers
+                (a, b) = depth_model_params
+                if a == 0 or b == 0:
+                    raise ValueError(&#34;Parameters cannot be zero, check model inputs&#34;)            
+
+        # Standardize b as positive for input to function
+        if b &lt; 0:
+            b = b * -1
+        
+        depth_model = (a, b)
 
     # Get frequency input
     # Checking if freq_input is HVSRData object
@@ -387,7 +390,8 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
         tableReport[&#34;DepthModelType&#34;] = depthModelTypeList
 
         mplList = [&#39;matplotlib&#39;, &#39;mpl&#39;, &#39;m&#39;,]
-        if str(plot_engine).lower() in mplList:
+        # Currently only MPL supported
+        if str(plot_engine).lower() in mplList or str(plot_engine).lower() not in mplList:
             # Do plotting work
             if fig is None and ax is None:
                 fig, ax = plt.subplots()
@@ -399,6 +403,8 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
             if hasattr(freq_input, &#39;hvsr_curve&#39;) and generate_depth_curve:
                 pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
                 pdc_kwargs[&#39;show_depth_curve&#39;] = show_depth_curve
+                pdc_kwargs[&#39;depth_plot_export_path&#39;] = depth_plot_export_path
+                pdc_kwargs[&#39;depth_model&#39;] = depth_model
                 pdc_kwargs[&#39;fig&#39;] = fig
                 pdc_kwargs[&#39;ax&#39;] = ax
                 freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input,

@@ -101,7 +101,10 @@ el.replaceWith(d);
                      sprit_hvsr.export_data,
                      sprit_hvsr.export_hvsr,
                      sprit_hvsr.export_report,
-                     sprit_hvsr.plot_hvsr]
+                     sprit_hvsr.plot_hvsr,
+                     sprit_calibration.calculate_depth,
+                     sprit_plot.plot_depth_curve,
+                     sprit_plot.plot_text]
 
     hvsrFunDict = {sprit_hvsr.run: inspect.signature(sprit_hvsr.run).parameters,
                    sprit_hvsr.input_params: inspect.signature(sprit_hvsr.input_params).parameters,
@@ -117,7 +120,10 @@ el.replaceWith(d);
                    sprit_hvsr.export_data: inspect.signature(sprit_hvsr.export_data).parameters,
                    sprit_hvsr.export_hvsr: inspect.signature(sprit_hvsr.export_hvsr).parameters,
                    sprit_hvsr.export_report: inspect.signature(sprit_hvsr.export_report).parameters,
+                   sprit_plot.plot_depth_curve: inspect.signature(sprit_plot.plot_depth_curve).parameters,
+                   sprit_calibration.calculate_depth: inspect.signature(sprit_calibration.calculate_depth).parameters,
                    sprit_hvsr.plot_hvsr: inspect.signature(sprit_hvsr.plot_hvsr).parameters,
+                   sprit_plot.plot_text: inspect.signature(sprit_plot.plot_text).parameters,
                    }
 
     # Get default parameters from main functions
@@ -127,7 +133,7 @@ el.replaceWith(d);
 
     # Add argument and options to the parser
     intermediate_params_list = [&#39;params&#39;, &#39;input_parameters&#39;, &#39;input&#39;, &#39;hvsr_data&#39;, &#39;hvsr_results&#39;]
-    storeTrueList = [&#39;noise_removal&#39;, &#39;outlier_curves_removal&#39;,
+    storeTrueList = [&#39;noise_removal&#39;, &#39;outlier_curves_removal&#39;, &#39;suppress_report_outputs&#39;,
                      &#39;show_pdf_report&#39;, &#39;show_plot_report&#39;, &#39;plot_input_stream&#39;, &#39;remove_response&#39;,
                       &#39;show_outlier_plot&#39;, &#39;suppress_report_outputs&#39;, &#39;show_report_outputs&#39;,
                         &#39;return_json_string&#39;, &#39;include_dataframe&#39;, &#39;include_plots&#39;, &#39;export_edited_stream&#39;,&#39;use_subplots&#39;,
@@ -159,6 +165,9 @@ el.replaceWith(d);
     # Map command-line arguments/options to kwargs
     kwargs = {}
     for arg_name, arg_value in vars(args).items():
+        if arg_name == &#39;input_data&#39;:
+            inData = arg_value
+
         if isinstance(arg_value, str):
             if &#34;=&#34; in arg_value:
                 arg_value = {arg_value.split(&#39;=&#39;)[0]: arg_value.split(&#39;=&#39;)[1]}
@@ -185,8 +194,8 @@ el.replaceWith(d);
             if is_default:
                 continue
 
+        do_terminal_plot=True
         if not is_default:
-            print(arg_value)
             if str(arg_value).replace(&#39;.&#39;, &#39;&#39;).replace(&#39;,&#39;,&#39;&#39;).isnumeric():
                 arg_value = float(arg_value)
             elif isinstance(arg_value, (tuple, list)):
@@ -197,8 +206,10 @@ el.replaceWith(d);
                 arg_value = avList
             kwargs[arg_name] = arg_value
 
+    if &#39;input_data&#39; not in kwargs:
+        kwargs[&#39;input_data&#39;] = inData
     # Call the sprit.run function with the generated kwargs
-    kwargs[&#39;input_data&#39;] = kwargs[&#39;input_data&#39;].replace(&#34;&#39;&#34;, &#34;&#34;)  # Remove single quotes to reduce errors
+    kwargs[&#39;input_data&#39;] = str(kwargs[&#39;input_data&#39;]).replace(&#34;&#39;&#34;, &#34;&#34;)  # Remove single quotes to reduce errors
     if str(kwargs[&#39;input_data&#39;]).lower() == &#39;gui&#39;:
         sprit_hvsr.gui()
     else:
@@ -220,8 +231,12 @@ el.replaceWith(d);
         print(&#39;\tNon-default kwargs:&#39;)
         [print(f&#34;\t\t {k} = {v}&#34;) for k, v in kwargs.items()]
         print()
+        
+        hvData =  sprit_hvsr.run(**kwargs)
 
-        sprit_hvsr.run(**kwargs)</code></pre>
+        if do_terminal_plot:
+            ptkwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_text).parameters.keys())}
+            sprit_plot.plot_text(hvData, **ptkwargs)</code></pre>
 </details>
 <div class="desc"></div>
 </dd>

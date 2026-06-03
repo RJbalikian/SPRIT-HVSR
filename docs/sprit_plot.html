@@ -872,7 +872,7 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
             curvePlot = np.tile(curvePlot, (xSize, 1))
             minY = min(yVals)
             maxY = max(yVals)
-            yLims = [minY, maxY]
+            #yLims = [minY, maxY]
             xBase = -10
             xCap = xBase + xSize + 1
             xLims = [xBase, xCap-1]
@@ -980,17 +980,32 @@ If None, uses elevation data in HVSRBatch specified by hvsr_data, by default Non
         #fig.set_layout_engine(&#39;constrained&#39;)
 
         plt.sca(ax)
-        
+
+        if depth_plot_export_path is not None:
+            try:
+                if depth_plot_export_path is True:
+                    if pathlib.Path(str(hvsr_results[&#39;input_data&#39;])).exists():
+                        fname = f&#39;{hvsr_results.site}_DepthCurve_{stats.starttime.strftime(&#34;%Y%m%d&#34;)}-{stats.starttime.strftime(&#34;%H%M&#34;)}-{hvsr_results.station}-{datetime.date.today().strftime(&#34;%Y-%m-%d&#34;)}.png&#39;
+
+                        depth_plot_export_path = pathlib.Path(str(hvsr_results[&#39;input_data&#39;])).with_name(fname)
+                elif pathlib.Path(depth_plot_export_path).is_dir():
+                    st = hvsr_results.stream
+                    stats = st[0].stats
+                    fname = f&#39;{hvsr_results.site}_DepthCurve_{stats.starttime.strftime(&#34;%Y%m%d&#34;)}-{stats.starttime.strftime(&#34;%H%M&#34;)}-{hvsr_results.station}-{datetime.date.today().strftime(&#34;%Y-%m-%d&#34;)}.png&#39;
+                    if not pathlib.Path(depth_plot_export_path).exists():
+                        print(&#34;Creating directory for Depth Curve Image export at&#34;, depth_plot_export_path)
+                        pathlib.Path(depth_plot_export_path).mkdir(exist_ok=True, parents=True)
+                    depth_plot_export_path = pathlib.Path(depth_plot_export_path).joinpath(fname)
+
+                fig.savefig(pathlib.Path(depth_plot_export_path).as_posix(), bbox_inches=&#39;tight&#39;)                
+            except:
+                print(f&#39;Please specify a valid path for depth_plot_export_path, not {depth_plot_export_path}&#39;)
+
+
         if show_depth_curve:
             plt.show()
         else:
             plt.close()
-
-        if depth_plot_export_path is not None:
-            if isinstance(depth_plot_export_path, os.PathLike):
-                fig.savefig(depth_plot_export_path)
-            else:
-                print(f&#39;Please specify a valid path for depth_plot_export_path, not {depth_plot_export_path}&#39;)
 
         hvsr_results[&#39;Depth_Plot&#39;] = fig
     return hvsr_results</code></pre>
@@ -1737,6 +1752,81 @@ If "well", will plot a color-coded borehole-style plot.</dd>
 <dd>Only if return_fig is True.</dd>
 </dl></div>
 </dd>
+<dt id="sprit.sprit_plot.plot_text"><code class="name flex">
+<span>def <span class="ident">plot_text</span></span>(<span>hvsr_data,<br>textplot_height=1,<br>textplot_width=1,<br>hvsr_textplot=True,<br>component_textplot=True,<br>spectrogram_textplot=True)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_text(hvsr_data, textplot_height=1, textplot_width=1, 
+              hvsr_textplot=True, component_textplot=True, spectrogram_textplot=True):
+    &#34;&#34;&#34;Function to plot HVSR results to terminal&#34;&#34;&#34;
+    import numpy as np
+
+    x = hvsr_data.x_freqs[&#39;Z&#39;][:-1]
+
+    y = hvsr_data.hvsr_curve
+    yp1 = hvsr_data.hvsrp[&#39;HV&#39;]
+    ym1 = hvsr_data.hvsrm[&#39;HV&#39;]-0.5
+
+    twFactor = textplot_width
+    numPlots = sum([hvsr_textplot, component_textplot, spectrogram_textplot])
+    thFactor = textplot_height * (3/numPlots)
+
+    if hvsr_textplot:
+        fig = pltxt.subplots(rows=1)
+        pltxt.subplot(1)
+        pltxt.plotsize(pltxt.tw()*twFactor, pltxt.th()*0.27 * thFactor)
+        pltxt.title(hvsr_data.site)
+        if pltxt.th()*0.27 * thFactor &gt; 20:
+            pltxt.plot(x, yp1, fillx=True, color=&#39;silver&#39;)
+            pltxt.plot(x, ym1, fillx=True, color=&#39;white&#39;)
+        pltxt.plot(x, y, color=&#39;black&#39;)
+        pltxt.xticks([])
+        pltxt.xscale(&#39;log&#39;)
+        pltxt.show()
+
+    # Component plot
+    if component_textplot:
+        fig = pltxt.subplots(rows=1)
+        import numpy as np
+        psdZ = np.median(np.stack(hvsr_data.hvsr_windows_df[&#39;psd_values_Z&#39;]), axis=0)[:-1]
+        psdE = np.median(np.stack(hvsr_data.hvsr_windows_df[&#39;psd_values_E&#39;]), axis=0)[:-1]
+        psdN = np.median(np.stack(hvsr_data.hvsr_windows_df[&#39;psd_values_N&#39;]), axis=0)[:-1]
+
+        pltxt.subplot(1)
+        pltxt.plotsize(pltxt.tw()*twFactor, pltxt.th()*0.27*thFactor)
+        pltxt.plot(x, psdZ, color=&#39;black&#39;, label=&#39;Z&#39;)
+        pltxt.plot(x, psdE, color=&#39;blue&#39;, label=&#39;E&#39;)
+        pltxt.plot(x, psdN, color=&#39;red&#39;, label=&#39;N&#39;)
+        pltxt.xscale(&#39;log&#39;)
+        pltxt.show()
+    
+    # Spectrogram Plot
+    if spectrogram_textplot:
+        fig = pltxt.subplots(rows=1)
+        pltxt.subplot(1)
+        pltxt.plotsize(pltxt.tw()*twFactor, pltxt.th()*0.45*thFactor)
+        data = np.stack(hvsr_data.hvsr_windows_df[&#34;HV_Curves&#34;])
+        norm = (255 * (data - data.min()) / (data.max() - data.min())).astype(np.uint8)
+
+        from PIL import Image
+        colored = matplotlib.cm.jet(norm)[..., :3]
+        rgb = (colored * 255).astype(np.uint8)
+        rgb = np.transpose(rgb, (1, 0, 2))
+
+        with tempfile.NamedTemporaryFile(suffix=&#34;.png&#34;, delete=False) as tmp:
+            img = Image.fromarray(rgb)
+            img.save(tmp.name, format=&#34;PNG&#34;)
+            temp_path = tmp.name
+            pltxt.image_plot(temp_path)
+
+        pltxt.show()</code></pre>
+</details>
+<div class="desc"><p>Function to plot HVSR results to terminal</p></div>
+</dd>
 </dl>
 </section>
 <section>
@@ -1760,6 +1850,7 @@ If "well", will plot a color-coded borehole-style plot.</dd>
 <li><code><a title="sprit.sprit_plot.plot_input_stream" href="#sprit.sprit_plot.plot_input_stream">plot_input_stream</a></code></li>
 <li><code><a title="sprit.sprit_plot.plot_outlier_curves" href="#sprit.sprit_plot.plot_outlier_curves">plot_outlier_curves</a></code></li>
 <li><code><a title="sprit.sprit_plot.plot_results_plotly" href="#sprit.sprit_plot.plot_results_plotly">plot_results_plotly</a></code></li>
+<li><code><a title="sprit.sprit_plot.plot_text" href="#sprit.sprit_plot.plot_text">plot_text</a></code></li>
 </ul>
 </li>
 </ul>
