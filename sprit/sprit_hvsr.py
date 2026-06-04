@@ -141,7 +141,7 @@ class HVSRBatch:
             Filepath extension to use in `glob()` function for filetypes to import, if batch_input is a filepath.
         batch_use : {dict, list, tuple, None}
             Intended to be used as dict with keys "site", "filepath", and "batch". 
-            In this case, should be {'site':"name_of_df_col_with_sitenames", 'filepath':"name_of_df_col_with_filepaths_to_data", 'batch':values_to_include}.
+            In this case, should be {'site':"name_of_df_col_with_sitenames", 'filepath':"name_of_df_col_with_filepaths_to_data", 'batch': values_to_include}.
             values_to_include can be a value (or list of values) in a column called "batch" to specify that that row should be included in the HVSRBatch object or
             a dictionary where they keys are column names and the values are the values to look for in each column name for inclusion in HVSRBatch object.
             If not specified, defaults to None and uses all rows in dataframe.
@@ -287,7 +287,7 @@ class HVSRBatch:
                         return dataObj
 
                     if isinstance(batch_use, dict):
-                        # Dictionary of {'site':"site_col", 'filepath':'path_col', 'batch':values_in_batch_col_to_include}
+                        # Dictionary of {'site':"site_col", 'filepath':'path_col', 'batch': values_in_batch_col_to_include}
                         if len(list(batch_use.keys())) != 3:
                             warnMsg = f"batch_use dict should have three keys called 'site', 'filepath', and 'batch' (not {len(list(batch_use.keys()))}: {list(batch_use.keys())}). \n\t'batch' may be changed to name of column you are using to specify inclusion in HVSRBatch object, or input DataFrame should have column called 'batch'"
                             warnings.Warn(warnMsg)
@@ -387,7 +387,7 @@ class HVSRBatch:
         
     def append(self, hvsr_data):
         """Alias of add()"""
-        add(self, hvsr_data)
+        self.add(self, hvsr_data)
         
     def export_hvsr(self, hvsr_export_path=True, hvsr_export_ext='hvsr'):
         """Method to export HVSRData objects in HVSRBatch container to indivdual .hvsr pickle files.
@@ -430,7 +430,7 @@ class HVSRBatch:
             Based on input, creates either a shallow or deep copy of the HVSRBatch object. Shallow is equivalent of copy.copy(). Input of 'deep' is equivalent of copy.deepcopy() (still experimental). Defaults to shallow.
     
         """
-        if type.lower()=='deep':
+        if type.lower() == 'deep':
             return HVSRBatch(copy.deepcopy(self._batch_dict), df_as_read=self._input_df)
         else:
             return HVSRBatch(copy.copy(self._batch_dict), df_as_read=self._input_df)
@@ -486,7 +486,7 @@ class HVSRBatch:
                         get_report(self[sitename], **kwargs)
                 return plotDict
             
-        #Only report_formats left is print, doesn't return anything, so doesn't matter if defalut or not
+        # Only report_formats left is print, doesn't return anything, so doesn't matter if defalut or not
         for sitename in self:
             get_report(self[sitename], **kwargs)
         return
@@ -522,7 +522,6 @@ class HVSRBatch:
 
         self.sites = list(self.batch_dict.keys())
 
-
     def export_settings(self, site_name=None, export_settings_path='default', export_settings_type='all', include_location=False, verbose=True):
         """Method to export settings from HVSRData object in HVSRBatch object. 
         
@@ -547,7 +546,7 @@ class HVSRBatch:
         --------
         export_settings
         """
-        #If no site name selected, use first site
+        # If no site name selected, use first site
         if site_name is None:
             site_name = self.sites[0]
             
@@ -562,7 +561,8 @@ class HVSRBatch:
 
     def __getitem__(self, key):
         return getattr(self, key)
-    
+
+
 # Class for HVSR site data
 class HVSRData:
     """HVSRData is the basic data class of the sprit package. 
@@ -574,9 +574,7 @@ class HVSRData:
     """
     @check_instance    
     def __init__(self, params):
-        #self.params = params
         self.batch = False
-        #self.tsteps_used = []
 
         for key, value in params.items():
             if key == 'input_params':
@@ -584,8 +582,6 @@ class HVSRData:
                     setattr(self, k, v)
             else:
                 setattr(self, key, value)
-
-                
 
         self.processing_status = {'input_params_status': None,
                                   'fetch_data_status': None,
@@ -596,7 +592,6 @@ class HVSRData:
                                   'remove_outlier_curves_status': None,
                                   'overall_status': False}
 
-
     def __setitem__(self, key, value):
         setattr(self, key, value)
 
@@ -605,10 +600,10 @@ class HVSRData:
 
     def __str__(self):
         attrsToUse = ['project', 'site', 
-            'instrument', 'network', 'station', 'location', 'channels',
-            'acq_date', 'starttime', 'endtime',
-            'xcoord', 'ycoord', 'input_crs', 'elevation', 'elev_unit',
-            ]
+                      'instrument', 'network', 'station', 'location', 'channels',
+                      'acq_date', 'starttime', 'endtime',
+                      'xcoord', 'ycoord', 'input_crs', 'elevation', 'elev_unit',
+                      ]
 
         if not all([atu in self.keys() for atu in attrsToUse]):
             return 'String representation cannot be generated. Object not instatianted correctly using sprit.input_params()'
@@ -633,9 +628,9 @@ class HVSRData:
         elif 'hvsr_id' in self.keys():
             hvsrIDStr = self['hvsr_id']
 
-        titleInfoStr =f"\nSpRIT HVSR DATA INFORMATION\n"
+        titleInfoStr = "\nSpRIT HVSR DATA INFORMATION\n"
         titleLen = len(titleInfoStr)
-        bigLineBreak = "—"*titleLen+ '\n'
+        bigLineBreak = "—" * titleLen + '\n'
         titleInfoStr += bigLineBreak
         titleInfoStr += f"Site Name: {self.site}\nProject: ({projStr})\n"
         titleInfoStr = f"{titleInfoStr}HVSRID (autogenerated): {hvsrIDStr}\n"
@@ -675,7 +670,7 @@ class HVSRData:
         
         transLocStr = ''
         if inCRSStr != outCRSStr:
-            transLocStr = f"{xcoordStr}, {ycoordstr} (transformed to output_crs: {outCRSStr})\n"
+            transLocStr = f"{xcoordStr}, {ycoordStr} (transformed to output_crs: {outCRSStr})\n"
 
         wgs84Str = f"{lonStr:.5f}°, {latStr:.5f}° | Lon/Lat in WGS84 (EPSG:4326)"
 
@@ -728,24 +723,23 @@ class HVSRData:
             acqTimeStr += f"\tEnded at  : {eTimeStr}\n"
         acqTimeStr += acqDurStr
 
-
         # PEAK INFORMATION (IF CALCULATED)
         peakInfoStr = ''
-        azimuth='HV'
+        azimuth = 'HV'
         try:
             if 'BestPeak' in self.keys():
                 curvTestsPassed = (self['BestPeak'][azimuth]['PassList']['WinLen'] +
-                                    self['BestPeak'][azimuth]['PassList']['SigCycles']+
-                                    self['BestPeak'][azimuth]['PassList']['LowCurveStD'])
+                                   self['BestPeak'][azimuth]['PassList']['SigCycles'] +
+                                   self['BestPeak'][azimuth]['PassList']['LowCurveStD'])
                 curvePass = curvTestsPassed > 2
                 
-                #Peak Pass?
-                peakTestsPassed = ( self['BestPeak'][azimuth]['PassList']['ProminenceLow'] +
-                            self['BestPeak'][azimuth]['PassList']['ProminenceHi']+
-                            self['BestPeak'][azimuth]['PassList']['AmpClarity']+
-                            self['BestPeak'][azimuth]['PassList']['FreqStability']+
-                            self['BestPeak'][azimuth]['PassList']['LowStDev_Freq']+
-                            self['BestPeak'][azimuth]['PassList']['LowStDev_Amp'])
+                # Peak Pass?
+                peakTestsPassed = (self['BestPeak'][azimuth]['PassList']['ProminenceLow'] +
+                                   self['BestPeak'][azimuth]['PassList']['ProminenceHi'] +
+                                   self['BestPeak'][azimuth]['PassList']['AmpClarity'] +
+                                   self['BestPeak'][azimuth]['PassList']['FreqStability'] +
+                                   self['BestPeak'][azimuth]['PassList']['LowStDev_Freq'] +
+                                   self['BestPeak'][azimuth]['PassList']['LowStDev_Amp'])
                 peakPass = peakTestsPassed >= 5
 
                 peakInfoStr = "\nCALCULATED F₀\n"
@@ -783,14 +777,6 @@ class HVSRData:
             strRep += ps
         
         return strRep
-
-        #try:
-            # Check if running in IPython environment
-        #    from IPython.display import display, HTML
-        #    return f"<b>Person Information:</b><br>Name: {self.name}<br>Age: {self.age}"
-        #except ImportError:
-            # Fallback for terminal/console
-        #    return f"Person Information:\nName: {self.name}\nAge: {self.age}"
 
     def __repr__(self):
         return self.__str__()
@@ -953,7 +939,7 @@ class HVSRData:
         plot_azimuth
         """
         if 'close_figs' not in kwargs.keys():
-            kwargs['close_figs']=True
+            kwargs['close_figs'] = True
         plot_return = plot_hvsr(self, **kwargs)
         plt.show()
         return plot_return
@@ -977,13 +963,6 @@ class HVSRData:
 
         else:
             warnings.Warn("HVSRData.select() method applied, but 'stream' attribute (obspy.Stream object) not found")
-
-    # ATTRIBUTES
-    #@params.setter
-    #def params(self, value):
-    #    if not (isinstance(value, dict)):
-            raise ValueError("params must be a dict type, currently passing {} type.".format(type(value)))
-    #    self._params = value
     
     # batch
     @property
@@ -1009,7 +988,7 @@ class HVSRData:
             raise ValueError("batch must be boolean type")
         self._batch = value
 
-    #PPSD object from obspy (static)
+    # PPSD object from obspy (static)
     @property
     def ppsds_obspy(self):
         """The original ppsd information from the obspy.signal.spectral_estimation.PPSD(), so as to keep original if copy is manipulated/changed."""        
@@ -1025,9 +1004,9 @@ class HVSRData:
                 for key in value.keys():
                     if not isinstance(value[key], obspy.signal.spectral_estimation.PPSD):
                         raise ValueError("ppsds_obspy must be obspy.PPSD or dict with osbpy.PPSDs")
-        self._ppsds_obspy=value
+        self._ppsds_obspy = value
                         
-    #PPSD dict, copied from obspy ppsds (dynamic)
+    # PPSD dict, copied from obspy ppsds (dynamic)
     @property
     def ppsds(self):
         """Dictionary copy of the class object obspy.signal.spectral_estimation.PPSD(). The dictionary copy allows manipulation of the data in PPSD, whereas that data cannot be easily manipulated in the original Obspy object.
@@ -1043,14 +1022,7 @@ class HVSRData:
     def ppsds(self, value):
         if not isinstance(value, dict):
             raise ValueError("ppsds dict with infomration from osbpy.PPSD (created by sprit.generate_psds())")                  
-        self._ppsds=value
-
-# Test guis
-def _gui_test():
-    import subprocess
-    print(sprit_tkinter_ui.__file__)
-    guiFile = sprit_tkinter_ui.__file__
-    subprocess.call(guiFile, shell=True)
+        self._ppsds = value
 
 
 # Launch a gui
@@ -1067,25 +1039,21 @@ def gui(kind: str = 'browser'):
         
     """
     browserList = ['browser', 'streamlit', 'default', 'd', 'b', 's']
-    windowList = ['windowed', 'window', 'tkinter', 'tk', 't', 'win']
     widgetList = ['widget', 'jupyter', 'notebook', 'nb']
     liteList = ['lite', 'light', 'basic', 'l']
 
     if kind.lower() in browserList:
         import subprocess
-        streamlitPath = pathlib.Path(__file__).parent.joinpath("sprit_streamlit_ui.py")
-        cmd = ['streamlit', 'run', streamlitPath.as_posix()]
-        #subprocess.run(cmd)
-        import sys
+        # streamlitPath = pathlib.Path(__file__).parent.joinpath("sprit_streamlit_ui.py")
+        # import sys
 
-        from streamlit.web import cli as stcli
-        import streamlit
-        import sys
+        # from streamlit.web import cli as stcli
+        # import streamlit
 
-        import subprocess
         import tempfile
 
-        temp_dir = tempfile.TemporaryDirectory()
+        # temp_dir = tempfile.TemporaryDirectory()
+        
         def run_streamlit_app(path_dir):
             temp_dir = tempfile.TemporaryDirectory()
             # create a temporary directory
@@ -1112,50 +1080,8 @@ def gui(kind: str = 'browser'):
             # clean up the temporary directory when done
             temp_dir.cleanup()
         
-        #with open(streamlitPath.parent.as_posix(), 'r') as file:
-        #    appText = file.read()
-
         run_streamlit_app(pathlib.Path(__name__).parent)
 
-        #streamlit.web.bootstrap.run(streamlitPath.as_posix(), '', [], [])
-        #process = subprocess.Popen(["streamlit", "run", os.path.join(
-        #            'application', 'main', 'services', 'streamlit_app.py')])             
-    elif kind.lower() in windowList:
-        #guiPath = pathlib.Path(os.path.realpath(__file__))
-        try:
-            import tkinter as tk
-            from sprit.sprit_tkinter_ui import SPRIT_App
-        except:
-            if sys.platform == 'linux':
-                raise ImportError('The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use "apt-get install python-tk" or "apt-get install python3-tk" to install tkinter. You may need to use the sudo command at the start of those commands.')
-            else:
-                print("Tkinter may not be installed on your system, or is not functioning correctly. Please download and install tkinter, or use another interface.")
-        
-        def on_gui_closing():
-            plt.close('all')
-            gui_root.quit()
-            gui_root.destroy()
-
-        if sys.platform == 'linux':
-            if not pathlib.Path("/usr/share/doc/python3-tk").exists():
-                warnings.warn('The SpRIT graphical interface uses tkinter, which ships with python but is not pre-installed on linux machines. Use "apt-get install python-tk" or "apt-get install python3-tk" to install tkinter. You may need to use the sudo command at the start of those commands.')
-
-        gui_root = tk.Tk()
-        try:
-            try:
-                icon_path = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources').joinpath("icon").joinpath('sprit_icon_alpha.ico') 
-                gui_root.iconbitmap(icon_path.as_posix())
-            except:
-                icon_path = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources').joinpath("icon").joinpath('sprit_icon.png') 
-                gui_root.iconphoto(False, tk.PhotoImage(file=icon_path.as_posix()))
-        except Exception as e:
-            print("ICON NOT LOADED, still opening GUI")
-
-        gui_root.resizable(True, True)
-        spritApp = SPRIT_App(master=gui_root)  # Open the app with a tk.Tk root
-
-        gui_root.protocol("WM_DELETE_WINDOW", on_gui_closing)    
-        gui_root.mainloop()  # Run the main loop
     elif kind.lower() in widgetList:
         try:
             sprit_jupyter_UI.create_jupyter_ui()
@@ -1169,6 +1095,7 @@ def gui(kind: str = 'browser'):
             
     elif kind.lower() in liteList:
         print("Lite GUI is not currently supported")
+
 
 # FUNCTIONS AND METHODS
 # The run function to rule them all (runs all needed for simply processing HVSR)
@@ -1286,7 +1213,7 @@ def run(input_data=None, source='file',
         if DPD['verbose']:
             verbose = True
             orig_args['verbose'] = verbose
-            print(f"verbose parameter has been updated from defaults.json to True")
+            print("verbose parameter has been updated from defaults.json to True")
         del DPD['verbose']
     if 'input_data' in DPD:
         del DPD['input_data']
@@ -1356,23 +1283,18 @@ def run(input_data=None, source='file',
             if skip_steps is None or 'input_params' not in skip_steps:
                 # Check for any updated defaults
                 updated_ip_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(input_params).parameters.keys())}
-                input_params_kwargs.update({k: v for k, v in updated_ip_defaults.items() if k not in input_params_kwargs}) # Don't overwrite specified kwargs
+                input_params_kwargs.update({k: v for k, v in updated_ip_defaults.items() if k not in input_params_kwargs})  # Don't overwrite specified kwargs
                 params = input_params(input_data=input_data, verbose=verbose, **input_params_kwargs)
             else:
-                params=input_data
+                params = input_data
         except Exception as e:
             if hasattr(e, 'message'):
                 errMsg = e.message
             else:
                 errMsg = e
-            
             print(f"ERROR during input_params(): {errMsg}")        
             # Even if batch, this is reading in data for all sites so we want to raise error, not just warn
             raise RuntimeError('Input parameters not read correctly, see sprit.input_params() function and parameters')
-            # If input_params fails, initialize params as an HVSRDATA
-            #params = {'processing_status':{'input_params_status':False, 'overall_status':False}}
-            #params.update(input_params_kwargs)
-            #params = sprit_utils._make_it_classy(params)
 
         # Fetch Data
         hvsrDataIN = params
@@ -1386,7 +1308,7 @@ def run(input_data=None, source='file',
             if skip_steps is None or 'fetch_data' not in skip_steps:
                 updated_fd_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(fetch_data).parameters.keys())}
                 updated_fd_defaults.update({k: v for k, v in DPD.items() if k in tuple(inspect.signature(read_tromino_files).parameters.keys())})
-                fetch_data_kwargs.update({k:v for k,v in updated_fd_defaults.items() if k not in fetch_data_kwargs})
+                fetch_data_kwargs.update({k: v for k, v in updated_fd_defaults.items() if k not in fetch_data_kwargs})
                 if 'remove_response' in kwargs and kwargs['remove_response']:
                     fetch_data_kwargs['update_metadata'] = True
                 hvsrDataIN = fetch_data(input_parameters=params, source=source, verbose=verbose, **fetch_data_kwargs)
@@ -1412,7 +1334,7 @@ def run(input_data=None, source='file',
         
         # Loop through each site and run sprit.run() for each HVSRData object
         for site_name, site_data in hvsrDataIN.items():
-            run_kwargs = {}  #orig_args.copy()  # Make a copy so we don't accidentally overwrite
+            run_kwargs = {}  # orig_args.copy()  # Make a copy so we don't accidentally overwrite
             print(f'\n\n**PROCESSING DATA FOR SITE {site_name.upper()}**\n')
             run_kwargs['input_data'] = site_data
             # Update run kwargs       
@@ -1485,10 +1407,10 @@ def run(input_data=None, source='file',
     azList = ['azimuth', 'single azimuth', 'single']
     
     # Correct for shorthand angles
-    angleDict = {'n':0,  'north':0,   'ne':45,  'northeast':45,
-                'e':90,  'east':90,   'se':135, 'southeast':135,
-                's':180, 'south':180, 'sw':225, 'soutwest':225,
-                'w':270, 'west':270,  'nw':315, 'northwest':315}
+    angleDict = {'n': 0,   'north': 0,   'ne': 45,  'northeast': 45,
+                 'e': 90,  'east': 90,   'se': 135, 'southeast': 135,
+                 's': 180, 'south': 180, 'sw': 225, 'soutwest': 225,
+                 'w': 270, 'west': 270,  'nw': 315, 'northwest': 315}
 
     if 'azimuth_type' in azimuth_kwargs:
         if str(azimuth_kwargs['azimuth_type']).lower() == 'none':
@@ -1531,7 +1453,7 @@ def run(input_data=None, source='file',
             kwargs['horizontal_method'] = 'Single Azimuth'
 
         updated_az_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(calculate_azimuth).parameters.keys())}
-        azimuth_kwargs.update({k: v for k, v in updated_az_defaults.items() if k not in azimuth_kwargs}) # Don't overwrite specified kwargs
+        azimuth_kwargs.update({k: v for k, v in updated_az_defaults.items() if k not in azimuth_kwargs})  # Don't overwrite specified kwargs
 
         try:
             hvsr_az = calculate_azimuth(hvsrDataIN, verbose=verbose, **azimuth_kwargs)
@@ -1557,7 +1479,7 @@ def run(input_data=None, source='file',
         remove_noise_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
         if noise_removal or remove_noise_kwargs != {}:
             updated_rn_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(remove_noise).parameters.keys())}
-            remove_noise_kwargs.update({k:v for k,v in updated_rn_defaults.items() if k not in remove_noise_kwargs})
+            remove_noise_kwargs.update({k: v for k, v in updated_rn_defaults.items() if k not in remove_noise_kwargs})
             try:
                 if skip_steps is None or 'remove_noise' not in skip_steps:
                     data_noiseRemoved = remove_noise(hvsr_data=data_noiseRemoved, verbose=verbose, **remove_noise_kwargs)   
@@ -1595,8 +1517,6 @@ def run(input_data=None, source='file',
                 
                 data_noiseRemoved[site_name]['processing_status']['remove_noise_status'] = None
         
-                # If it wasn't originally HVSRBatch, make it HVSRData object again
-                #if not data_noiseRemoved[site_name]['batch']:
                 data_noiseRemoved = data_noiseRemoved[site_name]
     except Exception as e:
         if (source == 'file' or source == 'raw'):
@@ -1614,7 +1534,7 @@ def run(input_data=None, source='file',
         PPSDkwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(PPSD).parameters.keys())}
         updated_gp_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(generate_psds).parameters.keys())}
         generate_psds_kwargs.update(PPSDkwargs)
-        generate_psds_kwargs.update({k:v for k, v in updated_gp_defaults.items() if k not in generate_psds_kwargs})
+        generate_psds_kwargs.update({k: v for k, v in updated_gp_defaults.items() if k not in generate_psds_kwargs})
         generate_psds_kwargs['azimuthal_psds'] = azimuth_calculation
         if skip_steps is None or ('generate_psds' not in skip_steps and 'generate_ppsds' not in skip_steps):
             psd_data = generate_psds(hvsr_data=psd_data, verbose=verbose, **generate_psds_kwargs)
@@ -1639,7 +1559,7 @@ def run(input_data=None, source='file',
             psd_data[site_name]['processing_status']['generate_psds_status'] = False
             psd_data[site_name]['processing_status']['overall_status'] = False
     
-            #If it wasn't originally HVSRBatch, make it HVSRData object again
+            # If it wasn't originally HVSRBatch, make it HVSRData object again
             if not psd_data[site_name]['batch']:
                 psd_data = psd_data[site_name]
 
@@ -1662,9 +1582,9 @@ def run(input_data=None, source='file',
             remove_outlier_curve_kwargs['remove_outliers_during_plot'] = False
     
             updated_roc_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
-            remove_outlier_curve_kwargs.update({k:v for k, v in updated_roc_defaults.items() if k not in remove_outlier_curve_kwargs})
+            remove_outlier_curve_kwargs.update({k: v for k, v in updated_roc_defaults.items() if k not in remove_outlier_curve_kwargs})
 
-            data_curvesRemoved = remove_outlier_curves(hvsr_data=data_curvesRemoved, verbose=verbose,**remove_outlier_curve_kwargs)   
+            data_curvesRemoved = remove_outlier_curves(hvsr_data=data_curvesRemoved, verbose=verbose, **remove_outlier_curve_kwargs)   
     except Exception as e:
         traceback.print_exception(sys.exc_info()[1])
         exc_type, exc_obj, tb = sys.exc_info()
@@ -1685,9 +1605,8 @@ def run(input_data=None, source='file',
         
         for site_name in data_curvesRemoved_interim.keys():  # This should work more or less the same for batch and regular data now
             data_curvesRemoved_interim[site_name]['processing_status']['remove_outlier_curves_status'] = False
-            #data_curvesRemoved_interim[site_name]['processing_status']['overall_status'] = False
-    
-            #If it wasn't originally HVSRBatch, make it HVSRData object again
+
+            # If it wasn't originally HVSRBatch, make it HVSRData object again
             if not data_curvesRemoved_interim[site_name]['batch']:
                 data_curvesRemoved_interim = data_curvesRemoved_interim[site_name]
         data_curvesRemoved = data_curvesRemoved_interim
@@ -1713,7 +1632,7 @@ def run(input_data=None, source='file',
             
         for site_name in hvsr_results.keys():  # This should work more or less the same for batch and regular data now
         
-            hvsr_results[site_name]['processing_status']['process_hvsr_status']=False
+            hvsr_results[site_name]['processing_status']['process_hvsr_status'] = False
             hvsr_results[site_name]['processing_status']['overall_status'] = False
             
             # If it wasn't originally HVSRBatch, make it HVSRData object again
@@ -1734,9 +1653,9 @@ def run(input_data=None, source='file',
         if (outlier_curves_removal or outlier_curve_keys_used) and use_hv_curves and (skip_steps is None or 'remove_outlier_curves' not in skip_steps):
             remove_outlier_curve_kwargs['remove_outliers_during_plot'] = False
             updated_roc_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(remove_outlier_curves).parameters.keys())}
-            remove_outlier_curve_kwargs.update({k:v for k, v in updated_roc_defaults.items() if k not in remove_outlier_curve_kwargs})
+            remove_outlier_curve_kwargs.update({k: v for k, v in updated_roc_defaults.items() if k not in remove_outlier_curve_kwargs})
 
-            hvsr_results = remove_outlier_curves(hvsr_data=hvsr_results, verbose=verbose,**remove_outlier_curve_kwargs)   
+            hvsr_results = remove_outlier_curves(hvsr_data=hvsr_results, verbose=verbose, **remove_outlier_curve_kwargs)   
     except Exception as e:
         traceback.print_exception(sys.exc_info()[1])
         exc_type, exc_obj, tb = sys.exc_info()
@@ -1757,9 +1676,8 @@ def run(input_data=None, source='file',
         
         for site_name in data_curvesRemoved_interim.keys():  # This should work more or less the same for batch and regular data now
             data_curvesRemoved_interim[site_name]['processing_status']['remove_outlier_curves_status'] = False
-            #data_curvesRemoved_interim[site_name]['processing_status']['overall_status'] = False
     
-            #If it wasn't originally HVSRBatch, make it HVSRData object again
+            # If it wasn't originally HVSRBatch, make it HVSRData object again
             if not data_curvesRemoved_interim[site_name]['batch']:
                 data_curvesRemoved_interim = data_curvesRemoved_interim[site_name]
         hvsr_results = data_curvesRemoved_interim
@@ -1787,7 +1705,7 @@ def run(input_data=None, source='file',
             if 'plot' in get_report_kwargs['report_formats']:
                 plot_hvsr_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
                 updated_phv_defaults = {k: v for k, v in DPD.items() if k in tuple(inspect.signature(plot_hvsr).parameters.keys())}
-                #plot_hvsr_kwargs.update({k: v for k, v in updated_phv_defaults.items() if k not in plot_hvsr_kwargs})
+
                 get_report_kwargs.update(plot_hvsr_kwargs)
                 usingDefault = True
                 if 'plot_type' not in get_report_kwargs.keys():
@@ -1830,16 +1748,15 @@ def run(input_data=None, source='file',
                         break
 
                     # If it wasn't originally HVSRBatch, make it HVSRData object again
-                    #if not hvsr_results_interim[site_name]['batch']:
+                    # if not hvsr_results_interim[site_name]['batch']:
                     #    hvsr_results_interim = hvsr_results_interim[site_name]            
                     
                 # Add azimuth as a requested plot if azimuthal data exists but not requested in plot
                 if not az_requested and hasAz and hvsr_results.horizontal_method != 'Single Azimuth':
                     get_report_kwargs['plot_type'] = get_report_kwargs['plot_type'] + ' az'
 
-
-            azimuth='HV'
-            if hasAz and len(hvsr_results.stream.select(component='R'))>0:
+            azimuth = 'HV'
+            if hasAz and len(hvsr_results.stream.select(component='R')) > 0:
                 get_report_kwargs['azimuth'] = 'AZ'+hvsr_results.stream.select(component='R')[0].stats.location
 
             if skip_steps is None or ('get_report' not in skip_steps and 'report' not in skip_steps):
@@ -1894,9 +1811,8 @@ def run(input_data=None, source='file',
         
         for site_name in hvsr_results.keys():  # This should work more or less the same for batch and regular data now
             hvsr_results[site_name]['processing_status']['check_peaks'] = False
-            #data_curvesRemoved_interim[site_name]['processing_status']['overall_status'] = False
-    
-            #If it wasn't originally HVSRBatch, make it HVSRData object again
+
+            # If it wasn't originally HVSRBatch, make it HVSRData object again
             if not hvsr_results[site_name]['batch']:
                 hvsr_results = hvsr_results[site_name]
         print("H/V data processed, could not check peaks")
@@ -1997,37 +1913,38 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
         print(f"  Batch data source: {type(batch_data)}")
 
     # First figure out which parameters go with which function
-    input_params_params = inspect.signature(input_params).parameters
-    get_metadata_params = inspect.signature(get_metadata).parameters
-    fetch_data_params = inspect.signature(fetch_data).parameters
-    calculate_azimuth_params = inspect.signature(calculate_azimuth).parameters
-    remove_noise_params = inspect.signature(remove_noise).parameters
-    generate_ppsds_params = inspect.signature(generate_psds).parameters
-    remove_outlier_curves_params = inspect.signature(remove_outlier_curves).parameters
-    process_hvsr_params = inspect.signature(process_hvsr).parameters
-    check_peaks_params = inspect.signature(check_peaks).parameters
-    get_report_params = inspect.signature(get_report).parameters
+    # input_params_params = inspect.signature(input_params).parameters
+    # get_metadata_params = inspect.signature(get_metadata).parameters
+    # fetch_data_params = inspect.signature(fetch_data).parameters
+    # calculate_azimuth_params = inspect.signature(calculate_azimuth).parameters
+    # remove_noise_params = inspect.signature(remove_noise).parameters
+    # generate_ppsds_params = inspect.signature(generate_psds).parameters
+    # remove_outlier_curves_params = inspect.signature(remove_outlier_curves).parameters
+    # process_hvsr_params = inspect.signature(process_hvsr).parameters
+    # check_peaks_params = inspect.signature(check_peaks).parameters
+    # get_report_params = inspect.signature(get_report).parameters
   
-    dict_of_params = {'input_params': input_params_params,
-                      'get_metadata': get_metadata_params,
-                      'fetch_data_params': fetch_data_params,
-                      'calculate_azimuth_params': calculate_azimuth_params,
-                      'remove_noise_params': remove_noise_params,
-                      'generate_ppsds_params': generate_ppsds_params,
-                      'remove_outlier_curves_params': remove_outlier_curves_params,
-                      'process_hvsr_params': process_hvsr_params,
-                      'check_peaks_params': check_peaks_params,
-                      'get_report_params': get_report_params}
+    # dict_of_params = {'input_params': input_params_params,
+    #                  'get_metadata': get_metadata_params,
+    #                  'fetch_data_params': fetch_data_params,
+    #                  'calculate_azimuth_params': calculate_azimuth_params,
+    #                  'remove_noise_params': remove_noise_params,
+    #                  'generate_ppsds_params': generate_ppsds_params,
+    #                  'remove_outlier_curves_params': remove_outlier_curves_params,
+    #                  'process_hvsr_params': process_hvsr_params,
+    #                  'check_peaks_params': check_peaks_params,
+    #                  'get_report_params': get_report_params}
     
     def __get_run_functions():
         # Get a list of all functions (for which paramters are used) in sprit.run()
         run_functions_list = [input_params, fetch_data, batch_data_read,
-                            get_metadata, calculate_azimuth, 
-                            remove_noise, generate_psds, remove_outlier_curves, 
-                            process_hvsr, check_peaks, 
-                            get_report, export_hvsr]
-        
+                              get_metadata, calculate_azimuth, 
+                              remove_noise, generate_psds, remove_outlier_curves, 
+                              process_hvsr, check_peaks, 
+                              get_report, export_hvsr]
+
         return run_functions_list
+
     SPRIT_RUN_FUNCTIONS = __get_run_functions()
     # Get default values of all functions in a dict
     default_dict = {}
@@ -2037,7 +1954,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
                 default_dict[param_name] = param_info.default
     
     if isinstance(batch_data, pd.DataFrame):
-        sample_data=False
+        sample_data = False
     elif batch_type == 'sample' or batch_data in sampleFileKeyMap.keys() or str(batch_data).startswith('sample'):
         sample_data = True
         batch_type = 'table'
@@ -2046,16 +1963,16 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
     
     # Dictionary to store the stream objects
     dirList = ['dir', 'directory', 'd']
-    stream_dict = {}
-    data_dict = {}
+    # stream_dict = {}
+    # data_dict = {}
     verboseStatement = []
 
     if str(batch_type).lower() == 'table':
-        # If this is sample data, we need to create absolute paths to the filepaths
+        # If this is sample data, we need to get filepaths
         if sample_data:
             dataReadInfoDF = pd.read_csv(sampleFileKeyMap['sample_batch'])
             for index, row in dataReadInfoDF.iterrows():
-                dataReadInfoDF.loc[index, 'input_data'] = index+1
+                dataReadInfoDF.loc[index, 'input_data'] = index + 1
         elif isinstance(batch_data, pd.DataFrame):
             dataReadInfoDF = batch_data
         elif isinstance(batch_data, dict):
@@ -2068,8 +1985,6 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
                 dataReadInfoDF = sprit_utils._get_sample_data('batch', verbose=verbose)
             else:
                 dataReadInfoDF = pd.read_csv(batch_data, **read_csv_kwargs)
-            if 'input_data' in dataReadInfoDF.columns:
-                filelist = list(dataReadInfoDF['input_data'])
 
         # Generate site names if they don't exist already           
         if 'site' not in dataReadInfoDF.columns:
@@ -2101,7 +2016,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
                 print('-', end='')
             print()
 
-            #Print columns/rows
+            # Print columns/rows
             for index, row in dataReadInfoDF.iterrows():
                 print('  ', end='')
                 for col in row:
@@ -2197,7 +2112,7 @@ def batch_data_read(batch_data, batch_type='table', param_col=None, batch_params
         param_dict_list = []
         for file in pathlib.Path(batch_data).glob('*'):
             if file.suffix.replace('.', '').upper() in OBSPY_FORMATS:
-                param_dict_list.append({'input_data': file, 'site':file.stem} )
+                param_dict_list.append({'input_data': file, 'site': file.stem})
         
     # Get a uniformly formatted input DataFrame
     input_df_uniformatted = pd.DataFrame(param_dict_list)   
@@ -2345,7 +2260,7 @@ def calculate_azimuth(hvsr_data, azimuth_angle=45, azimuth_type='multiple', azim
                 defaultVDict = dict(zip(inspect.getfullargspec(calculate_azimuth).args[1:], 
                                         inspect.getfullargspec(calculate_azimuth).defaults))
                 # Manual input to function overrides the imported parameter values
-                if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
+                if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k] == defaultVDict[k]):
                     update_msg.append(f'\t\t{k} = {v} (previously {orig_args[k]})')
                     orig_args[k] = v
                                      
@@ -2379,11 +2294,11 @@ def calculate_azimuth(hvsr_data, azimuth_angle=45, azimuth_type='multiple', azim
         # If running batch, we'll loop through each site
         hvsr_out = {}
         for site_name in hvsr_data.keys():
-            args = orig_args.copy() #Make a copy so we don't accidentally overwrite
-            args['hvsr_data'] = hvsr_data[site_name] #Get what would normally be the "hvsr_data" variable for each site
+            args = orig_args.copy()  # Make a copy so we don't accidentally overwrite
+            args['hvsr_data'] = hvsr_data[site_name]  # Get what would normally be the "hvsr_data" variable for each site
             if hvsr_data[site_name]['processing_status']['overall_status']:
                 try:
-                   hvsr_out[site_name] = __azimuth_batch(**args) #Call another function, that lets us run this function again
+                    hvsr_out[site_name] = __azimuth_batch(**args)  # Call another function, that lets us run this function again
                 except Exception as e:
                     hvsr_out[site_name]['processing_status']['calculate_azimuths_status'] = False
                     hvsr_out[site_name]['processing_status']['overall_status'] = False
@@ -2485,8 +2400,8 @@ def calculate_azimuth(hvsr_data, azimuth_angle=45, azimuth_type='multiple', azim
 
         for i, az_rad in enumerate(azimuth_list):
             az_deg = azimuth_list_deg[i]
-            statsDict['location'] = f"{str(round(az_deg,0)).zfill(3)}" #Change location name
-            statsDict['channel'] = f"EHR"#-{str(round(az_deg,0)).zfill(3)}" #Change channel name
+            statsDict['location'] = f"{str(round(az_deg, 0)).zfill(3)}"  # Change location name
+            statsDict['channel'] = "EHR"  # -{str(round(az_deg,0)).zfill(3)}" #Change channel name
             statsDict['azimuth_deg'] = az_deg
             statsDict['azimuth_rad'] = az_rad
 
@@ -2556,7 +2471,7 @@ def check_peaks(hvsr_data, hvsr_band=DEFAULT_BAND, peak_selection='max', peak_fr
         hvsr_data   : HVSRData or HVSRBatch object
             Object containing previous input data, plus information about peak tests
     """
-    orig_args = locals().copy() # Get the initial arguments
+    orig_args = locals().copy()  # Get the initial arguments
     start_time = datetime.datetime.now()
     
     # Update with processing parameters specified previously in input_params, if applicable
@@ -2567,7 +2482,7 @@ def check_peaks(hvsr_data, hvsr_band=DEFAULT_BAND, peak_selection='max', peak_fr
                 defaultVDict = dict(zip(inspect.getfullargspec(check_peaks).args[1:], 
                                         inspect.getfullargspec(check_peaks).defaults))
                 # Manual input to function overrides the imported parameter values
-                if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k]==defaultVDict[k]):
+                if (not isinstance(v, (HVSRData, HVSRBatch))) and (k in orig_args.keys()) and (orig_args[k] == defaultVDict[k]):
                     update_msg.append(f'\t\t{k} = {v} (previously {orig_args[k]})')
                     orig_args[k] = v
                     
@@ -2576,10 +2491,6 @@ def check_peaks(hvsr_data, hvsr_band=DEFAULT_BAND, peak_selection='max', peak_fr
     peak_freq_range = orig_args['peak_freq_range']
     verbose = orig_args['verbose']
 
-    #if (verbose and 'input_params' not in hvsr_data.keys()) or (verbose and not hvsr_data['batch']):
-    #    if isinstance(hvsr_data, HVSRData) and hvsr_data['batch']:
-    #        pass
-    #    else:
     if verbose:
         print('\nChecking peaks in the H/V Curve (check_peaks())')
         print('\tUsing the following parameters:')
@@ -2601,14 +2512,14 @@ def check_peaks(hvsr_data, hvsr_band=DEFAULT_BAND, peak_selection='max', peak_fr
     if isinstance(hvsr_data, HVSRBatch):
         if verbose:
             print('\t  Running in batch mode')
-        #If running batch, we'll loop through each site
+        # If running batch, we'll loop through each site
         for site_name in hvsr_data.keys():
-            args = orig_args.copy() #Make a copy so we don't accidentally overwrite
-            args['hvsr_data'] =  hvsr_data[site_name] #Get what would normally be the "params" variable for each site
+            args = orig_args.copy()  # Make a copy so we don't accidentally overwrite
+            args['hvsr_data'] = hvsr_data[site_name]  # Get what would normally be the "params" variable for each site
             if hvsr_data[site_name]['processing_status']['overall_status']:
                 try:
-                    hvsr_data[site_name] = __check_peaks_batch(**args) #Call another function, that lets us run this function again
-                except:
+                    hvsr_data[site_name] = __check_peaks_batch(**args)  # Call another function, that lets us run this function again
+                except Exception:
                     if verbose:
                         print(f"\t{site_name}: check_peaks() unsuccessful. Peaks not checked.")
                     else:
@@ -2647,12 +2558,12 @@ def check_peaks(hvsr_data, hvsr_band=DEFAULT_BAND, peak_selection='max', peak_fr
             try:
                 peak_val = float(peak_selection)
                 index_list = [np.argmin(np.abs(x - peak_val))]
-            except Exception as e:
+            except Exception:
                 # If score method is being used, get index list for __init_peaks()
                 if peak_selection in scorelist:
-                    index_list = hvsr_data['hvsr_peak_indices'][col_id] #Calculated based on hvsr_curve
-                else:# str(peak_selection).lower() in maxlist:
-                    #Get max index as item in list for __init_peaks()
+                    index_list = hvsr_data['hvsr_peak_indices'][col_id]  # Calculated based on hvsr_curve
+                else:  # str(peak_selection).lower() in maxlist:
+                    # Get max index as item in list for __init_peaks()
                     startInd = np.argmin(np.abs(x - peak_freq_range[0]))
                     endInd = np.argmin(np.abs(x - peak_freq_range[1]))
                     if startInd > endInd:
@@ -2707,10 +2618,10 @@ def check_peaks(hvsr_data, hvsr_band=DEFAULT_BAND, peak_selection='max', peak_fr
 
             hvsr_data['PeakReport'][col_id] = peak
 
-            #Iterate through peaks and 
+            # Iterate through peaks and 
             #   Get the BestPeak based on the peak score
             #   Calculate whether each peak passes enough tests
-            curveTests = ['WinLen','SigCycles', 'LowCurveStD']
+            curveTests = ['WinLen', 'SigCycles', 'LowCurveStD']
             peakTests = ['ProminenceLow', 'ProminenceHi', 'AmpClarity', 'FreqStability', 'LowStDev_Freq', 'LowStDev_Amp']
             bestPeakScore = 0
 
@@ -2750,7 +2661,7 @@ def check_peaks(hvsr_data, hvsr_band=DEFAULT_BAND, peak_selection='max', peak_fr
                 print(f"Processing Errors: No Best Peak identified for {hvsr_data['site']} (azimuth {col_id})")
         try:
             hvsr_data.plot()
-        except:
+        except Exception:
             pass
 
     hvsr_data['processing_parameters']['check_peaks'] = {}
@@ -2828,7 +2739,7 @@ def export_data(hvsr_data, data_export_path, data_export_format='mseed', startti
         
     # Get starttime in obspy.UTCDateTime format
     if starttime is not None:
-        if type(starttime) == str:
+        if type(starttime) is str:
             sTimeDT = sprit_utils._format_time(starttime, tzone=tzone)
             acqDate = outputStream[0].stats.starttime.date
             sTimeDT.replace(year=acqDate.year, month=acqDate.month, day=acqDate.day)
@@ -2844,7 +2755,7 @@ def export_data(hvsr_data, data_export_path, data_export_format='mseed', startti
     
     # Get endtime in obspy.UTCDateTime format
     if endtime is not None:
-        if type(endtime) == str:
+        if type(endtime) is str:
             eTimeDT = sprit_utils._format_time(endtime, tzone=tzone)
             acqDate = outputStream[-1].stats.endtime.date
             eTimeDT.replace(year=acqDate.year, month=acqDate.month, day=acqDate.day)
@@ -2867,7 +2778,7 @@ def export_data(hvsr_data, data_export_path, data_export_format='mseed', startti
     projectName = project
     if project is None:
         projectName = ""
-    if projectName != "" and len(projectName)>0 and projectName[-1] != '-':
+    if projectName != "" and len(projectName) > 0 and projectName[-1] != '-':
         projectName += "-"
 
     sDateStr = outputStream[0].stats.starttime.strftime("%Y%m%d")
@@ -2884,7 +2795,7 @@ def export_data(hvsr_data, data_export_path, data_export_format='mseed', startti
         if not dePath.exists():
             dePath.mkdir(parents=True)
         outfPath = dePath.joinpath(autoFname)
-    else: # dePath.is_file():
+    else:  # dePath.is_file():
         outfPath = dePath
     
     # Trim stream as needed
@@ -2971,7 +2882,7 @@ def export_hvsr(hvsr_data, hvsr_export_path=None, hvsr_export_ext='hvsr', hvsr_e
 
         if verbose:
             print('EXPORT COMPLETE')
-        print(f"Processed data exported as pickled data to: {_export_path} [~{round(float(pathlib.Path(_export_path).stat().st_size)/2**20,1)} Mb]")    
+        print(f"Processed data exported as pickled data to: {_export_path} [~{round(float(pathlib.Path(_export_path).stat().st_size)/2**20, 1)} Mb]")    
 
     hvData = hvsr_data
     hvData = hvsr_data.copy()
@@ -3031,7 +2942,7 @@ def export_json(hvsr_results, json_export_path=None,
                 'input_stream', 'stream', 'stream_edited', 'current_times_used']
 
     channel_dicts = ['x_freqs', 'x_period', 'psd_raw', 'psds', 'psd_values_tavg', 
-                        'ppsd_std', 'psd_std_vals_m', 'ppsd_std_vals_p'] 
+                     'ppsd_std', 'psd_std_vals_m', 'ppsd_std_vals_p'] 
 
     az_dicts = ['ind_hvsr_curves', 'ind_hvsr_stdDev', 'ind_hvsr_peak_indices',
                 'hvsr_peak_indices', 'hvsr_peak_freqs', 'hvsr_log_std',
@@ -3072,7 +2983,7 @@ def export_json(hvsr_results, json_export_path=None,
             if str(plotEngine).lower() not in ['plotly', 'plty', 'p']:
                 fig = plt.figure(v)
                 fig.set_size_inches(8.5, 6)
-                #fig.set_size_inches(4.25, 3)
+                # fig.set_size_inches(4.25, 3)
                 # Create a byte stream from the image
                 buf = io.BytesIO()
                 fig.savefig(buf, format='png')
@@ -3112,9 +3023,9 @@ def export_json(hvsr_results, json_export_path=None,
                 v = {'Use': jdict}
                 
                 # To recover into df
-                #dfInd = pd.to_datetime(list(v['Use'].keys()), format="%Y-%m-%dT%M:%H:%S.%fZ", utc=True)
-                #dfInd.name = "TimesProcessed"
-                #df= pd.DataFrame(v['Use'].values(), index=dfInd, columns=['Use'])
+                # dfInd = pd.to_datetime(list(v['Use'].keys()), format="%Y-%m-%dT%M:%H:%S.%fZ", utc=True)
+                # dfInd.name = "TimesProcessed"
+                # df= pd.DataFrame(v['Use'].values(), index=dfInd, columns=['Use'])
             else:
                 cols = hvsr_results['hvsr_windows_df'].columns
                 hvDF = hvsr_results['hvsr_windows_df']
@@ -3150,7 +3061,7 @@ def export_json(hvsr_results, json_export_path=None,
             try:
                 invDict = {}
                 for n in v.networks:
-                    invDict['networks'] =  str(n)+'\n'
+                    invDict['networks'] = str(n)+'\n'
                     for sta in n:
                         invDict['stations'] = str(sta)+'\n'
                         for c in sta:
@@ -3160,14 +3071,13 @@ def export_json(hvsr_results, json_export_path=None,
                                 if rk == 'instrument_sensitivity':
                                     invDict['response'][rk] = rv.__dict__
                                 elif rk == 'response_stages':
-                                    invDict['response'][rk] = {i:str(rr.__dict__) for i, rr in enumerate(rv)}
+                                    invDict['response'][rk] = {i: str(rr.__dict__) for i, rr in enumerate(rv)}
                                 else:
                                     invDict['response'][rk] = rv.__repr__()
                 v = invDict
             except Exception:
                 v = str(v)
         
-
         # Now, see if it can be made into a string natively
         try:
             json.dumps({k: v})  # This is just a test to ensure item can be dumped
@@ -3205,7 +3115,7 @@ def export_json(hvsr_results, json_export_path=None,
                             bpStr = bpStr[:-1*(len(indSpcs)*4+3)]
                             bpStr += "\n"+indSpcs+indSpcs+indSpcs+"},\n"+indSpcs+indSpcs+indSpcs
                         elif azDictKey == 'PassList':
-                            bpStr += f'"{azDictKey}": '+ '{\n'+indSpcs+indSpcs+indSpcs+indSpcs
+                            bpStr += f'"{azDictKey}": ' + '{\n'+indSpcs+indSpcs+indSpcs+indSpcs
                             for plKey, plVal in azDictData.items():
                                 plVal = str(plVal).lower()
                                 bpStr += f'"{plKey}": {plVal}, \n'+indSpcs+indSpcs+indSpcs+indSpcs
@@ -3214,7 +3124,7 @@ def export_json(hvsr_results, json_export_path=None,
                         else:
                             bpStr += f'"{azDictKey}": "{azDictData}", \n'+indSpcs+indSpcs+indSpcs
                     bpStr = bpStr[:-1*(3 * len(indSpcs) + 3)] + '\n'+indSpcs+indSpcs
-                bpStr = bpStr + '}\n'+indSpcs+'}'+indSpcs
+                bpStr = bpStr + '}\n'+indSpcs+'}' + indSpcs
                 dict_str_list.append(bpStr)
                 continue
 
@@ -3252,7 +3162,7 @@ def export_json(hvsr_results, json_export_path=None,
                                 newStr = f'"{prmName}": ['
                                 for item in prmVal:
                                     if isinstance(item, numbers.Number):
-                                        newStr += item +', '
+                                        newStr += item + ', '
                                     else:
                                         newStr += f'"{item}", '
                                 ppStr += newStr[:-2]+'], '
@@ -3261,7 +3171,7 @@ def export_json(hvsr_results, json_export_path=None,
                         except Exception:
                             ppStr += f'"{prmName}": "{prmVal}", '
 
-                    ppStr = ppStr[:-2]+ '},\n'+indSpcs+indSpcs
+                    ppStr = ppStr[:-2] + '},\n'+indSpcs+indSpcs
                 minInd = -1*(len(indSpcs) * 2 + 3)
                 dict_str_list.append(ppStr[:minInd]+'}\n'+indSpcs+'},\n')
                 continue 
@@ -3288,7 +3198,7 @@ def export_json(hvsr_results, json_export_path=None,
                                             if pk == 'instrument_sensitivity':
                                                 responseDict['response'][pk] = str(pv.__dict__)
                                             elif pk == 'response_stages':
-                                                responseDict['response'][pk] = {i:str(rr.__dict__) for i, rr in enumerate(pv)}
+                                                responseDict['response'][pk] = {i: str(rr.__dict__) for i, rr in enumerate(pv)}
                                             else:
                                                 responseDict['response'][pk] = str(pv)
                                         v = responseDict                       
@@ -3303,12 +3213,12 @@ def export_json(hvsr_results, json_export_path=None,
                                     dictString += json.dumps(outerDict).replace('{', '').replace("}", '') + ',\n'+indSpcs+indSpcs+indSpcs
                                 else:
                                     dictString += '"'+psdKey+'": "'+str(psdVal)+'",\n'+indSpcs+indSpcs
-                            dictString = dictString[:-14] +"\n" +indSpcs+indSpcs+"},\n"+indSpcs+indSpcs
+                            dictString = dictString[:-14] + "\n" + indSpcs + indSpcs + "},\n" + indSpcs + indSpcs
                         except Exception:
-                            dictString = dictString[:-14] +"\n" +indSpcs+indSpcs+"},\n"+indSpcs+indSpcs
+                            dictString = dictString[:-14] + "\n" + indSpcs + indSpcs + "},\n" + indSpcs + indSpcs
 
                     else:
-                        outDict = {chaz:chazVals}
+                        outDict = {chaz: chazVals}
                         if isinstance(chazVals, np.ndarray):
                             outDict = {chaz: np.round(chazVals, 3).tolist()}
                         if "Indices" in chaz:
@@ -3339,15 +3249,15 @@ def export_json(hvsr_results, json_export_path=None,
             jsondump_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(json.dump).parameters.keys())}
             
             json.dump(dict_for_json, 
-                        fp=f,
-                        sort_keys=sKeys, 
-                        indent=indent, **jsondump_kwargs)
+                      fp=f,
+                      sort_keys=sKeys, 
+                      indent=indent, **jsondump_kwargs)
 
         # Then read it back in to add custom parts from dict_str_list
         with open(json_export_path, encoding='UTF-8', mode='r') as f:
             readLines = f.readlines()
         readLines = readLines[:-1]
-        readLines[-1] = readLines[-1].replace('\n',',\n')
+        readLines[-1] = readLines[-1].replace('\n', ',\n')
         readLines.extend(dict_str_list)
         readLines.append('}')
 
@@ -4943,7 +4853,7 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
                 #print(e)
         return hvsr_data
     
-    def _get_obspy_ppsds(hvsr_data,**obspy_ppsd_kwargs):
+    def _get_obspy_ppsds(hvsr_data, **obspy_ppsd_kwargs):
         paz = hvsr_data['paz']
         stream = hvsr_data['stream']
 
@@ -5159,10 +5069,13 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
     # Create functions to be used in pandas .apply() for datetime conversions
     def convert_to_datetime(obspyUTCDateTime):
         return obspyUTCDateTime.datetime.replace(tzinfo=datetime.timezone.utc)
+    
     def convert_to_mpl_dates(obspyUTCDateTime):
         return obspyUTCDateTime.matplotlib_date
+    
     def convert_to_mplEnd(mpltimeStart):
         return mpltimeStart + (window_length/86400)
+    
     def convert_to_dtend(dtStart):
         return dtStart + datetime.timedelta(seconds=window_length)
 
@@ -5245,7 +5158,7 @@ def get_metadata(input_parameters, write_path='', update_metadata=False, source=
     Returns
     -------
     input_parameters : dict
-        Modified input dictionary with additional key:value pair containing paz or inv dictionary (key = "paz")
+        Modified input dictionary with additional key: value pair containing paz or inv dictionary (key = "paz")
     """
     
     if 'metadata' not in input_parameters.keys():
@@ -5800,7 +5713,7 @@ def import_settings(settings_import_path, settings_import_type='instrument', ver
     -------
     dict
         A dictionary containing the function names as keys of internal dictionaries, 
-        with key:value pairs for each parameter name:value in that function.
+        with key: value pairs for each parameter name: value in that function.
 
     """
     allList = ['all', ':', 'both', 'any']
@@ -6360,7 +6273,7 @@ def plot_azimuth(hvsr_data, fig=None, ax=None, show_azimuth_peaks=False, interpo
 
 
 # Main function for plotting results
-def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=True, fig=None, ax=None, return_fig=False,  plot_engine='matplotlib', save_dir=None, save_suffix='', show_legend=False, show_plot=True, close_figs=False, clear_fig=True,**kwargs):
+def plot_hvsr(hvsr_data, plot_type=DEFAULT_PLOT_STR, azimuth='HV', use_subplots=True, fig=None, ax=None, return_fig=False,  plot_engine='matplotlib', save_dir=None, save_suffix='', show_legend=False, show_plot=True, close_figs=False, clear_fig=True, **kwargs):
     """Function to plot HVSR data
 
     Parameters
@@ -8112,7 +8025,7 @@ def _update_shake_metadata(filepath, params, write_path='', verbose=False):
         Returns
         -------
         params : dict
-            Updated params dict with new key:value pair with updated updated obspy.inventory object (key="inv")
+            Updated params dict with new key: value pair with updated updated obspy.inventory object (key="inv")
     """
     if verbose:
         print("\tUpdating Metadata for Raspberry Shake Instrument Type")
@@ -12505,7 +12418,7 @@ def __plot_current_fig(save_dir, filename, fig, ax, plot_suffix, user_suffix, sh
 
 
 # Plot specgtrogram, private supporting function for plot_hvsr
-def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, azimuth='HV', save_dir=None, save_suffix='',**kwargs):
+def _plot_specgram_hvsr(hvsr_data, fig=None, ax=None, azimuth='HV', save_dir=None, save_suffix='', **kwargs):
     """Private function for plotting average spectrogram of all three channels from psds
     """
     # Get all input parameters
