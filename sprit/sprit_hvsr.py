@@ -30,7 +30,6 @@ import webbrowser
 import xml.etree.ElementTree as ET
 import zoneinfo
 
-import kaleido
 import matplotlib
 from matplotlib.backend_bases import MouseButton
 import matplotlib.dates as mdates
@@ -39,20 +38,10 @@ import numpy as np
 import obspy
 from obspy.signal import PPSD
 import pandas as pd
-import plotly
 from pyproj import CRS, Transformer
 import scipy
 from scipy.spatial.distance import squareform, pdist
 from xhtml2pdf import pisa
-
-#try:  # For distribution
-#    from sprit import sprit_utils
-#    from sprit import sprit_jupyter_UI
-#    from sprit import sprit_plot
-#except Exception:  # For testing
-#    import sprit_utils
-#    import sprit_jupyter_UI
-#    import sprit_plot
 
 from . import sprit_utils
 from . import sprit_jupyter_UI
@@ -134,7 +123,7 @@ class HVSRBatch:
     
     """
     @check_instance
-    def __init__(self, batch_input, batch_ext=None, batch_use=None, df_as_read=None):
+    def __init__(self, batch_input, batch_ext=None, batch_use=None, df_as_read=None, verbose=False):
         """HVSR Batch initializer
 
         Parameters
@@ -217,14 +206,14 @@ class HVSRBatch:
 
                     if 'hvsr' in pathlib.Path(hvdata).suffix:
                         sitename = pathlib.path(hvdata).stem
-                        sitename = _get_sitename(sitename, batch_dict)
+                        sitename = _get_sitename(sitename, self.batch_dict)
 
                         self.batch_dict[sitename] = hvdata
                     elif pathlib.Path(hvdata).suffix.upper()[1:] in OBSPY_FORMATS:
                         if verbose:
                             print(f"Site specified for inclusion in HVSRBatch has not been processed. Processing. ({hvdata})")
                         sitename = pathlib.Path(hvdata).stem
-                        sitename = _get_sitename(sitename, batch_dict)
+                        sitename = _get_sitename(sitename, self.batch_dict)
                         self.batch_dict[sitename] = run(pathlib.Path(hvdata).as_posix())
                     else:
                         print(f"Could not parse Batch input. Excluding from HVSRBatch object: {hvdata}")
@@ -241,7 +230,7 @@ class HVSRBatch:
                 if batch_ext is not None:
                     batchfileglob = pathlib.Path(batch_input).glob("*."+batch_ext)
                     batchfiledict = {}
-                    #if 'hvsr' in batch_ext:
+
                     for hvfile in batchfileglob:
                         currhvfile = import_data(hvfile)
                         batchfiledict[currhvfile['site']] = currhvfile
@@ -270,8 +259,8 @@ class HVSRBatch:
 
                     # This is for if dictionary mapping is not specified
                     snList = ['site', 'sitename', 'sites', 'sitenames', 
-                                'identifier', 'batch', 'profile', 'crosssection', 'group']
-                    pathList = ['hvsr_export_path', 'import_filepath', 'batch_input', 'filepath', 'input_data',
+                              'identifier', 'batch', 'profile', 'crosssection', 'group']
+                    pathList = ['hvsr_export_path', 'json_export_path', 'import_filepath', 'batch_input', 'filepath', 'input_data',
                                 'path', 'filepath', 'filename', 'file', 'hvsrdata', 'hvsr', 'data']
 
                     siteCol = batch_df.columns[0]
@@ -304,30 +293,30 @@ class HVSRBatch:
                             warnings.Warn(warnMsg)
 
                         # Should be site and filepath, but just in case
+                        includeMe = None
                         for k in batch_use.keys():
                             if str(k).lower() in snList:
                                 siteCol = batch_use[k]
-                                siteKey = k
 
                             if str(k).lower() in pathList:
                                 pathCol = batch_use[k]
-                                pathKey = k
 
                             if str(k).lower() not in snList and str(k).lower() not in pathList:
                                 includeMe = batch_use[k]
                                 batchKey = k
     
                         # Get subset df with only rows that we want
-                        #includeMe = batchCol#batch_use[batchCol]
-                        if isinstance(includeMe, (list, tuple)):
+                        if includeMe is None:
+                            sites_df = batch_df
+                        elif isinstance(includeMe, (list, tuple)):
                             sites_df = batch_df[batch_df[batchKey].isin(includeMe)]
                         elif isinstance(includeMe, dict):
                             sitesDFList = []
                             for batchCol, includeValue in includeMe.items():
-                                sitesDFList.append(batch_df[batch_df[batchCol]==includeValue])
+                                sitesDFList.append(batch_df[batch_df[batchCol] == includeValue])
                             sites_df = pd.concat(sitesDFList, ignore_index=True)
                         else:
-                            sites_df = batch_df[batch_df[batchKey]==includeMe]
+                            sites_df = batch_df[batch_df[batchKey] == includeMe]
 
                         # Import, process, or otherwise read data into batch object
                         for i, row in sites_df.iterrows():
@@ -354,13 +343,11 @@ class HVSRBatch:
         else:
             raise TypeError(f"The batch_input parameter of the HVSRBatch class must be a dict of parameters, list or tuple of HVSRData obejcts, or an HVSRData object itself. {type(batch_input)}")
 
-
         self._batch_dict = self.batch_dict
         for sitename, hvsrdata in self.batch_dict.items():
             setattr(self, sitename, hvsrdata)
             self[sitename]['batch'] = True
         self.sites = list(self.batch_dict.keys())
-
 
     # METHODS
     def __to_json(self, filepath):
@@ -375,7 +362,6 @@ class HVSRBatch:
         with open(filepath, 'w') as f:
             # dump the JSON string to the file
             json.dump(self, f, default=lambda o: o.__dict__, sort_keys=True, indent=4)
-
 
     def add(self, hvsr_data):
         """Function to add HVSRData objects to existing HVSRBatch objects"""
@@ -399,12 +385,10 @@ class HVSRBatch:
 
                 self[sitename] = hvsr_data
         
-
     def append(self, hvsr_data):
         """Alias of add()"""
         add(self, hvsr_data)
         
-
     def export_hvsr(self, hvsr_export_path=True, hvsr_export_ext='hvsr'):
         """Method to export HVSRData objects in HVSRBatch container to indivdual .hvsr pickle files.
 
@@ -417,7 +401,6 @@ class HVSRBatch:
         """
         export_hvsr(hvsr_data=self, hvsr_export_path=hvsr_export_path, hvsr_export_ext=hvsr_export_ext)
 
-
     def keys(self):
         """Method to return the "keys" of the HVSRBatch object. For HVSRBatch objects, these are the site names. Functions similar to dict.keys().
 
@@ -428,7 +411,6 @@ class HVSRBatch:
         """
         return self.batch_dict.keys()
 
-
     def items(self):
         """Method to return both the site names and the HVSRData object as a set of dict_items tuples. Functions similar to dict.items().
 
@@ -438,7 +420,6 @@ class HVSRBatch:
             _description_
         """
         return self.batch_dict.items()
-
 
     def copy(self, type='shallow'):
         """Make a copy of the HVSRBatch object. Uses python copy module.
@@ -454,8 +435,7 @@ class HVSRBatch:
         else:
             return HVSRBatch(copy.copy(self._batch_dict), df_as_read=self._input_df)
 
-
-    #Method wrapper of sprit.plot_hvsr function
+    # Method wrapper of sprit.plot_hvsr function
     def plot(self, **kwargs):
         """Method to plot data, based on the sprit.plot_hvsr() function. 
         
@@ -478,7 +458,6 @@ class HVSRBatch:
                 plot_hvsr(self[sitename], **kwargs)
 
         return self
-    
     
     def get_report(self, **kwargs):
         """Method to get report from processed data, in print, graphical, or tabular format.
@@ -512,7 +491,6 @@ class HVSRBatch:
             get_report(self[sitename], **kwargs)
         return
 
-
     def report(self, **kwargs):
         """Wrapper of get_report()
         
@@ -523,15 +501,24 @@ class HVSRBatch:
         return self.get_report(**kwargs)
 
     def remove(self, site_name, **kwargs):
-        if hasattr(self, site_name):
-            delattr(self, site_name)
+        if isinstance(site_name, (list, tuple)):
+            pass
+        elif type(site_name) is str:
+            site_name = [site_name]
+        else:
+            print(f"site_name parameter of HVSRBatch.remove() must be of type list, tuple, or str, not {type(site_name)}")
+            return 
+        
+        for site in site_name:
+            if hasattr(self, site):
+                delattr(self, site)
 
-        if site_name in self.batch_dict:
-            del self.batch_dict[site_name]
+            if site in self.batch_dict:
+                del self.batch_dict[site]
 
-        if site_name in self.input_df['site']:
-            inDFInd = self.input_df[self.input_df['site']==site_name].index[0]
-            self.input_df.drop(index=inDFInd, inplace=True)
+            if site in self.input_df['site']:
+                inDFInd = self.input_df[self.input_df['site'] == site].index[0]
+                self.input_df.drop(index=inDFInd, inplace=True)
 
         self.sites = list(self.batch_dict.keys())
 
@@ -3094,8 +3081,6 @@ def export_json(hvsr_results, json_export_path=None,
                 # Encode the image to base64
                 v = base64.b64encode(buf.read()).decode('utf-8')
             else:
-                #htmlstring = plotly.io.to_html(hvsr_results.Plot_Report, include_plotlyjs=False)
-                #print(type(htmlstring))
 
                 img = v.to_image(format='png', engine='kaleido')
                 v = base64.b64encode(img).decode('utf8')
@@ -11725,8 +11710,7 @@ def _generate_html_report(hvsr_results, azimuth='HV', show_html_report=False, ve
         # Embed the image in the html document
         html = html.replace("./output.png", f'data:image/png;base64,{hvplot_base64}')
     else:
-        #htmlstring = plotly.io.to_html(hvsr_results.Plot_Report, include_plotlyjs=False)
-        #print(type(htmlstring))
+
         try:
             img = hvsr_results.Plot_Report.to_image(format='png', engine='kaleido')
             hvplot_base64 = base64.b64encode(img).decode('utf8')
