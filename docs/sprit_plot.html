@@ -259,10 +259,22 @@ el.replaceWith(d);
     if verbose:
         print(&#34;Getting data batch for cross section plot&#34;)
     batchExt = None
-    if isinstance(hvsr_data, (str, os.PathLike, pathlib.Path)):
-        if pathlib.Path(hvsr_data).exists() and pathlib.Path(hvsr_data).is_dir():
-            batchExt = &#39;hvsr&#39;
-    hvDataBatch = sprit_hvsr.HVSRBatch(hvsr_data, batch_ext=batchExt)
+    hvDataBatch = hvsr_data
+    if not isinstance(hvDataBatch, sprit_hvsr.HVSRBatch):
+        if isinstance(hvsr_data, (str, os.PathLike, pathlib.Path)):
+            if pathlib.Path(hvsr_data).exists() and pathlib.Path(hvsr_data).is_dir():
+                batchExt = &#39;hvsr&#39;
+
+        hvDataBatch = sprit_hvsr.HVSRBatch(hvsr_data, batch_ext=batchExt)
+
+    # Remove data temporarily from Batch if it does not have proper data
+    noTableList = []
+    for sitename in hvDataBatch.sites:
+        if not hasattr(hvDataBatch[sitename], &#34;Table_Report&#34;) or not hasattr(hvDataBatch[sitename], &#34;BestPeak&#34;):
+            noTableList.append(sitename)
+
+    for site in noTableList:
+        hvDataBatch.remove(site)
 
     # Get likely orientation if not specified
     if orientation is None:
@@ -404,9 +416,9 @@ el.replaceWith(d);
     # Get grid/plot area/values
     cellWSize = xSectionLength/cellWNumber
 
-    max_surf_elev = max([hvd.elevation for hvd in hvDataSorted])
+    max_surf_elev = max([float(hvd.elevation) for hvd in hvDataSorted])
     min_br_elev = min([float(hvd.Table_Report[&#39;BedrockElevation&#39;].values[0]) for hvd in hvDataSorted])
-    elev_range = max_surf_elev - min_br_elev
+    elev_range = float(max_surf_elev) - float(min_br_elev)
 
     max_grid_elev = math.ceil(max_surf_elev)
 

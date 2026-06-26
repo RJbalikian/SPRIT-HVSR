@@ -304,7 +304,8 @@ to derive a relation between the resonant frequency and the depth to bedrock ben
             if not hasattr(freq_input, &#39;Table_Report&#39;):
                 if verbose:
                     warn(&#34;Passed HVSRData Object has no attribute Table_Report, attempting to generate one.&#34;)
-                tableReport = sprit_hvsr.get_report(freq_input, report_format=&#39;table&#39;)
+                freq_input = sprit_hvsr.get_report(freq_input, report_format=&#39;table&#39;)
+                tableReport = freq_input.Table_Report
             else:
                 tableReport = freq_input.Table_Report
 
