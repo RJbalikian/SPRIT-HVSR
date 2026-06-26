@@ -316,9 +316,9 @@ def plot_cross_section(hvsr_data,  title=None, fig=None, ax=None, use_elevation=
     # Get grid/plot area/values
     cellWSize = xSectionLength/cellWNumber
 
-    max_surf_elev = max([hvd.elevation for hvd in hvDataSorted])
+    max_surf_elev = max([float(hvd.elevation) for hvd in hvDataSorted])
     min_br_elev = min([float(hvd.Table_Report['BedrockElevation'].values[0]) for hvd in hvDataSorted])
-    elev_range = max_surf_elev - min_br_elev
+    elev_range = float(max_surf_elev) - float(min_br_elev)
 
     max_grid_elev = math.ceil(max_surf_elev)
 

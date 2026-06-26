@@ -144,7 +144,6 @@ def calculate_depth(freq_input,
     """
     orig_args = locals()
     ip_params, fd_params = __get_ip_df_params()
-    print("FRREEEQQINPUT", type(freq_input))
 
     if depth_model is None:
         depth_model = CONGLOMERATE_MODEL

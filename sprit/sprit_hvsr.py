@@ -5995,7 +5995,7 @@ def input_params(input_data,
     batchCond2 = pathlib.Path(str(input_data)).exists() and pathlib.Path(str(input_data)).suffix.lower() in ['.csv', '.txt']
     batchCond3 = isinstance(input_data, (list, tuple))
 
-    batchCond4 = pathlib.Path(str(input_data)).is_dir()
+    batchCond4 = (pathlib.Path(str(input_data)).is_dir() and "GRILLA" not in str(input_data))
 
     if batchCond1 or batchCond2:
         batchType = 'table'
