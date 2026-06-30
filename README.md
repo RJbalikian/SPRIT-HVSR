@@ -31,10 +31,10 @@ For troubleshooting issues with installation or usage of the sprit package, see 
 # Usage and Examples
 Using SpRIT is designed to be simple for students and professionals alike. To carry out HVSR on seismic data, all that is needed is a seismic file readable by ObsPy with the proper seismometer components (usually, a Z, E, and N component). 
 
-Example HTML Report
+Example HTML Report (Can also be viewed[here](https://htmlpreview.github.io/?https://raw.githubusercontent.com/RJbalikian/SPRIT-HVSR/main/sprit/resources/html_example_report.html))
 
 <img width="1129" height="877" alt="SpRIT HTML Report" src="https://github.com/user-attachments/assets/2b9ee13e-d647-42b9-ae28-8ece990b6f72" />
-[View an example report here](https://htmlpreview.github.io/?https://raw.githubusercontent.com/RJbalikian/SPRIT-HVSR/main/sprit/resources/html_example_report.html)
+
 
 There are three interfaces to the SpRIT HVSR processing code:
 - Python interface: `sprit.run(input_data=seisimic_data)`
