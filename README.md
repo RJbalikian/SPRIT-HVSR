@@ -32,7 +32,7 @@ For troubleshooting issues with installation or usage of the sprit package, see 
 Using SpRIT is designed to be simple for students and professionals alike. To carry out HVSR on seismic data, all that is needed is a seismic file readable by ObsPy with the proper seismometer components (usually, a Z, E, and N component). 
 
 <iframe 
-  src="https://RJbalikian.github.io/SPRIT-HVSR/main/sprit/resources/html_example_report.html" 
+  src="https://raw.githubusercontent.com/RJbalikian/SPRIT-HVSR/main/sprit/resources/html_example_report.html" 
   width="100%" 
   height="400px" 
   title="Embedded HTML Demo" 
