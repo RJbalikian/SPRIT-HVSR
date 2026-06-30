@@ -33,7 +33,7 @@ Using SpRIT is designed to be simple for students and professionals alike. To ca
 
 Example HTML Report (Can also be viewed[here](https://htmlpreview.github.io/?https://raw.githubusercontent.com/RJbalikian/SPRIT-HVSR/main/sprit/resources/html_example_report.html))
 
-<img width="1129" height="877" alt="SpRIT HTML Report" src="https://github.com/user-attachments/assets/2b9ee13e-d647-42b9-ae28-8ece990b6f72" />
+<img width="564" height="439" alt="SpRIT HTML Report" src="https://github.com/user-attachments/assets/2b9ee13e-d647-42b9-ae28-8ece990b6f72" />
 
 
 There are three interfaces to the SpRIT HVSR processing code:
