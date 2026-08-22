@@ -16,12 +16,15 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit
 
-try:  # For distribution
-    from sprit import sprit_hvsr
-    from sprit import sprit_plot
-except Exception as e:  # For testing
-    import sprit_hvsr
-    import sprit_plot
+#try:  # For distribution
+#    from sprit import sprit_hvsr
+#    from sprit import sprit_plot
+#except Exception as e:  # For testing
+#    import sprit_hvsr
+#    import sprit_plot
+
+from . import sprit_hvsr
+from . import sprit_plot
 
 """
 Attempt 1: Regression equations: 
@@ -67,41 +70,38 @@ models = ["ISGS_All", "ISGS_North", "ISGS_Central", "ISGS_Southeast", "ISGS_Sout
                     "Fairchild", "DelMonaco", "Tun", "Thabet_A", "Thabet_B",
                     "Thabet_C", "Thabet_D"]
 
-swave = ["shear", "swave", "shearwave", "rayleigh", "rayleighwave", "vs"]
+swave_model_list = ["shear", "swave", "swave_model_list", "shearwave", "rayleigh", "rayleighwave", "vs"]
 
 model_list = list(map(lambda x : x.casefold(), models))
 
-model_parameters = {"ISGS_All" : (141.81, 1.582), "ISGS_North" : (142.95,1.312), "ISGS_Central" : (119.17, 1.21), "ISGS_Southeast" : (67.973,1.166),
-                    "ISGS_Southwest": (61.238,1.003), "ISGS_North_Central" : (117.44, 1.095), "ISGS_SW_SE" : (62.62, 1.039),
+model_parameters = {"ISGS_All" : (92.58,1.038), "ISGS_North" : (73.718,0.934), "ISGS_Central" : (119.17, 1.21), "ISGS_Southeast": (61.554, 0.861),
+                    "ISGS_Southwest": (51.075,0.885), "ISGS_North_Central" : (110.97,1.061), "ISGS_SW_SE" : (62.62, 1.039),
                     "Minnesota_All" : (121, 1.323), "Minnesota_Twin_Cities" : (129, 1.295), "Minnesota_South_Central" : (135, 1.248),
                     "Minnesota_River_Valleys" : (83, 1.232), "Rhine_Graben" : (96, 1.388), 
                     "Ibsvon_A" : (96, 1.388), "Ibsvon_B" : (146, 1.375), "Delgado_A" : (55.11, 1.256), 
                     "Delgado_B" : (55.64, 1.268), "Parolai" : (108, 1.551), "Hinzen" : (137, 1.19), "Birgoren" : (150.99, 1.153), 
-                    "Ozalaybey" : (141, 1.270), "Harutoonian" : (73, 1.170), "Fairchild" : (90.53, 1), "DelMonaco" : (53.461, 1.01), 
+                    "Ozalaybey" : (141, 1.270), "Harutoonian" : (73, 1.170), "Fairchild" : (90.53, 1.0), "DelMonaco" : (53.461, 1.01), 
                     "Tun" : (136, 1.357), "Thabet_A": (117.13, 1.197), "Thabet_B":(105.14, 0.899), "Thabet_C":(132.67, 1.084), "Thabet_D":(116.62, 1.169)}
-
+CONGLOMERATE_MODEL = [float(tv) for tv in tuple(np.nanmean(list(zip(*[v for k, v in model_parameters.items()])), axis=1))]
 
 def power_law(f, a, b):
     return a*(f**-b)
 
 
 def calculate_depth(freq_input,
-                    depth_model="ISGS_All",
+                    depth_model=None,
                     freq_col="Peak",
                     calculate_depth_in_feet=False,
                     calculate_elevation=True,
-                    show_depth_curve=True,
+                    generate_depth_curve=True,
+                    show_depth_curve=False,
                     surface_elevation_data='Elevation',
-                    bedrock_elevation_column="BedrockElevation",
-                    depth_column="BedrockDepth",
-                    verbose=False,    # if verbose is True, display warnings otherwise not
-                    export_path=None,
+                    bedrock_elevation_data="BedrockElevation",
+                    bedrock_depth_data="BedrockDepth",
+                    depth_plot_export_path=None,
                     swave_velocity=563.0,
-                    decimal_places=3,
                     depth_model_in_latex=False,
-                    fig=None,
-                    ax=None,
-                    #group_by = "County", -> make a kwarg
+                    verbose=False,  # if verbose=True, warnings will be shown
                     **kwargs):
     """Calculate depth(s) based on a frequency input (usually HVSRData or HVSRBatch oject) and a frequency-depth depth_model (usually a power law relationship).
 
@@ -117,22 +117,24 @@ def calculate_depth(freq_input,
         Name of the column containing the frequency information of the peak, by default "Peak" (per HVSRData.Table_Report output)
     calculate_elevation : bool, optional
         Whether or not to calculate elevation, by default True
+    generate_depth_curve
+        Whether to generate a plot curve (will be shown by default, but can be hidden using show_depth_curve=False), by default False
+    show_depth_curve
+        Whether to show the depth curve. If True, will also set generate_depth_curve to True.
     surface_elevation_data : str or numeric, optional
         The name of the column or a manually specified numeric value to use for the surface elevation value, by default "Elevation"
-    bedrock_elevation_column : str, optional
+    bedrock_elevation_data : str, optional
         The name of the column in the TableReport for the bedrock elevation of the point.
         This can be either the name of a column in a table (i.e., Table_Report) or a numeric value, by default "BedrockElevation"
-    depth_column : str, optional
+    bedrock_depth_data : str, optional
         _description_, by default "BedrockDepth"
     verbose : bool, optional
         Whether or not to print information about the processing to the terminal, by default False
-    export_path : _type_, optional
+    depth_plot_export_path : _type_, optional
         _description_, by default None
     swave_velocity : float, optional
         Shear wave velocity to use for depth calculations in meters/second, 
         if using the quarter wavelength shear wave velocity method, by default 563.0
-    decimal_places : int, optional
-        Number of decimal places to round depth results, by default 3
 
     Returns
     -------
@@ -143,6 +145,29 @@ def calculate_depth(freq_input,
     orig_args = locals()
     ip_params, fd_params = __get_ip_df_params()
 
+    if depth_model is None:
+        depth_model = CONGLOMERATE_MODEL
+        orig_args['depth_model'] = depth_model
+
+    if show_depth_curve:
+        generate_depth_curve = True
+        orig_args['generate_depth_curve'] = generate_depth_curve
+
+    plot_engine = 'matplotlib'
+    if 'plot_engine' in kwargs:
+        plot_engine = kwargs['plot_engine']
+
+    decimal_places = 3
+    if 'decimal_places' in kwargs:
+        decimal_places = kwargs['decimal_places']
+
+    fig = None
+    ax = None
+    if 'fig' in kwargs:
+        fig = kwargs['fig']
+    if 'ax' in kwargs:
+        ax = kwargs['ax']
+
     # Break out if list (of random or not) items
     if isinstance(freq_input, (list, tuple)):
         outputList = []
@@ -152,7 +177,7 @@ def calculate_depth(freq_input,
             calc_depth_kwargs = orig_args
             outputList.append(calculate_depth(freq_input=item, **calc_depth_kwargs))
         return outputList
-    
+
     # Break out for Batch data
     if isinstance(freq_input, sprit_hvsr.HVSRBatch):
         newBatchList = []
@@ -163,41 +188,50 @@ def calculate_depth(freq_input,
             calc_depth_kwargs = orig_args
             newBatchList.append(calculate_depth(freq_input=freq_input[site], **calc_depth_kwargs))
         return sprit_hvsr.HVSRBatch(newBatchList, df_as_read=freq_input.input_df)    
-    
+
+    # Extract and standardize depth_model for a, b
     # initialize values
     a = 0
     b = 0
     depth_model_params = None
-
-    # Fetch parameters for frequency-depth model
-    if isinstance(depth_model, (tuple, list, dict)):
+    if isinstance(depth_model, (list, tuple, np.ndarray)) and len(depth_model) == 2:
         (a, b) = depth_model
-        if a == 0 or b == 0:
-            raise ValueError(f"Model parameters (a, b)={depth_model} cannot be zero, check model inputs.")
-    elif isinstance(depth_model, str):
 
-        if depth_model.casefold() in list(map(str.casefold, model_parameters)):
-            for k, v in model_parameters.items():
-                if depth_model.casefold() == k.casefold():
-                    (a, b) = v
-                    break
-
-        elif depth_model.casefold() in swave:
-            depth_model_params = depth_model.casefold()
-
-        elif depth_model.casefold() == "all":
-            depth_model_params = depth_model.casefold()
-
-        else:   # parameters a and b could be passed in as a parsable string
-            depth_model_params = depth_model.split(',')
-            # Work on re update[int(s) for s in re.findall(r"[-+]?(?:\d*\.*\d+)", 
-            # depth_model)]  #figure this out later for floating points; works for integers
-            (a, b) = depth_model_params
+        # Fetch parameters for frequency-depth model
+        if isinstance(depth_model, (tuple, list)):
+            (a, b) = depth_model
             if a == 0 or b == 0:
-                raise ValueError("Parameters cannot be zero, check model inputs")            
+                raise ValueError(f"Model parameters (a, b)={depth_model} cannot be zero, check model inputs.")
+        elif isinstance(depth_model, dict):
+            depth_modelDict = {k.lower(): v for k, v in depth_model.items()}
+            a = depth_modelDict['a']
+            b = depth_modelDict['b']
+        elif isinstance(depth_model, str):
+            if depth_model.casefold() in list(map(str.casefold, model_parameters)):
+                for k, v in model_parameters.items():
+                    if depth_model.casefold() == k.casefold():
+                        (a, b) = v
+                        break
 
-    if b < 0:
-        b = b * -1
+            elif depth_model.casefold() in swave_model_list:
+                depth_model_params = depth_model.casefold()
+
+            elif depth_model.casefold() == "all":
+                depth_model_params = depth_model.casefold()
+
+            else:   # parameters a and b could be passed in as a parsable string
+                depth_model_params = depth_model.split(',')
+                # Work on re update[int(s) for s in re.findall(r"[-+]?(?:\d*\.*\d+)", 
+                # depth_model)]  #figure this out later for floating points; works for integers
+                (a, b) = depth_model_params
+                if a == 0 or b == 0:
+                    raise ValueError("Parameters cannot be zero, check model inputs")            
+
+        # Standardize b as positive for input to function
+        if b < 0:
+            b = b * -1
+        
+        depth_model = (a, b)
 
     # Get frequency input
     # Checking if freq_input is HVSRData object
@@ -209,12 +243,12 @@ def calculate_depth(freq_input,
             if isinstance(freq_input, (float, int)):
                 if freq_input <= 0:
                     raise ValueError("Peak Frequency cannot be zero or negative")
-                
+
                 if isinstance(surface_elevation_data, numbers.Number):
                     surface_elevation_col = 'Elevation'
                 else:
                     surface_elevation_col = surface_elevation_data
-                
+
                 tableReport = pd.DataFrame(columns=['Site Name',
                                                     'Acq_Date',
                                                     'XCoord',
@@ -224,7 +258,7 @@ def calculate_depth(freq_input,
                                                     'Peak_StDev'
                                                     'PeakPasses'])
                 tableReport.loc[0, freq_col] = freq_input
-                
+
                 # Get extra parameters read in via kwargs, if applicable
                 paramDict = {'input_data': "from_user"}
                 if isinstance(surface_elevation_data, numbers.Number):
@@ -303,7 +337,8 @@ def calculate_depth(freq_input,
             if not hasattr(freq_input, 'Table_Report'):
                 if verbose:
                     warn("Passed HVSRData Object has no attribute Table_Report, attempting to generate one.")
-                tableReport = sprit_hvsr.get_report(freq_input, report_format='csv')
+                freq_input = sprit_hvsr.get_report(freq_input, report_format='table')
+                tableReport = freq_input.Table_Report
             else:
                 tableReport = freq_input.Table_Report
 
@@ -327,9 +362,9 @@ def calculate_depth(freq_input,
 
         for site_peak_freq in pf_values:
             try:
-                if depth_model in swave:
+                if str(depth_model).lower() in swave_model_list:
                     calib_data.append(swave_velocity/(4*site_peak_freq))
-                    
+
                     if depth_model_in_latex:
                         dModelStr = f"$\\frac{{{swave_velocity}}}{{4\\times{site_peak_freq}}}$"
                     else:
@@ -337,14 +372,10 @@ def calculate_depth(freq_input,
                     depthModelList.append(dModelStr)
                     depthModelTypeList.append('Quarter Wavelength')
                 else:
-                    if depth_model == "all":
-                        a_list = []
-                        b_list = []
-                        for name, model_params in model_parameters.items():
-                            a_list.append(model_params[0])
-                            b_list.append(model_params[1])
-                        (a, b) = (np.nanmean(a_list), np.nanmean(b_list))
-
+                    if str(depth_model).lower() in ["all", 'average', 'conglomerate']:
+                        (a, b) = CONGLOMERATE_MODEL
+                    else:
+                        (a, b) = depth_model
                     calib_data.append(a*(site_peak_freq**-b))
                     if hasattr(freq_input, 'x_freqs'):
                         freq_input['x_depth_m'] = {'Z': np.around([a*(f**-b) for f in freq_input["x_freqs"]['Z']], decimal_places),
@@ -355,7 +386,7 @@ def calculate_depth(freq_input,
                         freq_input['x_depth_ft'] = {'Z': np.around(freq_input['x_depth_m']['Z']*3.281, decimal_places),
                                                     'E': np.around(freq_input['x_depth_m']['E']*3.281, decimal_places),
                                                     'N': np.around(freq_input['x_depth_m']['N']*3.281, decimal_places)}
-                             
+
                     if depth_model_in_latex:
                         dModelStr = f"{a} \\times {{{site_peak_freq}}}^{{-{b}}}"
                     else:
@@ -367,21 +398,21 @@ def calculate_depth(freq_input,
                 raise ValueError("Error in calculating depth, check HVSRData object for empty values or missing columns") from e
 
         # Record depth data in table
-        tableReport[depth_column] = np.around(calib_data, decimal_places)
-        
+        tableReport[bedrock_depth_data] = np.around(calib_data, decimal_places)
+
         # Calculate elevation data
         if calculate_elevation and surface_elevation_data in tableReport.columns:
-            tableReport[bedrock_elevation_column] = np.around((float(tableReport.loc[0, surface_elevation_data]) - float(tableReport.loc[0, depth_column])), decimal_places)
+            tableReport[bedrock_elevation_data] = np.around((np.float32(tableReport.loc[:, surface_elevation_data]) - np.float32(tableReport.loc[:, bedrock_depth_data])), decimal_places)
             if hasattr(freq_input, 'x_depth_m'):
                 freq_input['x_elev_m'] = {'Z': np.around([float(tableReport[surface_elevation_data].values[0]) - float(f) for f in freq_input["x_depth_m"]['Z']], decimal_places),
                                           'E': np.around([float(tableReport[surface_elevation_data].values[0]) - float(f) for f in freq_input["x_depth_m"]['E']], decimal_places),
                                           'N': np.around([float(tableReport[surface_elevation_data].values[0]) - float(f) for f in freq_input["x_depth_m"]['N']], decimal_places)}
 
         if calculate_depth_in_feet:
-            tableReport[depth_column+'_ft'] = np.around(calib_data*3.281,
+            tableReport[bedrock_depth_data+'_ft'] = np.around(calib_data*3.281,
                                                      decimals=decimal_places)
             if calculate_elevation and surface_elevation_data in tableReport.columns:
-                tableReport[bedrock_elevation_column+'_ft'] = np.around(tableReport[bedrock_elevation_column] * 3.281,
+                tableReport[bedrock_elevation_data+'_ft'] = np.around(tableReport[bedrock_elevation_data] * 3.281,
                                                                 decimals=decimal_places)
                 if hasattr(freq_input, 'x_elev_m') and not hasattr(freq_input['x_depth_ft']):
                     # Calculate depth in feet
@@ -392,86 +423,94 @@ def calculate_depth(freq_input,
         tableReport["DepthModel"] = depthModelList
         tableReport["DepthModelType"] = depthModelTypeList
 
-        # Do plotting work
-        if fig is None and ax is None:
-            fig, ax = plt.subplots()
-        elif fig is not None:
-            ax = fig.get_axes()
-            if len(ax) == 1:
-                ax = ax[0]
+        mplList = ['matplotlib', 'mpl', 'm',]
+        # Currently only MPL supported
+        if str(plot_engine).lower() in mplList or str(plot_engine).lower() not in mplList:
+            # Do plotting work
+            if fig is None and ax is None:
+                fig, ax = plt.subplots()
+            elif fig is not None:
+                ax = fig.get_axes()
+                if len(ax) == 1:
+                    ax = ax[0]
 
-        if hasattr(freq_input, 'hvsr_curve'):
-            pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
-            freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input,
-                                                     show_depth_curve=show_depth_curve,
-                                                     fig=fig, ax=ax,
-                                                     **pdc_kwargs)
-        else:
-            surfElevVal = tableReport.loc[0, surface_elevation_col]
-            brElevVal = tableReport.loc[0, bedrock_elevation_column]
-            if np.isnan(surfElevVal):
-                surfElevVal = 0
-                
-            if np.isnan(brElevVal):
-                brElevVal = tableReport.loc[0, depth_column]
-                yLIMITS = [brElevVal*1.1, brElevVal*-0.1]
+            if hasattr(freq_input, 'hvsr_curve') and generate_depth_curve:
+                pdc_kwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_depth_curve).parameters.keys())}
+                pdc_kwargs['show_depth_curve'] = show_depth_curve
+                pdc_kwargs['depth_plot_export_path'] = depth_plot_export_path
+                pdc_kwargs['depth_model'] = depth_model
+                pdc_kwargs['fig'] = fig
+                pdc_kwargs['ax'] = ax
+                freq_input = sprit_plot.plot_depth_curve(hvsr_results=freq_input,
+                                                         **pdc_kwargs)
             else:
-                yLIMITS = [0, brElevVal - ((surfElevVal-brElevVal) * 0.1)]
+                surfElevVal = tableReport.loc[0, surface_elevation_col]
+                brElevVal = tableReport.loc[0, bedrock_elevation_data]
+                if np.isnan(surfElevVal):
+                    surfElevVal = 0
+                    
+                if np.isnan(brElevVal):
+                    brElevVal = tableReport.loc[0, bedrock_depth_data]
+                    yLIMITS = [brElevVal*1.1, brElevVal*-0.1]
+                else:
+                    yLIMITS = [0, brElevVal - ((surfElevVal-brElevVal) * 0.1)]
 
-            ax.axhline(0, xmin=-0.1, xmax=1, c='k')
-            ax.plot([0, 0], [0, brElevVal], linestyle='dotted', c='k')
-            
-            ax.scatter(x=0, y=surfElevVal, c='k', marker='v')
-            ax.scatter(x=0, y=brElevVal, c='k', marker='^')
-            
-            spc = " "
-            ax.text(x=0, y=brElevVal, 
-                    s=f"  Depth: {brElevVal}m {spc}({tableReport.loc[0, freq_col]} Hz)",
-                    va='top')
-            
-            ax.set_xlim([-0.1, 1])
-            ax.set_ylim(yLIMITS)
-            
-            ax.set_ylabel('Depth [m]')
-            ax.set_xticks([])
-            titleText = f'Calibrated Depth from Input Frequency'
-            fig.suptitle(titleText)
-            if isinstance(depth_model, (tuple, list)):
-                aText = depth_model[0]
-                bText = np.sqrt(depth_model[1]**2)*-1
-                ax.text(x=0,
-                        y=surfElevVal, va='bottom',
-                        s=f"  Depth Model: ${aText:.2f} * f_0 ^{{{bText:0.3f}}}$")
-            
-        plt.sca(ax)
-        if show_depth_curve:
-            plt.show()
-        else:
-            plt.close()
+                ax.axhline(0, xmin=-0.1, xmax=1, c='k')
+                ax.plot([0, 0], [0, brElevVal], linestyle='dotted', c='k')
+                
+                ax.scatter(x=0, y=surfElevVal, c='k', marker='v')
+                ax.scatter(x=0, y=brElevVal, c='k', marker='^')
+                
+                spc = " "
+                ax.text(x=0, y=brElevVal,
+                        s=f"  Depth: {brElevVal}m {spc}({tableReport.loc[0, freq_col]} Hz)",
+                        va='top')
+                
+                ax.set_xlim([-0.1, 1])
+                ax.set_ylim(yLIMITS)
+                
+                ax.set_ylabel('Depth [m]')
+                ax.set_xticks([])
+                titleText = f'Calibrated Depth from Input Frequency'
+                fig.suptitle(titleText)
+                if isinstance(depth_model, (tuple, list)):
+                    aText = depth_model[0]
+                    bText = np.sqrt(depth_model[1]**2)*-1
+                    ax.text(x=0,
+                            y=surfElevVal, va='bottom',
+                            s=f"  Depth Model: ${aText:.2f} * f_0 ^{{{bText:0.3f}}}$")
+                
+            plt.sca(ax)
+            if not show_depth_curve:
+                plt.close()
         
         # Export as specified
-        if export_path is not None and os.path.exists(export_path):
-            if export_path == freq_input:
-                tableReport.to_csv(freq_input)
-                if verbose:
-                    print("Saving data in the original file")
+        if depth_plot_export_path is not None:
+            try:
+                pathlib.path(depth_plot_export_path)
 
-            else:
-                if "/" in export_path:
-                    temp = os.path.join(export_path+ "/"+ site + ".csv")
-                    tableReport.to_csv(temp)
-                
+                if pathlib.Path(depth_plot_export_path).is_dir():
+                    if hasattr(freq_input, 'site'):
+                        site = freq_input['site']
+                    else:
+                        site = str(freq_input)
+
+                    if len(site) > 15:
+                        site = site[:15]
+                    dm = str(depth_model)
+
+                    fname = f"{site}_{dm}_Depth_Sounding_Plot.png"
+                    dpExPath = pathlib.Path(depth_plot_export_path).joinpath(fname)
                 else:
-                    temp = os.path.join(export_path+"\\"+ site + ".csv")
-                    tableReport.to_csv(temp)
+                    dpExPath = pathlib.Path(depth_plot_export_path)
 
-                if verbose:
-                    print("Saving data to the path specified")
-        
-        
+                if str(plot_engine).lower() in mplList:
+                    plt.savefig(dpExPath.as_posix())
+            except Exception:
+                print(f'Path specified for depth_plot_export_path cannot be parsed as filepath: {depth_plot_export_path}')
+
         freq_input.Table_Report = tableReport
         return freq_input
-            
     else:
         raise RuntimeError(f"The freq_input parameter is not the correct type:\n\ttype(freq_input)={type(freq_input)}")
 
@@ -520,8 +559,6 @@ def calibrate(calib_filepath, calib_type="power", peak_freq_col="PeakFrequency",
     bedrock_depth_names = ["BedrockDepth", "DepthToBedrock", "bedrock_depth",
                             "depth_bedrock", "depthtobedrock", "bedrockdepth"]
 
-    #if calib_type.lower() in power_list:
-
     depthDataDF = pd.read_csv(calib_filepath)
 
     depths = depthDataDF[calib_depth_col]
@@ -549,8 +586,8 @@ def calibrate(calib_filepath, calib_type="power", peak_freq_col="PeakFrequency",
             if min(freqs) > t and min(freqs) <= tickList[i+1]:
                 minX = t
             if i!=0 and max(freqs) > tickList[i-1] and max(freqs) <= t:
-                maxX = t                
-        
+                maxX = t
+    
         for i, t in enumerate(tickList):
             if min(depths) > t and min(depths) <= tickList[i+1]:
                 minY = t
@@ -617,7 +654,7 @@ def calibrate(calib_filepath, calib_type="power", peak_freq_col="PeakFrequency",
         plt.xlim([xArr[0]-0.001*xArr[0], xArr[-1]+0.005*xArr[-1]])
         plt.ylim([yArr[0]-0.005*yArr[0], yArr[-1]+0.005*yArr[-1]])
         plt.show()
-    
+
     calibration_vals = tuple(popt)
 
     return calibration_vals

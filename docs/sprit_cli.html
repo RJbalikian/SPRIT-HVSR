@@ -69,7 +69,7 @@ el.replaceWith(d);
             param_end = function_docstring.find(&#39;\n&#39;, param_end_line1 + 1)
             if param_end != -1:
                 param_docstring = function_docstring[param_start:param_end].strip()
-    
+
     if param_docstring is None:
         param_docstring = &#39;&#39;
     return param_docstring</code></pre>
@@ -86,40 +86,58 @@ el.replaceWith(d);
 </summary>
 <pre><code class="python">def main():
     parser = argparse.ArgumentParser(description=&#39;CLI for SPRIT HVSR package (specifically the sprit.run() function)&#39;)
-    
-    hvsrFunctions = [sprit.run,
-                    sprit.input_params,
-                     sprit.fetch_data,
-                     sprit.calculate_azimuth,
-                     sprit.remove_noise,
-                     sprit.generate_psds,
-                     sprit.process_hvsr,
-                     sprit.remove_outlier_curves,
-                     sprit.check_peaks,
-                     sprit.get_report]#,
-                     #sprit.plot_hvsr]
 
-    hvsrFunDict = {sprit.run: inspect.signature(sprit.run).parameters,
-                    sprit.input_params: inspect.signature(sprit.input_params).parameters,
-                     sprit.fetch_data: inspect.signature(sprit.fetch_data).parameters,
-                     sprit.calculate_azimuth: inspect.signature(sprit.calculate_azimuth).parameters,
-                     sprit.remove_noise: inspect.signature(sprit.remove_noise).parameters,
-                     sprit.generate_psds: inspect.signature(sprit.generate_psds).parameters,
-                     sprit.process_hvsr: inspect.signature(sprit.process_hvsr).parameters,
-                     sprit.remove_outlier_curves: inspect.signature(sprit.remove_outlier_curves).parameters,
-                     sprit.check_peaks: inspect.signature(sprit.check_peaks).parameters,
-                     sprit.get_report: inspect.signature(sprit.get_report).parameters     
-                    }
+    hvsrFunctions = [sprit_hvsr.run,
+                    sprit_hvsr.input_params,
+                     sprit_hvsr.fetch_data,
+                     sprit_hvsr.calculate_azimuth,
+                     sprit_hvsr.remove_noise,
+                     sprit_hvsr.generate_psds,
+                     sprit_hvsr.process_hvsr,
+                     sprit_hvsr.remove_outlier_curves,
+                     sprit_hvsr.check_peaks,
+                     sprit_hvsr.get_report,
+                     sprit_hvsr.export_json,
+                     sprit_hvsr.export_data,
+                     sprit_hvsr.export_hvsr,
+                     sprit_hvsr.export_report,
+                     sprit_hvsr.plot_hvsr,
+                     sprit_calibration.calculate_depth,
+                     sprit_plot.plot_depth_curve,
+                     sprit_plot.plot_text]
+
+    hvsrFunDict = {sprit_hvsr.run: inspect.signature(sprit_hvsr.run).parameters,
+                   sprit_hvsr.input_params: inspect.signature(sprit_hvsr.input_params).parameters,
+                   sprit_hvsr.fetch_data: inspect.signature(sprit_hvsr.fetch_data).parameters,
+                   sprit_hvsr.calculate_azimuth: inspect.signature(sprit_hvsr.calculate_azimuth).parameters,
+                   sprit_hvsr.remove_noise: inspect.signature(sprit_hvsr.remove_noise).parameters,
+                   sprit_hvsr.generate_psds: inspect.signature(sprit_hvsr.generate_psds).parameters,
+                   sprit_hvsr.process_hvsr: inspect.signature(sprit_hvsr.process_hvsr).parameters,
+                   sprit_hvsr.remove_outlier_curves: inspect.signature(sprit_hvsr.remove_outlier_curves).parameters,
+                   sprit_hvsr.check_peaks: inspect.signature(sprit_hvsr.check_peaks).parameters,
+                   sprit_hvsr.get_report: inspect.signature(sprit_hvsr.get_report).parameters,
+                   sprit_hvsr.export_json: inspect.signature(sprit_hvsr.export_json).parameters,
+                   sprit_hvsr.export_data: inspect.signature(sprit_hvsr.export_data).parameters,
+                   sprit_hvsr.export_hvsr: inspect.signature(sprit_hvsr.export_hvsr).parameters,
+                   sprit_hvsr.export_report: inspect.signature(sprit_hvsr.export_report).parameters,
+                   sprit_plot.plot_depth_curve: inspect.signature(sprit_plot.plot_depth_curve).parameters,
+                   sprit_calibration.calculate_depth: inspect.signature(sprit_calibration.calculate_depth).parameters,
+                   sprit_hvsr.plot_hvsr: inspect.signature(sprit_hvsr.plot_hvsr).parameters,
+                   sprit_plot.plot_text: inspect.signature(sprit_plot.plot_text).parameters,
+                   }
 
     # Get default parameters from main functions
     parameters = []
     for f in hvsrFunctions:
         parameters.append(inspect.signature(f).parameters)
-    #for f, p in hvsrFunDict.items():
-        
-    
+
     # Add argument and options to the parser
     intermediate_params_list = [&#39;params&#39;, &#39;input_parameters&#39;, &#39;input&#39;, &#39;hvsr_data&#39;, &#39;hvsr_results&#39;]
+    storeTrueList = [&#39;noise_removal&#39;, &#39;outlier_curves_removal&#39;, &#39;suppress_report_outputs&#39;,
+                     &#39;show_pdf_report&#39;, &#39;show_plot_report&#39;, &#39;plot_input_stream&#39;, &#39;remove_response&#39;,
+                      &#39;show_outlier_plot&#39;, &#39;suppress_report_outputs&#39;, &#39;show_report_outputs&#39;,
+                        &#39;return_json_string&#39;, &#39;include_dataframe&#39;, &#39;include_plots&#39;, &#39;export_edited_stream&#39;,&#39;use_subplots&#39;,
+                         &#39;return_fig&#39;, &#39;show_legend&#39;, &#39;close_figs&#39; ]
     paramNamesList = []
     for i, param in enumerate(parameters):
         for name, parameter in param.items():
@@ -128,19 +146,28 @@ el.replaceWith(d);
                 paramNamesList.append(name)
                 curr_doc_str = get_param_docstring(func=hvsrFunctions[i], param_name=name)
                 if name == &#39;input_data&#39;:
-                    parser.add_argument(name, help=f&#39;{curr_doc_str}&#39;)
-                elif name == &#39;verbose&#39;:
-                    parser.add_argument(&#39;-v&#39;, &#39;--verbose&#39;,  action=&#39;store_true&#39;, help=&#39;Print status and results to terminal.&#39;, default=parameter.default)
+                    parser.add_argument(name, default=&#39;sample&#39;, help=f&#39;{curr_doc_str}&#39;)
+                elif name  == &#39;verbose&#39;:
+                    parser.add_argument(&#39;-v&#39;, &#39;--verbose&#39;,  action=&#39;store_true&#39;,
+                                        help=&#39;Print status and results to terminal.&#39;,
+                                       default=parameter.default)
+                elif name in storeTrueList:
+                    parser.add_argument(f&#39;--{name}&#39;, action=&#39;store_true&#39;,
+                                        help=helpStr,
+                                        default=parameter.default)
                 else:
                     helpStr = f&#39;Keyword argument {name} in function sprit.{hvsrFunctions[i].__name__}(). default={parameter.default}.\n\t{curr_doc_str}&#39;
-                    parser.add_argument(F&#39;--{name}&#39;, help=helpStr, default=parameter.default)
+                    parser.add_argument(f&#39;--{name}&#39;, help=helpStr, default=parameter.default)
 
     # Add more arguments/options as needed
     args = parser.parse_args()
 
     # Map command-line arguments/options to kwargs
     kwargs = {}
-    for arg_name, arg_value in vars(args).items():      
+    for arg_name, arg_value in vars(args).items():
+        if arg_name == &#39;input_data&#39;:
+            inData = arg_value
+
         if isinstance(arg_value, str):
             if &#34;=&#34; in arg_value:
                 arg_value = {arg_value.split(&#39;=&#39;)[0]: arg_value.split(&#39;=&#39;)[1]}
@@ -156,26 +183,37 @@ el.replaceWith(d);
                 arg_value = arg_value.split(&#39;,&#39;)
             elif &#34;,&#34; in arg_value:
                 arg_value = arg_value.split(&#39;,&#39;)
-        
-        is_default = False    
+
+        is_default = False
         for k, v in hvsrFunDict.items():
             for param in v:
-                if param == arg_name and arg_value == v[arg_name].default:
+                if param == arg_name and (arg_value == v[arg_name].default or str(arg_value).lower() == str(v[arg_name].default).lower()):
                     is_default = True
                     continue
-                    
+
             if is_default:
                 continue
-            
+
+        do_terminal_plot=True
         if not is_default:
+            if str(arg_value).replace(&#39;.&#39;, &#39;&#39;).replace(&#39;,&#39;,&#39;&#39;).isnumeric():
+                arg_value = float(arg_value)
+            elif isinstance(arg_value, (tuple, list)):
+                avList = []
+                for av in arg_value:
+                    if str(av).replace(&#39;.&#39;, &#39;&#39;).replace(&#39;,&#39;,&#39;&#39;).isnumeric():
+                        avList.append(float(av))
+                arg_value = avList
             kwargs[arg_name] = arg_value
-        
+
+    if &#39;input_data&#39; not in kwargs:
+        kwargs[&#39;input_data&#39;] = inData
     # Call the sprit.run function with the generated kwargs
-    kwargs[&#39;input_data&#39;] = kwargs[&#39;input_data&#39;].replace(&#34;&#39;&#34;, &#34;&#34;)  # Remove single quotes to reduce errors
+    kwargs[&#39;input_data&#39;] = str(kwargs[&#39;input_data&#39;]).replace(&#34;&#39;&#34;, &#34;&#34;)  # Remove single quotes to reduce errors
     if str(kwargs[&#39;input_data&#39;]).lower() == &#39;gui&#39;:
-        sprit.gui()
+        sprit_hvsr.gui()
     else:
-        #Print a summary if not verbose
+        # Print a summary if not verbose
         if &#39;verbose&#39; not in kwargs or not kwargs[&#39;verbose&#39;]:
             print(&#34;\nRunning sprit.run() with the following arguments (use --verbose for more information):\n&#34;)
             print(&#34;\tsprit.run(&#34;, end=&#39;&#39;)
@@ -194,7 +232,11 @@ el.replaceWith(d);
         [print(f&#34;\t\t {k} = {v}&#34;) for k, v in kwargs.items()]
         print()
         
-        sprit.run(**kwargs)</code></pre>
+        hvData =  sprit_hvsr.run(**kwargs)
+
+        if do_terminal_plot:
+            ptkwargs = {k: v for k, v in kwargs.items() if k in tuple(inspect.signature(sprit_plot.plot_text).parameters.keys())}
+            sprit_plot.plot_text(hvData, **ptkwargs)</code></pre>
 </details>
 <div class="desc"></div>
 </dd>

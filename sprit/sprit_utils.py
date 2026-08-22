@@ -6,6 +6,7 @@ import json
 import numbers
 import os
 import pathlib
+import requests
 import sys
 import traceback
 import warnings
@@ -16,17 +17,19 @@ from obspy.core.utcdatetime import UTCDateTime
 import obspy
 import pandas as pd
 
-try:  # For distribution
-    from sprit import sprit_hvsr
-except Exception: #For testing
-    import sprit_hvsr
-    pass
+#try:  # For distribution
+#    from sprit import sprit_hvsr
+#except Exception: #For testing
+#    import sprit_hvsr
 
-RESOURCE_DIR = pathlib.Path(str(importlib.resources.files('sprit'))).joinpath('resources')
+from . import sprit_hvsr
+
+RESOURCE_DIR = importlib.resources.files('sprit') / 'resources'
+with (RESOURCE_DIR / 'defaults.json').open('r', encoding='utf-8') as fp:
+    DEFAULT_PARAMS_DICT = json.load(fp)
 
 greek_chars = {'sigma': u'\u03C3', 'epsilon': u'\u03B5', 'teta': u'\u03B8'}
 channel_order = {'Z': 0, '1': 1, 'N': 1, '2': 2, 'E': 2}
-
 
 def _assert_check(var, cond=None, var_type=None, error_message='Output not valid', verbose=False):
     if var_type is not None:
@@ -121,7 +124,10 @@ def _checkifpath(filepath, sample_list='', verbose=False, raise_error=False):
         except Exception:
             if verbose:
                 warnings.warn('Filepath cannot be converted to pathlib path: {}'.format(filepath))
-        if not filepath.exists():
+        
+        if filepath is None:
+            pass
+        elif not filepath.exists():
             raise RuntimeError('File does not exist: {}'.format(filepath))
 
     return filepath
@@ -173,6 +179,9 @@ def _check_processing_status(hvsr_data, start_time=datetime.datetime.now(), func
     """
 
     # Convert HVSRData to same format as HVSRBatch so same code works the same on both
+    if isinstance(hvsr_data, dict):
+        hvsr_data = sprit_hvsr.HVSRData(hvsr_data)
+
     if isinstance(hvsr_data, sprit_hvsr.HVSRData):
         sn = hvsr_data['site']
         hvsr_interim = {sn: hvsr_data}
@@ -427,60 +436,170 @@ def _get_error_from_exception(exception=None, print_error_message=True, return_e
             return f"{error_category} ({errLineNo}): {error_message}\n\n{lineno} {filename} {f}"
 
 
+# Get noise models
+def _get_noise_models(model_type='vel'):
+    """This returns curve values based on Peterson 1993 Noise models.
+        Values from: https://pubs.usgs.gov/of/1993/0322/ofr93-322.pdf
+    Returns
+    -------
+    dict
+        Dictionary of various noise models
+    """
+    DEFAULT_BAND = DEFAULT_PARAMS_DICT['hvsr_band']
+    DEFAULT_RESAMPLING = 1024
+
+    nlnm_periods = np.array([0.1,0.17,0.4,0.8,1.24,2.4,4.3,5,6,10,12,15.6,21.9,31.6,45,70,101,154,328,600,10000])
+    nlnm_freqs = 1/np.array(nlnm_periods)
+    nlnmA = np.array([-162.36,-166.7,-170.,-166.4,-168.6,-159.98,-141.1,-71.36,
+             -97.26,-132.18,-205.27,-37.65,-114.37,-160.58,-187.5,-216.47,-185.00,
+             -168.34,-217.43,-258.28,-346.88])
+    nlnmB = np.array([5.64,0,-8.3,28.9,52.48,29.81,0,-99.7,-66.49,-31.57,36.16,-104.33,-47.1,
+             -16.28,0,15.7,0,-7.61,11.9,26.6,48.75])
+    
+    nhnm_periods = np.array([0.1,0.22,0.32,0.8,3.8,4.6,6.3,7.9,15.4,20,354.8])
+    nhnm_freqs = 1/np.array(nhnm_periods)
+    nhnmA = np.array([-108.73,-150.34,-122.31,-116.85,-108.48,-74.66,0.66,-93.37,73.54,-151.52,-206.66])
+    nhnmB = np.array([-17.23,-80.5,-23.87,32.51,18.08,-32.95,-127.18,-22.42,-162.98,10.01,31.63])
+    
+    nlnmAcc = nlnmA + nlnmB * np.log10(nlnm_periods)
+    nhnmAcc = nhnmA + nhnmB * np.log10(nhnm_periods)
+
+
+    if 'vel' in str(model_type).lower():
+        #from obspy.signal.spectral_estimation import get_nlnm, get_nhnm
+
+        #nlnm_periods, nlnmOUT = get_nlnm()
+        #nlnm_freqs = 1/nlnm_periods
+
+        #nhnm_periods, nhnmOUT = get_nhnm()
+        #nhnm_freqs = 1/nhnm_periods
+
+        nlnmOUT = nlnmAcc + 20 * np.log10(nlnm_periods/2*np.pi)
+        nhnmOUT = nhnmAcc + 20 * np.log10(nhnm_periods/2*np.pi)
+    elif 'disp' in str(model_type).lower():
+        nlnmOUT = nlnmAcc + 20 * np.log10(nlnm_periods**2/4*np.pi**2)
+        nhnmOUT = nhnmAcc + 20 * np.log10(nhnm_periods**2/4*np.pi**2)
+    else:
+        nlnmOUT = nlnmAcc
+        nhnmOUT = nhnmAcc
+    
+    nnmDict = {'NLNM_periods': nlnm_periods,
+               'NLNM_freqs': nlnm_freqs,
+               'NHNM_periods': nhnm_periods,
+               'NHNM_freqs': nhnm_freqs,
+               'NLNM': nlnmOUT,
+               'NHNM': nhnmOUT}
+    return nnmDict
+
+
 # Get sample data from resources
 def _get_sample_data(sample_file='1', verbose=False):
+    """Get sample data from distributed, online, or local sources
 
+    Parameters
+    ----------
+    sample_file : str, optional
+        Sample file to use, by default '1'
+    verbose : bool, optional
+        Whether to print information about process to terminal, by default False
+
+    Returns
+    -------
+    obspy.Stream
+        ObsPy Stream object of sample data specified.
+
+    Raises
+    ------
+    FileNotFoundError
+        _description_
+    """
+    if sample_file=='sample':
+        sample_file = '1'
     # Get filenames depending on input
-    sampleMapDict = {'1':'SampleHVSRSite01.MSEED',
-                     '2':'SampleHVSRSite02.MSEED',
-                     '3':'SampleHVSRSite03.MSEED',
-                     '4':'SampleHVSRSite04.MSEED',
-                     '5':'SampleHVSRSite05.MSEED',
-                     '6':'SampleHVSRSite06.MSEED',
-                     '7':'SampleHVSRSite07.MSEED',
-                     '8':'SampleHVSRSite08.MSEED',
-                     '9':'SampleHVSRSite09.MSEED',
-                     '10':'SampleHVSRSite10.MSEED',
-                     'batch':'Batch_SampleData.csv'
-                    }
-    sampleKey = sample_file
+    sampleMapDict = {'sample': 'SampleHVSRSite01.MSEED',
+                     '1': 'SampleHVSRSite01.MSEED',
+                     '2': 'SampleHVSRSite02.MSEED',
+                     '3': 'SampleHVSRSite03.MSEED',
+                     '4': 'SampleHVSRSite04.MSEED',
+                     '5': 'SampleHVSRSite05.MSEED',
+                     '6': 'SampleHVSRSite06.MSEED',
+                     '7': 'SampleHVSRSite07.MSEED',
+                     '8': 'SampleHVSRSite08.MSEED',
+                     '9': 'SampleHVSRSite09.MSEED',
+                     '10': 'SampleHVSRSite10.MSEED',
+                     '11': 'SampleHVSRSite11.MSEED',
+                     '12': 'SampleHVSRSite12.MSEED',
+                     '13': 'SampleHVSRSite13.MSEED',
+                     '14': 'SampleHVSRSite14.MSEED',
+                     'batch': 'Batch_SampleData.csv'
+                     }
+    addDict = {}
+    for key, file in sampleMapDict.items():
+        if len(key) == 1:
+            addDict[f'0{key}'] = file
+    sampleMapDict.update(addDict)
 
-    if 'sample' in str(sampleKey).lower():
+    sampleKey = sample_file
+    if 'sampledata' in str(sampleKey).lower():
+        sampleKey = str(sampleKey).lower().split('sampledata')[1]
+    elif 'sample' in str(sampleKey).lower():
         sampleKey = str(sampleKey).lower().split('sample')[1]
         if sampleKey[0] == '0':
             sampleKey = str(sampleKey[1:]).lower()
-
-    if isinstance(sampleKey, numbers.Number):
+    elif isinstance(sampleKey, numbers.Number):
         sampleKey = str(sampleKey).lower()
 
     if sampleKey not in sampleMapDict.keys():
         if verbose:
-            print(f'{sample_file} is not an acceptable sample file. Specify any number 1-10, or use "batch" for input_data')
-
-        print("USING SAMPLE DATASET")
+            print(f'{sample_file} is not an acceptable sample file. Specify any number 1-14, or use "batch" for input_data')
         sampleKey = '1'
-            
 
-    #sampleListKeys = [str(i) for i in list(range(1,11))]
+    print(f" READING SAMPLE DATASET {sampleKey.zfill(2)} ".center(99, '*'))
+    onlineSampleKeyList = ['3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']
+    if sampleKey in onlineSampleKeyList:
+        print('*'+"**Attempting to access online sample data. For local sample data, use dataset 1 or 2**".center(97)+'*')    
+    print('*'+"To read in your own data, use sprit.run(input_data='/path/to/your/seismic/data.mseed')".center(97)+'*')
+    print('*'+"Any file format supported by osbpy.read() can be input to sprit_run()".center(97)+'*')
+    print('*'+"Raw data (.trc) files from select Tromino Portable are also supported".center(97)+'*')
+    print('*'+"See SpRIT Wiki or API documentation for more information:".center(97)+'*')
+    print('*'+"Wiki: https://github.com/RJbalikian/SPRIT-HVSR/wiki".center(97)+'*')
+    print('*'+"API Documentation: https://sprit.readthedocs.io/en/latest/#".center(97)+'*')
+    print("".center(99, '*'))
+    print()
 
-    # Construct resource filename
-    filename = sampleMapDict[sampleKey]
     sampleDir = importlib.resources.files('sprit') / "resources" / "sample_data"
-    resource = sampleDir / filename
+    if sampleKey in ['1', '2', '01', '02', 1, 2]:
+        # Construct resource filename
+        filename = sampleMapDict[sampleKey]
+        resource = sampleDir / filename
 
-    if str(sampleKey).lower() == 'batch':
-        text = resource.read_text(encoding="utf-8")
-        return pd.read_csv(io.StringIO(text))
+        if str(sampleKey).lower() == 'batch':
+            text = resource.read_text(encoding="utf-8")
+            return pd.read_csv(io.StringIO(text))
 
-    if not resource.is_file():
-        resource = sample_dir / sampleMapDict['1']
+        if not resource.is_file():
+            resource = sampleDir / sampleMapDict['1']
+            try:
+                return obspy.read(io.BytesIO(resource.read_bytes()))
+            except:
+                available = sorted(p.stem for p in sampleDir.iterdir() if p.suffix == ".mseed")
+                raise FileNotFoundError(f"Sample '{sampleKey}' not found. Available samples: {available}")
+
+        return obspy.read(io.BytesIO(resource.read_bytes()))
+    elif 'b' in str(sampleKey).lower():
+        return pd.read_csv(sampleDir / "Batch_SampleData.csv")
+    else:
+        BASE_URL = "https://raw.githubusercontent.com/RJbalikian/SPRIT-HVSR/main/sprit/extra_sample_data"
+        sampleDataURL = f"{BASE_URL}/{sampleMapDict[sampleKey]}"
         try:
+            resp = requests.get(sampleDataURL, timeout=30)
+            resp.raise_for_status()
+            return obspy.read(io.BytesIO(resp.content))
+        except Exception:
+            print("Error reading online sample data, using local dataset")
+            resource = sampleDir / sampleMapDict['1']
             return obspy.read(io.BytesIO(resource.read_bytes()))
-        except:
-            available = sorted(p.stem for p in sampleDir.iterdir() if p.suffix == ".mseed")
-            raise FileNotFoundError(f"Sample '{name}' not found. Available samples: {available}")
 
-    return obspy.read(io.BytesIO(resource.read_bytes()))
 
 # Check that input strema has Z, E, N channels
 def _has_required_channels(stream):

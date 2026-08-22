@@ -62,7 +62,7 @@ el.replaceWith(d);
         icon = spritLogoPath
     else:
         icon = &#34;:material/electric_bolt:&#34;
-        
+
     if &#39;sprit&#39; in sys.modules and hasattr(sprit, &#39;__version__&#39;):
         spritversion = sprit.__version__
     else:
@@ -102,7 +102,7 @@ el.replaceWith(d);
     bandVals = [0.05, 0.06, 0.07, 0.08, 0.09,
                 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
                 1, 2, 3, 4, 5, 6, 7, 8, 9,
-                10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+                10, 16, 20, 30, 32, 40, 50, 60, 64, 70, 80, 90, 100]
 
     # SETUP KWARGS
     if VERBOSE:
@@ -419,12 +419,7 @@ el.replaceWith(d);
             if key in st.session_state.run_kws:
                 if value != st.session_state.default_params[key]:
                     if str(value) != str(st.session_state.default_params[key]):
-                        if isinstance(value, (tuple, list)):
-                            if tuple(value) != tuple(st.session_state.default_params[key]):
-                                srun[key] = value
-                                print(&#34;ADDED&#34;, key, value)
-                        else:
-                            srun[key] = value                           
+                        srun[key] = value
             
             if key == &#39;plot_engine&#39;:
                 srun[key] = value
@@ -454,25 +449,30 @@ el.replaceWith(d);
             spinnerText = &#39;## Data is processing with default parameters.&#39;
             excludedKeys = [&#39;plot_engine&#39;, &#39;plot_input_stream&#39;, &#39;show_plot&#39;, &#39;verbose&#39;, &#39;show_outlier_plot&#39;]
             NOWTIME = datetime.datetime.now()
-            secondaryDefaults = {&#39;acq_date&#39;: datetime.date(NOWTIME.year, NOWTIME.month, NOWTIME.day),
-                                 &#39;hvsr_band&#39;:tuple(DEFAULT_BAND_LIST), &#39;use_hv_curves&#39;:True,
-                                 &#39;starttime&#39;:datetime.time(0,0,0),
-                                 &#39;endtime&#39;:datetime.time(23, 59, 0),
-                                 &#39;peak_freq_range&#39;:tuple(DEFAULT_BAND_LIST),
-                                 &#39;stalta_thresh&#39;:(8, 16),
-                                 &#39;period_limits&#39;:(1/DEFAULT_BAND_LIST[1], 1/DEFAULT_BAND_LIST[0]),
-                                 &#39;remove_method&#39;:[&#39;None&#39;],
-                                 &#39;report_export_format&#39;:None,
-                                 &#39;report_formats&#39;:  [&#39;print&#39;, &#39;table&#39;, &#39;plot&#39;, &#39;html&#39;, &#39;pdf&#39;] ,
-                                 &#39;show_pdf_report&#39;:False,
-                                 &#39;show_print_report&#39;:True,
-                                 &#39;show_plot_report&#39;:False,
-                                 &#39;elev_unit&#39;:&#39;m&#39;,
-                                 &#39;plot_type&#39;:&#39;HVSR p ann C+ p ann Spec p&#39;,
-                                 &#39;suppress_report_outputs&#39;:True
+            secondaryDefaults = {&#39;acq_date&#39;: datetime.date(NOWTIME.year,
+                                                           NOWTIME.month,
+                                                           NOWTIME.day),
+                                 &#39;hvsr_band&#39;: tuple(DEFAULT_BAND_LIST),
+                                 &#39;use_hv_curves&#39;: True,
+                                 &#39;starttime&#39;: datetime.time(0, 0, 0),
+                                 &#39;endtime&#39;: datetime.time(23, 59, 0),
+                                 &#39;peak_freq_range&#39;: tuple(DEFAULT_BAND_LIST),
+                                 &#39;stalta_thresh&#39;: (8, 16),
+                                 &#39;period_limits&#39;: (1/DEFAULT_BAND_LIST[1],
+                                                   1/DEFAULT_BAND_LIST[0]),
+                                 &#39;remove_method&#39;: [&#39;None&#39;],
+                                 &#39;report_export_format&#39;: None,
+                                 &#39;report_formats&#39;:  [&#39;print&#39;, &#39;table&#39;, &#39;plot&#39;,
+                                                     &#39;html&#39;, &#39;pdf&#39;],
+                                 &#39;show_pdf_report&#39;: False,
+                                 &#39;show_print_report&#39;: True,
+                                 &#39;show_plot_report&#39;: False,
+                                 &#39;elev_unit&#39;: &#39;m&#39;,
+                                 &#39;plot_type&#39;: &#39;HVSR p ann C+ p ann Spec p&#39;,
+                                 &#39;suppress_report_outputs&#39;: True,
+                                 &#39;resample&#39;: 1000
+                                 }
 
-                                  }
-            
             nonDefaultParams = False
 
             srun[&#39;report_formats&#39;] = [&#39;print&#39;, &#39;table&#39;, &#39;plot&#39;, &#39;html&#39;, &#39;pdf&#39;]
@@ -548,6 +548,7 @@ el.replaceWith(d);
         update_session_log(&#34;Processed data displayed&#34;)
         st.session_state.logTab.markdown(st.session_state.session_log)
 
+
     def on_read_data():
         update_session_log(f&#34;Started data read: {st.session_state.input_data}&#34;)
         if &#39;read_button&#39; not in st.session_state.keys() or not st.session_state.read_button:
@@ -589,6 +590,7 @@ el.replaceWith(d);
         st.session_state.data_ingested = True
         update_session_log(&#34;Ingested data displayed&#34;)
         st.session_state.logTab.markdown(st.session_state.session_log)
+
 
     def do_interactive_display():
         if st.session_state.interactive_display:
@@ -714,12 +716,10 @@ el.replaceWith(d);
 
     @st.fragment
     def display_download_buttons():
-        ##dlText, dlPDFReport, dlStream, dlTable, dlPlot, dlHVSR = st.session_state.mainContainer.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])
-        dlText, dlStream, dlHVSR, dlPDFReport, dlTable, dlPlot = st.columns([0.2, 0.16, 0.16, 0.16, 0.16, 0.16])
+        dlText, dlStream, dlJSON, dlPDFReport, dlHVSR, dlTable, dlPlot = st.columns([0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
         st.divider()
 
         # Download Buttons
-        ##st.session_state.dlText.text(&#34;Download Results: &#34;)
         dlText.text(&#34;Download Results: &#34;)
 
         # Set up variables for download section
@@ -742,13 +742,11 @@ el.replaceWith(d);
 
         dlPDFReport.download_button(label=&#34;Report (.pdf)&#34;,
                     data=pdf_byte,
-                    #on_click=display_results,
                     file_name=f&#34;{hvData.site}_Report_{hvID}_{nowTimeStr}.pdf&#34;,
                     mime=&#39;application/octet-stream&#39;,
                     icon=&#34;:material/summarize:&#34;)
 
         # Data Stream
-        #@st.cache_data
         def _convert_stream_for_download(_stream):
             strm = io.BytesIO()
             _stream = _stream.split()
@@ -756,7 +754,6 @@ el.replaceWith(d);
             return strm.getvalue()
         streamBytes = _convert_stream_for_download(hvData.stream)
 
-        ##st.session_state.dlStream.download_button(
         dlStream.download_button(
             label=&#39;Data (.mseed)&#39;,
             data=streamBytes,
@@ -766,13 +763,11 @@ el.replaceWith(d);
         )
 
         # Table download
-        #@st.cache_data
         def _convert_table_for_download(df):
             return df.to_csv().encode(&#34;utf-8&#34;)
 
         csv = _convert_table_for_download(st.session_state.hvsr_data[&#39;Table_Report&#39;])
 
-        ##st.session_state.dlTable.download_button(
         dlTable.download_button(
             label=&#34;Table (.csv)&#34;,
             data=csv,
@@ -783,26 +778,44 @@ el.replaceWith(d);
         )
 
         # Plot
-        #@st.cache_data
         def _convert_plot_for_download(_HV_Plot):            
             _img = io.BytesIO()
             if st.session_state.plot_engine == &#39;Matplotlib&#39;:
                 _HV_Plot.savefig(_img, format=&#39;png&#39;)
             else:
                 _img = _HV_Plot.to_image(format=&#39;png&#39;)
-            
+
             return _img
+        
+        try:
+            img = _convert_plot_for_download(hvData[&#39;Plot_Report&#39;])
+            ##st.session_state.dlPlot.download_button(
+            dlPlot.download_button(
+                label=&#34;Plot (.png)&#34;,
+                data=img,
+                file_name=f&#34;{hvData.site}_HV-Plot_{hvID}_{nowTimeStr}.png&#34;,
+                mime=&#34;image/png&#34;,
+                icon=&#34;:material/analytics:&#34;
+                )
+        except:
+            dlPlot.download_button(
+                label=&#34;Plot not available&#34;,
+                data=&#39;Plot&#39;,
+                disabled=True,
+                icon=&#34;:material/analytics:&#34;)
 
-        img = _convert_plot_for_download(hvData[&#39;Plot_Report&#39;])
+        # JSON File
+        def _convert_json_for_download(hv_data):
+            return hv_data.to_json()
 
-        ##st.session_state.dlPlot.download_button(
-        dlPlot.download_button(
-            label=&#34;Plot (.png)&#34;,
-            data=img,
-            file_name=f&#34;{hvData.site}_HV-Plot_{hvID}_{nowTimeStr}.png&#34;,
-            mime=&#34;image/png&#34;,
-            #on_click=display_results,
-            icon=&#34;:material/analytics:&#34;
+        jsonText = _convert_json_for_download(hvData)
+
+        dlJSON.download_button(
+            label=&#34;JSON&#34;,
+            data=jsonText,
+            file_name=f&#34;{hvData.site}_JSON_{hvID}_{nowTimeStr}.json&#34;,
+            mime=&#34;application/json&#34;,
+            icon=&#34;:material/data_object:&#34;
             )
 
 
@@ -824,9 +837,9 @@ el.replaceWith(d);
 
             ##st.session_state.dlHVSR.download_button(
             dlHVSR.download_button(
-                label=&#34;Pickled (.hvsr)&#34;,
+                label=&#34;Pickled&#34;,
                 data=hvsrPickle,
-                file_name=f&#34;{hvData.site}_HVSRData_{hvID}_{nowTimeStr}_pickled_app.hvsr&#34;,
+                file_name=f&#34;{hvData.site}_HVSRData_{hvID}_{nowTimeStr}_pickled_fromApp.hvsr&#34;,
                 #on_click=display_results,
                 mime=&#39;application/octet-stream&#39;,
                 icon=&#34;:material/database:&#34;)
@@ -1489,6 +1502,7 @@ el.replaceWith(d);
             import rioxarray as rxr
         except:
             st.info(&#34;You must have rioxarray installed (pip install rioxarray) in your python environment to use GMRT elevation data.&#34;)
+            st.session_state.ZTB_disabled = True
             return
 
         response = requests.get(url=GMRT_URL)
@@ -1580,8 +1594,8 @@ el.replaceWith(d);
             inCRSCol, outCRSCol, elevUnitCol  = st.columns([0.3, 0.3, 0.3])
             xCoordCol.text_input(&#39;X Coordinate&#39;, help=&#39;i.e., Longitude or Easting&#39;, key=&#39;xcoord&#39;)
             yCoordCol.text_input(&#39;Y Coordinate&#39;, help=&#39;i.e., Latitude or Northing&#39;, key=&#39;ycoord&#39;)
-            ZTB_disabled = st.session_state.elev_wms_check       
-            zCoordCol.text_input(&#39;Z Coordinate&#39;, help=&#39;i.e., Elevation&#39;, key=&#39;elevation&#39;, disabled=ZTB_disabled)
+            st.session_state.ZTB_disabled = st.session_state.elev_wms_check       
+            zCoordCol.text_input(&#39;Z Coordinate&#39;, help=&#39;i.e., Elevation&#39;, key=&#39;elevation&#39;, disabled=st.session_state.ZTB_disabled)
 
 
      
@@ -1852,7 +1866,7 @@ el.replaceWith(d);
                 st.number_input(&#39;PPSD Window overlap (%, 0-1)&#39;, step=0.01, min_value=0.0, max_value=1.0, key=&#39;overlap&#39;)
                 st.number_input(&#39;Period Smoothing Width (octaves)&#39;, step=0.1, key=&#39;period_smoothing_width_octaves&#39;)
                 st.number_input(&#39;Period Step (octaves)&#39;, step=0.005, format=&#34;%.5f&#34;, key=&#39;period_step_octaves&#39;)
-                periodVals=[round(1/x,3) for x in bandVals]
+                periodVals=[round(1/x,5) for x in bandVals]
                 periodVals.sort()
 
                 st.select_slider(&#39;Period Limits (s)&#39;, options=periodVals, value=st.session_state.period_limits, key=&#39;period_limits&#39;)
