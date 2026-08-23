@@ -1119,26 +1119,16 @@ def gui(kind: str = 'browser'):
 # FUNCTIONS AND METHODS
 # The run function to rule them all (runs all needed for simply processing HVSR)
 def run(input_data=None, source='file',
-
         azimuth_calculation=False, noise_removal=False, outlier_curves_removal=False,
-
         skip_steps=None, generate_reports=True, verbose=False, **kwargs):
     """The sprit.run() is the main function
-
        that allows you to do all your HVSR processing in one simple step
-
        (sprit.run() is how you would call it in your code,
-
        but it may also be called using sprit.sprit_hvsr.run())
-
     The input_data parameter of sprit.run() is the only required parameter
-
     (if nothing entered, it will run sample data).
-
     This can be either a single file, a list of files (one for each component, for example),
-
     a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance),
-
     a Rasp. Shake raw data directory, select Tromino binary (.trc) files, or sample data.
 
     Notes
@@ -1153,6 +1143,7 @@ def run(input_data=None, source='file',
     - process_hvsr(): this is the main function processing the hvsr curve and statistics. See process_hvsr() documentation for more details. The hvsr_band parameter sets the frequency spectrum over which these calculations occur.
     - check_peaks(): this is the main function that will find and 'score' peaks to get a best peak. The parameter peak_freq_range can be set to limit the frequencies within which peaks are checked and scored.
     - get_report(): this is the main function that will print, plot, and/or save the results of the data. See the get_report() API documentation for more information.
+    - calculate_depth(): optional step to caculate a frequency-depth transformation based on a provided depth model (in power law form). See the calculate_depth() API documentation for more information.
     - export_hvsr(): this function exports the final data output as a pickle file (by default, this pickle object has a .hvsr extension). This can be used to read data back into SpRIT without having to reprocess data.
 
     Parameters
@@ -1176,7 +1167,6 @@ def run(input_data=None, source='file',
         Whether to remove outlier curves from HVSR time windows
     skip_steps : list, str, or None
         A list of function names to skip (as strings), to manually prevent any function from being performed.
-
         For example, skip_steps=["input_params", "fetch_data"] will prevent sprit.input_params() and sprit.fetch_data() from being called in sprit.run().
     show_plot : bool, default=True
         Whether to show plots. This does not affect whether the plots are created (and then inserted as an attribute of HVSRData), only whether they are shown.
@@ -1212,6 +1202,8 @@ def run(input_data=None, source='file',
     RuntimeError
         If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     """
+
+    # If this is a filepath, put it in posix style that throws fewer errors
     try:
         if pathlib.Path(input_data).exists():
             input_data = pathlib.Path(input_data).as_posix()
@@ -1274,9 +1266,9 @@ def run(input_data=None, source='file',
         print()
 
     if 'hvsr_band' not in kwargs.keys():
-        kwargs['hvsr_band'] = inspect.signature(input_params).parameters['hvsr_band'].default
+        kwargs['hvsr_band'] = DPD['hvsr_band']
     if 'peak_freq_range' not in kwargs.keys():
-        kwargs['peak_freq_range'] = inspect.signature(input_params).parameters['peak_freq_range'].default
+        kwargs['peak_freq_range'] = DPD['peak_freq_range']
     if 'processing_parameters' not in kwargs.keys():
         kwargs['processing_parameters'] = {}
 
@@ -8663,13 +8655,14 @@ def __detrend_data(input, detrend, detrend_options, verbose, source):
         output = input[key]['stream']
     return output
 
+
 # Helper function for reading data from Tromino 3G(+)
 def __read_tromino_data_yellow(input_data, sampling_rate=None,
                                struct_format='H', tromino_model='3G',
                                start_byte=24576, diagnose=False,
                                return_dict=True,
                                verbose=False, **kwargs):
-
+    """Function to read (meta)data specifically from Tromino 3G(+) systems"""
     input_filepath = input_data
     if isinstance(input_data, HVSRData):
         input_filepath = input_data['input_data']
@@ -8727,8 +8720,6 @@ def __read_tromino_data_yellow(input_data, sampling_rate=None,
 
     dataArr = np.array(dataList)
 
-    #medVal = np.nanmedian(dataArr[50000:100000])
-
     if 'start_byte' in kwargs.keys():
         start_byte = kwargs['start_byte']
 
@@ -8736,9 +8727,9 @@ def __read_tromino_data_yellow(input_data, sampling_rate=None,
         print("Total file bytes: ", len(dataArr))
 
         fig, ax = plt.subplots(3, sharex=True, sharey=True)
-        ax[0].plot(comp1, linewidth=0.1, c='k')
-        ax[1].plot(comp2, linewidth=0.1, c='k')
-        ax[2].plot(comp3, linewidth=0.1, c='k')
+        ax[0].plot(dataArr[::3], linewidth=0.1, c='k')
+        ax[1].plot(dataArr[1::3], linewidth=0.1, c='k')
+        ax[2].plot(dataArr[2::3], linewidth=0.1, c='k')
         plt.show()
 
     try:
@@ -8841,16 +8832,14 @@ def __read_tromino_data_blue(input_data, sampling_rate=None,
                             channel_map={'Z':6, 'E':4, 'N':2}, data_start_buffer=113,
                             return_dict=False, verbose=False):
 
-    # Reconfigure data for some of the analysis
+    # Bytes are swapped, need to un-swap
     swapped = __read_and_swap_bytes(input_data)
 
-    # Initialize a result dictionary
     result = {
         'header': {},
         'gps_data': [],
         'seismometer_data': None, # Will be replaced with a (7, n) numpy array
         'stream': None
-
         }
 
     # Extract header information (text sections)
@@ -8860,7 +8849,7 @@ def __read_tromino_data_blue(input_data, sampling_rate=None,
             result['header']['file_type'] = text.decode('ascii', errors='ignore').strip('\x00')
         # Add more header parsing as needed
 
-    # Extract GPS NMEA sentences
+    # Extract GPS data (b/w text and data)
     gps_data = __extract_gps_data(swapped)
     for sentence in gps_data:
         if sentence.startswith('$GPGGA'):
@@ -8912,7 +8901,7 @@ def __read_tromino_data_blue(input_data, sampling_rate=None,
     # Find the start of seismometer data section (after GPS data)
     seis_data_start = __locate_data_start_blue(swapped)
 
-    # Get seismic starting buffer
+    # Get seismic starting buffer (not sure if this is the best way to do this)
     for item in header_text:
         if "FIRST DATA" in str(item):
             data_buffer = data_start_buffer #137#int(str(item).split('-')[2].split("ADDRES ")[1].split('.')[0])
@@ -8925,7 +8914,7 @@ def __read_tromino_data_blue(input_data, sampling_rate=None,
         if verbose:
             print('\tSampling rate detected as:', sampling_rate)
 
-    # Read the file as simple bytes
+    # Read the data part of the file as simple bytes (these do not appear to be swapped)
     with open(input_data, 'rb') as f:
         f.seek(seis_data_start + data_buffer)
         # Read the rest of the file
@@ -9089,7 +9078,7 @@ def __extract_tromino_yellow_data(input_data, swapped_bytes, no_channels, struct
 # Read starttime, number of channels, and sampling rate
 def __get_tromino_yellow_metadata(input_data, start_hex='00004020', end_hex='00004030'):
     """
-    Extracts bytes from [start_hex, end_hex) and tries different decodings.
+    Extracts bytes from `start_hex` to `end_hex` and tries different decodings.
 
     Parameters
     ----------
@@ -9107,6 +9096,8 @@ def __get_tromino_yellow_metadata(input_data, start_hex='00004020', end_hex='000
     with open(input_data, 'rb') as f:
         alldata = f.read()
 
+    # In the metadata sections, the bytes are swapped
+    # To get readable metadata, un-swap the bytes
     swapped = bytearray(len(alldata))
     for i in range(0, len(alldata) - 1, 2):
         swapped[i] = alldata[i + 1]
@@ -9117,6 +9108,7 @@ def __get_tromino_yellow_metadata(input_data, start_hex='00004020', end_hex='000
 
     data = swapped[start:end]
 
+    # Most of this was used previously for troubleshooting
     byteList = [f"{b:b}" for b in data]
     hexList = [f"{b:02X}" for b in data]
 
@@ -9126,6 +9118,7 @@ def __get_tromino_yellow_metadata(input_data, start_hex='00004020', end_hex='000
 
     df = pd.DataFrame({'BYTES':byteList, 'HEX':hexList})
 
+    # It was much easier to decode date metadata from hexadecimal
     starttime = obspy.UTCDateTime(year=2000+int(df.loc[11, "HEX"]),
                            month=int(df.loc[9, "HEX"]),
                            day = int(df.loc[7, "HEX"]),
@@ -9144,9 +9137,8 @@ def __get_tromino_yellow_metadata(input_data, start_hex='00004020', end_hex='000
 def __read_and_swap_bytes(input_file, return_unswapped=False):
     """
     Private function (not meant to be called except by internal functions)
-
-    to read a binary file and return a bytearray with all bytes swapped in pairs.
-    This handles odd-length files correctly.
+    to read a binary file and return a bytearray with all bytes swapped in pairs. 
+    (mostly for metadata)
     """
 
     # Open binary file
@@ -9186,15 +9178,18 @@ def __extract_text_sections(data):
 
 # Helper function, Part of reading tromino datap
 def __extract_gps_data(data):
-    """Extract GPS NMEA sentences from binary data"""
-    # NMEA sentences start with $ and end with \r\n
+    """Extract GPS NMEA sentences from binary data
+    Currently only used in _read_tromino_blue()"""
+
+    # Get data as string
     data_str = data.decode('ascii', errors='ignore')
 
     # Look for NMEA sentences
+    # NMEA sentences start with $ and end with \r\n
+    # Get all matches w/regex search, make list
     gps_sentences = []
     nmea_pattern = r'\$(GP[A-Z]{3},.+?)\r\n'
     matches = re.finditer(nmea_pattern, data_str)
-
     for match in matches:
         gps_sentences.append(match.group(0))
 
@@ -9761,7 +9756,9 @@ def __remove_noise_thresh(stream, noise_percent=0.8, lta=30, min_win_size=1, ver
     return outstream
 
 
-# Helper function for removing data during warmup (when seismometers are still initializing) and "cooldown" (when there may be noise from deactivating seismometer) time, if desired
+# Helper function for removing data during warmup 
+# (when seismometers are still initializing) and 
+# "cooldown" (when there may be noise from deactivating seismometer) time, if desired
 def __remove_warmup_cooldown(stream, warmup_time = 0, cooldown_time = 0, verbose=False):
     """Private helper function to remove data from the start and/or end of each site
 
