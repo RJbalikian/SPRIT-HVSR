@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 3.13.2 documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 3.14 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
 
   
-      <script src="../../_static/documentation_options.js?v=f92f4e34"></script>
+      <script src="../../_static/documentation_options.js?v=672fcdc7"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -10882,7 +10882,7 @@
 <span class="c1"># Helper functions for generate_psds()</span>
 <span class="c1"># Generate psds from raw data (no response removed)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">__single_psd_from_raw_data</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mf">30.0</span><span class="p">,</span> <span class="n">window_length_method</span><span class="o">=</span><span class="s1">&#39;length&#39;</span><span class="p">,</span> <span class="n">window_type</span><span class="o">=</span><span class="s1">&#39;hann&#39;</span><span class="p">,</span>
-                               <span class="n">overlap_pct</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">num_freq_bins</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>
+                               <span class="n">overlap</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">num_freq_bins</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">interpolate_nans</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                <span class="n">remove_response</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">do_azimuths</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to get psds from raw trace streams (no response information is needed in this case)</span>
 
@@ -10892,12 +10892,31 @@
 <span class="sd">        HVSRData object containing data to be processed</span>
 <span class="sd">    window_length : float, optional</span>
 <span class="sd">        Length of FFT processing window for in seconds, by default 30.0</span>
-<span class="sd">    overlap_pct : float, optional</span>
+<span class="sd">    window_length_method : str, {&#39;length&#39;, &#39;number&#39;}</span>
+<span class="sd">        Which windowing method to use, &quot;length&quot;, which creates windows of a specified length, or</span>
+<span class="sd">        &quot;number&quot;, which creates a specified number of windows, by default &#39;length&#39;</span>
+<span class="sd">    window_type : str, optional</span>
+<span class="sd">        The type of type to use for creating a PSD.</span>
+<span class="sd">        This is passed to the `window` parameter of [`scipy.signal.welch`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html)</span>
+<span class="sd">        The available windows are listed [here](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.get_window.html#scipy.signal.get_window).</span>
+<span class="sd">        By default, &#39;hann&#39;.</span>
+<span class="sd">    overlap : float, optional</span>
 <span class="sd">        Percent overlap between windows (0-1), by default 0.5.</span>
 <span class="sd">        A percentage value between 1-100 will be accepted, but will be divided by 100 to convert to 0-1.</span>
 <span class="sd">        If the value is over 100, the modulus of 100 will be calculated, then divided by 100; i.e., (overlap%100)/100.</span>
-<span class="sd">    show_psd_plot : bool, optional</span>
-<span class="sd">        Whether to show a plot of the psds, by default False</span>
+<span class="sd">    num_freq_bins : int, optional</span>
+<span class="sd">        The number of frequency bins. </span>
+<span class="sd">        he scipy welch method uses an internal algorithm to divide the stream into windows.</span>
+<span class="sd">        The number of frequency bins specified here is used for interpolation of the windows created in the scipy welch function</span>
+<span class="sd">        to the a logarithmically-spaced, specified number of windows between the hvsr_band minimum and maximum frequency values.</span>
+<span class="sd">    interpolate_nans : bool, optional</span>
+<span class="sd">        Whether to interpolate through nans if present in the data stream.</span>
+<span class="sd">        Nans frequently occur during the step of creating azimuthal data. By default, `True`.</span>
+<span class="sd">    remove_response : bool, optional</span>
+<span class="sd">        Whether to remove the instrument response before calculting PSD. By default, `False`.</span>
+<span class="sd">        If `True`, pertinent response data must be provided during the `input_params` step, often via the `metadata` parameter of the `run()` function.</span>
+<span class="sd">    do_azimuths : bool, optional</span>
+<span class="sd">        Whether to use the azimuthal data. By default, it uses any azimuthal data.</span>
 <span class="sd">    verbose : bool, optional</span>
 <span class="sd">        Whether to print information about the PSD processing to terminal, by default False</span>
 
@@ -10918,12 +10937,11 @@
 
     <span class="k">if</span> <span class="n">do_azimuths</span><span class="p">:</span>
         <span class="n">azimuthStream</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s1">&#39;R&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">merge</span><span class="p">()</span>
-
+        
         <span class="k">for</span> <span class="n">azimuthTrace</span> <span class="ow">in</span> <span class="n">azimuthStream</span><span class="p">:</span>
-            <span class="n">keyName</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;AZ</span><span class="si">{</span><span class="n">azimuthTrace</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">location</span><span class="si">}</span><span class="s2">&quot;</span>
-
+            <span class="n">keyName</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;AZ</span><span class="si">{</span><span class="n">azimuthTrace</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">location</span><span class="si">}</span><span class="s2">&quot;</span> 
             <span class="n">dataDict</span><span class="p">[</span><span class="n">keyName</span><span class="p">]</span> <span class="o">=</span> <span class="n">azimuthTrace</span>
-
+        
     <span class="k">if</span> <span class="n">remove_response</span><span class="p">:</span>
         <span class="n">pf1</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span>
         <span class="n">pf2</span> <span class="o">=</span> <span class="n">hvsr_data</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
@@ -10947,25 +10965,26 @@
     <span class="n">sample_space</span> <span class="o">=</span> <span class="n">zdata</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">delta</span>
     <span class="n">zdata</span> <span class="o">=</span> <span class="n">zdata</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
 
-    <span class="c1"># Transform overlap_pct to proper formatting (% b/w 0-1)</span>
-    <span class="k">if</span> <span class="n">overlap_pct</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
+
+    <span class="c1"># Transform overlap to proper formatting (% b/w 0-1)</span>
+    <span class="k">if</span> <span class="n">overlap</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">The parameter overlap_pct=</span><span class="si">{</span><span class="n">overlap_pct</span><span class="si">}</span><span class="s2"> should be a float between 0-1 or between 1 and 100&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">  Since it is over 100, the modulus of 100 (overlap_pct%100)/100=(</span><span class="si">{</span><span class="n">overlap_pct</span><span class="o">%</span><span class="mi">100</span><span class="si">}</span><span class="s2">) will be used&quot;</span><span class="p">)</span>
-        <span class="n">overlap_pct</span> <span class="o">=</span> <span class="p">(</span><span class="n">overlap_pct</span> <span class="o">%</span> <span class="mi">100</span><span class="p">)</span><span class="o">/</span><span class="mi">100</span>
-    <span class="k">elif</span> <span class="n">overlap_pct</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">overlap_pct</span> <span class="o">=</span> <span class="n">overlap_pct</span> <span class="o">/</span> <span class="mi">100</span>
-    <span class="k">elif</span> <span class="n">overlap_pct</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">overlap_pct</span> <span class="o">=</span> <span class="n">overlap_pct</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">The parameter overlap=</span><span class="si">{</span><span class="n">overlap</span><span class="si">}</span><span class="s2"> should be a float between 0-1&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">  Since it is over 100, the modulus of 100 (overlap%100)/100=(</span><span class="si">{</span><span class="n">overlap</span><span class="o">%</span><span class="mi">100</span><span class="si">}</span><span class="s2">) will be used&quot;</span><span class="p">)</span>
+        <span class="n">overlap</span> <span class="o">=</span> <span class="p">(</span><span class="n">overlap</span> <span class="o">%</span> <span class="mi">100</span><span class="p">)</span><span class="o">/</span><span class="mi">100</span>
+    <span class="k">elif</span> <span class="n">overlap</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">overlap</span> <span class="o">=</span> <span class="n">overlap</span> <span class="o">/</span> <span class="mi">100</span>
+    <span class="k">elif</span> <span class="n">overlap</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">overlap</span> <span class="o">=</span> <span class="n">overlap</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">The parameter overlap_pct=</span><span class="si">{</span><span class="n">overlap_pct</span><span class="si">}</span><span class="s2"> should be a float between 0-1&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">  This has been updated to the default value of overlap_pct=0.5&quot;</span><span class="p">)</span>
-        <span class="n">overlap_pct</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="c1">#just set it default otherwise</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">The parameter overlap=</span><span class="si">{</span><span class="n">overlap</span><span class="si">}</span><span class="s2"> should be a float between 0-1&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">  This has been updated to the default value of overlap=0.5&quot;</span><span class="p">)</span>
+        <span class="n">overlap</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="c1">#just set it default otherwise</span>
 
     <span class="c1"># Get number of samples instead of seconds/percentage</span>
     <span class="n">psd_window_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">window_length</span> <span class="o">*</span> <span class="n">sample_rate</span><span class="p">)</span>
-    <span class="n">overlap_samples</span> <span class="o">=</span> <span class="n">overlap_pct</span> <span class="o">*</span> <span class="n">psd_window_samples</span>
+    <span class="n">overlap_samples</span> <span class="o">=</span> <span class="n">overlap</span> <span class="o">*</span> <span class="n">psd_window_samples</span>
 
     <span class="c1"># Generated x values to which data will be interpolated later</span>
     <span class="c1">#  This maintains consistency in array size across all FFT windows</span>
@@ -10982,7 +11001,7 @@
     <span class="n">psdDict</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">curr_component</span> <span class="ow">in</span> <span class="n">dataDict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">psdDict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-
+        
         <span class="c1"># Get all data in same format (obspy.Stream, traces will be extracted later)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">curr_component</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">):</span>
             <span class="n">st</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">([</span><span class="n">curr_component</span><span class="p">])</span><span class="o">.</span><span class="n">merge</span><span class="p">()</span>
@@ -10997,19 +11016,17 @@
 
         <span class="c1"># Get all possible windows and initialize output window list for windows that are actually used</span>
         <span class="c1">#  This will likely be the same if there are no gaps in the data</span>
-        <span class="n">windows</span> <span class="o">=</span> <span class="n">_create_windows</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="n">window_length</span><span class="p">,</span>
-
-                                  <span class="n">overlap_pct</span><span class="o">=</span><span class="n">overlap_pct</span><span class="p">,</span> <span class="n">window_length_method</span><span class="o">=</span><span class="n">window_length_method</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">windows</span> <span class="o">=</span> <span class="n">_create_windows</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="n">window_length</span><span class="p">,</span> 
+                                  <span class="n">overlap</span><span class="o">=</span><span class="n">overlap</span><span class="p">,</span> <span class="n">window_length_method</span><span class="o">=</span><span class="n">window_length_method</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">windows_out</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="c1"># Iterate through each window to trim data trace and perform fft analysis</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">stime</span><span class="p">,</span> <span class="n">etime</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">windows</span><span class="p">):</span>
             <span class="c1"># Trim trace to just window time (copy so doesn&#39;t overwrite main trace)</span>
             <span class="n">window_trace</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-            <span class="n">window_trace</span><span class="o">.</span><span class="n">trim</span><span class="p">(</span><span class="n">starttime</span><span class="o">=</span><span class="n">stime</span><span class="p">,</span> <span class="n">endtime</span><span class="o">=</span><span class="n">etime</span><span class="p">)</span>
-
-            <span class="c1"># Handle gaps in data</span>
-
+            <span class="n">window_trace</span><span class="o">.</span><span class="n">trim</span><span class="p">(</span><span class="n">starttime</span><span class="o">=</span><span class="n">stime</span><span class="p">,</span> <span class="n">endtime</span><span class="o">=</span><span class="n">etime</span><span class="p">)</span> 
+            
+            <span class="c1"># Handle gaps in data </span>
             <span class="c1"># Only process longest continous data section in each window, if gaps exist</span>
             <span class="n">window_st</span> <span class="o">=</span> <span class="n">window_trace</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>  <span class="c1"># Split into continuous data sections</span>
 
@@ -11039,19 +11056,39 @@
             <span class="c1"># PERFORM FFT analysis using Welch method if length of window is &gt; 1 sample</span>
             <span class="c1"># If time window used, the start time will be recorded in window_out list</span>
                 <span class="c1"># and PSD will be stored in psdDict[key][str(starttime)] as numpy array.</span>
-
+            
             <span class="n">noNanCond</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">window_trace</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">noNanCond</span><span class="p">:</span>
+                <span class="k">def</span><span class="w"> </span><span class="nf">nan_helper</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+<span class="w">                    </span><span class="sd">&quot;&quot;&quot;Helper to handle indices and logical indices of NaNs.</span>
+
+<span class="sd">                    Input:</span>
+<span class="sd">                        - y, 1d numpy array with possible NaNs</span>
+<span class="sd">                    Output:</span>
+<span class="sd">                        - nans, logical indices of NaNs</span>
+<span class="sd">                        - index, a function, with signature indices= index(logical_indices),</span>
+<span class="sd">                        to convert logical indices of NaNs to &#39;equivalent&#39; indices</span>
+<span class="sd">                    Example:</span>
+<span class="sd">                        &gt;&gt;&gt; # linear interpolation of NaNs</span>
+<span class="sd">                        &gt;&gt;&gt; nans, x= nan_helper(y)</span>
+<span class="sd">                        &gt;&gt;&gt; y[nans]= np.interp(x(nans), x(~nans), y[~nans])</span>
+<span class="sd">                    &quot;&quot;&quot;</span>
+
+                    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="k">lambda</span> <span class="n">z</span><span class="p">:</span> <span class="n">z</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                
+                <span class="n">nans</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span> <span class="n">nan_helper</span><span class="p">(</span><span class="n">window_trace</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+                <span class="n">window_trace</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">nans</span><span class="p">]</span><span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">x</span><span class="p">(</span><span class="n">nans</span><span class="p">),</span> <span class="n">x</span><span class="p">(</span><span class="o">~</span><span class="n">nans</span><span class="p">),</span> <span class="n">window_trace</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="o">~</span><span class="n">nans</span><span class="p">])</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">window_trace</span><span class="o">.</span><span class="n">data</span><span class="p">))</span><span class="si">}</span><span class="s2"> Nans in data&quot;</span><span class="p">)</span>
+                <span class="n">noNanCond</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">window_trace</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+
             <span class="k">if</span> <span class="n">nsamplesperwin</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">noNanCond</span><span class="p">:</span>
                 <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
                     <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span> <span class="c1"># Sometimes unnecessary warnings arise</span>
-                    <span class="n">f</span><span class="p">,</span> <span class="n">pxx</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">welch</span><span class="p">(</span><span class="n">window_trace</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">window_trace</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">sampling_rate</span><span class="p">,</span>
-
-                                                <span class="n">window</span><span class="o">=</span><span class="n">window_type</span><span class="p">,</span> <span class="n">nperseg</span><span class="o">=</span><span class="n">nsamplesperwin</span><span class="p">,</span>
-
-                                                <span class="n">noverlap</span><span class="o">=</span><span class="n">overlap_samples</span><span class="p">,</span> <span class="n">nfft</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">detrend</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">return_onesided</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-
+                    <span class="n">f</span><span class="p">,</span> <span class="n">pxx</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">welch</span><span class="p">(</span><span class="n">window_trace</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">window_trace</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">sampling_rate</span><span class="p">,</span> 
+                                                <span class="n">window</span><span class="o">=</span><span class="n">window_type</span><span class="p">,</span> <span class="n">nperseg</span><span class="o">=</span><span class="n">nsamplesperwin</span><span class="p">,</span> 
+                                                <span class="n">noverlap</span><span class="o">=</span><span class="n">overlap_samples</span><span class="p">,</span> <span class="n">nfft</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">detrend</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">return_onesided</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
                                                 <span class="n">scaling</span><span class="o">=</span><span class="s1">&#39;density&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">average</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">)</span>
-
+                
                 <span class="c1"># Only add successful psds to psdDict (and the window starttime to window_out)</span>
                 <span class="k">if</span> <span class="n">pxx</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">f</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">freqs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
@@ -11059,19 +11096,17 @@
                     <span class="n">interpPSD</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">x_freqs</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">pxx</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">period</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
                     <span class="n">interpPSD_dB</span> <span class="o">=</span> <span class="mi">10</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">interpPSD</span><span class="p">)</span> <span class="c1"># Convert to decibels</span>
                     <span class="n">psdDict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">stime</span><span class="p">)]</span> <span class="o">=</span> <span class="n">interpPSD_dB</span>
-                    <span class="n">final_psds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">interpPSD_dB</span><span class="p">)</span>
-
+                    <span class="n">final_psds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">interpPSD_dB</span><span class="p">)</span>                
                     <span class="n">windows_out</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">stime</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">windows_out</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">stime</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ADDING STIMES&quot;</span><span class="p">,</span> <span class="n">stime</span><span class="p">)</span>
                     <span class="n">psdDict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">stime</span><span class="p">)]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">x_freqs</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
 
                     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
                         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">Window starting at </span><span class="si">{</span><span class="n">stime</span><span class="si">}</span><span class="s2"> not used (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">window_trace</span><span class="p">)</span><span class="si">}</span><span class="s2"> samples long)&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">Window starting at </span><span class="si">{</span><span class="n">stime</span><span class="si">}</span><span class="s2"> not used (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">window_trace</span><span class="p">)</span><span class="si">}</span><span class="s2"> samples long)&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">Window starting at </span><span class="si">{</span><span class="n">stime</span><span class="si">}</span><span class="s2"> not used (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">window_trace</span><span class="p">)</span><span class="si">}</span><span class="s2"> samples long). Nans in data?: </span><span class="si">{</span><span class="n">noNanCond</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="c1">#psds = np.mean(np.array(final_psds), axis=0)</span>
         <span class="c1">#psdDict[key][str(stime)] = np.array(final_psds)</span>
 
@@ -11093,7 +11128,6 @@
 <span class="sd">        Window overlap_pct in percentage. If &gt;=1, it will be interpreted as a percentage out of 100, by default 0.5</span>
 <span class="sd">    window_length_method : str, optional</span>
 <span class="sd">        Which windowing method to use, &quot;length&quot;, which creates windows of a specified length, or</span>
-
 <span class="sd">        &quot;number&quot;, which creates a specified number of windows, by default &#39;length&#39;</span>
 <span class="sd">    verbose : bool, optional</span>
 <span class="sd">        Whether to print information about the process to terminal, by default False</span>
