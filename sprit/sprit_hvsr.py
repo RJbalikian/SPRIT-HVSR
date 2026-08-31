@@ -10661,7 +10661,7 @@ def __prototype_outlier_detect(hvsr_data, use_hv_curves=False,
 # Helper functions for generate_psds()
 # Generate psds from raw data (no response removed)
 def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_method='length', window_type='hann',
-                               overlap_pct=0.5, num_freq_bins=512,
+                               overlap=0.5, num_freq_bins=512, interpolate_nans=True,
                                remove_response=False, do_azimuths=False, verbose=False):
     """Helper function to get psds from raw trace streams (no response information is needed in this case)
 
@@ -10671,12 +10671,31 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_meth
         HVSRData object containing data to be processed
     window_length : float, optional
         Length of FFT processing window for in seconds, by default 30.0
-    overlap_pct : float, optional
+    window_length_method : str, {'length', 'number'}
+        Which windowing method to use, "length", which creates windows of a specified length, or
+        "number", which creates a specified number of windows, by default 'length'
+    window_type : str, optional
+        The type of type to use for creating a PSD.
+        This is passed to the `window` parameter of [`scipy.signal.welch`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html)
+        The available windows are listed [here](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.get_window.html#scipy.signal.get_window).
+        By default, 'hann'.
+    overlap : float, optional
         Percent overlap between windows (0-1), by default 0.5.
         A percentage value between 1-100 will be accepted, but will be divided by 100 to convert to 0-1.
         If the value is over 100, the modulus of 100 will be calculated, then divided by 100; i.e., (overlap%100)/100.
-    show_psd_plot : bool, optional
-        Whether to show a plot of the psds, by default False
+    num_freq_bins : int, optional
+        The number of frequency bins. 
+        he scipy welch method uses an internal algorithm to divide the stream into windows.
+        The number of frequency bins specified here is used for interpolation of the windows created in the scipy welch function
+        to the a logarithmically-spaced, specified number of windows between the hvsr_band minimum and maximum frequency values.
+    interpolate_nans : bool, optional
+        Whether to interpolate through nans if present in the data stream.
+        Nans frequently occur during the step of creating azimuthal data. By default, `True`.
+    remove_response : bool, optional
+        Whether to remove the instrument response before calculting PSD. By default, `False`.
+        If `True`, pertinent response data must be provided during the `input_params` step, often via the `metadata` parameter of the `run()` function.
+    do_azimuths : bool, optional
+        Whether to use the azimuthal data. By default, it uses any azimuthal data.
     verbose : bool, optional
         Whether to print information about the PSD processing to terminal, by default False
 
@@ -10697,12 +10716,11 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_meth
 
     if do_azimuths:
         azimuthStream = hvsr_data.stream.select(component='R').merge()
-
+        
         for azimuthTrace in azimuthStream:
-            keyName = f"AZ{azimuthTrace.stats.location}"
-
+            keyName = f"AZ{azimuthTrace.stats.location}" 
             dataDict[keyName] = azimuthTrace
-
+        
     if remove_response:
         pf1 = hvsr_data['hvsr_band'][0]/2
         pf2 = hvsr_data['hvsr_band'][0]
@@ -10726,25 +10744,26 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_meth
     sample_space = zdata[0].stats.delta
     zdata = zdata.split()
 
-    # Transform overlap_pct to proper formatting (% b/w 0-1)
-    if overlap_pct > 100:
+
+    # Transform overlap to proper formatting (% b/w 0-1)
+    if overlap > 100:
         if verbose:
-            print(f"\tThe parameter overlap_pct={overlap_pct} should be a float between 0-1 or between 1 and 100")
-            print(f"\t  Since it is over 100, the modulus of 100 (overlap_pct%100)/100=({overlap_pct%100}) will be used")
-        overlap_pct = (overlap_pct % 100)/100
-    elif overlap_pct > 1:
-        overlap_pct = overlap_pct / 100
-    elif overlap_pct >= 0:
-        overlap_pct = overlap_pct
+            print(f"\tThe parameter overlap={overlap} should be a float between 0-1")
+            print(f"\t  Since it is over 100, the modulus of 100 (overlap%100)/100=({overlap%100}) will be used")
+        overlap = (overlap % 100)/100
+    elif overlap > 1:
+        overlap = overlap / 100
+    elif overlap >= 0:
+        overlap = overlap
     else:
         if verbose:
-            print(f"\tThe parameter overlap_pct={overlap_pct} should be a float between 0-1")
-            print(f"\t  This has been updated to the default value of overlap_pct=0.5")
-        overlap_pct = 0.5 #just set it default otherwise
+            print(f"\tThe parameter overlap={overlap} should be a float between 0-1")
+            print(f"\t  This has been updated to the default value of overlap=0.5")
+        overlap = 0.5 #just set it default otherwise
 
     # Get number of samples instead of seconds/percentage
     psd_window_samples = int(window_length * sample_rate)
-    overlap_samples = overlap_pct * psd_window_samples
+    overlap_samples = overlap * psd_window_samples
 
     # Generated x values to which data will be interpolated later
     #  This maintains consistency in array size across all FFT windows
@@ -10761,7 +10780,7 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_meth
     psdDict = {}
     for key, curr_component in dataDict.items():
         psdDict[key] = {}
-
+        
         # Get all data in same format (obspy.Stream, traces will be extracted later)
         if isinstance(curr_component, obspy.Trace):
             st = obspy.Stream([curr_component]).merge()
@@ -10776,19 +10795,17 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_meth
 
         # Get all possible windows and initialize output window list for windows that are actually used
         #  This will likely be the same if there are no gaps in the data
-        windows = _create_windows(hvsr_data=hvsr_data, window=window_length,
-
-                                  overlap_pct=overlap_pct, window_length_method=window_length_method, verbose=False)
+        windows = _create_windows(hvsr_data=hvsr_data, window=window_length, 
+                                  overlap=overlap, window_length_method=window_length_method, verbose=False)
         windows_out = []
 
         # Iterate through each window to trim data trace and perform fft analysis
         for i, (stime, etime) in enumerate(windows):
             # Trim trace to just window time (copy so doesn't overwrite main trace)
             window_trace = tr.copy()
-            window_trace.trim(starttime=stime, endtime=etime)
-
-            # Handle gaps in data
-
+            window_trace.trim(starttime=stime, endtime=etime) 
+            
+            # Handle gaps in data 
             # Only process longest continous data section in each window, if gaps exist
             window_st = window_trace.split()  # Split into continuous data sections
 
@@ -10818,19 +10835,39 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_meth
             # PERFORM FFT analysis using Welch method if length of window is > 1 sample
             # If time window used, the start time will be recorded in window_out list
                 # and PSD will be stored in psdDict[key][str(starttime)] as numpy array.
-
+            
             noNanCond = np.any(np.isnan(window_trace.data))
+            if noNanCond:
+                def nan_helper(y):
+                    """Helper to handle indices and logical indices of NaNs.
+
+                    Input:
+                        - y, 1d numpy array with possible NaNs
+                    Output:
+                        - nans, logical indices of NaNs
+                        - index, a function, with signature indices= index(logical_indices),
+                        to convert logical indices of NaNs to 'equivalent' indices
+                    Example:
+                        >>> # linear interpolation of NaNs
+                        >>> nans, x= nan_helper(y)
+                        >>> y[nans]= np.interp(x(nans), x(~nans), y[~nans])
+                    """
+
+                    return np.isnan(y), lambda z: z.nonzero()[0]
+                
+                nans, x= nan_helper(window_trace.data)
+                window_trace.data[nans]= np.interp(x(nans), x(~nans), window_trace.data[~nans])
+                print(f"{np.sum(np.isnan(window_trace.data))} Nans in data")
+                noNanCond = np.any(np.isnan(window_trace.data))
+
             if nsamplesperwin > 1 and not noNanCond:
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore') # Sometimes unnecessary warnings arise
-                    f, pxx = scipy.signal.welch(window_trace.data, fs=window_trace.stats.sampling_rate,
-
-                                                window=window_type, nperseg=nsamplesperwin,
-
-                                                noverlap=overlap_samples, nfft=None, detrend='linear', return_onesided=True,
-
+                    f, pxx = scipy.signal.welch(window_trace.data, fs=window_trace.stats.sampling_rate, 
+                                                window=window_type, nperseg=nsamplesperwin, 
+                                                noverlap=overlap_samples, nfft=None, detrend='linear', return_onesided=True, 
                                                 scaling='density', axis=-1, average='mean')
-
+                
                 # Only add successful psds to psdDict (and the window starttime to window_out)
                 if pxx.size > 0 and f.size > 0:
                     freqs.append(f)
@@ -10838,19 +10875,17 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_meth
                     interpPSD = np.interp(x_freqs, f, pxx, left=None, right=None, period=None)
                     interpPSD_dB = 10*np.log10(interpPSD) # Convert to decibels
                     psdDict[key][str(stime)] = interpPSD_dB
-                    final_psds.append(interpPSD_dB)
-
+                    final_psds.append(interpPSD_dB)                
                     windows_out.append((stime, True))
                 else:
                     windows_out.append((stime, False))
-                    print("ADDING STIMES", stime)
                     psdDict[key][str(stime)] = np.full(x_freqs.shape, np.nan)
 
                     if verbose:
                         print(f"\tWindow starting at {stime} not used ({len(window_trace)} samples long)")
             else:
                 if verbose:
-                    print(f"\tWindow starting at {stime} not used ({len(window_trace)} samples long)")
+                    print(f"\tWindow starting at {stime} not used ({len(window_trace)} samples long). Nans in data?: {noNanCond}")
         #psds = np.mean(np.array(final_psds), axis=0)
         #psdDict[key][str(stime)] = np.array(final_psds)
 
@@ -10872,7 +10907,6 @@ def _create_windows(hvsr_data, window=30, overlap_pct=0.5, window_length_method=
         Window overlap_pct in percentage. If >=1, it will be interpreted as a percentage out of 100, by default 0.5
     window_length_method : str, optional
         Which windowing method to use, "length", which creates windows of a specified length, or
-
         "number", which creates a specified number of windows, by default 'length'
     verbose : bool, optional
         Whether to print information about the process to terminal, by default False
