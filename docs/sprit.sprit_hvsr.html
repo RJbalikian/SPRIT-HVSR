@@ -6,12 +6,12 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr module &mdash; sprit 3.14 documentation</title>
+  <title>sprit.sprit_hvsr module &mdash; sprit 3.14.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
-      <script src="_static/documentation_options.js?v=672fcdc7"></script>
+      <script src="_static/documentation_options.js?v=408c3590"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
@@ -1690,17 +1690,17 @@ If remove_method=’auto’, this is the equivalent of remove_method=[‘noise t
 <dl class="py function">
 <dt class="sig sig-object py" id="sprit.sprit_hvsr.run">
 <span class="sig-prename descclassname"><span class="pre">sprit.sprit_hvsr.</span></span><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'file'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">azimuth_calculation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_removal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlier_curves_removal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">generate_reports</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sprit/sprit_hvsr.html#run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sprit.sprit_hvsr.run" title="Link to this definition">¶</a></dt>
-<dd><p>The sprit.run() is the main function</p>
-<blockquote>
-<div><p>that allows you to do all your HVSR processing in one simple step</p>
-<p>(sprit.run() is how you would call it in your code,</p>
-<p>but it may also be called using sprit.sprit_hvsr.run())</p>
-</div></blockquote>
-<p>The input_data parameter of sprit.run() is the only required parameter</p>
-<p>(if nothing entered, it will run sample data).</p>
-<p>This can be either a single file, a list of files (one for each component, for example),</p>
-<p>a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance),</p>
-<p>a Rasp. Shake raw data directory, select Tromino binary (.trc) files, or sample data.</p>
+<dd><dl class="simple">
+<dt>The sprit.run() is the main function</dt><dd><p>that allows you to do all your HVSR processing in one simple step
+(sprit.run() is how you would call it in your code,
+but it may also be called using sprit.sprit_hvsr.run())</p>
+</dd>
+</dl>
+<p>The input_data parameter of sprit.run() is the only required parameter
+(if nothing entered, it will run sample data).
+This can be either a single file, a list of files (one for each component, for example),
+a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance),
+a Rasp. Shake raw data directory, select Tromino binary (.trc) files, or sample data.</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl>
@@ -1723,8 +1723,8 @@ If remove_method=’auto’, this is the equivalent of remove_method=[‘noise t
 </dd>
 <dt><strong>outlier_curves_removal</strong><span class="classifier">bool, default=False</span></dt><dd><p>Whether to remove outlier curves from HVSR time windows</p>
 </dd>
-<dt><strong>skip_steps</strong><span class="classifier">list, str, or None</span></dt><dd><p>A list of function names to skip (as strings), to manually prevent any function from being performed.</p>
-<p>For example, skip_steps=[“input_params”, “fetch_data”] will prevent sprit.input_params() and sprit.fetch_data() from being called in sprit.run().</p>
+<dt><strong>skip_steps</strong><span class="classifier">list, str, or None</span></dt><dd><p>A list of function names to skip (as strings), to manually prevent any function from being performed.
+For example, skip_steps=[“input_params”, “fetch_data”] will prevent sprit.input_params() and sprit.fetch_data() from being called in sprit.run().</p>
 </dd>
 <dt><strong>show_plot</strong><span class="classifier">bool, default=True</span></dt><dd><p>Whether to show plots. This does not affect whether the plots are created (and then inserted as an attribute of HVSRData), only whether they are shown.</p>
 </dd>
@@ -2057,6 +2057,7 @@ See API documentation: [export_hvsr()](<a class="reference external" href="https
 - process_hvsr(): this is the main function processing the hvsr curve and statistics. See process_hvsr() documentation for more details. The hvsr_band parameter sets the frequency spectrum over which these calculations occur.
 - check_peaks(): this is the main function that will find and ‘score’ peaks to get a best peak. The parameter peak_freq_range can be set to limit the frequencies within which peaks are checked and scored.
 - get_report(): this is the main function that will print, plot, and/or save the results of the data. See the get_report() API documentation for more information.
+- calculate_depth(): optional step to caculate a frequency-depth transformation based on a provided depth model (in power law form). See the calculate_depth() API documentation for more information.
 - export_hvsr(): this function exports the final data output as a pickle file (by default, this pickle object has a .hvsr extension). This can be used to read data back into SpRIT without having to reprocess data.</p>
 </dd></dl>
 

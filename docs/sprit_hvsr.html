@@ -3612,7 +3612,7 @@ If it cannot do that, it will attempt to return a string representation of the i
 
         psdDict, times_bool = __single_psd_from_raw_data(hvsr_data, window_length=window_length, window_length_method=window_length_method, window_type=window_type,
                                                          num_freq_bins=num_freq_bins, verbose=verbose,
-                                                         overlap_pct=overlap_pct, remove_response=remove_response, do_azimuths=azimuthal_psds)
+                                                         overlap=overlap_pct, remove_response=remove_response, do_azimuths=azimuthal_psds)
         common_times = [ct[0] for ct in times_bool]
         use_times = [ut[1] for ut in times_bool]
 
@@ -7099,26 +7099,16 @@ This is only used if outlier_method='dbscan'</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def run(input_data=None, source=&#39;file&#39;,
-
         azimuth_calculation=False, noise_removal=False, outlier_curves_removal=False,
-
         skip_steps=None, generate_reports=True, verbose=False, **kwargs):
     &#34;&#34;&#34;The sprit.run() is the main function
-
        that allows you to do all your HVSR processing in one simple step
-
        (sprit.run() is how you would call it in your code,
-
        but it may also be called using sprit.sprit_hvsr.run())
-
     The input_data parameter of sprit.run() is the only required parameter
-
     (if nothing entered, it will run sample data).
-
     This can be either a single file, a list of files (one for each component, for example),
-
     a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance),
-
     a Rasp. Shake raw data directory, select Tromino binary (.trc) files, or sample data.
 
     Notes
@@ -7133,6 +7123,7 @@ This is only used if outlier_method='dbscan'</p>
     - process_hvsr(): this is the main function processing the hvsr curve and statistics. See process_hvsr() documentation for more details. The hvsr_band parameter sets the frequency spectrum over which these calculations occur.
     - check_peaks(): this is the main function that will find and &#39;score&#39; peaks to get a best peak. The parameter peak_freq_range can be set to limit the frequencies within which peaks are checked and scored.
     - get_report(): this is the main function that will print, plot, and/or save the results of the data. See the get_report() API documentation for more information.
+    - calculate_depth(): optional step to caculate a frequency-depth transformation based on a provided depth model (in power law form). See the calculate_depth() API documentation for more information.
     - export_hvsr(): this function exports the final data output as a pickle file (by default, this pickle object has a .hvsr extension). This can be used to read data back into SpRIT without having to reprocess data.
 
     Parameters
@@ -7156,7 +7147,6 @@ This is only used if outlier_method='dbscan'</p>
         Whether to remove outlier curves from HVSR time windows
     skip_steps : list, str, or None
         A list of function names to skip (as strings), to manually prevent any function from being performed.
-
         For example, skip_steps=[&#34;input_params&#34;, &#34;fetch_data&#34;] will prevent sprit.input_params() and sprit.fetch_data() from being called in sprit.run().
     show_plot : bool, default=True
         Whether to show plots. This does not affect whether the plots are created (and then inserted as an attribute of HVSRData), only whether they are shown.
@@ -7192,6 +7182,8 @@ This is only used if outlier_method='dbscan'</p>
     RuntimeError
         If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .
     &#34;&#34;&#34;
+
+    # If this is a filepath, put it in posix style that throws fewer errors
     try:
         if pathlib.Path(input_data).exists():
             input_data = pathlib.Path(input_data).as_posix()
@@ -7254,9 +7246,9 @@ This is only used if outlier_method='dbscan'</p>
         print()
 
     if &#39;hvsr_band&#39; not in kwargs.keys():
-        kwargs[&#39;hvsr_band&#39;] = inspect.signature(input_params).parameters[&#39;hvsr_band&#39;].default
+        kwargs[&#39;hvsr_band&#39;] = DPD[&#39;hvsr_band&#39;]
     if &#39;peak_freq_range&#39; not in kwargs.keys():
-        kwargs[&#39;peak_freq_range&#39;] = inspect.signature(input_params).parameters[&#39;peak_freq_range&#39;].default
+        kwargs[&#39;peak_freq_range&#39;] = DPD[&#39;peak_freq_range&#39;]
     if &#39;processing_parameters&#39; not in kwargs.keys():
         kwargs[&#39;processing_parameters&#39;] = {}
 
@@ -7893,15 +7885,15 @@ This is only used if outlier_method='dbscan'</p>
 
     return hvsr_results</code></pre>
 </details>
-<div class="desc"><p>The sprit.run() is the main function</p>
-<p>that allows you to do all your HVSR processing in one simple step</p>
-<p>(sprit.run() is how you would call it in your code,</p>
-<p>but it may also be called using sprit.sprit_hvsr.run())</p>
-<p>The input_data parameter of sprit.run() is the only required parameter</p>
-<p>(if nothing entered, it will run sample data).</p>
-<p>This can be either a single file, a list of files (one for each component, for example),</p>
-<p>a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance),</p>
-<p>a Rasp. Shake raw data directory, select Tromino binary (.trc) files, or sample data.</p>
+<div class="desc"><p>The sprit.run() is the main function
+that allows you to do all your HVSR processing in one simple step
+(sprit.run() is how you would call it in your code,
+but it may also be called using sprit.sprit_hvsr.run())
+The input_data parameter of sprit.run() is the only required parameter
+(if nothing entered, it will run sample data).
+This can be either a single file, a list of files (one for each component, for example),
+a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance),
+a Rasp. Shake raw data directory, select Tromino binary (.trc) files, or sample data.</p>
 <h2 id="notes">Notes</h2>
 <p>The sprit.run() function calls the following functions. This is the recommended order/set of functions to run to process HVSR using SpRIT. See the API documentation for these functions for more information:
 - input_params(): The input_data parameter of input_params() is the only required variable, though others may also need to be called for your data to process correctly.
@@ -7913,6 +7905,7 @@ This is only used if outlier_method='dbscan'</p>
 - process_hvsr(): this is the main function processing the hvsr curve and statistics. See process_hvsr() documentation for more details. The hvsr_band parameter sets the frequency spectrum over which these calculations occur.
 - check_peaks(): this is the main function that will find and 'score' peaks to get a best peak. The parameter peak_freq_range can be set to limit the frequencies within which peaks are checked and scored.
 - get_report(): this is the main function that will print, plot, and/or save the results of the data. See the get_report() API documentation for more information.
+- calculate_depth(): optional step to caculate a frequency-depth transformation based on a provided depth model (in power law form). See the calculate_depth() API documentation for more information.
 - export_hvsr(): this function exports the final data output as a pickle file (by default, this pickle object has a .hvsr extension). This can be used to read data back into SpRIT without having to reprocess data.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
@@ -7935,10 +7928,8 @@ This is only used if outlier_method='dbscan'</p>
 <dt><strong><code>outlier_curves_removal</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
 <dd>Whether to remove outlier curves from HVSR time windows</dd>
 <dt><strong><code>skip_steps</code></strong> :&ensp;<code>list, str,</code> or <code>None</code></dt>
-<dd>
-<p>A list of function names to skip (as strings), to manually prevent any function from being performed.</p>
-<p>For example, skip_steps=["input_params", "fetch_data"] will prevent sprit.input_params() and sprit.fetch_data() from being called in sprit.run().</p>
-</dd>
+<dd>A list of function names to skip (as strings), to manually prevent any function from being performed.
+For example, skip_steps=["input_params", "fetch_data"] will prevent sprit.input_params() and sprit.fetch_data() from being called in sprit.run().</dd>
 <dt><strong><code>show_plot</code></strong> :&ensp;<code>bool</code>, default=<code>True</code></dt>
 <dd>Whether to show plots. This does not affect whether the plots are created (and then inserted as an attribute of HVSRData), only whether they are shown.</dd>
 <dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, optional</dt>

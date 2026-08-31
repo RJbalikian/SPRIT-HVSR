@@ -5065,7 +5065,7 @@ def generate_psds(hvsr_data, window_length=30.0, overlap_pct=0.5, window_type='h
 
         psdDict, times_bool = __single_psd_from_raw_data(hvsr_data, window_length=window_length, window_length_method=window_length_method, window_type=window_type,
                                                          num_freq_bins=num_freq_bins, verbose=verbose,
-                                                         overlap_pct=overlap_pct, remove_response=remove_response, do_azimuths=azimuthal_psds)
+                                                         overlap=overlap_pct, remove_response=remove_response, do_azimuths=azimuthal_psds)
         common_times = [ct[0] for ct in times_bool]
         use_times = [ut[1] for ut in times_bool]
 
@@ -10793,7 +10793,7 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_meth
         # Get all possible windows and initialize output window list for windows that are actually used
         #  This will likely be the same if there are no gaps in the data
         windows = _create_windows(hvsr_data=hvsr_data, window=window_length, 
-                                  overlap=overlap, window_length_method=window_length_method, verbose=False)
+                                  overlap_pct=overlap, window_length_method=window_length_method, verbose=False)
         windows_out = []
 
         # Iterate through each window to trim data trace and perform fft analysis
@@ -10854,7 +10854,8 @@ def __single_psd_from_raw_data(hvsr_data, window_length=30.0, window_length_meth
                 
                 nans, x= nan_helper(window_trace.data)
                 window_trace.data[nans]= np.interp(x(nans), x(~nans), window_trace.data[~nans])
-                print(f"{np.sum(np.isnan(window_trace.data))} Nans in data")
+                if verbose:
+                    print(f"\t\t{np.sum(np.isnan(window_trace.data))} Nans in data after nan removal")
                 noNanCond = np.any(np.isnan(window_trace.data))
 
             if nsamplesperwin > 1 and not noNanCond:

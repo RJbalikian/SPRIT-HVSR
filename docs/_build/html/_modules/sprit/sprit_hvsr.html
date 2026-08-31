@@ -5,12 +5,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sprit.sprit_hvsr &mdash; sprit 3.14 documentation</title>
+  <title>sprit.sprit_hvsr &mdash; sprit 3.14.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
 
   
-      <script src="../../_static/documentation_options.js?v=672fcdc7"></script>
+      <script src="../../_static/documentation_options.js?v=408c3590"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -1267,26 +1267,16 @@
 <div class="viewcode-block" id="run">
 <a class="viewcode-back" href="../../sprit.sprit_hvsr.html#sprit.run">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="n">input_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="s1">&#39;file&#39;</span><span class="p">,</span>
-
         <span class="n">azimuth_calculation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">noise_removal</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">outlier_curves_removal</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-
         <span class="n">skip_steps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">generate_reports</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The sprit.run() is the main function</span>
-
 <span class="sd">       that allows you to do all your HVSR processing in one simple step</span>
-
 <span class="sd">       (sprit.run() is how you would call it in your code,</span>
-
 <span class="sd">       but it may also be called using sprit.sprit_hvsr.run())</span>
-
 <span class="sd">    The input_data parameter of sprit.run() is the only required parameter</span>
-
 <span class="sd">    (if nothing entered, it will run sample data).</span>
-
 <span class="sd">    This can be either a single file, a list of files (one for each component, for example),</span>
-
 <span class="sd">    a directory (in which case, all obspy-readable files will be added to an HVSRBatch instance),</span>
-
 <span class="sd">    a Rasp. Shake raw data directory, select Tromino binary (.trc) files, or sample data.</span>
 
 <span class="sd">    Notes</span>
@@ -1301,6 +1291,7 @@
 <span class="sd">    - process_hvsr(): this is the main function processing the hvsr curve and statistics. See process_hvsr() documentation for more details. The hvsr_band parameter sets the frequency spectrum over which these calculations occur.</span>
 <span class="sd">    - check_peaks(): this is the main function that will find and &#39;score&#39; peaks to get a best peak. The parameter peak_freq_range can be set to limit the frequencies within which peaks are checked and scored.</span>
 <span class="sd">    - get_report(): this is the main function that will print, plot, and/or save the results of the data. See the get_report() API documentation for more information.</span>
+<span class="sd">    - calculate_depth(): optional step to caculate a frequency-depth transformation based on a provided depth model (in power law form). See the calculate_depth() API documentation for more information.</span>
 <span class="sd">    - export_hvsr(): this function exports the final data output as a pickle file (by default, this pickle object has a .hvsr extension). This can be used to read data back into SpRIT without having to reprocess data.</span>
 
 <span class="sd">    Parameters</span>
@@ -1324,7 +1315,6 @@
 <span class="sd">        Whether to remove outlier curves from HVSR time windows</span>
 <span class="sd">    skip_steps : list, str, or None</span>
 <span class="sd">        A list of function names to skip (as strings), to manually prevent any function from being performed.</span>
-
 <span class="sd">        For example, skip_steps=[&quot;input_params&quot;, &quot;fetch_data&quot;] will prevent sprit.input_params() and sprit.fetch_data() from being called in sprit.run().</span>
 <span class="sd">    show_plot : bool, default=True</span>
 <span class="sd">        Whether to show plots. This does not affect whether the plots are created (and then inserted as an attribute of HVSRData), only whether they are shown.</span>
@@ -1360,6 +1350,8 @@
 <span class="sd">    RuntimeError</span>
 <span class="sd">        If the data being processed is a single file, an error will be raised if generate_psds() does not work correctly. No errors are raised for remove_noise() errors (since that is an optional step) and the process_hvsr() step (since that is the last processing step) .</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># If this is a filepath, put it in posix style that throws fewer errors</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
             <span class="n">input_data</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span><span class="o">.</span><span class="n">as_posix</span><span class="p">()</span>
@@ -1422,9 +1414,9 @@
         <span class="nb">print</span><span class="p">()</span>
 
     <span class="k">if</span> <span class="s1">&#39;hvsr_band&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">input_params</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">default</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">DPD</span><span class="p">[</span><span class="s1">&#39;hvsr_band&#39;</span><span class="p">]</span>
     <span class="k">if</span> <span class="s1">&#39;peak_freq_range&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;peak_freq_range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">input_params</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;peak_freq_range&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">default</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;peak_freq_range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">DPD</span><span class="p">[</span><span class="s1">&#39;peak_freq_range&#39;</span><span class="p">]</span>
     <span class="k">if</span> <span class="s1">&#39;processing_parameters&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;processing_parameters&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -5255,7 +5247,7 @@
 
         <span class="n">psdDict</span><span class="p">,</span> <span class="n">times_bool</span> <span class="o">=</span> <span class="n">__single_psd_from_raw_data</span><span class="p">(</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="n">window_length</span><span class="p">,</span> <span class="n">window_length_method</span><span class="o">=</span><span class="n">window_length_method</span><span class="p">,</span> <span class="n">window_type</span><span class="o">=</span><span class="n">window_type</span><span class="p">,</span>
                                                          <span class="n">num_freq_bins</span><span class="o">=</span><span class="n">num_freq_bins</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
-                                                         <span class="n">overlap_pct</span><span class="o">=</span><span class="n">overlap_pct</span><span class="p">,</span> <span class="n">remove_response</span><span class="o">=</span><span class="n">remove_response</span><span class="p">,</span> <span class="n">do_azimuths</span><span class="o">=</span><span class="n">azimuthal_psds</span><span class="p">)</span>
+                                                         <span class="n">overlap</span><span class="o">=</span><span class="n">overlap_pct</span><span class="p">,</span> <span class="n">remove_response</span><span class="o">=</span><span class="n">remove_response</span><span class="p">,</span> <span class="n">do_azimuths</span><span class="o">=</span><span class="n">azimuthal_psds</span><span class="p">)</span>
         <span class="n">common_times</span> <span class="o">=</span> <span class="p">[</span><span class="n">ct</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">ct</span> <span class="ow">in</span> <span class="n">times_bool</span><span class="p">]</span>
         <span class="n">use_times</span> <span class="o">=</span> <span class="p">[</span><span class="n">ut</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">ut</span> <span class="ow">in</span> <span class="n">times_bool</span><span class="p">]</span>
 
@@ -8884,13 +8876,14 @@
         <span class="n">output</span> <span class="o">=</span> <span class="nb">input</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;stream&#39;</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">output</span>
 
+
 <span class="c1"># Helper function for reading data from Tromino 3G(+)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">__read_tromino_data_yellow</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">sampling_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                <span class="n">struct_format</span><span class="o">=</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="n">tromino_model</span><span class="o">=</span><span class="s1">&#39;3G&#39;</span><span class="p">,</span>
                                <span class="n">start_byte</span><span class="o">=</span><span class="mi">24576</span><span class="p">,</span> <span class="n">diagnose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                                <span class="n">return_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to read (meta)data specifically from Tromino 3G(+) systems&quot;&quot;&quot;</span>
     <span class="n">input_filepath</span> <span class="o">=</span> <span class="n">input_data</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">HVSRData</span><span class="p">):</span>
         <span class="n">input_filepath</span> <span class="o">=</span> <span class="n">input_data</span><span class="p">[</span><span class="s1">&#39;input_data&#39;</span><span class="p">]</span>
@@ -8948,8 +8941,6 @@
 
     <span class="n">dataArr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dataList</span><span class="p">)</span>
 
-    <span class="c1">#medVal = np.nanmedian(dataArr[50000:100000])</span>
-
     <span class="k">if</span> <span class="s1">&#39;start_byte&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="n">start_byte</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;start_byte&#39;</span><span class="p">]</span>
 
@@ -8957,9 +8948,9 @@
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Total file bytes: &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataArr</span><span class="p">))</span>
 
         <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">comp1</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
-        <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">comp2</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
-        <span class="n">ax</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">comp3</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">dataArr</span><span class="p">[::</span><span class="mi">3</span><span class="p">],</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">dataArr</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">3</span><span class="p">],</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">dataArr</span><span class="p">[</span><span class="mi">2</span><span class="p">::</span><span class="mi">3</span><span class="p">],</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
     <span class="k">try</span><span class="p">:</span>
@@ -9062,16 +9053,14 @@
                             <span class="n">channel_map</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Z&#39;</span><span class="p">:</span><span class="mi">6</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">},</span> <span class="n">data_start_buffer</span><span class="o">=</span><span class="mi">113</span><span class="p">,</span>
                             <span class="n">return_dict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 
-    <span class="c1"># Reconfigure data for some of the analysis</span>
+    <span class="c1"># Bytes are swapped, need to un-swap</span>
     <span class="n">swapped</span> <span class="o">=</span> <span class="n">__read_and_swap_bytes</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
 
-    <span class="c1"># Initialize a result dictionary</span>
     <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;header&#39;</span><span class="p">:</span> <span class="p">{},</span>
         <span class="s1">&#39;gps_data&#39;</span><span class="p">:</span> <span class="p">[],</span>
         <span class="s1">&#39;seismometer_data&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="c1"># Will be replaced with a (7, n) numpy array</span>
         <span class="s1">&#39;stream&#39;</span><span class="p">:</span> <span class="kc">None</span>
-
         <span class="p">}</span>
 
     <span class="c1"># Extract header information (text sections)</span>
@@ -9081,7 +9070,7 @@
             <span class="n">result</span><span class="p">[</span><span class="s1">&#39;header&#39;</span><span class="p">][</span><span class="s1">&#39;file_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\x00</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="c1"># Add more header parsing as needed</span>
 
-    <span class="c1"># Extract GPS NMEA sentences</span>
+    <span class="c1"># Extract GPS data (b/w text and data)</span>
     <span class="n">gps_data</span> <span class="o">=</span> <span class="n">__extract_gps_data</span><span class="p">(</span><span class="n">swapped</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">sentence</span> <span class="ow">in</span> <span class="n">gps_data</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">sentence</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;$GPGGA&#39;</span><span class="p">):</span>
@@ -9133,7 +9122,7 @@
     <span class="c1"># Find the start of seismometer data section (after GPS data)</span>
     <span class="n">seis_data_start</span> <span class="o">=</span> <span class="n">__locate_data_start_blue</span><span class="p">(</span><span class="n">swapped</span><span class="p">)</span>
 
-    <span class="c1"># Get seismic starting buffer</span>
+    <span class="c1"># Get seismic starting buffer (not sure if this is the best way to do this)</span>
     <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">header_text</span><span class="p">:</span>
         <span class="k">if</span> <span class="s2">&quot;FIRST DATA&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
             <span class="n">data_buffer</span> <span class="o">=</span> <span class="n">data_start_buffer</span> <span class="c1">#137#int(str(item).split(&#39;-&#39;)[2].split(&quot;ADDRES &quot;)[1].split(&#39;.&#39;)[0])</span>
@@ -9146,7 +9135,7 @@
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">Sampling rate detected as:&#39;</span><span class="p">,</span> <span class="n">sampling_rate</span><span class="p">)</span>
 
-    <span class="c1"># Read the file as simple bytes</span>
+    <span class="c1"># Read the data part of the file as simple bytes (these do not appear to be swapped)</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">seis_data_start</span> <span class="o">+</span> <span class="n">data_buffer</span><span class="p">)</span>
         <span class="c1"># Read the rest of the file</span>
@@ -9310,7 +9299,7 @@
 <span class="c1"># Read starttime, number of channels, and sampling rate</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">__get_tromino_yellow_metadata</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">start_hex</span><span class="o">=</span><span class="s1">&#39;00004020&#39;</span><span class="p">,</span> <span class="n">end_hex</span><span class="o">=</span><span class="s1">&#39;00004030&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Extracts bytes from [start_hex, end_hex) and tries different decodings.</span>
+<span class="sd">    Extracts bytes from `start_hex` to `end_hex` and tries different decodings.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -9328,6 +9317,8 @@
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="n">alldata</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
 
+    <span class="c1"># In the metadata sections, the bytes are swapped</span>
+    <span class="c1"># To get readable metadata, un-swap the bytes</span>
     <span class="n">swapped</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">alldata</span><span class="p">))</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">alldata</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
         <span class="n">swapped</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">alldata</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
@@ -9338,6 +9329,7 @@
 
     <span class="n">data</span> <span class="o">=</span> <span class="n">swapped</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
 
+    <span class="c1"># Most of this was used previously for troubleshooting</span>
     <span class="n">byteList</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">b</span><span class="si">:</span><span class="s2">b</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
     <span class="n">hexList</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">b</span><span class="si">:</span><span class="s2">02X</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
 
@@ -9347,6 +9339,7 @@
 
     <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;BYTES&#39;</span><span class="p">:</span><span class="n">byteList</span><span class="p">,</span> <span class="s1">&#39;HEX&#39;</span><span class="p">:</span><span class="n">hexList</span><span class="p">})</span>
 
+    <span class="c1"># It was much easier to decode date metadata from hexadecimal</span>
     <span class="n">starttime</span> <span class="o">=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="mi">2000</span><span class="o">+</span><span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">11</span><span class="p">,</span> <span class="s2">&quot;HEX&quot;</span><span class="p">]),</span>
                            <span class="n">month</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">9</span><span class="p">,</span> <span class="s2">&quot;HEX&quot;</span><span class="p">]),</span>
                            <span class="n">day</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="s2">&quot;HEX&quot;</span><span class="p">]),</span>
@@ -9365,9 +9358,8 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">__read_and_swap_bytes</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">return_unswapped</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Private function (not meant to be called except by internal functions)</span>
-
-<span class="sd">    to read a binary file and return a bytearray with all bytes swapped in pairs.</span>
-<span class="sd">    This handles odd-length files correctly.</span>
+<span class="sd">    to read a binary file and return a bytearray with all bytes swapped in pairs. </span>
+<span class="sd">    (mostly for metadata)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># Open binary file</span>
@@ -9407,15 +9399,18 @@
 
 <span class="c1"># Helper function, Part of reading tromino datap</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">__extract_gps_data</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract GPS NMEA sentences from binary data&quot;&quot;&quot;</span>
-    <span class="c1"># NMEA sentences start with $ and end with \r\n</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract GPS NMEA sentences from binary data</span>
+<span class="sd">    Currently only used in _read_tromino_blue()&quot;&quot;&quot;</span>
+
+    <span class="c1"># Get data as string</span>
     <span class="n">data_str</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
 
     <span class="c1"># Look for NMEA sentences</span>
+    <span class="c1"># NMEA sentences start with $ and end with \r\n</span>
+    <span class="c1"># Get all matches w/regex search, make list</span>
     <span class="n">gps_sentences</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">nmea_pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\$(GP[A-Z]</span><span class="si">{3}</span><span class="s1">,.+?)\r\n&#39;</span>
     <span class="n">matches</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">nmea_pattern</span><span class="p">,</span> <span class="n">data_str</span><span class="p">)</span>
-
     <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">:</span>
         <span class="n">gps_sentences</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
 
@@ -9982,7 +9977,9 @@
     <span class="k">return</span> <span class="n">outstream</span>
 
 
-<span class="c1"># Helper function for removing data during warmup (when seismometers are still initializing) and &quot;cooldown&quot; (when there may be noise from deactivating seismometer) time, if desired</span>
+<span class="c1"># Helper function for removing data during warmup </span>
+<span class="c1"># (when seismometers are still initializing) and </span>
+<span class="c1"># &quot;cooldown&quot; (when there may be noise from deactivating seismometer) time, if desired</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">__remove_warmup_cooldown</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">warmup_time</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">cooldown_time</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Private helper function to remove data from the start and/or end of each site</span>
 
@@ -11017,7 +11014,7 @@
         <span class="c1"># Get all possible windows and initialize output window list for windows that are actually used</span>
         <span class="c1">#  This will likely be the same if there are no gaps in the data</span>
         <span class="n">windows</span> <span class="o">=</span> <span class="n">_create_windows</span><span class="p">(</span><span class="n">hvsr_data</span><span class="o">=</span><span class="n">hvsr_data</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="n">window_length</span><span class="p">,</span> 
-                                  <span class="n">overlap</span><span class="o">=</span><span class="n">overlap</span><span class="p">,</span> <span class="n">window_length_method</span><span class="o">=</span><span class="n">window_length_method</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                                  <span class="n">overlap_pct</span><span class="o">=</span><span class="n">overlap</span><span class="p">,</span> <span class="n">window_length_method</span><span class="o">=</span><span class="n">window_length_method</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">windows_out</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="c1"># Iterate through each window to trim data trace and perform fft analysis</span>
@@ -11078,7 +11075,8 @@
                 
                 <span class="n">nans</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span> <span class="n">nan_helper</span><span class="p">(</span><span class="n">window_trace</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
                 <span class="n">window_trace</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">nans</span><span class="p">]</span><span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">x</span><span class="p">(</span><span class="n">nans</span><span class="p">),</span> <span class="n">x</span><span class="p">(</span><span class="o">~</span><span class="n">nans</span><span class="p">),</span> <span class="n">window_trace</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="o">~</span><span class="n">nans</span><span class="p">])</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">window_trace</span><span class="o">.</span><span class="n">data</span><span class="p">))</span><span class="si">}</span><span class="s2"> Nans in data&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">window_trace</span><span class="o">.</span><span class="n">data</span><span class="p">))</span><span class="si">}</span><span class="s2"> Nans in data after nan removal&quot;</span><span class="p">)</span>
                 <span class="n">noNanCond</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">window_trace</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
 
             <span class="k">if</span> <span class="n">nsamplesperwin</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">noNanCond</span><span class="p">:</span>
